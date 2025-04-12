@@ -1,0 +1,597 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Çalışan Yönetimi {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+    --koc-gray: #f5f5f5;
+    --koc-light-gray: #f8f9fe;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+    transition: all 0.2s ease;
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(var(--koc-red-rgb), 0.15);
+  }
+  
+  .btn-outline-koc-red {
+    color: var(--koc-red);
+    border-color: var(--koc-red);
+    background-color: transparent;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-outline-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+    transform: translateY(-1px);
+  }
+  
+  .badge-koc-red {
+    background-color: var(--koc-red);
+    color: white;
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Sayfa özel stilleri */
+  .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: none;
+    overflow: hidden;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .card-header {
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    background-color: white;
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .avatar {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    transition: all 0.3s ease;
+  }
+  
+  .avatar:hover {
+    transform: scale(1.05);
+  }
+  
+  .badge-role {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 30px;
+  }
+  
+  .badge-admin {
+    background-color: var(--koc-red-light);
+    color: white;
+  }
+  
+  .badge-manager {
+    background-color: #5e72e4;
+    color: white;
+  }
+  
+  .badge-consultant {
+    background-color: #11cdef;
+    color: white;
+  }
+  
+  .badge-secretary {
+    background-color: #fb6340;
+    color: white;
+  }
+  
+  .badge-employee {
+    background-color: #2dce89;
+    color: white;
+  }
+  
+  .table th {
+    border-top: none;
+    border-bottom: 2px solid var(--koc-red);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  
+  .table td {
+    vertical-align: middle;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    padding: 1rem 1.5rem;
+  }
+  
+  .permission-section {
+    background-color: var(--koc-light-gray);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  
+  .search-form {
+    position: relative;
+    max-width: 300px;
+  }
+  
+  .search-form input {
+    border-radius: 30px;
+    padding-left: 40px;
+    border: 1px solid rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .search-form input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
+    border-color: var(--koc-red);
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 15px;
+    top: 10px;
+    color: #adb5bd;
+  }
+  
+  .filter-btn-group .btn {
+    border-radius: 20px;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    margin-right: 0.25rem;
+    box-shadow: none;
+    transition: all 0.2s ease;
+  }
+  
+  .filter-btn-group .btn:hover {
+    transform: translateY(-1px);
+  }
+  
+  .filter-btn-group .btn.active {
+    background-color: var(--koc-red);
+    color: white;
+    box-shadow: 0 4px 6px rgba(var(--koc-red-rgb), 0.2);
+  }
+  
+  .activity-list .avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  
+  .activity-item {
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+  }
+  
+  .activity-item:hover {
+    border-left-color: var(--koc-red);
+    background-color: var(--koc-light-gray);
+  }
+  
+  .employee-info small {
+    font-size: 0.75rem;
+    opacity: 0.7;
+  }
+  
+  .action-dropdown .dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+  
+  .action-dropdown .dropdown-item:hover {
+    background-color: var(--koc-light-gray);
+  }
+  
+  .action-dropdown .dropdown-item i {
+    width: 20px;
+    text-align: center;
+  }
+  
+  .role-stats {
+    padding: 1rem;
+    border-radius: 10px;
+    background-color: var(--koc-light-gray);
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+  }
+  
+  .role-stats:hover {
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+  
+  .stats-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .stats-count {
+    font-weight: 700;
+    font-size: 1.25rem;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Çalışan Yönetimi</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item active" aria-current="page">Çalışan Yönetimi</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'employee_create' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-user-plus mr-1"></i> Yeni Çalışan Ekle
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  
+  <!-- Hata mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col-12">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <div class="row">
+    <!-- Çalışan Listesi Kartı -->
+    <div class="col-lg-9">
+      <div class="card shadow">
+        <!-- Card header -->
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col-md-5">
+              <h3 class="mb-0 font-weight-bold">Çalışanlar</h3>
+              <p class="text-muted mb-0 small">Toplam {{ employees|length }} çalışan bulunmaktadır</p>
+            </div>
+            <div class="col-md-7">
+              <form action="{% url 'employee_list' %}" method="get" class="search-form ml-auto">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Çalışan ara..." value="{{ search_query }}">
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Filtreler -->
+        <div class="card-header pb-0 pt-0">
+          <div class="filter-btn-group mt-3">
+            <a href="{% url 'employee_list' %}" class="btn btn-sm {% if not role_filter %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
+              <i class="fas fa-users mr-1"></i> Tümü
+            </a>
+            <a href="{% url 'employee_list' %}?role=admin" class="btn btn-sm {% if role_filter == 'admin' %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
+              <i class="fas fa-user-shield mr-1"></i> Yöneticiler
+            </a>
+            <a href="{% url 'employee_list' %}?role=consultant" class="btn btn-sm {% if role_filter == 'consultant' %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
+              <i class="fas fa-user-tie mr-1"></i> Danışmanlar
+            </a>
+            <a href="{% url 'employee_list' %}?role=secretary" class="btn btn-sm {% if role_filter == 'secretary' %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
+              <i class="fas fa-headset mr-1"></i> Santral
+            </a>
+          </div>
+        </div>
+        
+        <!-- Çalışan tablosu -->
+        <div class="table-responsive">
+          <table class="table align-items-center">
+            <thead>
+              <tr>
+                <th scope="col">Çalışan</th>
+                <th scope="col">Rol</th>
+                <th scope="col">İletişim</th>
+                <th scope="col">Durum</th>
+                <th scope="col" class="text-right">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for employee in employees %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="avatar bg-{{ employee.role }}">
+                      {{ employee.user.first_name|slice:":1" }}{{ employee.user.last_name|slice:":1" }}
+                    </div>
+                    <div class="ml-3 employee-info">
+                      <h5 class="mb-0">{{ employee.user.get_full_name }}</h5>
+                      <small>{{ employee.user.email }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge badge-pill badge-{{ employee.role }}">
+                    <i class="fas fa-user{% if employee.role == 'admin' %}-shield{% elif employee.role == 'manager' %}-tie{% endif %} mr-1"></i>
+                    {{ employee.get_role_display }}
+                  </span>
+                </td>
+                <td>
+                  {% if employee.phone %}
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-phone text-muted mr-2"></i>
+                    <span>{{ employee.phone }}</span>
+                  </div>
+                  {% else %}
+                  <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <span class="status-indicator bg-{% if employee.is_active %}success{% else %}danger{% endif %}"></span>
+                    <span>{% if employee.is_active %}Aktif{% else %}Pasif{% endif %}</span>
+                  </div>
+                </td>
+                <td class="text-right">
+                  <div class="dropdown action-dropdown">
+                    <button class="btn btn-sm btn-icon btn-outline-koc-red" type="button" data-toggle="dropdown">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                      <a class="dropdown-item" href="{% url 'employee_edit' employee.id %}">
+                        <i class="fas fa-edit text-koc-red"></i> Düzenle
+                      </a>
+                      <a class="dropdown-item" href="{% url 'manage_permissions' employee.id %}">
+                        <i class="fas fa-key text-koc-red"></i> Yetki Düzenle
+                      </a>
+                      <a class="dropdown-item" href="{% url 'reset_password' employee.id %}">
+                        <i class="fas fa-lock text-koc-red"></i> Şifre Sıfırla
+                      </a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item text-{% if employee.is_active %}danger{% else %}success{% endif %}" 
+                         href="{% url 'employee_edit' employee.id %}?toggle_status=true">
+                        <i class="fas fa-{% if employee.is_active %}user-slash{% else %}user-check{% endif %}"></i>
+                        {% if employee.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}
+                      </a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center py-5">
+                  <img src="https://cdn.iconscout.com/icon/free/png-256/free-data-not-found-1965034-1662569.png" width="80" class="mb-3 opacity-5">
+                  <h5 class="text-muted font-weight-bold">Gösterilecek çalışan bulunamadı</h5>
+                  {% if search_query or role_filter %}
+                  <p class="mb-3 text-muted small">Filtreleri temizleyip tekrar deneyin.</p>
+                  <a href="{% url 'employee_list' %}" class="btn btn-sm btn-outline-koc-red">
+                    <i class="fas fa-sync-alt mr-1"></i> Filtreleri Temizle
+                  </a>
+                  {% else %}
+                  <a href="{% url 'employee_create' %}" class="btn btn-sm btn-koc-red mt-2">
+                    <i class="fas fa-user-plus mr-1"></i> Yeni Çalışan Ekle
+                  </a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Boş alan varsa yükseklik ekle -->
+        {% if employees|length < 5 %}
+        <div class="card-footer py-4 border-0 bg-transparent"></div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- Yan Panel -->
+    <div class="col-lg-3">
+      <!-- Rol istatistikleri kartı -->
+      <div class="card shadow mb-4">
+        <div class="card-header border-0">
+          <h3 class="mb-0 font-weight-bold">Özet Bilgiler</h3>
+        </div>
+        <div class="card-body">
+          <div class="role-stats d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <div class="stats-badge bg-admin">
+                <i class="fas fa-user-shield text-white"></i>
+              </div>
+              <div class="ml-3">
+                <h6 class="mb-0">Yönetici</h6>
+              </div>
+            </div>
+            <div class="stats-count">{{ role_counts.admin }}</div>
+          </div>
+          
+          <div class="role-stats d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <div class="stats-badge bg-manager">
+                <i class="fas fa-user-tie text-white"></i>
+              </div>
+              <div class="ml-3">
+                <h6 class="mb-0">Müdür</h6>
+              </div>
+            </div>
+            <div class="stats-count">{{ role_counts.manager }}</div>
+          </div>
+          
+          <div class="role-stats d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <div class="stats-badge bg-consultant">
+                <i class="fas fa-user text-white"></i>
+              </div>
+              <div class="ml-3">
+                <h6 class="mb-0">Danışman</h6>
+              </div>
+            </div>
+            <div class="stats-count">{{ role_counts.consultant }}</div>
+          </div>
+          
+          <div class="role-stats d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <div class="stats-badge bg-secretary">
+                <i class="fas fa-headset text-white"></i>
+              </div>
+              <div class="ml-3">
+                <h6 class="mb-0">Santral</h6>
+              </div>
+            </div>
+            <div class="stats-count">{{ role_counts.secretary }}</div>
+          </div>
+          
+          <div class="role-stats d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <div class="stats-badge bg-employee">
+                <i class="fas fa-user text-white"></i>
+              </div>
+              <div class="ml-3">
+                <h6 class="mb-0">Çalışan</h6>
+              </div>
+            </div>
+            <div class="stats-count">{{ role_counts.employee }}</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Aktivite kartı -->
+      <div class="card shadow">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0 font-weight-bold">Son Aktiviteler</h3>
+            </div>
+            <div class="col text-right">
+              <a href="{% url 'activity_log' %}" class="btn btn-sm btn-outline-koc-red">
+                <i class="fas fa-history mr-1"></i> Tümü
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush activity-list">
+            {% for activity in activities %}
+            <div class="list-group-item activity-item">
+              <div class="d-flex align-items-center">
+                <div class="avatar bg-{{ activity.user.employee.role|default:'secondary' }}">
+                  {{ activity.user.first_name|slice:":1" }}{{ activity.user.last_name|slice:":1" }}
+                </div>
+                <div class="ml-3">
+                  <div class="d-flex justify-content-between align-items-center w-100">
+                    <h6 class="mb-0">{{ activity.user.get_full_name }}</h6>
+                    <small class="text-muted">{{ activity.timestamp|timesince }} önce</small>
+                  </div>
+                  <p class="mb-0 small">{{ activity.action }}</p>
+                  {% if activity.details %}
+                  <small class="text-muted">{{ activity.details }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% empty %}
+            <div class="text-center p-4">
+              <i class="fas fa-history fa-2x text-muted mb-3 opacity-5"></i>
+              <p class="text-muted mb-0">Henüz aktivite kaydı bulunmuyor.</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script>
+  $(document).ready(function() {
+    // Hover efektleri
+    $('.activity-item').hover(
+      function() { $(this).addClass('shadow-sm'); },
+      function() { $(this).removeClass('shadow-sm'); }
+    );
+    
+    // Tooltip aktivasyonu
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+</script>
+{% endblock javascripts %} 

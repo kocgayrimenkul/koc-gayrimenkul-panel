@@ -1,0 +1,216 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Etkinlik Listesi {% endblock %}
+
+{% block stylesheets %}
+{{ block.super }}
+<link rel="stylesheet" href="/static/assets/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="/static/assets/vendor/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css">
+<link rel="stylesheet" href="/static/assets/vendor/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-primary pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Etkinlik Listesi</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'calendar' %}">Ajanda</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Etkinlikler</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'event_create_form' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-plus mr-1"></i> Yeni Etkinlik
+          </a>
+          <a href="{% url 'calendar' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-calendar mr-1"></i> Takvim Görünümü
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--6">
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Tüm Etkinlikler</h3>
+          <p class="text-sm mb-0">
+            Bu sayfada sisteme kaydedilmiş tüm etkinlikleri görüntüleyebilir ve yönetebilirsiniz.
+          </p>
+        </div>
+        
+        <div class="table-responsive py-4">
+          <table class="table table-flush" id="datatable-events">
+            <thead class="thead-light">
+              <tr>
+                <th>ID</th>
+                <th>Başlık</th>
+                <th>Etkinlik Türü</th>
+                <th>Başlangıç</th>
+                <th>Bitiş</th>
+                <th>Durum</th>
+                <th>Müşteri</th>
+                <th>Gayrimenkul</th>
+                <th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for event in events %}
+                <tr>
+                  <td>{{ event.id }}</td>
+                  <td>
+                    <a href="{% url 'event_detail' event.id %}">
+                      {{ event.title }}
+                    </a>
+                  </td>
+                  <td>
+                    {% if event.event_type == 'meeting' %}
+                      <span class="badge badge-primary">Toplantı</span>
+                    {% elif event.event_type == 'viewing' %}
+                      <span class="badge badge-info">Gayrimenkul Gösterimi</span>
+                    {% elif event.event_type == 'call' %}
+                      <span class="badge badge-warning">Telefon Görüşmesi</span>
+                    {% elif event.event_type == 'reminder' %}
+                      <span class="badge badge-yellow">Hatırlatıcı</span>
+                    {% elif event.event_type == 'appointment' %}
+                      <span class="badge badge-success">Randevu</span>
+                    {% elif event.event_type == 'task' %}
+                      <span class="badge badge-purple">Görev</span>
+                    {% else %}
+                      <span class="badge badge-default">Diğer</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ event.start_time|date:"d.m.Y H:i" }}</td>
+                  <td>{{ event.end_time|date:"d.m.Y H:i" }}</td>
+                  <td>
+                    {% if event.is_completed %}
+                      <span class="badge badge-success">Tamamlandı</span>
+                    {% else %}
+                      <span class="badge badge-warning">Devam Ediyor</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if event.customer %}
+                      <a href="{% url 'customer_detail' event.customer.id %}">
+                        {{ event.customer.full_name }}
+                      </a>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if event.property %}
+                      <a href="{% url 'property_detail' event.property.id %}">
+                        {{ event.property.title }}
+                      </a>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td class="table-actions">
+                    <a href="{% url 'event_detail' event.id %}" class="table-action" data-toggle="tooltip" data-original-title="Görüntüle">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{% url 'event_update' event.id %}" class="table-action" data-toggle="tooltip" data-original-title="Düzenle">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="#" class="table-action table-action-delete" data-toggle="modal" data-target="#modal-delete-{{ event.id }}" data-original-title="Sil">
+                      <i class="fas fa-trash"></i>
+                    </a>
+                    
+                    <!-- Silme onay modalı -->
+                    <div class="modal fade" id="modal-delete-{{ event.id }}" tabindex="-1" role="dialog" aria-labelledby="modal-delete-{{ event.id }}" aria-hidden="true">
+                      <div class="modal-dialog modal-danger modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h6 class="modal-title" id="modal-title-delete">Etkinliği Sil</h6>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">×</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            <div class="py-3 text-center">
+                              <i class="ni ni-bell-55 ni-3x"></i>
+                              <h4 class="heading mt-4">Dikkat! Bu işlemi geri alamazsınız.</h4>
+                              <p>
+                                <strong>{{ event.title }}</strong> etkinliğini silmek istediğinizden emin misiniz?
+                              </p>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <form action="{% url 'event_delete' event.id %}" method="post">
+                              {% csrf_token %}
+                              <button type="submit" class="btn btn-danger">Evet, sil</button>
+                            </form>
+                            <button type="button" class="btn btn-link ml-auto" data-dismiss="modal">İptal</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="9" class="text-center">
+                    <h4 class="text-muted my-3">Henüz etkinlik kaydı bulunmamaktadır.</h4>
+                    <a href="{% url 'event_create_form' %}" class="btn btn-sm btn-primary">
+                      <i class="fas fa-plus mr-1"></i> Yeni Etkinlik Ekle
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+  
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+{{ block.super }}
+<script src="/static/assets/vendor/datatables.net/js/jquery.dataTables.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
+
+<script>
+  $(document).ready(function() {
+    var eventTable = $('#datatable-events').DataTable({
+      language: {
+        url: '/static/assets/vendor/datatables.net/i18n/tr.json'
+      },
+      responsive: true,
+      order: [[3, 'desc']], // Başlangıç tarihine göre sırala (en yakın en üstte)
+      columnDefs: [
+        { targets: 0, visible: false }, // ID kolonunu gizle
+        { targets: 8, orderable: false } // İşlemler kolonunda sıralama olmasın
+      ],
+      lengthMenu: [
+        [10, 25, 50, -1],
+        [10, 25, 50, "Tümü"]
+      ]
+    });
+    
+    // Tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+</script>
+{% endblock javascripts %} 

@@ -1,0 +1,408 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} {{ event.title }} - Etkinlik Detayı {% endblock %}
+
+{% block stylesheets %}
+{{ block.super }}
+<link rel="stylesheet" href="/static/assets/css/timeline.css">
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-primary pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Etkinlik Detayı</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'calendar' %}">Ajanda</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'event_list' %}">Etkinlikler</a></li>
+              <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'event_update' event.id %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-edit mr-1"></i> Düzenle
+          </a>
+          <a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#modal-delete">
+            <i class="fas fa-trash mr-1"></i> Sil
+          </a>
+          <a href="{% url 'event_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> Listeye Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Silme onay modalı -->
+<div class="modal fade" id="modal-delete" tabindex="-1" role="dialog" aria-labelledby="modal-delete" aria-hidden="true">
+  <div class="modal-dialog modal-danger modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" id="modal-title-delete">Etkinliği Sil</h6>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="py-3 text-center">
+          <i class="ni ni-bell-55 ni-3x"></i>
+          <h4 class="heading mt-4">Dikkat! Bu işlemi geri alamazsınız.</h4>
+          <p><strong>{{ event.title }}</strong> etkinliğini silmek istediğinizden emin misiniz?</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <form action="{% url 'event_delete' event.id %}" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Evet, sil</button>
+        </form>
+        <button type="button" class="btn btn-link ml-auto" data-dismiss="modal">İptal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--6">
+  <div class="row">
+    <!-- Etkinlik bilgileri -->
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <div class="row align-items-center">
+            <div class="col-8">
+              <h3 class="mb-0">Etkinlik Bilgileri</h3>
+            </div>
+            <div class="col-4 text-right">
+              <span class="badge {% if event.is_completed %}badge-success{% else %}badge-warning{% endif %} badge-lg">
+                {% if event.is_completed %}Tamamlandı{% else %}Devam Ediyor{% endif %}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <h1 class="display-4 mt-0 mb-4">{{ event.title }}</h1>
+          
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-control-label text-muted">Etkinlik Türü</label>
+                <div>
+                  {% if event.event_type == 'meeting' %}
+                    <span class="badge badge-primary badge-lg">Toplantı</span>
+                  {% elif event.event_type == 'viewing' %}
+                    <span class="badge badge-info badge-lg">Gayrimenkul Gösterimi</span>
+                  {% elif event.event_type == 'call' %}
+                    <span class="badge badge-warning badge-lg">Telefon Görüşmesi</span>
+                  {% elif event.event_type == 'reminder' %}
+                    <span class="badge badge-yellow badge-lg">Hatırlatıcı</span>
+                  {% elif event.event_type == 'appointment' %}
+                    <span class="badge badge-success badge-lg">Randevu</span>
+                  {% elif event.event_type == 'task' %}
+                    <span class="badge badge-purple badge-lg">Görev</span>
+                  {% else %}
+                    <span class="badge badge-default badge-lg">Diğer</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-control-label text-muted">Etkinlik Tarihi</label>
+                <div class="d-flex align-items-center">
+                  <i class="ni ni-calendar-grid-58 mr-2 text-primary"></i>
+                  <div>
+                    <div>{{ event.start_time|date:"d.m.Y H:i" }}</div>
+                    {% if event.end_time %}
+                      <small class="text-muted">{{ event.end_time|date:"d.m.Y H:i" }} (Bitiş)</small>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-control-label text-muted">Müşteri</label>
+                <div>
+                  {% if event.customer %}
+                    <a href="{% url 'customer_detail' event.customer.id %}" class="d-flex align-items-center">
+                      {% if event.customer.profile_image %}
+                        <img src="{{ event.customer.profile_image.url }}" class="avatar avatar-sm rounded-circle mr-3">
+                      {% else %}
+                        <div class="avatar avatar-sm bg-primary rounded-circle mr-3">
+                          <span class="text-white">{{ event.customer.initials }}</span>
+                        </div>
+                      {% endif %}
+                      <div>
+                        <span class="font-weight-bold">{{ event.customer.full_name }}</span>
+                        {% if event.customer.phone %}
+                          <small class="d-block text-muted">{{ event.customer.phone }}</small>
+                        {% endif %}
+                      </div>
+                    </a>
+                  {% else %}
+                    <span class="text-muted">Müşteri belirtilmemiş</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-control-label text-muted">Gayrimenkul</label>
+                <div>
+                  {% if event.property %}
+                    <a href="{% url 'property_detail' event.property.id %}" class="d-flex align-items-center">
+                      {% if event.property.featured_image %}
+                        <img src="{{ event.property.featured_image.url }}" class="avatar avatar-sm rounded mr-3">
+                      {% else %}
+                        <div class="avatar avatar-sm bg-secondary rounded mr-3">
+                          <i class="fas fa-home text-white"></i>
+                        </div>
+                      {% endif %}
+                      <div>
+                        <span class="font-weight-bold">{{ event.property.title }}</span>
+                        <small class="d-block text-muted">{{ event.property.address }}</small>
+                      </div>
+                    </a>
+                  {% else %}
+                    <span class="text-muted">Gayrimenkul belirtilmemiş</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mb-4">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label class="form-control-label text-muted">Konum</label>
+                <div>
+                  {% if event.location %}
+                    <div class="d-flex align-items-center">
+                      <i class="ni ni-pin-3 mr-2 text-primary"></i>
+                      <span>{{ event.location }}</span>
+                    </div>
+                  {% else %}
+                    <span class="text-muted">Konum belirtilmemiş</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+                    
+          {% if event.description %}
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label class="form-control-label text-muted">Açıklama</label>
+                <div class="p-3 bg-secondary rounded">
+                  {{ event.description|linebreaks }}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if event.is_completed %}
+          <div class="row mb-4">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label class="form-control-label text-muted">Tamamlanma Tarihi</label>
+                <div class="d-flex align-items-center">
+                  <i class="ni ni-check-bold mr-2 text-success"></i>
+                  <span>{{ event.completed_at|date:"d.m.Y H:i" }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          <div class="row">
+            <div class="col-md-12">
+              <hr class="my-4">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <small class="text-muted">Oluşturulma: {{ event.created_at|date:"d.m.Y H:i" }}</small>
+                  {% if event.created_by %}
+                    <br>
+                    <small class="text-muted">Oluşturan: {{ event.created_by.get_full_name }}</small>
+                  {% endif %}
+                </div>
+                <div class="text-right">
+                  <small class="text-muted">Son Güncelleme: {{ event.updated_at|date:"d.m.Y H:i" }}</small>
+                  {% if event.updated_by %}
+                    <br>
+                    <small class="text-muted">Güncelleyen: {{ event.updated_by.get_full_name }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sağ yan panel -->
+    <div class="col-lg-4">
+      <!-- Durum kartı -->
+      <div class="card">
+        <div class="card-header bg-transparent">
+          <h3 class="mb-0">Etkinlik Durumu</h3>
+        </div>
+        <div class="card-body">
+          {% if not event.is_completed %}
+            <form action="{% url 'event_complete' event.id %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-success btn-block">
+                <i class="fas fa-check mr-2"></i> Etkinliği Tamamla
+              </button>
+            </form>
+          {% else %}
+            <div class="alert alert-success mb-3">
+              <div class="d-flex align-items-center">
+                <i class="ni ni-check-bold mr-3"></i>
+                <div>
+                  <h4 class="mb-0">Etkinlik Tamamlandı</h4>
+                  <small>{{ event.completed_at|date:"d.m.Y H:i" }}</small>
+                </div>
+              </div>
+            </div>
+            <form action="{% url 'event_reopen' event.id %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-primary btn-block">
+                <i class="fas fa-undo mr-2"></i> Etkinliği Yeniden Aç
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Hızlı işlemler kartı -->
+      <div class="card mt-4">
+        <div class="card-header bg-transparent">
+          <h3 class="mb-0">Hızlı İşlemler</h3>
+        </div>
+        <div class="card-body">
+          <div class="list-group list-group-flush">
+            <a href="{% url 'event_update' event.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+              <div>
+                <i class="fas fa-edit text-primary mr-3"></i>
+                <span>Etkinliği Düzenle</span>
+              </div>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+            
+            {% if event.customer %}
+            <a href="{% url 'customer_detail' event.customer.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+              <div>
+                <i class="fas fa-user text-info mr-3"></i>
+                <span>Müşteri Detayı</span>
+              </div>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+            
+            {% if event.property %}
+            <a href="{% url 'property_detail' event.property.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+              <div>
+                <i class="fas fa-home text-success mr-3"></i>
+                <span>Gayrimenkul Detayı</span>
+              </div>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'event_list' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+              <div>
+                <i class="fas fa-list text-warning mr-3"></i>
+                <span>Etkinlik Listesine Dön</span>
+              </div>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+            
+            <a href="{% url 'calendar' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+              <div>
+                <i class="fas fa-calendar text-danger mr-3"></i>
+                <span>Takvim Görünümüne Dön</span>
+              </div>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+            
+            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center text-danger" data-toggle="modal" data-target="#modal-delete">
+              <div>
+                <i class="fas fa-trash mr-3"></i>
+                <span>Etkinliği Sil</span>
+              </div>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      {% if related_events %}
+      <!-- İlişkili Etkinlikler -->
+      <div class="card mt-4">
+        <div class="card-header bg-transparent">
+          <h3 class="mb-0">İlişkili Etkinlikler</h3>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            {% for related_event in related_events %}
+              <a href="{% url 'event_detail' related_event.id %}" class="list-group-item list-group-item-action">
+                <div class="row align-items-center">
+                  <div class="col-auto">
+                    {% if related_event.event_type == 'meeting' %}
+                      <i class="fas fa-users text-primary"></i>
+                    {% elif related_event.event_type == 'viewing' %}
+                      <i class="fas fa-eye text-info"></i>
+                    {% elif related_event.event_type == 'call' %}
+                      <i class="fas fa-phone text-warning"></i>
+                    {% elif related_event.event_type == 'reminder' %}
+                      <i class="fas fa-bell text-yellow"></i>
+                    {% elif related_event.event_type == 'appointment' %}
+                      <i class="fas fa-calendar-check text-success"></i>
+                    {% elif related_event.event_type == 'task' %}
+                      <i class="fas fa-tasks text-purple"></i>
+                    {% else %}
+                      <i class="fas fa-calendar text-default"></i>
+                    {% endif %}
+                  </div>
+                  <div class="col ml-2">
+                    <h5 class="mb-0">{{ related_event.title }}</h5>
+                    <small class="text-muted">{{ related_event.start_time|date:"d.m.Y H:i" }}</small>
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+  
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+{{ block.super }}
+<script>
+  $(document).ready(function() {
+    // Tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+</script>
+{% endblock javascripts %} 

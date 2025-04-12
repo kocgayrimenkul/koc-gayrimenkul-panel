@@ -1,0 +1,318 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} {% if form.instance.id %}{{ form.instance.title }} - Düzenle{% else %}Yeni Etkinlik{% endif %} {% endblock %}
+
+{% block stylesheets %}
+{{ block.super }}
+<link rel="stylesheet" href="/static/assets/vendor/select2/dist/css/select2.min.css">
+<link rel="stylesheet" href="/static/assets/vendor/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="/static/assets/vendor/flatpickr/dist/themes/material_blue.css">
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-primary pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">{% if form.instance.id %}Etkinlik Düzenle{% else %}Yeni Etkinlik{% endif %}</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'calendar' %}">Ajanda</a></li>
+              <li class="breadcrumb-item active" aria-current="page">{% if form.instance.id %}Düzenle{% else %}Yeni Etkinlik{% endif %}</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--6">
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Etkinlik Bilgileri</h3>
+        </div>
+        <div class="card-body">
+          <form method="post" id="event-form">
+            {% csrf_token %}
+            {% if form.errors %}
+              <div class="alert alert-danger">
+                <strong>Hata!</strong> Lütfen aşağıdaki hataları düzeltin:
+                <ul>
+                  {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                      <li>{{ field }}: {{ error }}</li>
+                    {% endfor %}
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+            
+            <h6 class="heading-small text-muted mb-4">Temel Bilgiler</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-12">
+                  <div class="form-group">
+                    <label class="form-control-label" for="{{ form.title.id_for_label }}">Başlık <span class="text-danger">*</span></label>
+                    {{ form.title|safe }}
+                    {% if form.title.errors %}
+                      <div class="invalid-feedback d-block">{{ form.title.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="{{ form.start_time.id_for_label }}">Başlangıç Zamanı <span class="text-danger">*</span></label>
+                    {{ form.start_time|safe }}
+                    {% if form.start_time.errors %}
+                      <div class="invalid-feedback d-block">{{ form.start_time.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="{{ form.end_time.id_for_label }}">Bitiş Zamanı</label>
+                    {{ form.end_time|safe }}
+                    {% if form.end_time.errors %}
+                      <div class="invalid-feedback d-block">{{ form.end_time.errors.0 }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">İsteğe bağlı. Belirtilmezse başlangıç zamanı + 1 saat olarak hesaplanır.</small>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="{{ form.event_type.id_for_label }}">Etkinlik Türü <span class="text-danger">*</span></label>
+                    {{ form.event_type|safe }}
+                    {% if form.event_type.errors %}
+                      <div class="invalid-feedback d-block">{{ form.event_type.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="{{ form.is_completed.id_for_label }}">Durum</label>
+                    <div class="custom-control custom-checkbox">
+                      {{ form.is_completed|safe }}
+                      <label class="custom-control-label" for="{{ form.is_completed.id_for_label }}">
+                        Tamamlandı olarak işaretle
+                      </label>
+                    </div>
+                    {% if form.is_completed.errors %}
+                      <div class="invalid-feedback d-block">{{ form.is_completed.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <h6 class="heading-small text-muted mb-4">Detaylar</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-12">
+                  <div class="form-group">
+                    <label class="form-control-label" for="{{ form.location.id_for_label }}">Konum</label>
+                    {{ form.location|safe }}
+                    {% if form.location.errors %}
+                      <div class="invalid-feedback d-block">{{ form.location.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-lg-12">
+                  <div class="form-group">
+                    <label class="form-control-label" for="{{ form.description.id_for_label }}">Açıklama</label>
+                    {{ form.description|safe }}
+                    {% if form.description.errors %}
+                      <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <h6 class="heading-small text-muted mb-4">İlişkili Kayıtlar</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="{{ form.customer.id_for_label }}">Müşteri</label>
+                    {{ form.customer|safe }}
+                    {% if form.customer.errors %}
+                      <div class="invalid-feedback d-block">{{ form.customer.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="{{ form.property.id_for_label }}">Gayrimenkul</label>
+                    {{ form.property|safe }}
+                    {% if form.property.errors %}
+                      <div class="invalid-feedback d-block">{{ form.property.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="text-right">
+              <a href="{% url 'calendar' %}" class="btn btn-secondary">İptal</a>
+              <button type="submit" class="btn btn-primary">Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Etkinlik Türleri</h3>
+        </div>
+        <div class="card-body">
+          <div class="timeline timeline-one-side" data-timeline-content="axis">
+            <div class="timeline-block">
+              <span class="timeline-step badge-primary">
+                <i class="ni ni-chart-pie-35"></i>
+              </span>
+              <div class="timeline-content">
+                <h5 class="mb-1">Toplantı</h5>
+                <p class="text-sm mb-0">İş ortakları veya müşteriler ile yapılacak toplantılar için kullanılır.</p>
+              </div>
+            </div>
+            
+            <div class="timeline-block">
+              <span class="timeline-step badge-info">
+                <i class="ni ni-building"></i>
+              </span>
+              <div class="timeline-content">
+                <h5 class="mb-1">Gayrimenkul Gösterimi</h5>
+                <p class="text-sm mb-0">Potansiyel alıcı veya kiracılara gayrimenkul gösterimi için kullanılır.</p>
+              </div>
+            </div>
+            
+            <div class="timeline-block">
+              <span class="timeline-step badge-warning">
+                <i class="ni ni-mobile-button"></i>
+              </span>
+              <div class="timeline-content">
+                <h5 class="mb-1">Telefon Görüşmesi</h5>
+                <p class="text-sm mb-0">Müşteriler, iş ortakları veya diğer kişiler ile yapılacak telefon görüşmeleri için kullanılır.</p>
+              </div>
+            </div>
+            
+            <div class="timeline-block">
+              <span class="timeline-step badge-yellow">
+                <i class="ni ni-bell-55"></i>
+              </span>
+              <div class="timeline-content">
+                <h5 class="mb-1">Hatırlatıcı</h5>
+                <p class="text-sm mb-0">Kendinize hatırlatıcı notlar eklemek için kullanılır.</p>
+              </div>
+            </div>
+            
+            <div class="timeline-block">
+              <span class="timeline-step badge-success">
+                <i class="ni ni-calendar-grid-58"></i>
+              </span>
+              <div class="timeline-content">
+                <h5 class="mb-1">Randevu</h5>
+                <p class="text-sm mb-0">İş ile ilgili randevular için kullanılır.</p>
+              </div>
+            </div>
+            
+            <div class="timeline-block">
+              <span class="timeline-step badge-purple">
+                <i class="ni ni-check-bold"></i>
+              </span>
+              <div class="timeline-content">
+                <h5 class="mb-1">Görev</h5>
+                <p class="text-sm mb-0">Yapılması gereken görevleri eklemek için kullanılır.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+  
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+{{ block.super }}
+<script src="/static/assets/vendor/flatpickr/dist/flatpickr.min.js"></script>
+<script src="/static/assets/vendor/flatpickr/dist/l10n/tr.js"></script>
+<script src="/static/assets/vendor/select2/dist/js/select2.min.js"></script>
+<script src="/static/assets/vendor/select2/dist/js/i18n/tr.js"></script>
+
+<script>
+  $(document).ready(function() {
+    // Flatpickr tarih ve saat seçicileri
+    flatpickr('.datetimepicker', {
+      enableTime: true,
+      dateFormat: "Y-m-d H:i",
+      time_24hr: true,
+      locale: "tr",
+      minuteIncrement: 15,
+      allowInput: true,
+      disableMobile: true
+    });
+    
+    // Select2 müşteri ve gayrimenkul seçicileri
+    $('.select2').select2({
+      language: "tr",
+      placeholder: "Seçiniz...",
+      allowClear: true,
+      width: '100%'
+    });
+    
+    // Etkinlik türüne göre form alanlarını göster/gizle
+    $('#{{ form.event_type.id_for_label }}').on('change', function() {
+      let selectedType = $(this).val();
+      
+      // Etkinlik türüne göre belirli alanları göster/gizle
+      if (selectedType === 'viewing') {
+        // Gayrimenkul gösterimi için location ve property alanlarını zorunlu yap
+        $('#{{ form.location.id_for_label }}').parent().parent().find('label').html('Konum <span class="text-danger">*</span>');
+        $('#{{ form.property.id_for_label }}').parent().parent().find('label').html('Gayrimenkul <span class="text-danger">*</span>');
+      } else {
+        // Diğer etkinlik türleri için bu alanları isteğe bağlı yap
+        $('#{{ form.location.id_for_label }}').parent().parent().find('label').html('Konum');
+        $('#{{ form.property.id_for_label }}').parent().parent().find('label').html('Gayrimenkul');
+      }
+      
+      if (selectedType === 'call') {
+        // Telefon görüşmesi için müşteri alanını zorunlu yap
+        $('#{{ form.customer.id_for_label }}').parent().parent().find('label').html('Müşteri <span class="text-danger">*</span>');
+      } else {
+        $('#{{ form.customer.id_for_label }}').parent().parent().find('label').html('Müşteri');
+      }
+    });
+    
+    // Sayfa yüklendiğinde de bir kere tetikle
+    $('#{{ form.event_type.id_for_label }}').trigger('change');
+  });
+</script>
+{% endblock javascripts %} 

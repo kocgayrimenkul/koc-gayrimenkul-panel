@@ -1,0 +1,413 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Müşteri Detay {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Kartlar */
+  .card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  /* Durum rozeti stilleri */
+  .badge-status {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-radius: 30px;
+  }
+  
+  .badge-bekliyor {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .badge-olumlu {
+    background-color: #2dce89;
+    color: white;
+  }
+  
+  .badge-olumsuz {
+    background-color: #f5365c;
+    color: white;
+  }
+  
+  /* Müşteri profil kartı */
+  .customer-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 0;
+  }
+  
+  .customer-avatar {
+    width: 100px;
+    height: 100px;
+    background-color: var(--koc-red);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .detail-item {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: #f8f9fe;
+    margin-bottom: 1rem;
+  }
+  
+  .detail-item .icon {
+    color: var(--koc-red);
+    margin-right: 0.5rem;
+  }
+  
+  .timeline {
+    position: relative;
+    padding: 0;
+    list-style: none;
+    margin-bottom: 0;
+  }
+  
+  .timeline:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 16px;
+    height: 100%;
+    width: 2px;
+    background-color: #e9ecef;
+  }
+  
+  .timeline-item {
+    position: relative;
+    padding-left: 40px;
+    padding-bottom: 1.5rem;
+  }
+  
+  .timeline-item:last-child {
+    padding-bottom: 0;
+  }
+  
+  .timeline-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 34px;
+    color: white;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Müşteri Detay</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'customer_list' %}">Müşteriler</a></li>
+              <li class="breadcrumb-item active" aria-current="page">{{ customer.full_name }}</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'customer_edit' customer.id %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-edit mr-1"></i> Düzenle
+          </a>
+          <a href="{% url 'customer_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> Müşteri Listesine Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <div class="row">
+    <div class="col-xl-4 order-xl-2">
+      <!-- Müşteri profil kartı -->
+      <div class="card">
+        <div class="card-body">
+          <div class="customer-profile">
+            <div class="customer-avatar">
+              {{ customer.full_name|slice:":1" }}
+            </div>
+            <h3 class="text-center mb-0">{{ customer.full_name }}</h3>
+            <p class="text-muted text-center">{{ customer.neighborhood.name }}</p>
+            
+            {% if customer.meeting_status == 'olumlu' %}
+              <span class="badge badge-status badge-olumlu mb-3">
+                <i class="fas fa-check-circle mr-1"></i> Olumlu
+              </span>
+            {% elif customer.meeting_status == 'olumsuz' %}
+              <span class="badge badge-status badge-olumsuz mb-3">
+                <i class="fas fa-times-circle mr-1"></i> Olumsuz
+              </span>
+            {% else %}
+              <span class="badge badge-status badge-bekliyor mb-3">
+                <i class="fas fa-clock mr-1"></i> Bekliyor
+              </span>
+            {% endif %}
+            
+            <!-- Müşteri iletişim butonu -->
+            <a href="tel:{{ customer.phone }}" class="btn btn-koc-red btn-block mb-3">
+              <i class="fas fa-phone-alt mr-2"></i> Ara
+            </a>
+
+            <!-- Müşteri düzenleme butonu -->
+            <a href="{% url 'customer_edit' customer.id %}" class="btn btn-outline-primary btn-block mb-3">
+              <i class="fas fa-edit mr-2"></i> Düzenle
+            </a>
+          </div>
+          
+          <hr class="my-3">
+          
+          <!-- Müşteri detay bilgileri -->
+          <h6 class="heading-small text-muted mb-3">İletişim Bilgileri</h6>
+          <div class="detail-item">
+            <div class="d-flex justify-content-between">
+              <span><i class="fas fa-phone icon"></i> Telefon</span>
+              <strong>{{ customer.phone }}</strong>
+            </div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="d-flex justify-content-between">
+              <span><i class="fas fa-map-marker-alt icon"></i> Mahalle</span>
+              <strong>{{ customer.neighborhood.name }}</strong>
+            </div>
+          </div>
+          
+          {% if customer.apartment %}
+          <div class="detail-item">
+            <div class="d-flex justify-content-between">
+              <span><i class="fas fa-building icon"></i> Daire</span>
+              <strong>{{ customer.apartment }}</strong>
+            </div>
+          </div>
+          {% endif %}
+          
+          <h6 class="heading-small text-muted mb-3 mt-4">Sistem Bilgileri</h6>
+          <div class="detail-item">
+            <div class="d-flex justify-content-between">
+              <span><i class="fas fa-calendar-alt icon"></i> Kayıt Tarihi</span>
+              <strong>{{ customer.created_at|date:"d.m.Y" }}</strong>
+            </div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="d-flex justify-content-between">
+              <span><i class="fas fa-user-tie icon"></i> Danışman</span>
+              <strong>
+                {% if customer.consultant %}
+                  {{ customer.consultant.get_full_name|default:customer.consultant.username }}
+                {% else %}
+                  Atanmamış
+                {% endif %}
+              </strong>
+            </div>
+          </div>
+
+          {% if customer.notes %}
+          <h6 class="heading-small text-muted mb-3 mt-4">Notlar</h6>
+          <div class="detail-item">
+            <p class="mb-0">{{ customer.notes|linebreaks }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-8 order-xl-1">
+      <!-- Görüşme Sonucu -->
+      <div class="card mb-4">
+        <div class="card-header bg-transparent">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Görüşme Sonucu</h3>
+              <p class="text-sm text-muted mb-0">Müşteri ile yapılan görüşme sonucunu güncelleyin</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+              <label class="form-control-label" for="meeting_result">Görüşme Notları</label>
+              <div class="input-group input-group-merge">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="fas fa-comment-alt"></i></span>
+                </div>
+                <textarea id="meeting_result" name="meeting_result" rows="5" class="form-control" 
+                  placeholder="Görüşme notlarını buraya girebilirsiniz...">{{ customer.meeting_result }}</textarea>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-control-label" for="meeting_status">Görüşme Durumu</label>
+              <div class="input-group input-group-merge">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="fas fa-clipboard-check"></i></span>
+                </div>
+                <select id="meeting_status" name="meeting_status" class="form-control">
+                  <option value="bekliyor" {% if customer.meeting_status == 'bekliyor' %}selected{% endif %}>Bekliyor</option>
+                  <option value="olumlu" {% if customer.meeting_status == 'olumlu' %}selected{% endif %}>Olumlu</option>
+                  <option value="olumsuz" {% if customer.meeting_status == 'olumsuz' %}selected{% endif %}>Olumsuz</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="text-center">
+              <button type="submit" class="btn btn-koc-red">
+                <i class="fas fa-save mr-2"></i> Görüşme Sonucunu Kaydet
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Zaman Çizelgesi -->
+      <div class="card">
+        <div class="card-header bg-transparent">
+          <h3 class="mb-0">Müşteri Zaman Çizelgesi</h3>
+        </div>
+        <div class="card-body">
+          <ul class="timeline">
+            <li class="timeline-item">
+              <div class="timeline-icon bg-koc-red">
+                <i class="fas fa-user-plus"></i>
+              </div>
+              <h5>Müşteri Kaydı Oluşturuldu</h5>
+              <p class="text-muted">{{ customer.created_at|date:"d.m.Y H:i" }}</p>
+              <p>Müşteri kaydı oluşturuldu ve {{ customer.consultant.get_full_name|default:"danışmana" }} atandı.</p>
+            </li>
+            
+            {% if customer.meeting_status != 'bekliyor' %}
+            <li class="timeline-item">
+              <div class="timeline-icon {% if customer.meeting_status == 'olumlu' %}bg-success{% else %}bg-danger{% endif %}">
+                <i class="fas fa-clipboard-check"></i>
+              </div>
+              <h5>Görüşme Sonucu Güncellendi</h5>
+              <p class="text-muted">{{ customer.updated_at|date:"d.m.Y H:i"|default:"-" }}</p>
+              <p>
+                Görüşme sonucu 
+                {% if customer.meeting_status == 'olumlu' %}
+                <span class="text-success">olumlu</span>
+                {% else %}
+                <span class="text-danger">olumsuz</span>
+                {% endif %} 
+                olarak kaydedildi.
+              </p>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include "includes/footer.html" %}
+
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script>
+  $(document).ready(function() {
+    // Görüşme durumuna göre renk değiştirme
+    $('#meeting_status').on('change', function() {
+      var status = $(this).val();
+      if (status === 'olumlu') {
+        $(this).removeClass('border-warning border-danger').addClass('border-success');
+      } else if (status === 'olumsuz') {
+        $(this).removeClass('border-warning border-success').addClass('border-danger');
+      } else {
+        $(this).removeClass('border-success border-danger').addClass('border-warning');
+      }
+    });
+    
+    // Sayfa yüklendiğinde de çalıştır
+    $('#meeting_status').trigger('change');
+  });
+</script>
+{% endblock javascripts %} 

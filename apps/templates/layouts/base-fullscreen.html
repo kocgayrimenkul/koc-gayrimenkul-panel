@@ -1,0 +1,130 @@
+<!--
+=========================================================
+* Koç Gayrimenkul Yönetim Paneli
+=========================================================
+* Koç Gayrimenkul Portal Sistemi
+* İç yönetim ve raporlama amaçlı panel
+=========================================================
+-->
+<!DOCTYPE html>
+{% load static %}
+<html lang="tr">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  
+  <title>
+    Koç Gayrimenkul Panel - {% block title %} Yönetim Paneli {% endblock %}
+  </title>
+
+  <link rel="icon" href="{% static 'assets/img/brand/favicon.png' %}" type="image/png">
+  <!-- Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700">
+  <!-- Icons -->
+  <link rel="stylesheet" href="{% static 'assets/vendor/nucleo/css/nucleo.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'assets/vendor/@fortawesome/fontawesome-free/css/all.min.css' %}" type="text/css">
+  <!-- Argon CSS -->
+  <link rel="stylesheet" href="{% static 'assets/css/argon.css' %}?v=1.3.0" type="text/css">
+
+  <!-- Specific CSS goes HERE -->
+  {% block stylesheets %}{% endblock stylesheets %}
+  
+  <style>
+    /* Koç Gayrimenkul kurumsal renkleri */
+    :root {
+      --koc-red: #9d2235;
+      --koc-red-light: #b82e42;
+      --koc-red-dark: #7a1a29;
+      --koc-black: #212529;
+    }
+    
+    .bg-gradient-koc-red {
+      background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+    }
+    
+    .bg-koc-red {
+      background-color: var(--koc-red) !important;
+    }
+    
+    .text-koc-red {
+      color: var(--koc-red) !important;
+    }
+    
+    .btn-koc-red {
+      color: #fff;
+      background-color: var(--koc-red);
+      border-color: var(--koc-red);
+    }
+    
+    .btn-koc-red:hover {
+      color: #fff;
+      background-color: var(--koc-red-light);
+      border-color: var(--koc-red-light);
+    }
+    
+    .form-control:focus {
+      border-color: var(--koc-red-light);
+    }
+    
+    .login-card {
+      border-radius: 10px;
+      box-shadow: 0 15px 35px rgba(50, 50, 93, 0.1), 0 5px 15px rgba(0, 0, 0, 0.07);
+    }
+    
+    .login-icon {
+      color: var(--koc-red);
+    }
+    
+    .border-koc-red {
+      border-color: var(--koc-red) !important;
+    }
+  </style>
+
+</head>
+
+<body class="bg-default">
+
+  <div class="main-content">
+
+    {% include "includes/navigation-fullscreen.html" %}
+
+    <!-- Header -->
+    <div class="header bg-gradient-koc-red py-7 py-lg-8">
+      <div class="container">
+        <div class="header-body text-center mb-7">
+          <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-6">
+              <h1 class="text-white">
+                Koç Gayrimenkul
+              </h1>
+              <p class="text-lead text-light">
+                Emlak Portföy ve Müşteri Yönetim Platformu
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="separator separator-bottom separator-skew zindex-100">
+        <svg x="0" y="0" viewBox="0 0 2560 100" preserveAspectRatio="none" version="1.1" xmlns="http://www.w3.org/2000/svg">
+          <polygon class="fill-default" points="2560 0 2560 100 0 100"></polygon>
+        </svg>
+      </div>
+    </div>
+    
+    {% block content %}{% endblock content %}
+
+    {% include "includes/footer-fullscreen.html" %}
+
+  </div>
+    
+  {% include "includes/scripts.html" %}
+
+  <!-- Specific JS goes HERE --> 
+  {% block javascripts %}{% endblock javascripts %}
+  
+  <script src="{% static 'assets/js/argon.js' %}?v=1.3.0"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,448 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Ajanda {% endblock %}
+
+{% block stylesheets %}
+  {{ block.super }}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css">
+  <style>
+    .fc-event {
+      cursor: pointer;
+    }
+    .fc-event-title {
+      font-weight: 500;
+    }
+    .fc-event.event-meeting {
+      background-color: #5e72e4;
+      border-color: #5e72e4;
+    }
+    .fc-event.event-viewing {
+      background-color: #11cdef;
+      border-color: #11cdef;
+    }
+    .fc-event.event-call {
+      background-color: #fb6340;
+      border-color: #fb6340;
+    }
+    .fc-event.event-reminder {
+      background-color: #ffd600;
+      border-color: #ffd600;
+      color: #212529;
+    }
+    .fc-event.event-appointment {
+      background-color: #2dce89;
+      border-color: #2dce89;
+    }
+    .fc-event.event-task {
+      background-color: #8965e0;
+      border-color: #8965e0;
+    }
+    .fc-event.event-completed {
+      opacity: 0.7;
+      text-decoration: line-through;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      margin-right: 8px;
+      border-radius: 3px;
+    }
+  </style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-primary pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Ajanda</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item active" aria-current="page">Ajanda</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'event_create' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-plus mr-2"></i> Yeni Etkinlik
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <div class="row">
+    <div class="col-xl-9">
+      <div class="card">
+        <div class="card-header bg-transparent">
+          <div class="row align-items-center">
+            <div class="col">
+              <h6 class="text-uppercase text-muted ls-1 mb-1">Genel Bakış</h6>
+              <h5 class="h3 mb-0">Etkinlik Takvimi</h5>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="calendar"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-3">
+      <div class="card">
+        <div class="card-header bg-transparent">
+          <div class="row align-items-center">
+            <div class="col">
+              <h6 class="text-uppercase text-muted ls-1 mb-1">Filtreler</h6>
+              <h5 class="h3 mb-0">Etkinlik Tipleri</h5>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <form id="filter-form">
+            <div class="custom-control custom-checkbox mb-3">
+              <input class="custom-control-input" id="filter-all" type="checkbox" checked>
+              <label class="custom-control-label" for="filter-all">Tümünü Göster</label>
+            </div>
+            
+            <div class="custom-control custom-checkbox mb-3">
+              <input class="custom-control-input event-type-filter" id="filter-meeting" type="checkbox" value="meeting" checked>
+              <label class="custom-control-label" for="filter-meeting">
+                <div class="legend-item">
+                  <div class="legend-color" style="background-color: #5e72e4;"></div>
+                  <span>Toplantılar</span>
+                </div>
+              </label>
+            </div>
+            
+            <div class="custom-control custom-checkbox mb-3">
+              <input class="custom-control-input event-type-filter" id="filter-viewing" type="checkbox" value="viewing" checked>
+              <label class="custom-control-label" for="filter-viewing">
+                <div class="legend-item">
+                  <div class="legend-color" style="background-color: #11cdef;"></div>
+                  <span>Görüntülemeler</span>
+                </div>
+              </label>
+            </div>
+            
+            <div class="custom-control custom-checkbox mb-3">
+              <input class="custom-control-input event-type-filter" id="filter-call" type="checkbox" value="call" checked>
+              <label class="custom-control-label" for="filter-call">
+                <div class="legend-item">
+                  <div class="legend-color" style="background-color: #fb6340;"></div>
+                  <span>Aramalar</span>
+                </div>
+              </label>
+            </div>
+            
+            <div class="custom-control custom-checkbox mb-3">
+              <input class="custom-control-input event-type-filter" id="filter-reminder" type="checkbox" value="reminder" checked>
+              <label class="custom-control-label" for="filter-reminder">
+                <div class="legend-item">
+                  <div class="legend-color" style="background-color: #ffd600;"></div>
+                  <span>Hatırlatıcılar</span>
+                </div>
+              </label>
+            </div>
+            
+            <div class="custom-control custom-checkbox mb-3">
+              <input class="custom-control-input event-type-filter" id="filter-appointment" type="checkbox" value="appointment" checked>
+              <label class="custom-control-label" for="filter-appointment">
+                <div class="legend-item">
+                  <div class="legend-color" style="background-color: #2dce89;"></div>
+                  <span>Randevular</span>
+                </div>
+              </label>
+            </div>
+            
+            <div class="custom-control custom-checkbox mb-3">
+              <input class="custom-control-input event-type-filter" id="filter-task" type="checkbox" value="task" checked>
+              <label class="custom-control-label" for="filter-task">
+                <div class="legend-item">
+                  <div class="legend-color" style="background-color: #8965e0;"></div>
+                  <span>Görevler</span>
+                </div>
+              </label>
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="custom-control custom-checkbox mb-3">
+              <input class="custom-control-input" id="filter-completed" type="checkbox" checked>
+              <label class="custom-control-label" for="filter-completed">Tamamlanan Etkinlikleri Göster</label>
+            </div>
+          </form>
+          
+          <div class="mt-4">
+            <h6 class="text-uppercase text-muted ls-1 mb-1">Yaklaşan Etkinlikler</h6>
+            <div class="list-group list-group-flush">
+              {% for event in upcoming_events %}
+                <a href="{% url 'event_detail' event.id %}" class="list-group-item list-group-item-action">
+                  <div class="row align-items-center">
+                    <div class="col-auto">
+                      <!-- Icon based on event type -->
+                      <div class="icon icon-shape icon-sm 
+                        {% if event.event_type == 'meeting' %}
+                          bg-gradient-primary
+                        {% elif event.event_type == 'viewing' %}
+                          bg-gradient-info
+                        {% elif event.event_type == 'call' %}
+                          bg-gradient-warning
+                        {% elif event.event_type == 'reminder' %}
+                          bg-gradient-yellow
+                        {% elif event.event_type == 'appointment' %}
+                          bg-gradient-success
+                        {% elif event.event_type == 'task' %}
+                          bg-gradient-purple
+                        {% endif %}
+                        text-white rounded-circle shadow">
+                        <i class="
+                          {% if event.event_type == 'meeting' %}
+                            ni ni-calendar-grid-58
+                          {% elif event.event_type == 'viewing' %}
+                            ni ni-building
+                          {% elif event.event_type == 'call' %}
+                            ni ni-mobile-button
+                          {% elif event.event_type == 'reminder' %}
+                            ni ni-bell-55
+                          {% elif event.event_type == 'appointment' %}
+                            ni ni-time-alarm
+                          {% elif event.event_type == 'task' %}
+                            ni ni-check-bold
+                          {% endif %}
+                        "></i>
+                      </div>
+                    </div>
+                    <div class="col ml--2">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <h4 class="mb-0 text-sm">{{ event.title }}</h4>
+                        </div>
+                        <div class="text-right text-muted">
+                          <small>{{ event.start_time|date:"d.m.Y" }}</small>
+                        </div>
+                      </div>
+                      <p class="text-sm mb-0">{{ event.start_time|date:"H:i" }} - {% if event.end_time %}{{ event.end_time|date:"H:i" }}{% else %}--:--{% endif %}</p>
+                    </div>
+                  </div>
+                </a>
+              {% empty %}
+                <div class="text-center py-3">
+                  <p class="text-muted mb-0">Yaklaşan etkinlik bulunmuyor.</p>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+  
+</div>
+
+<!-- Event Detail Modal -->
+<div class="modal fade" id="event-modal" tabindex="-1" role="dialog" aria-labelledby="event-modal-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="event-modal-title">Etkinlik Detayı</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="event-modal-body">
+        <div class="text-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Yükleniyor...</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
+        <a href="#" class="btn btn-primary" id="view-event-detail">Detayları Görüntüle</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+  {{ block.super }}
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales/tr.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // CSRF token
+      const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      
+      // Takvim elemanını oluştur
+      var calendarEl = document.getElementById('calendar');
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+        },
+        initialView: 'dayGridMonth',
+        locale: 'tr',
+        navLinks: true,
+        editable: true,
+        dayMaxEvents: true,
+        events: "{% url 'api_events' %}",
+        eventTimeFormat: {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        },
+        eventClassNames: function(arg) {
+          var classes = ['event-' + arg.event.extendedProps.event_type];
+          if (arg.event.extendedProps.is_completed) {
+            classes.push('event-completed');
+          }
+          return classes;
+        },
+        eventClick: function(info) {
+          var modal = $('#event-modal');
+          var modalBody = $('#event-modal-body');
+          var viewDetailBtn = $('#view-event-detail');
+          
+          // Detay URL'sini ayarla
+          viewDetailBtn.attr('href', '/calendar/events/' + info.event.id + '/');
+          
+          // Modal başlığını ayarla
+          $('#event-modal-title').text(info.event.title);
+          
+          // Modal içeriğini ayarla
+          modalBody.html('<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Yükleniyor...</span></div></div>');
+          
+          // AJAX ile etkinlik verilerini al
+          $.ajax({
+            url: '/calendar/api/events/' + info.event.id + '/',
+            type: 'GET',
+            headers: {
+              'X-CSRFToken': csrftoken
+            },
+            success: function(data) {
+              var eventStartTime = new Date(data.start_time);
+              var formattedStartTime = eventStartTime.toLocaleDateString('tr-TR') + ' ' + 
+                                      eventStartTime.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+              
+              var html = `
+                <div class="text-center mb-3">
+                  <span class="badge badge-pill 
+                    ${data.event_type === 'meeting' ? 'badge-primary' : 
+                      data.event_type === 'viewing' ? 'badge-info' : 
+                      data.event_type === 'call' ? 'badge-warning' : 
+                      data.event_type === 'reminder' ? 'badge-warning' : 
+                      data.event_type === 'appointment' ? 'badge-success' : 
+                      data.event_type === 'task' ? 'badge-purple' : 'badge-default'}">
+                    ${data.event_type_display}
+                  </span>
+                  <span class="badge badge-pill ${data.is_completed ? 'badge-success' : 'badge-secondary'}">
+                    ${data.is_completed ? 'Tamamlandı' : 'Beklemede'}
+                  </span>
+                </div>
+                <dl class="row">
+                  <dt class="col-sm-4">Başlangıç:</dt>
+                  <dd class="col-sm-8">${formattedStartTime}</dd>`;
+              
+              if (data.end_time) {
+                var eventEndTime = new Date(data.end_time);
+                var formattedEndTime = eventEndTime.toLocaleDateString('tr-TR') + ' ' + 
+                                      eventEndTime.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+                html += `
+                  <dt class="col-sm-4">Bitiş:</dt>
+                  <dd class="col-sm-8">${formattedEndTime}</dd>`;
+              }
+              
+              if (data.location) {
+                html += `
+                  <dt class="col-sm-4">Konum:</dt>
+                  <dd class="col-sm-8">${data.location}</dd>`;
+              }
+              
+              if (data.description) {
+                html += `
+                  <dt class="col-sm-4">Açıklama:</dt>
+                  <dd class="col-sm-8">${data.description}</dd>`;
+              }
+              
+              if (data.customer) {
+                html += `
+                  <dt class="col-sm-4">Müşteri:</dt>
+                  <dd class="col-sm-8"><a href="/customers/${data.customer.id}/">${data.customer.name}</a></dd>`;
+              }
+              
+              if (data.property) {
+                html += `
+                  <dt class="col-sm-4">Gayrimenkul:</dt>
+                  <dd class="col-sm-8"><a href="/properties/${data.property.id}/">${data.property.title}</a></dd>`;
+              }
+              
+              html += '</dl>';
+              modalBody.html(html);
+            },
+            error: function() {
+              modalBody.html('<div class="alert alert-danger">Etkinlik bilgileri yüklenirken bir hata oluştu.</div>');
+            }
+          });
+          
+          modal.modal('show');
+        }
+      });
+      
+      calendar.render();
+      
+      // Filtre işlemleri
+      $('#filter-all').change(function() {
+        var isChecked = $(this).prop('checked');
+        $('.event-type-filter').prop('checked', isChecked);
+        applyFilters();
+      });
+      
+      $('.event-type-filter').change(function() {
+        var allChecked = $('.event-type-filter:checked').length === $('.event-type-filter').length;
+        $('#filter-all').prop('checked', allChecked);
+        applyFilters();
+      });
+      
+      $('#filter-completed').change(function() {
+        applyFilters();
+      });
+      
+      function applyFilters() {
+        var selectedTypes = [];
+        $('.event-type-filter:checked').each(function() {
+          selectedTypes.push($(this).val());
+        });
+        
+        var showCompleted = $('#filter-completed').prop('checked');
+        
+        calendar.getEvents().forEach(function(event) {
+          var matchesType = selectedTypes.includes(event.extendedProps.event_type);
+          var matchesCompleted = showCompleted || !event.extendedProps.is_completed;
+          
+          if (matchesType && matchesCompleted) {
+            event.setProp('display', 'auto');
+          } else {
+            event.setProp('display', 'none');
+          }
+        });
+      }
+    });
+  </script>
+{% endblock javascripts %} 

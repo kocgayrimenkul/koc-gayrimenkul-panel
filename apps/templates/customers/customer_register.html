@@ -1,0 +1,321 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Müşteri Kayıt {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Form elemanları */
+  .form-control:focus {
+    border-color: var(--koc-red-light);
+    box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
+  }
+  
+  /* Kartlar */
+  .card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  /* Bilgi kutuları */
+  .info-box {
+    background-color: #f8f9fe;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .info-box i {
+    font-size: 1.5rem;
+    margin-right: 10px;
+  }
+  
+  .info-box h5 {
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  
+  .info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f8f9fe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+  }
+  
+  .info-icon i {
+    font-size: 18px;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Müşteri Kayıt</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'customer_list' %}">Müşteriler</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Müşteri Kayıt</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'customer_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> Müşteri Listesine Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <div class="row">
+    <div class="col-xl-8 order-xl-1">
+      <div class="card">
+        <div class="card-header">
+          <div class="row align-items-center">
+            <div class="col-8">
+              <h3 class="mb-0">Yeni Müşteri Kaydı</h3>
+              <p class="text-sm text-muted mb-0">Santral tarafından müşteri kaydı oluşturma formu</p>
+            </div>
+            <div class="col-4 text-right">
+              <span class="badge badge-koc-red">Santral</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <!-- Müşteri Bilgileri -->
+            <h6 class="heading-small text-muted mb-4">Müşteri Bilgileri</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="full_name">İsim Soyisim <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                      </div>
+                      <input type="text" id="full_name" name="full_name" class="form-control" required 
+                        placeholder="Müşterinin adı soyadı" value="{{ form_data.full_name|default:'' }}">
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="phone">Telefon <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                      </div>
+                      <input type="tel" id="phone" name="phone" class="form-control" required 
+                        placeholder="05XX XXX XX XX" pattern="[0-9]{11}" 
+                        title="Lütfen 11 haneli telefon numarası girin" value="{{ form_data.phone|default:'' }}">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="neighborhood">Mahalle <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                      </div>
+                      <select id="neighborhood" name="neighborhood" class="form-control" required>
+                        <option value="">Mahalle Seçiniz</option>
+                        {% for neighborhood in neighborhoods %}
+                          <option value="{{ neighborhood.id }}" {% if form_data.neighborhood == neighborhood.id|stringformat:"i" %}selected{% endif %}>
+                            {{ neighborhood.name }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="apartment">Daire Bilgisi</label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-building"></i></span>
+                      </div>
+                      <input type="text" id="apartment" name="apartment" class="form-control" 
+                        placeholder="Daire bilgisi, detaylar" value="{{ form_data.apartment|default:'' }}">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <hr class="my-4" />
+            <div class="row justify-content-center">
+              <div class="col-md-6 text-center">
+                <button type="submit" class="btn btn-koc-red btn-lg btn-block">
+                  <i class="fas fa-user-plus mr-2"></i> Müşteri Kaydet
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-4 order-xl-2">
+      <div class="card">
+        <div class="card-header bg-transparent">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Bilgilendirme</h3>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Bilgilendirme kutusu 1 -->
+          <div class="info-box d-flex align-items-start mb-4">
+            <div class="info-icon bg-info">
+              <i class="fas fa-info text-white"></i>
+            </div>
+            <div>
+              <h5 class="text-info">Otomatik Atama</h5>
+              <p class="text-sm mb-0">
+                Müşteri kaydı oluşturulduğunda, sistem müşteriyi mahallesine göre ilgili danışmana otomatik olarak atayacaktır.
+              </p>
+            </div>
+          </div>
+          
+          <!-- Bilgilendirme kutusu 2 -->
+          <div class="info-box d-flex align-items-start mb-4">
+            <div class="info-icon bg-warning">
+              <i class="fas fa-exclamation text-white"></i>
+            </div>
+            <div>
+              <h5 class="text-warning">Önemli Notlar</h5>
+              <ul class="pl-3 mb-0 text-sm">
+                <li>İsim, telefon ve mahalle bilgileri zorunludur.</li>
+                <li>Telefon numarası "0" ile başlayarak 11 haneli olmalıdır.</li>
+                <li>Müşteri kaydı sonrası düzenleme ya da silme yapılamaz.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <!-- Bilgilendirme kutusu 3 -->
+          <div class="info-box d-flex align-items-start">
+            <div class="info-icon bg-success">
+              <i class="fas fa-check text-white"></i>
+            </div>
+            <div>
+              <h5 class="text-success">Kayıt Sonrası</h5>
+              <p class="text-sm mb-0">
+                Kaydettiğiniz müşteri bilgileri, ilgili danışmanın müşteri listesine eklenecektir. Danışman müşteri ile iletişime geçecektir.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include "includes/footer.html" %}
+
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script>
+  $(document).ready(function() {
+    // Telefon için maske
+    $('#phone').on('input', function() {
+      var value = $(this).val().replace(/\D/g, '');
+      if (value.length > 11) {
+        value = value.substring(0, 11);
+      }
+      $(this).val(value);
+    });
+    
+    // Form submit doğrulama
+    $('form').on('submit', function(e) {
+      var phoneValue = $('#phone').val();
+      if (phoneValue.length < 11) {
+        e.preventDefault();
+        alert('Lütfen geçerli bir telefon numarası giriniz. (11 hane olmalıdır)');
+        return false;
+      }
+    });
+  });
+</script>
+{% endblock javascripts %} 

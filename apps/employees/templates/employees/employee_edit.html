@@ -1,0 +1,284 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Çalışan Düzenle {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .btn-outline-koc-red {
+    color: var(--koc-red);
+    border-color: var(--koc-red);
+    background-color: transparent;
+  }
+  
+  .btn-outline-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .form-control:focus {
+    border-color: var(--koc-red-light);
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Çalışan Düzenle</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'employee_list' %}">Çalışan Yönetimi</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Çalışan Düzenle</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'employee_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> Çalışanlara Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <div class="row">
+    <div class="col-xl-8 order-xl-1">
+      <div class="card">
+        <div class="card-header">
+          <div class="row align-items-center">
+            <div class="col-8">
+              <h3 class="mb-0">Çalışan Bilgileri</h3>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'employee_edit' employee.id %}">
+            {% csrf_token %}
+            
+            <!-- Hata mesajları -->
+            {% if messages %}
+            <div class="mb-3">
+              {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+                <span class="alert-text">{{ message }}</span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            
+            <h6 class="heading-small text-muted mb-4">Kişisel Bilgiler</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="first_name">Ad <span class="text-danger">*</span></label>
+                    <input type="text" id="first_name" name="first_name" class="form-control" value="{{ employee.user.first_name }}" required>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="last_name">Soyad <span class="text-danger">*</span></label>
+                    <input type="text" id="last_name" name="last_name" class="form-control" value="{{ employee.user.last_name }}" required>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="email">E-posta <span class="text-danger">*</span></label>
+                    <input type="email" id="email" name="email" class="form-control" value="{{ employee.user.email }}" required>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="phone">Telefon</label>
+                    <input type="tel" id="phone" name="phone" class="form-control" value="{{ employee.phone }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <hr class="my-4" />
+            
+            <h6 class="heading-small text-muted mb-4">Çalışan Bilgileri</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="role">Rol <span class="text-danger">*</span></label>
+                    <select id="role" name="role" class="form-control" required>
+                      <option value="">Rol Seçiniz</option>
+                      {% for role_id, role_name in roles %}
+                      <option value="{{ role_id }}" {% if employee.role == role_id %}selected{% endif %}>{{ role_name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <div class="custom-control custom-checkbox mt-4">
+                      <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" {% if employee.is_active %}checked{% endif %}>
+                      <label class="custom-control-label" for="is_active">Aktif Çalışan</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="text-right mt-4">
+              <a href="{% url 'employee_list' %}" class="btn btn-secondary">İptal</a>
+              <button type="submit" class="btn btn-koc-red">Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-4 order-xl-2">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Çalışan Seçenekleri</h3>
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <a href="{% url 'reset_password' employee.id %}" class="btn btn-outline-warning btn-block">
+              <i class="fas fa-lock mr-1"></i> Şifre Sıfırla
+            </a>
+          </div>
+          
+          <div class="mb-4">
+            <a href="{% url 'manage_permissions' employee.id %}" class="btn btn-outline-info btn-block">
+              <i class="fas fa-key mr-1"></i> Yetkileri Düzenle
+            </a>
+          </div>
+          
+          {% if employee.is_active %}
+          <div class="mb-4">
+            <a href="{% url 'employee_edit' employee.id %}?toggle_status=true" class="btn btn-outline-danger btn-block">
+              <i class="fas fa-user-slash mr-1"></i> Çalışanı Deaktif Et
+            </a>
+          </div>
+          {% else %}
+          <div class="mb-4">
+            <a href="{% url 'employee_edit' employee.id %}?toggle_status=true" class="btn btn-outline-success btn-block">
+              <i class="fas fa-user-check mr-1"></i> Çalışanı Aktif Et
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="card mt-4">
+        <div class="card-header">
+          <h3 class="mb-0">Roller ve Yetkiler</h3>
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <h5 class="text-koc-red">Yönetici</h5>
+            <p class="text-sm text-muted">Tüm sistem üzerinde tam yetki sahibidir. Çalışan ekleyebilir, düzenleyebilir ve silebilir.</p>
+          </div>
+          
+          <div class="mb-4">
+            <h5 class="text-primary">Müdür</h5>
+            <p class="text-sm text-muted">Çalışan ve müşteri yönetimi yapabilir, raporlama yetkisine sahiptir.</p>
+          </div>
+          
+          <div class="mb-4">
+            <h5 class="text-info">Danışman</h5>
+            <p class="text-sm text-muted">Müşteri ve portföy yönetimi yapabilir, kendi müşterilerini yönetebilir.</p>
+          </div>
+          
+          <div class="mb-4">
+            <h5 class="text-warning">Santral/Sekreter</h5>
+            <p class="text-sm text-muted">Müşteri kaydı yapabilir, danışmanlara atama yapabilir, ajanda düzenleyebilir.</p>
+          </div>
+          
+          <div class="mb-4">
+            <h5 class="text-success">Çalışan</h5>
+            <p class="text-sm text-muted">Müşteri ve portföy görüntüleme yetkisine sahiptir, sadece kendi görevlerini yönetebilir.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script>
+  $(document).ready(function() {
+    // Form doğrulama
+    $('form').submit(function(e) {
+      var isValid = true;
+      
+      // Ad ve soyad kontrolü
+      if ($('#first_name').val().trim() === '' || $('#last_name').val().trim() === '') {
+        isValid = false;
+        alert('Ad ve soyad alanları zorunludur.');
+      }
+      
+      // E-posta kontrolü
+      if ($('#email').val().trim() === '') {
+        isValid = false;
+        alert('E-posta alanı zorunludur.');
+      }
+      
+      // Rol kontrolü
+      if ($('#role').val() === '') {
+        isValid = false;
+        alert('Lütfen bir rol seçin.');
+      }
+      
+      if (!isValid) {
+        e.preventDefault();
+      }
+    });
+  });
+</script>
+{% endblock javascripts %} 

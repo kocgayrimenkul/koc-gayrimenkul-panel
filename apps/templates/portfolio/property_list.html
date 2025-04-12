@@ -1,0 +1,897 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Gayrimenkul Listesi {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+    --koc-gray: #f5f5f5;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .btn-outline-koc-red {
+    color: var(--koc-red);
+    border-color: var(--koc-red);
+    background-color: transparent;
+  }
+  
+  .btn-outline-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Sayfa özel stilleri */
+  .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .filter-card {
+    border: none;
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+  
+  .filter-header {
+    background: linear-gradient(45deg, var(--koc-red-dark), var(--koc-red));
+    border-bottom: none;
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .badge-koc-red {
+    background-color: var(--koc-red);
+    color: white;
+  }
+  
+  .badge-koc-dark {
+    background-color: var(--koc-red-dark);
+    color: white;
+  }
+  
+  .badge-koc-light {
+    background-color: var(--koc-red-light);
+    color: white;
+  }
+  
+  .badge-success {
+    background-color: #2dce89;
+  }
+  
+  .badge-info {
+    background-color: var(--koc-red-light);
+  }
+  
+  .table thead th {
+    border-top: none;
+    border-bottom: 2px solid var(--koc-red);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(var(--koc-red-rgb), 0.04);
+  }
+  
+  .dropdown-item:hover {
+    background-color: rgba(var(--koc-red-rgb), 0.1);
+    color: var(--koc-red);
+  }
+  
+  .btn-float {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .btn-float i {
+    font-size: 24px;
+  }
+  
+  /* Görünüm değiştirme butonları */
+  .view-toggle .btn {
+    width: 42px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  
+  .view-toggle .btn i {
+    font-size: 18px;
+  }
+  
+  .view-toggle .btn.active {
+    background-color: var(--koc-red);
+    color: white;
+    border-color: var(--koc-red);
+  }
+  
+  /* Kart görünümü stilleri */
+  .property-card {
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    border: none;
+  }
+  
+  .property-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+  }
+  
+  .property-card .card-img-top {
+    height: 180px;
+    object-fit: cover;
+    background-color: #f8f9fe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .property-card .property-type {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 1;
+  }
+  
+  .property-card .property-status {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 1;
+  }
+  
+  .property-card .property-price {
+    color: var(--koc-red);
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+  
+  .property-card .card-footer {
+    background-color: white;
+    border-top: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  .property-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  
+  .property-feature {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f8f9fe;
+    border-radius: 12px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: #525f7f;
+  }
+  
+  .property-feature i {
+    margin-right: 4px;
+    color: var(--koc-red);
+  }
+  
+  /* Gelişmiş filtre stilleri */
+  .filter-section {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+  
+  .filter-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--koc-red-dark);
+    display: flex;
+    align-items: center;
+  }
+  
+  .filter-title i {
+    margin-right: 8px;
+    font-size: 1rem;
+  }
+  
+  .custom-range {
+    width: 100%;
+  }
+  
+  .range-values {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  
+  /* Pagination stilleri */
+  .pagination .page-item.active .page-link {
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+    color: white;
+  }
+  
+  .pagination .page-link {
+    color: var(--koc-red);
+  }
+  
+  .pagination .page-link:hover {
+    color: var(--koc-red-dark);
+  }
+  
+  .btn-outline-primary {
+    color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-outline-primary:hover, 
+  .btn-outline-primary:focus, 
+  .btn-outline-primary:active {
+    color: white;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-outline-info {
+    color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .btn-outline-info:hover, 
+  .btn-outline-info:focus, 
+  .btn-outline-info:active {
+    color: white;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  /* Animasyonlar */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  /* Tooltip stilleri */
+  .tooltip-inner {
+    background-color: var(--koc-red);
+  }
+  
+  .bs-tooltip-top .arrow::before, 
+  .bs-tooltip-auto[x-placement^="top"] .arrow::before {
+    border-top-color: var(--koc-red);
+  }
+  
+  /* Boş liste mesajı */
+  .empty-list {
+    padding: 60px 0;
+    text-align: center;
+  }
+  
+  .empty-list i {
+    font-size: 5rem;
+    color: #f0f0f0;
+    margin-bottom: 20px;
+  }
+  
+  .empty-list h4 {
+    font-weight: 600;
+    color: #8898aa;
+    margin-bottom: 15px;
+  }
+  
+  .empty-list p {
+    color: #adb5bd;
+    max-width: 600px;
+    margin: 0 auto 20px;
+  }
+  
+  .btn-outline-primary.active {
+    background-color: var(--koc-red);
+    color: white;
+  }
+  
+  /* Satılık badge'i için yeni stil */
+  .badge-satilik {
+    background-color: #2dce89;
+    color: white;
+  }
+  
+  .badge-kiralik {
+    background-color: var(--koc-red-light);
+    color: white;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Gayrimenkul Yönetimi</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="#">Gayrimenkuller</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Portföy Listesi</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'property_create' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-plus-circle mr-1"></i> Yeni Gayrimenkul Ekle
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <div class="row">
+    <!-- Filtreler (sol sütun) -->
+    <div class="col-xl-3 col-md-4">
+      <div class="card filter-card shadow-sm mb-4">
+        <div class="card-header filter-header">
+          <h5 class="text-white mb-0">
+            <i class="fas fa-filter mr-2"></i> Filtreleme Seçenekleri
+          </h5>
+        </div>
+        <div class="card-body">
+          <form method="get" id="filterForm">
+            <div class="filter-section">
+              <div class="filter-title"><i class="ni ni-building"></i> Emlak Tipi</div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="type_all" name="type_all" {% if not filters.property_type %}checked{% endif %}>
+                <label class="custom-control-label" for="type_all">Tümü</label>
+              </div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="type_daire" name="type" value="daire" {% if filters.property_type == 'daire' %}checked{% endif %}>
+                <label class="custom-control-label" for="type_daire">Daire</label>
+              </div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="type_arsa" name="type" value="arsa" {% if filters.property_type == 'arsa' %}checked{% endif %}>
+                <label class="custom-control-label" for="type_arsa">Arsa</label>
+              </div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="type_isyeri" name="type" value="isyeri" {% if filters.property_type == 'isyeri' %}checked{% endif %}>
+                <label class="custom-control-label" for="type_isyeri">İşyeri</label>
+              </div>
+            </div>
+            
+            <div class="filter-section">
+              <div class="filter-title"><i class="ni ni-tag"></i> Durum</div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="status_all" name="status" value="" {% if not filters.status %}checked{% endif %}>
+                <label class="custom-control-label" for="status_all">Tümü</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="status_satilik" name="status" value="satilik" {% if filters.status == 'satilik' %}checked{% endif %}>
+                <label class="custom-control-label" for="status_satilik">Satılık</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="status_kiralik" name="status" value="kiralik" {% if filters.status == 'kiralik' %}checked{% endif %}>
+                <label class="custom-control-label" for="status_kiralik">Kiralık</label>
+              </div>
+            </div>
+            
+            <div class="filter-section">
+              <div class="filter-title"><i class="ni ni-pin-3"></i> Mahalle</div>
+              <select name="neighborhood" class="form-control form-control-sm">
+                <option value="">Tüm Mahalleler</option>
+                {% for neighborhood in neighborhoods %}
+                  <option value="{{ neighborhood.id }}" {% if filters.neighborhood_id == neighborhood.id|stringformat:"i" %}selected{% endif %}>
+                    {{ neighborhood.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <div class="filter-section">
+              <div class="filter-title"><i class="ni ni-money-coins"></i> Fiyat Aralığı</div>
+              <div class="input-group input-group-sm mb-3">
+                <div class="input-group-prepend">
+                  <span class="input-group-text">Min</span>
+                </div>
+                <input type="number" name="min_price" class="form-control" placeholder="0" value="{{ filters.min_price }}">
+                <div class="input-group-append">
+                  <span class="input-group-text">TL</span>
+                </div>
+              </div>
+              <div class="input-group input-group-sm">
+                <div class="input-group-prepend">
+                  <span class="input-group-text">Max</span>
+                </div>
+                <input type="number" name="max_price" class="form-control" placeholder="∞" value="{{ filters.max_price }}">
+                <div class="input-group-append">
+                  <span class="input-group-text">TL</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="filter-section">
+              <div class="filter-title"><i class="ni ni-bullet-list-67"></i> Diğer Özellikler</div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="feature_credit" name="is_suitable_for_credit" value="1">
+                <label class="custom-control-label" for="feature_credit">Krediye Uygun</label>
+              </div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="feature_bargain" name="is_bargainable" value="1">
+                <label class="custom-control-label" for="feature_bargain">Pazarlıklı</label>
+              </div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="feature_photo" name="photo_status" value="1">
+                <label class="custom-control-label" for="feature_photo">Fotoğraflı</label>
+              </div>
+            </div>
+            
+            <div class="text-center">
+              <button type="submit" class="btn btn-koc-red btn-sm">
+                <i class="fas fa-search mr-1"></i> Filtrele
+              </button>
+              <a href="{% url 'property_list' %}" class="btn btn-secondary btn-sm ml-2">
+                <i class="fas fa-undo mr-1"></i> Sıfırla
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Ana içerik (sağ sütun) -->
+    <div class="col-xl-9 col-md-8">
+      <!-- Başlık ve görünüm seçenekleri -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center">
+            <h3 class="mb-0 mr-3">Gayrimenkuller</h3>
+            <span class="badge badge-pill badge-koc-red">{{ properties|length }} Kayıt</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <div class="input-group input-group-sm mr-3" style="width: 250px;">
+              <input type="text" class="form-control" placeholder="İlan başlığında ara...">
+              <div class="input-group-append">
+                <button class="btn btn-outline-koc-red" type="button">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+            </div>
+            <div class="btn-group view-toggle" role="group">
+              <button type="button" class="btn btn-outline-koc-red active" id="tableViewBtn" data-toggle="tooltip" title="Tablo Görünümü">
+                <i class="fas fa-list"></i>
+              </button>
+              <button type="button" class="btn btn-outline-koc-red" id="cardViewBtn" data-toggle="tooltip" title="Kart Görünümü">
+                <i class="fas fa-th-large"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tablo görünümü -->
+      <div id="tableView" class="card shadow-sm fade-in">
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">Başlık</th>
+                <th scope="col">Emlak Tipi</th>
+                <th scope="col">Durum</th>
+                <th scope="col">Fiyat</th>
+                <th scope="col">Mahalle</th>
+                <th scope="col">Özellikler</th>
+                <th scope="col">İlan Tarihi</th>
+                <th scope="col" class="text-right">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for property in properties %}
+              <tr>
+                <th scope="row">
+                  <div class="media align-items-center">
+                    <div class="media-body">
+                      <span class="name mb-0 text-sm font-weight-bold">{{ property.title }}</span>
+                      <small class="d-block text-muted">{{ property.address|truncatechars:40 }}</small>
+                    </div>
+                  </div>
+                </th>
+                <td>
+                  {% if property.property_type == 'daire' %}
+                    <span class="badge badge-pill badge-koc-red">Daire</span>
+                  {% elif property.property_type == 'arsa' %}
+                    <span class="badge badge-pill badge-koc-dark">Arsa</span>
+                  {% elif property.property_type == 'isyeri' %}
+                    <span class="badge badge-pill badge-koc-light">İşyeri</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if property.status == 'satilik' %}
+                    <span class="badge badge-pill badge-satilik">Satılık</span>
+                  {% elif property.status == 'kiralik' %}
+                    <span class="badge badge-pill badge-kiralik">Kiralık</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <strong>{{ property.price|floatformat:0 }} TL</strong>
+                  {% if property.is_bargainable %}
+                    <small class="text-muted d-block">Pazarlıklı</small>
+                  {% endif %}
+                </td>
+                <td>{{ property.neighborhood.name }}</td>
+                <td>
+                  <div class="d-flex">
+                    {% if property.property_type == 'daire' %}
+                      <span class="property-feature" data-toggle="tooltip" title="Oda Sayısı">
+                        <i class="fas fa-door-open"></i> {{ property.room_count|default:"?" }}
+                      </span>
+                      {% if property.gross_area %}
+                      <span class="property-feature ml-1" data-toggle="tooltip" title="Brüt Alan">
+                        <i class="fas fa-ruler-combined"></i> {{ property.gross_area }} m²
+                      </span>
+                      {% endif %}
+                    {% endif %}
+                    {% if property.is_suitable_for_credit %}
+                      <span class="property-feature ml-1" data-toggle="tooltip" title="Krediye Uygun">
+                        <i class="fas fa-check-circle"></i>
+                      </span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>{{ property.listing_date|date:"d.m.Y" }}</td>
+                <td class="text-right">
+                  <div class="dropdown">
+                    <a class="btn btn-sm btn-icon-only text-koc-red" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                      <a class="dropdown-item" href="{% url 'property_detail' property.id %}">
+                        <i class="fas fa-eye text-koc-red mr-2"></i> Detay
+                      </a>
+                      <a class="dropdown-item" href="{% url 'property_update' property.id %}">
+                        <i class="fas fa-edit text-koc-red mr-2"></i> Düzenle
+                      </a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item text-danger" href="#">
+                        <i class="fas fa-trash-alt mr-2"></i> Sil
+                      </a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="py-5">
+                  <div class="empty-list">
+                    <i class="ni ni-building"></i>
+                    <h4>Gayrimenkul Bulunamadı</h4>
+                    <p>Seçtiğiniz filtrelere uygun gayrimenkul bulunamadı. Lütfen farklı filtreler deneyin veya yeni bir gayrimenkul ekleyin.</p>
+                    <a href="{% url 'property_list' %}" class="btn btn-sm btn-outline-koc-red">
+                      <i class="fas fa-sync-alt mr-1"></i> Tüm Gayrimenkulleri Göster
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <!-- Backend Pagination -->
+        {% if properties.has_other_pages %}
+        <div class="card-footer py-4">
+          <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-end mb-0">
+              {% if properties.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ properties.previous_page_number }}">
+                    <i class="fas fa-angle-left"></i>
+                    <span class="sr-only">Önceki</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" tabindex="-1">
+                    <i class="fas fa-angle-left"></i>
+                    <span class="sr-only">Önceki</span>
+                  </a>
+                </li>
+              {% endif %}
+              
+              {% for num in properties.paginator.page_range %}
+                {% if properties.number == num %}
+                  <li class="page-item active">
+                    <a class="page-link" href="#">{{ num }}</a>
+                  </li>
+                {% elif num > properties.number|add:'-3' and num < properties.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ num }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+              
+              {% if properties.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ properties.next_page_number }}">
+                    <i class="fas fa-angle-right"></i>
+                    <span class="sr-only">Sonraki</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" tabindex="-1">
+                    <i class="fas fa-angle-right"></i>
+                    <span class="sr-only">Sonraki</span>
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+      
+      <!-- Kart görünümü -->
+      <div id="cardView" class="fade-in" style="display: none;">
+        <div class="row">
+          {% for property in properties %}
+          <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card property-card shadow-sm">
+              <div class="property-type">
+                {% if property.property_type == 'daire' %}
+                  <span class="badge badge-pill badge-koc-red">Daire</span>
+                {% elif property.property_type == 'arsa' %}
+                  <span class="badge badge-pill badge-koc-dark">Arsa</span>
+                {% elif property.property_type == 'isyeri' %}
+                  <span class="badge badge-pill badge-koc-light">İşyeri</span>
+                {% endif %}
+              </div>
+              <div class="property-status">
+                {% if property.status == 'satilik' %}
+                  <span class="badge badge-pill badge-satilik">Satılık</span>
+                {% elif property.status == 'kiralik' %}
+                  <span class="badge badge-pill badge-kiralik">Kiralık</span>
+                {% endif %}
+              </div>
+              <div class="card-img-top">
+                <i class="ni ni-building text-muted" style="font-size: 3rem;"></i>
+              </div>
+              <div class="card-body">
+                <h5 class="card-title text-truncate">{{ property.title }}</h5>
+                <p class="text-muted small mb-2 text-truncate">{{ property.address }}</p>
+                <div class="d-flex justify-content-between align-items-baseline mb-2">
+                  <p class="property-price mb-0">{{ property.price|floatformat:0 }} TL</p>
+                  <small class="text-muted">{{ property.neighborhood.name }}</small>
+                </div>
+                <div class="property-features">
+                  {% if property.property_type == 'daire' %}
+                    <span class="property-feature">
+                      <i class="fas fa-door-open"></i> {{ property.room_count|default:"?" }}
+                    </span>
+                    {% if property.gross_area %}
+                    <span class="property-feature">
+                      <i class="fas fa-ruler-combined"></i> {{ property.gross_area }} m²
+                    </span>
+                    {% endif %}
+                    {% if property.floor %}
+                    <span class="property-feature">
+                      <i class="fas fa-building"></i> {{ property.floor }}
+                    </span>
+                    {% endif %}
+                  {% endif %}
+                  {% if property.is_suitable_for_credit %}
+                    <span class="property-feature">
+                      <i class="fas fa-check-circle"></i> Krediye Uygun
+                    </span>
+                  {% endif %}
+                  {% if property.is_bargainable %}
+                    <span class="property-feature">
+                      <i class="fas fa-handshake"></i> Pazarlıklı
+                    </span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="card-footer d-flex justify-content-between align-items-center">
+                <small class="text-muted">{{ property.listing_date|date:"d.m.Y" }}</small>
+                <div class="btn-group">
+                  <a href="{% url 'property_detail' property.id %}" class="btn btn-sm btn-outline-koc-red">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a href="{% url 'property_update' property.id %}" class="btn btn-sm btn-outline-koc-red">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12">
+            <div class="empty-list">
+              <i class="ni ni-building"></i>
+              <h4>Gayrimenkul Bulunamadı</h4>
+              <p>Seçtiğiniz filtrelere uygun gayrimenkul bulunamadı. Lütfen farklı filtreler deneyin veya yeni bir gayrimenkul ekleyin.</p>
+              <a href="{% url 'property_list' %}" class="btn btn-sm btn-outline-koc-red">
+                <i class="fas fa-sync-alt mr-1"></i> Tüm Gayrimenkulleri Göster
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <!-- Backend Pagination - Card View -->
+        {% if properties.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-3">
+          <ul class="pagination justify-content-center">
+            {% if properties.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ properties.previous_page_number }}">
+                  <i class="fas fa-angle-left"></i>
+                  <span class="sr-only">Önceki</span>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1">
+                  <i class="fas fa-angle-left"></i>
+                  <span class="sr-only">Önceki</span>
+                </a>
+              </li>
+            {% endif %}
+            
+            {% for num in properties.paginator.page_range %}
+              {% if properties.number == num %}
+                <li class="page-item active">
+                  <a class="page-link" href="#">{{ num }}</a>
+                </li>
+              {% elif num > properties.number|add:'-3' and num < properties.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ num }}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if properties.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ properties.next_page_number }}">
+                  <i class="fas fa-angle-right"></i>
+                  <span class="sr-only">Sonraki</span>
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1">
+                  <i class="fas fa-angle-right"></i>
+                  <span class="sr-only">Sonraki</span>
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+</div>
+
+<!-- Mobil cihazlar için yeni gayrimenkul ekleme butonu -->
+<a href="{% url 'property_create' %}" class="btn btn-koc-red btn-float d-block d-md-none">
+  <i class="fas fa-plus"></i>
+</a>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script>
+  $(document).ready(function() {
+    // Tooltips etkinleştirme
+    $('[data-toggle="tooltip"]').tooltip();
+    
+    // Mobil görünümde kaydırma
+    $('.table-responsive').on('show.bs.dropdown', function () {
+      $('.table-responsive').css("overflow", "inherit");
+    });
+    
+    $('.table-responsive').on('hide.bs.dropdown', function () {
+      $('.table-responsive').css("overflow", "auto");
+    });
+    
+    // Görünüm değiştirme
+    $('#tableViewBtn').click(function() {
+      $('#tableView').show();
+      $('#cardView').hide();
+      $('.view-toggle .btn').removeClass('active');
+      $(this).addClass('active');
+    });
+    
+    $('#cardViewBtn').click(function() {
+      $('#tableView').hide();
+      $('#cardView').show();
+      $('.view-toggle .btn').removeClass('active');
+      $(this).addClass('active');
+    });
+    
+    // Tüm checkbox seçildiğinde diğerlerinin seçimini kaldır
+    $('#type_all').change(function() {
+      if($(this).is(':checked')) {
+        $('#type_daire, #type_arsa, #type_isyeri').prop('checked', false);
+      }
+    });
+    
+    $('#type_daire, #type_arsa, #type_isyeri').change(function() {
+      if($(this).is(':checked')) {
+        $('#type_all').prop('checked', false);
+      }
+      
+      // Eğer hiçbir tip seçilmemişse "Tümü" seçeneğini işaretle
+      if(!$('#type_daire').is(':checked') && !$('#type_arsa').is(':checked') && !$('#type_isyeri').is(':checked')) {
+        $('#type_all').prop('checked', true);
+      }
+    });
+  });
+</script>
+{% endblock javascripts %} 

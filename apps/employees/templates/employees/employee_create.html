@@ -1,0 +1,261 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Yeni Çalışan Ekle {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .btn-outline-koc-red {
+    color: var(--koc-red);
+    border-color: var(--koc-red);
+    background-color: transparent;
+  }
+  
+  .btn-outline-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .form-control:focus {
+    border-color: var(--koc-red-light);
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Yeni Çalışan Ekle</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'employee_list' %}">Çalışan Yönetimi</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Yeni Çalışan Ekle</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'employee_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> Çalışanlara Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <div class="row">
+    <div class="col-xl-8 order-xl-1">
+      <div class="card">
+        <div class="card-header">
+          <div class="row align-items-center">
+            <div class="col-8">
+              <h3 class="mb-0">Yeni Çalışan Bilgileri</h3>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% url 'employee_create' %}">
+            {% csrf_token %}
+            
+            <!-- Hata mesajları -->
+            {% if messages %}
+            <div class="mb-3">
+              {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+                <span class="alert-text">{{ message }}</span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            
+            <h6 class="heading-small text-muted mb-4">Kişisel Bilgiler</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="first_name">Ad <span class="text-danger">*</span></label>
+                    <input type="text" id="first_name" name="first_name" class="form-control" required>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="last_name">Soyad <span class="text-danger">*</span></label>
+                    <input type="text" id="last_name" name="last_name" class="form-control" required>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="email">E-posta <span class="text-danger">*</span></label>
+                    <input type="email" id="email" name="email" class="form-control" required>
+                    <small class="form-text text-muted">E-posta adresi, giriş için kullanıcı adı olarak kullanılacaktır.</small>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="phone">Telefon</label>
+                    <input type="tel" id="phone" name="phone" class="form-control">
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <hr class="my-4" />
+            
+            <h6 class="heading-small text-muted mb-4">Çalışan Bilgileri</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="role">Rol <span class="text-danger">*</span></label>
+                    <select id="role" name="role" class="form-control" required>
+                      <option value="">Rol Seçiniz</option>
+                      {% for role_id, role_name in roles %}
+                      <option value="{{ role_id }}">{{ role_name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <hr class="my-4" />
+            
+            <h6 class="heading-small text-muted mb-4">Giriş Bilgileri</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="password">Şifre <span class="text-danger">*</span></label>
+                    <input type="password" id="password" name="password" class="form-control" required>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="password_confirm">Şifre (Tekrar) <span class="text-danger">*</span></label>
+                    <input type="password" id="password_confirm" name="password_confirm" class="form-control" required>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="text-right mt-4">
+              <a href="{% url 'employee_list' %}" class="btn btn-secondary">İptal</a>
+              <button type="submit" class="btn btn-koc-red">Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-4 order-xl-2">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Roller ve Yetkiler</h3>
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <h5 class="text-koc-red">Yönetici</h5>
+            <p class="text-sm text-muted">Tüm sistem üzerinde tam yetki sahibidir. Çalışan ekleyebilir, düzenleyebilir ve silebilir.</p>
+          </div>
+          
+          <div class="mb-4">
+            <h5 class="text-primary">Müdür</h5>
+            <p class="text-sm text-muted">Çalışan ve müşteri yönetimi yapabilir, raporlama yetkisine sahiptir.</p>
+          </div>
+          
+          <div class="mb-4">
+            <h5 class="text-info">Danışman</h5>
+            <p class="text-sm text-muted">Müşteri ve portföy yönetimi yapabilir, kendi müşterilerini yönetebilir.</p>
+          </div>
+          
+          <div class="mb-4">
+            <h5 class="text-warning">Santral/Sekreter</h5>
+            <p class="text-sm text-muted">Müşteri kaydı yapabilir, danışmanlara atama yapabilir, ajanda düzenleyebilir.</p>
+          </div>
+          
+          <div class="mb-4">
+            <h5 class="text-success">Çalışan</h5>
+            <p class="text-sm text-muted">Müşteri ve portföy görüntüleme yetkisine sahiptir, sadece kendi görevlerini yönetebilir.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script>
+  $(document).ready(function() {
+    // Şifre eşleşme kontrolü
+    $('#password_confirm').on('input', function() {
+      var password = $('#password').val();
+      var confirm = $(this).val();
+      
+      if (password !== confirm) {
+        $(this).addClass('is-invalid');
+      } else {
+        $(this).removeClass('is-invalid');
+      }
+    });
+    
+    // Form submit öncesi doğrulama
+    $('form').submit(function(e) {
+      var password = $('#password').val();
+      var confirm = $('#password_confirm').val();
+      
+      if (password !== confirm) {
+        e.preventDefault();
+        alert('Şifreler eşleşmiyor.');
+        return false;
+      }
+    });
+  });
+</script>
+{% endblock javascripts %} 

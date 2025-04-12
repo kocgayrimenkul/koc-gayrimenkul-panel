@@ -1,0 +1,89 @@
+<nav class="sidenav navbar navbar-vertical  fixed-left  navbar-expand-xs navbar-light bg-white" id="sidenav-main">
+  <div class="scrollbar-inner">
+    <!-- Brand -->
+    <div class="sidenav-header  align-items-center">
+      <a class="navbar-brand" href="/">
+        <img src="/static/assets/img/logo.png" class="navbar-brand-img" alt="Koç Gayrimenkul Panel Logo">
+      </a>
+    </div>
+    <div class="navbar-inner">
+      <!-- Collapse -->
+      <div class="collapse navbar-collapse" id="sidenav-collapse-main">
+        <!-- Nav items -->
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link {% if 'index' in segment %} active {% endif %}" href="/">
+              <i class="ni ni-tv-2 text-primary"></i>
+              <span class="nav-link-text">Gösterge Paneli</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'gayrimenkul' in segment %} active {% endif %}" href="{% url 'property_list' %}">
+              <i class="ni ni-building text-orange"></i>
+              <span class="nav-link-text">Gayrimenkuller</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'musteri' in segment %} active {% endif %}" href="{% url 'customer_list' %}">
+              <i class="ni ni-satisfied text-info"></i>
+              <span class="nav-link-text">Müşteriler</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'calendar' in segment or 'ajanda' in segment %} active {% endif %}" href="{% url 'calendar_view' %}">
+              <i class="ni ni-calendar-grid-58 text-success"></i>
+              <span class="nav-link-text">Ajanda</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'event_list' in segment %} active {% endif %}" href="{% url 'event_list' %}">
+              <i class="ni ni-bullet-list-67 text-warning"></i>
+              <span class="nav-link-text">Etkinlikler</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'map' in segment %} active {% endif %}" href="/map.html">
+              <i class="ni ni-pin-3 text-primary"></i>
+              <span class="nav-link-text">Harita</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'profile' in segment %} active {% endif %}" href="/profile.html">
+              <i class="ni ni-single-02 text-yellow"></i>
+              <span class="nav-link-text">Profil</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'employee' in segment %} active {% endif %}" href="{% url 'employee_list' %}">
+              <i class="ni ni-circle-08 text-purple"></i>
+              <span class="nav-link-text">Çalışan Yönetimi</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'satis' in segment %} active {% endif %}" href="/satis.html">
+              <i class="ni ni-money-coins text-success"></i>
+              <span class="nav-link-text">Satışlar</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'logout' %}">
+              <i class="ni ni-user-run text-red"></i>
+              <span class="nav-link-text">Çıkış</span>
+            </a>
+          </li>            
+        </ul>
+        <!-- Divider -->
+        <hr class="my-3">
+        <!-- Navigation -->
+        <ul class="navbar-nav mb-md-3">
+          <li class="nav-item">
+            <a class="nav-link" href="/ayarlar.html">
+              <i class="ni ni-settings"></i>
+              <span class="nav-link-text">Ayarlar</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,181 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Profil {% endblock title %}
+
+{% block content %}
+
+<div class="header pb-6 d-flex align-items-center" 
+     style="min-height: 500px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
+  <!-- Mask -->
+  <span class="mask bg-gradient-default opacity-8"></span>
+  <!-- Header container -->
+  <div class="container-fluid d-flex align-items-center">
+    <div class="row">
+      <div class="col-lg-7 col-md-10">
+        <h1 class="display-2 text-white"> 
+          Merhaba {{ request.user.username }}
+        </h1>
+        <p class="text-white mt-0 mb-5">Bu sizin profil sayfanız. Çalışmalarınızda kaydettiğiniz ilerlemeyi görebilir, projelerinizi veya size atanan görevleri yönetebilirsiniz</p>
+        <a href="#!" class="btn btn-neutral">Profili Düzenle</a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <div class="row">
+    <div class="col-xl-4 order-xl-2">
+      <div class="card card-profile">
+        <img src="/static/assets/img/theme/img-1-1000x600.jpg" alt="Image placeholder" class="card-img-top">
+        <div class="row justify-content-center">
+          <div class="col-lg-3 order-lg-2">
+            <div class="card-profile-image">
+              <a href="#">
+                <img src="/static/assets/img/theme/team-4.jpg" class="rounded-circle">
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4">
+          <div class="d-flex justify-content-between">
+            <a href="#" class="btn btn-sm btn-info  mr-4 ">Bağlan</a>
+            <a href="#" class="btn btn-sm btn-default float-right">Mesaj</a>
+          </div>
+        </div>
+        <div class="card-body pt-0">
+          <div class="row">
+            <div class="col">
+              <div class="card-profile-stats d-flex justify-content-center">
+                <div>
+                  <span class="heading">22</span>
+                  <span class="description">Arkadaşlar</span>
+                </div>
+                <div>
+                  <span class="heading">10</span>
+                  <span class="description">Fotoğraflar</span>
+                </div>
+                <div>
+                  <span class="heading">89</span>
+                  <span class="description">Yorumlar</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="text-center">
+            <h5 class="h3">
+              {{ request.user.username }}
+            </h5>
+            <div class="h5 font-weight-300">
+              {{ request.user.email }}
+            </div>
+            <div class="h5 mt-4">
+              <i class="ni business_briefcase-24 mr-2"></i>Çözüm Yöneticisi - Koç Gayrimenkul
+            </div>
+            <div>
+              <i class="ni education_hat mr-2"></i>Bilgisayar Bilimleri Üniversitesi
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-8 order-xl-1">
+      <div class="card">
+        <div class="card-header">
+          <div class="row align-items-center">
+            <div class="col-8">
+              <h3 class="mb-0">Profili Düzenle </h3>
+            </div>
+            <div class="col-4 text-right">
+              <a href="#!" class="btn btn-sm btn-primary">Ayarlar</a>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <form>
+            <h6 class="heading-small text-muted mb-4">Kullanıcı Bilgileri</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="input-username">Kullanıcı Adı</label>
+                    <input type="text" id="input-username" class="form-control" placeholder="Kullanıcı Adı" value="{{ request.user.username }}">
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="input-email">E-posta Adresi</label>
+                    <input type="email" id="input-email" class="form-control" placeholder="{{ request.user.email }}">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="input-first-name">Ad</label>
+                    <input type="text" id="input-first-name" class="form-control" placeholder="Ad" value="Ahmet">
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="input-last-name">Soyad</label>
+                    <input type="text" id="input-last-name" class="form-control" placeholder="Soyad" value="Yılmaz">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <hr class="my-4" />
+            <!-- Address -->
+            <h6 class="heading-small text-muted mb-4">İletişim Bilgileri</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label class="form-control-label" for="input-address">Adres</label>
+                    <input id="input-address" class="form-control" placeholder="Ev Adresi" value="Barbaros Bulvarı No:145 D:5, 34349 Beşiktaş/İstanbul" type="text">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-4">
+                  <div class="form-group">
+                    <label class="form-control-label" for="input-city">Şehir</label>
+                    <input type="text" id="input-city" class="form-control" placeholder="Şehir" value="İstanbul">
+                  </div>
+                </div>
+                <div class="col-lg-4">
+                  <div class="form-group">
+                    <label class="form-control-label" for="input-country">Ülke</label>
+                    <input type="text" id="input-country" class="form-control" placeholder="Ülke" value="Türkiye">
+                  </div>
+                </div>
+                <div class="col-lg-4">
+                  <div class="form-group">
+                    <label class="form-control-label" for="input-country">Posta Kodu</label>
+                    <input type="number" id="input-postal-code" class="form-control" placeholder="Posta Kodu">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <hr class="my-4" />
+            <!-- Description -->
+            <h6 class="heading-small text-muted mb-4">Hakkımda</h6>
+            <div class="pl-lg-4">
+              <div class="form-group">
+                <label class="form-control-label">Hakkımda</label>
+                <textarea rows="4" class="form-control" placeholder="Kendiniz hakkında birkaç kelime...">Koç Gayrimenkul'de çalışan, deneyimli bir emlak danışmanı.</textarea>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include "includes/footer.html" %}
+
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}{% endblock javascripts %}
