@@ -4,8 +4,8 @@
 
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}
-<!-- FullCalendar ve diğer bağımlılıklar -->
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet'>
+<!-- Toast UI Calendar ve bağımlılıkları -->
+<link rel="stylesheet" href="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.css" />
 <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
@@ -35,48 +35,67 @@
     background-color: var(--koc-red-light);
     border-color: var(--koc-red-light);
   }
-  
-  /* Takvim özelleştirmeleri */
-  .fc {
-    --fc-border-color: #e9ecef;
-    --fc-button-bg-color: var(--koc-red);
-    --fc-button-border-color: var(--koc-red);
-    --fc-button-hover-bg-color: var(--koc-red-light);
-    --fc-button-hover-border-color: var(--koc-red-light);
-    --fc-button-active-bg-color: var(--koc-red-dark);
-    --fc-button-active-border-color: var(--koc-red-dark);
+
+  /* Toast UI Calendar özelleştirmeleri */
+  #calendar {
+    height: 800px;
+    font-family: 'Nunito', sans-serif;
   }
 
-  .fc .fc-toolbar-title {
-    font-size: 1.5rem;
+  .toastui-calendar-layout {
+    border-radius: 0.75rem;
+  }
+
+  .toastui-calendar-day-view-day-names,
+  .toastui-calendar-week-view-day-names {
+    background-color: #f8f9fe;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .toastui-calendar-template-month-grid-header-week {
+    background-color: #f8f9fe;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .toastui-calendar-template-month-grid-header-title {
     font-weight: 600;
-    color: var(--koc-black);
   }
 
-  .fc .fc-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+  .toastui-calendar-grid-cell-date {
+    font-weight: 600;
+  }
+
+  .toastui-calendar-day-name {
+    font-weight: 600;
+  }
+
+  .toastui-calendar-template-popup-header {
+    background-color: var(--koc-red);
+    color: white;
+  }
+
+  .toastui-calendar-template-popup-header-buttons {
+    top: 2px;
+  }
+
+  .toastui-calendar-section-button {
+    background-color: var(--koc-red);
+    color: white;
     border-radius: 0.375rem;
-    font-weight: 600;
-  }
-
-  .fc .fc-day-today {
-    background-color: rgba(157, 34, 53, 0.05) !important;
-  }
-
-  .fc .fc-event {
     border: none;
-    border-radius: 0.375rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
-    box-shadow: 0 2px 5px rgba(50, 50, 93, 0.1);
+    padding: 6px 12px;
   }
 
-  .fc .fc-event:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  .toastui-calendar-section-button:hover {
+    background-color: var(--koc-red-light);
+  }
+
+  .toastui-calendar-daily {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   }
 
   /* Kart stilleri */
@@ -103,29 +122,34 @@
   }
 
   /* Etkinlik tipleri için renkler */
-  .event-meeting { 
-    background-color: var(--koc-red) !important; 
-    color: #fff !important;
+  .meeting-bullet { background-color: var(--koc-red); }
+  .viewing-bullet { background-color: #11cdef; }
+  .call-bullet { background-color: #fb6340; }
+  .reminder-bullet { background-color: #ffd600; }
+  .appointment-bullet { background-color: #2dce89; }
+  .task-bullet { background-color: #8965e0; }
+
+  .calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(248, 249, 254, 0.8);
+    border-radius: 8px;
   }
-  .event-viewing { 
-    background-color: #11cdef !important; 
-    color: #fff !important;
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
   }
-  .event-call { 
-    background-color: #fb6340 !important; 
-    color: #fff !important;
-  }
-  .event-reminder { 
-    background-color: #ffd600 !important; 
-    color: #2c3038 !important; 
-  }
-  .event-appointment { 
-    background-color: #2dce89 !important; 
-    color: #fff !important;
-  }
-  .event-task { 
-    background-color: #8965e0 !important; 
-    color: #fff !important;
+
+  .legend-bullet {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 5px;
   }
 
   /* Yapılacaklar listesi */
@@ -185,7 +209,7 @@
     animation: fadeIn 0.3s ease forwards;
   }
   
-  /* Modal stileri */
+  /* Modal stilleri */
   .modal-content {
     border-radius: 0.75rem;
     border: none;
@@ -200,6 +224,60 @@
   .modal-footer {
     border-top: 1px solid rgba(0,0,0,0.05);
     padding: 1.5rem;
+  }
+
+  /* Takvim kontrol butonları */
+  .calendar-controls {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .calendar-control-btn {
+    padding: 8px 15px;
+    margin-right: 5px;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .calendar-control-btn:last-child {
+    margin-right: 0;
+  }
+
+  .calendar-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--koc-black);
+  }
+
+  .view-switch {
+    display: flex;
+    background: #f8f9fe;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+  }
+
+  .view-switch-btn {
+    padding: 8px 15px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .view-switch-btn.active {
+    background-color: var(--koc-red);
+    color: white;
+  }
+
+  .view-switch-btn:hover:not(.active) {
+    background-color: #e9ecef;
   }
 </style>
 {% endblock stylesheets %}
@@ -324,6 +402,53 @@
           </div>
         </div>
         <div class="card-body p-3">
+          <!-- Takvim Açıklamaları -->
+          <div class="calendar-legend">
+            <div class="legend-item">
+              <div class="legend-bullet meeting-bullet"></div>
+              <span>Toplantı</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-bullet viewing-bullet"></div>
+              <span>Görüntüleme</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-bullet call-bullet"></div>
+              <span>Arama</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-bullet reminder-bullet"></div>
+              <span>Hatırlatma</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-bullet appointment-bullet"></div>
+              <span>Randevu</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-bullet task-bullet"></div>
+              <span>Görev</span>
+            </div>
+          </div>
+          
+          <!-- Takvim Kontrolleri -->
+          <div class="calendar-controls">
+            <div>
+              <button id="prevButton" class="btn btn-sm btn-outline-secondary calendar-control-btn">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <button id="todayButton" class="btn btn-sm btn-outline-primary calendar-control-btn">Bugün</button>
+              <button id="nextButton" class="btn btn-sm btn-outline-secondary calendar-control-btn">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+              <span id="calendarTitle" class="ml-3 calendar-title"></span>
+            </div>
+            <div class="view-switch">
+              <button id="monthViewButton" class="view-switch-btn active">Ay</button>
+              <button id="weekViewButton" class="view-switch-btn">Hafta</button>
+              <button id="dayViewButton" class="view-switch-btn">Gün</button>
+            </div>
+          </div>
+          
           <div id="calendar"></div>
         </div>
       </div>
@@ -461,69 +586,257 @@
 
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script src="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  var calendarEl = document.getElementById('calendar');
+  // Toast UI Calendar örneklendirme
+  const Calendar = tui.Calendar;
   
-  var calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'dayGridMonth',
-    themeSystem: 'bootstrap5',
-    locale: 'tr',
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+  const calendar = new Calendar('#calendar', {
+    defaultView: 'month',
+    isReadOnly: false,
+    usageStatistics: false,
+    useDetailPopup: true,
+    useFormPopup: false,
+    selectionSetting: {
+      enableDblClick: false,
+      enableClick: true,
     },
-    buttonText: {
-      today: 'Bugün',
-      month: 'Ay',
-      week: 'Hafta',
-      day: 'Gün',
-      list: 'Liste'
+    timezone: {
+      zones: [
+        {
+          timezoneName: 'Europe/Istanbul',
+          displayLabel: 'İstanbul'
+        }
+      ]
     },
-    navLinks: true,
-    selectable: true,
-    selectMirror: true,
-    editable: true,
-    dayMaxEvents: true,
-    weekNumbers: true,
-    nowIndicator: true,
-    businessHours: {
-      daysOfWeek: [1, 2, 3, 4, 5],
-      startTime: '09:00',
-      endTime: '18:00'
-    },
-    events: {{ events_json|safe }},
-    eventContent: function(arg) {
-      return {
-        html: `<div class="fc-content event-${arg.event.extendedProps.type}">
-          <span class="fc-title">${arg.event.title}</span>
-        </div>`
-      };
-    },
-    select: function(info) {
-      $('#eventModal').modal('show');
-      $('#start_date').val(info.startStr);
-      if (info.end) {
-        $('#end_date').val(info.endStr);
+    template: {
+      allday: function(event) {
+        return `<span class="calendar-event-title">${event.title}</span>`;
+      },
+      popupDetailTitle: function(event) {
+        return event.title;
+      },
+      popupDetailBody: function(event) {
+        let html = `<div class="tui-full-calendar-popup-detail-item">`;
+        
+        if (event.body) {
+          html += `<div class="tui-full-calendar-popup-detail-item-separate">
+                    <span class="tui-full-calendar-content">${event.body}</span>
+                   </div>`;
+        }
+        
+        if (event.location) {
+          html += `<div class="tui-full-calendar-popup-detail-item-separate">
+                    <span class="tui-full-calendar-popup-detail-item-key">Konum:</span>
+                    <span class="tui-full-calendar-popup-detail-item-value">${event.location}</span>
+                   </div>`;
+        }
+        
+        html += `</div>`;
+        
+        return html;
+      },
+      milestone: function(event) {
+        return `<span class="calendar-event-title">${event.title}</span>`;
+      },
+      time: function(event) {
+        return `<span class="calendar-event-title">${event.title}</span>`;
+      },
+      monthMoreTitleDate: function(date, dayname) {
+        return `${date} (${dayname})`;
+      },
+      monthGridHeader: function(model) {
+        const date = parseInt(model.date.split('-')[2], 10);
+        const day = model.day;
+        
+        return `<span class="tui-full-calendar-weekday-grid-date">${date}</span>`;
       }
     },
-    eventClick: function(info) {
-      window.location.href = info.event.url;
-    },
-    eventDrop: function(info) {
-      updateEventDates(info.event);
-    },
-    eventResize: function(info) {
-      updateEventDates(info.event);
+    calendars: [
+      {
+        id: 'meeting',
+        name: 'Toplantı',
+        backgroundColor: '#9d2235',
+        borderColor: '#9d2235',
+        color: '#fff'
+      },
+      {
+        id: 'viewing',
+        name: 'Görüntüleme',
+        backgroundColor: '#11cdef',
+        borderColor: '#11cdef',
+        color: '#fff'
+      },
+      {
+        id: 'call',
+        name: 'Arama',
+        backgroundColor: '#fb6340',
+        borderColor: '#fb6340',
+        color: '#fff'
+      },
+      {
+        id: 'reminder',
+        name: 'Hatırlatma',
+        backgroundColor: '#ffd600',
+        borderColor: '#ffd600',
+        color: '#2c3038'
+      },
+      {
+        id: 'appointment',
+        name: 'Randevu',
+        backgroundColor: '#2dce89',
+        borderColor: '#2dce89',
+        color: '#fff'
+      },
+      {
+        id: 'task',
+        name: 'Görev',
+        backgroundColor: '#8965e0',
+        borderColor: '#8965e0',
+        color: '#fff'
+      }
+    ]
+  });
+  
+  // Etkinlikleri takvime yükle
+  const events = {{ events_json|safe }};
+  const calendarEvents = events.map(event => {
+    let calendarId;
+    switch(event.extendedProps.type) {
+      case 'meeting': calendarId = 'meeting'; break;
+      case 'viewing': calendarId = 'viewing'; break;
+      case 'call': calendarId = 'call'; break;
+      case 'reminder': calendarId = 'reminder'; break;
+      case 'appointment': calendarId = 'appointment'; break;
+      case 'task': calendarId = 'task'; break;
+      default: calendarId = 'meeting';
+    }
+    
+    return {
+      id: event.id,
+      calendarId: calendarId,
+      title: event.title,
+      body: event.extendedProps.description || '',
+      location: event.extendedProps.location || '',
+      start: event.start,
+      end: event.end,
+      isAllDay: event.allDay || false,
+      category: event.allDay ? 'allday' : 'time',
+      customStyle: {
+        backgroundColor: event.backgroundColor,
+        borderColor: event.borderColor
+      }
+    };
+  });
+  
+  calendar.createEvents(calendarEvents);
+  
+  // Takvim kontrollerini ayarla
+  const calendarTitle = document.getElementById('calendarTitle');
+  updateCalendarTitle();
+  
+  document.getElementById('prevButton').addEventListener('click', function() {
+    calendar.prev();
+    updateCalendarTitle();
+  });
+  
+  document.getElementById('todayButton').addEventListener('click', function() {
+    calendar.today();
+    updateCalendarTitle();
+  });
+  
+  document.getElementById('nextButton').addEventListener('click', function() {
+    calendar.next();
+    updateCalendarTitle();
+  });
+  
+  document.getElementById('monthViewButton').addEventListener('click', function() {
+    setActiveViewButton('monthViewButton');
+    calendar.changeView('month');
+    updateCalendarTitle();
+  });
+  
+  document.getElementById('weekViewButton').addEventListener('click', function() {
+    setActiveViewButton('weekViewButton');
+    calendar.changeView('week');
+    updateCalendarTitle();
+  });
+  
+  document.getElementById('dayViewButton').addEventListener('click', function() {
+    setActiveViewButton('dayViewButton');
+    calendar.changeView('day');
+    updateCalendarTitle();
+  });
+  
+  function setActiveViewButton(activeButtonId) {
+    const buttons = document.querySelectorAll('.view-switch-btn');
+    buttons.forEach(button => {
+      button.classList.remove('active');
+    });
+    document.getElementById(activeButtonId).classList.add('active');
+  }
+  
+  function updateCalendarTitle() {
+    const dateRange = calendar.getDateRangeStart();
+    const date = dateRange.getDate();
+    const month = dateRange.getMonth();
+    const year = dateRange.getFullYear();
+    
+    const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    
+    let title = '';
+    const viewType = calendar.getViewName();
+    
+    if (viewType === 'month') {
+      title = `${months[month]} ${year}`;
+    } else if (viewType === 'week') {
+      const weekStart = new Date(dateRange);
+      const weekEnd = new Date(dateRange);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      
+      if (weekStart.getMonth() === weekEnd.getMonth()) {
+        title = `${weekStart.getDate()} - ${weekEnd.getDate()} ${months[weekStart.getMonth()]} ${year}`;
+      } else {
+        title = `${weekStart.getDate()} ${months[weekStart.getMonth()]} - ${weekEnd.getDate()} ${months[weekEnd.getMonth()]} ${year}`;
+      }
+    } else {
+      title = `${date} ${months[month]} ${year}`;
+    }
+    
+    calendarTitle.textContent = title;
+  }
+  
+  // Takvim etkinliklerine tıklama olayları
+  calendar.on('clickEvent', function(event) {
+    window.location.href = '/ajanda/etkinlik/' + event.id + '/';
+  });
+  
+  // Tarih seçme olayları
+  calendar.on('selectDateTime', function(event) {
+    // Önceki seçimi temizle
+    calendar.clearGridSelections();
+    
+    $('#eventModal').modal('show');
+    $('#start_date').val(formatDateTime(event.start.toDate()));
+    
+    if (event.end) {
+      $('#end_date').val(formatDateTime(event.end.toDate()));
     }
   });
   
-  calendar.render();
-
+  function formatDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+  
   // Yapılacaklar listesi işlevleri
   $('.todo-checkbox').on('change', function() {
     var todoId = $(this).data('id');
@@ -611,47 +924,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   };
-
-  // Etkinlik tarihlerini güncelleme fonksiyonu
-  function updateEventDates(event) {
-    $.ajax({
-      url: '/ajanda/etkinlik/tarih-guncelle/' + event.id + '/',
-      type: 'POST',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val()
-      },
-      data: {
-        start: event.start.toISOString(),
-        end: event.end ? event.end.toISOString() : null
-      },
-      success: function(response) {
-        if (response.status === 'success') {
-          Swal.fire({
-            icon: 'success',
-            title: 'Başarılı!',
-            text: 'Etkinlik tarihi güncellendi.',
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000
-          });
-        }
-      },
-      error: function() {
-        Swal.fire({
-          icon: 'error',
-          title: 'Hata!',
-          text: 'Etkinlik tarihi güncellenirken bir hata oluştu.',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 3000
-        });
-        calendar.refetchEvents(); // Takvimi yenile
-      }
-    });
-  }
 });
 </script>
 {% endblock javascripts %} 

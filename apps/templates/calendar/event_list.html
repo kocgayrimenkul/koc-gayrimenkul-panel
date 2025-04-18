@@ -7,11 +7,188 @@
 <link rel="stylesheet" href="/static/assets/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
 <link rel="stylesheet" href="/static/assets/vendor/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css">
 <link rel="stylesheet" href="/static/assets/vendor/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Kartlar */
+  .card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    background-color: #fff;
+  }
+  
+  .card-header h3 {
+    margin-bottom: 0;
+    font-weight: 600;
+  }
+  
+  /* DataTables özelleştirmeleri */
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current, 
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: #fff !important;
+    background: var(--koc-red) !important;
+    border-color: var(--koc-red) !important;
+  }
+  
+  .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    color: #fff !important;
+    background: var(--koc-red-light) !important;
+    border-color: var(--koc-red-light) !important;
+  }
+  
+  .table thead th {
+    font-weight: 600;
+    color: #525f7f;
+  }
+  
+  .table-actions {
+    white-space: nowrap;
+  }
+  
+  .table-action {
+    color: #8898aa;
+    font-size: 0.875rem;
+    margin-right: 0.5rem;
+    transition: all 0.15s ease;
+  }
+  
+  .table-action:hover {
+    color: var(--koc-red);
+  }
+  
+  .table-action-delete:hover {
+    color: #f5365c;
+  }
+  
+  /* Badges */
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.35rem 0.5rem;
+    text-transform: none;
+  }
+  
+  .badge-primary {
+    background-color: var(--koc-red);
+    color: white !important;
+  }
+  
+  .badge-info {
+    background-color: #11cdef;
+    color: white !important;
+  }
+  
+  .badge-warning {
+    background-color: #fb6340;
+    color: white !important;
+  }
+  
+  .badge-yellow {
+    background-color: #ffd600;
+    color: #212529 !important;
+    font-weight: 700;
+  }
+  
+  .badge-success {
+    background-color: #2dce89;
+    color: white !important;
+  }
+  
+  .badge-purple {
+    background-color: #8965e0;
+    color: white !important;
+  }
+  
+  .badge-default {
+    background-color: #6c757d;
+    color: white !important;
+  }
+  
+  /* Modal özelleştirmeleri */
+  .modal-content {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 15px 35px rgba(50, 50, 93, 0.2), 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .modal-header {
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1.5rem;
+  }
+  
+  .modal-footer {
+    border-top: 1px solid rgba(0,0,0,0.05);
+    padding: 1.5rem;
+  }
+  
+  /* Pagination'daki önceki/sonraki ikonlarını düzelt */
+  .dataTables_wrapper .dataTables_paginate .previous,
+  .dataTables_wrapper .dataTables_paginate .next {
+    font-size: 0;
+  }
+  
+  .dataTables_wrapper .dataTables_paginate .previous:before {
+    content: "«";
+    font-size: 16px;
+  }
+  
+  .dataTables_wrapper .dataTables_paginate .next:before {
+    content: "»";
+    font-size: 16px;
+  }
+</style>
 {% endblock stylesheets %}
 
 {% block content %}
 
-<div class="header bg-primary pb-6">
+<div class="header bg-gradient-koc-red pb-6">
   <div class="container-fluid">
     <div class="header-body">
       <div class="row align-items-center py-4">
@@ -34,6 +211,94 @@
           </a>
         </div>
       </div>
+      
+      <!-- Etkinlik İstatistikleri -->
+      <div class="row">
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Toplam Etkinlik</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ events|length }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-koc-red text-white rounded-circle shadow">
+                    <i class="ni ni-calendar-grid-58"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-success mr-2"><i class="fa fa-calendar"></i></span>
+                <span class="text-nowrap">Tüm zamanlar</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Tamamlanan</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ events|dictsort:"is_completed"|last }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-success text-white rounded-circle shadow">
+                    <i class="ni ni-check-bold"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-success mr-2"><i class="fa fa-check"></i></span>
+                <span class="text-nowrap">Tamamlanan etkinlikler</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Bekleyen</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ events|dictsort:"is_completed"|first }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-warning text-white rounded-circle shadow">
+                    <i class="ni ni-time-alarm"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-warning mr-2"><i class="fa fa-clock"></i></span>
+                <span class="text-nowrap">Devam eden etkinlikler</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Bu Hafta</h5>
+                  <span class="h2 font-weight-bold mb-0">--</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow">
+                    <i class="ni ni-calendar-grid-58"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-info mr-2"><i class="fa fa-calendar-week"></i></span>
+                <span class="text-nowrap">Bu haftaki etkinlikler</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -42,11 +307,29 @@
   <div class="row">
     <div class="col">
       <div class="card">
-        <div class="card-header">
-          <h3 class="mb-0">Tüm Etkinlikler</h3>
-          <p class="text-sm mb-0">
-            Bu sayfada sisteme kaydedilmiş tüm etkinlikleri görüntüleyebilir ve yönetebilirsiniz.
-          </p>
+        <div class="card-header bg-transparent">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Tüm Etkinlikler</h3>
+              <p class="text-sm text-muted mb-0">
+                Bu sayfada sisteme kaydedilmiş tüm etkinlikleri görüntüleyebilir ve yönetebilirsiniz.
+              </p>
+            </div>
+            <div class="col text-right">
+              <div class="dropdown">
+                <button class="btn btn-sm btn-koc-red dropdown-toggle" type="button" id="filterDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fas fa-filter mr-1"></i> Filtrele
+                </button>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="filterDropdown">
+                  <a class="dropdown-item" href="#">Tümü</a>
+                  <a class="dropdown-item" href="#">Tamamlananlar</a>
+                  <a class="dropdown-item" href="#">Bekleyenler</a>
+                  <a class="dropdown-item" href="#">Bugün</a>
+                  <a class="dropdown-item" href="#">Bu Hafta</a>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
         <div class="table-responsive py-4">
@@ -69,7 +352,7 @@
                 <tr>
                   <td>{{ event.id }}</td>
                   <td>
-                    <a href="{% url 'event_detail' event.id %}">
+                    <a href="{% url 'event_detail' event.id %}" class="font-weight-bold text-koc-red">
                       {{ event.title }}
                     </a>
                   </td>
@@ -90,8 +373,20 @@
                       <span class="badge badge-default">Diğer</span>
                     {% endif %}
                   </td>
-                  <td>{{ event.start_time|date:"d.m.Y H:i" }}</td>
-                  <td>{{ event.end_time|date:"d.m.Y H:i" }}</td>
+                  <td>
+                    <span data-toggle="tooltip" data-placement="top" title="{{ event.start_time|date:'d F Y H:i' }}">
+                      {{ event.start_time|date:"d.m.Y H:i" }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if event.end_time %}
+                      <span data-toggle="tooltip" data-placement="top" title="{{ event.end_time|date:'d F Y H:i' }}">
+                        {{ event.end_time|date:"d.m.Y H:i" }}
+                      </span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
                   <td>
                     {% if event.is_completed %}
                       <span class="badge badge-success">Tamamlandı</span>
@@ -101,7 +396,7 @@
                   </td>
                   <td>
                     {% if event.customer %}
-                      <a href="{% url 'customer_detail' event.customer.id %}">
+                      <a href="{% url 'customer_detail' event.customer.id %}" class="text-primary">
                         {{ event.customer.full_name }}
                       </a>
                     {% else %}
@@ -110,7 +405,7 @@
                   </td>
                   <td>
                     {% if event.property %}
-                      <a href="{% url 'property_detail' event.property.id %}">
+                      <a href="{% url 'property_detail' event.property.id %}" class="text-primary">
                         {{ event.property.title }}
                       </a>
                     {% else %}
@@ -162,10 +457,15 @@
               {% empty %}
                 <tr>
                   <td colspan="9" class="text-center">
-                    <h4 class="text-muted my-3">Henüz etkinlik kaydı bulunmamaktadır.</h4>
-                    <a href="{% url 'event_create_form' %}" class="btn btn-sm btn-primary">
-                      <i class="fas fa-plus mr-1"></i> Yeni Etkinlik Ekle
-                    </a>
+                    <div class="my-5">
+                      <div class="icon icon-shape icon-lg bg-gradient-koc-red rounded-circle shadow text-white mb-4">
+                        <i class="fas fa-calendar-alt"></i>
+                      </div>
+                      <h4 class="text-muted mb-3">Henüz etkinlik kaydı bulunmamaktadır.</h4>
+                      <a href="{% url 'event_create_form' %}" class="btn btn-sm btn-koc-red">
+                        <i class="fas fa-plus mr-1"></i> Yeni Etkinlik Ekle
+                      </a>
+                    </div>
                   </td>
                 </tr>
               {% endfor %}
@@ -195,7 +495,11 @@
   $(document).ready(function() {
     var eventTable = $('#datatable-events').DataTable({
       language: {
-        url: '/static/assets/vendor/datatables.net/i18n/tr.json'
+        url: '/static/assets/vendor/datatables.net/i18n/tr.json',
+        paginate: {
+          previous: '',
+          next: ''
+        }
       },
       responsive: true,
       order: [[3, 'desc']], // Başlangıç tarihine göre sırala (en yakın en üstte)
@@ -206,11 +510,52 @@
       lengthMenu: [
         [10, 25, 50, -1],
         [10, 25, 50, "Tümü"]
+      ],
+      dom: 'lfrtip',
+      buttons: [
+        {
+          extend: 'excel',
+          text: '<i class="fas fa-file-excel"></i> Excel',
+          className: 'btn btn-sm btn-neutral',
+          title: 'Koç Gayrimenkul - Etkinlik Listesi'
+        },
+        {
+          extend: 'pdf',
+          text: '<i class="fas fa-file-pdf"></i> PDF',
+          className: 'btn btn-sm btn-neutral',
+          title: 'Koç Gayrimenkul - Etkinlik Listesi'
+        },
+        {
+          extend: 'print',
+          text: '<i class="fas fa-print"></i> Yazdır',
+          className: 'btn btn-sm btn-neutral',
+          title: 'Koç Gayrimenkul - Etkinlik Listesi'
+        }
       ]
     });
     
     // Tooltips
     $('[data-toggle="tooltip"]').tooltip();
+    
+    // Filtre dropdown işlevi
+    $('#filterDropdown a').on('click', function(e) {
+      e.preventDefault();
+      var filterValue = $(this).text().trim();
+      var filterColumn = eventTable.column(5); // Durum kolonu
+      
+      switch(filterValue) {
+        case 'Tümü':
+          filterColumn.search('').draw();
+          break;
+        case 'Tamamlananlar':
+          filterColumn.search('Tamamlandı').draw();
+          break;
+        case 'Bekleyenler':
+          filterColumn.search('Devam Ediyor').draw();
+          break;
+        // Diğer filtreler için implementasyon yapılabilir
+      }
+    });
   });
 </script>
 {% endblock javascripts %} 

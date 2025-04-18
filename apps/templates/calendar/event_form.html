@@ -7,11 +7,215 @@
 <link rel="stylesheet" href="/static/assets/vendor/select2/dist/css/select2.min.css">
 <link rel="stylesheet" href="/static/assets/vendor/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="/static/assets/vendor/flatpickr/dist/themes/material_blue.css">
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Form elemanları */
+  .form-control:focus {
+    border-color: var(--koc-red-light);
+    box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
+  }
+  
+  /* Kartlar */
+  .card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    background-color: #fff;
+  }
+  
+  .card-header h3 {
+    margin-bottom: 0;
+    font-weight: 600;
+  }
+  
+  /* Bilgi kutuları */
+  .info-box {
+    background-color: #f8f9fe;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .info-box i {
+    font-size: 1.5rem;
+    margin-right: 10px;
+  }
+  
+  .info-box h5 {
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  
+  .info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f8f9fe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+  }
+  
+  .info-icon i {
+    font-size: 18px;
+  }
+  
+  /* Timeline kutuları */
+  .timeline {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  
+  .timeline-block {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+  }
+  
+  .timeline-block:last-child {
+    margin-bottom: 0;
+  }
+  
+  .timeline-step {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+  }
+  
+  .timeline-step i {
+    font-size: 1rem;
+  }
+  
+  .timeline-content {
+    margin-left: 1rem;
+    flex: 1;
+  }
+  
+  .badge-primary {
+    background-color: var(--koc-red);
+  }
+  
+  .badge-info {
+    background-color: #11cdef;
+  }
+  
+  .badge-warning {
+    background-color: #fb6340;
+  }
+  
+  .badge-yellow {
+    background-color: #ffd600;
+    color: #212529;
+  }
+  
+  .badge-success {
+    background-color: #2dce89;
+  }
+  
+  .badge-purple {
+    background-color: #8965e0;
+  }
+  
+  /* Form grupları */
+  .form-group label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #525f7f;
+  }
+  
+  .input-group-text {
+    background-color: #f8f9fe;
+    border: 1px solid #e9ecef;
+  }
+  
+  /* Custom checkboxlar */
+  .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  /* Select2 özelleştirmeleri */
+  .select2-container--default .select2-selection--single {
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    height: calc(1.5em + 1.25rem + 2px);
+    padding: 0.625rem 0.75rem;
+  }
+  
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.5;
+    color: #8898aa;
+    padding-left: 0;
+  }
+  
+  .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: calc(1.5em + 1.25rem + 2px);
+  }
+  
+  .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--koc-red);
+  }
+</style>
 {% endblock stylesheets %}
 
 {% block content %}
 
-<div class="header bg-primary pb-6">
+<div class="header bg-gradient-koc-red pb-6">
   <div class="container-fluid">
     <div class="header-body">
       <div class="row align-items-center py-4">
@@ -25,6 +229,11 @@
             </ol>
           </nav>
         </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'calendar' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> Ajandaya Dön
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -35,7 +244,23 @@
     <div class="col-lg-8">
       <div class="card">
         <div class="card-header">
-          <h3 class="mb-0">Etkinlik Bilgileri</h3>
+          <div class="row align-items-center">
+            <div class="col-8">
+              <h3 class="mb-0">Etkinlik Bilgileri</h3>
+              <p class="text-sm text-muted mb-0">{% if form.instance.id %}{{ form.instance.title }} etkinliğini düzenleyin{% else %}Ajandanıza yeni bir etkinlik ekleyin{% endif %}</p>
+            </div>
+            <div class="col-4 text-right">
+              {% if form.instance.id %}
+                {% if form.instance.is_completed %}
+                  <span class="badge badge-success">Tamamlandı</span>
+                {% else %}
+                  <span class="badge badge-warning">Devam Ediyor</span>
+                {% endif %}
+              {% else %}
+                <span class="badge badge-koc-red">Yeni</span>
+              {% endif %}
+            </div>
+          </div>
         </div>
         <div class="card-body">
           <form method="post" id="event-form">
@@ -43,7 +268,7 @@
             {% if form.errors %}
               <div class="alert alert-danger">
                 <strong>Hata!</strong> Lütfen aşağıdaki hataları düzeltin:
-                <ul>
+                <ul class="mb-0">
                   {% for field, errors in form.errors.items %}
                     {% for error in errors %}
                       <li>{{ field }}: {{ error }}</li>
@@ -59,7 +284,12 @@
                 <div class="col-lg-12">
                   <div class="form-group">
                     <label class="form-control-label" for="{{ form.title.id_for_label }}">Başlık <span class="text-danger">*</span></label>
-                    {{ form.title|safe }}
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-heading"></i></span>
+                      </div>
+                      {{ form.title|safe }}
+                    </div>
                     {% if form.title.errors %}
                       <div class="invalid-feedback d-block">{{ form.title.errors.0 }}</div>
                     {% endif %}
@@ -71,7 +301,12 @@
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="{{ form.start_time.id_for_label }}">Başlangıç Zamanı <span class="text-danger">*</span></label>
-                    {{ form.start_time|safe }}
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                      </div>
+                      {{ form.start_time|safe }}
+                    </div>
                     {% if form.start_time.errors %}
                       <div class="invalid-feedback d-block">{{ form.start_time.errors.0 }}</div>
                     {% endif %}
@@ -80,7 +315,12 @@
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="{{ form.end_time.id_for_label }}">Bitiş Zamanı</label>
-                    {{ form.end_time|safe }}
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-hourglass-end"></i></span>
+                      </div>
+                      {{ form.end_time|safe }}
+                    </div>
                     {% if form.end_time.errors %}
                       <div class="invalid-feedback d-block">{{ form.end_time.errors.0 }}</div>
                     {% endif %}
@@ -93,7 +333,12 @@
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="{{ form.event_type.id_for_label }}">Etkinlik Türü <span class="text-danger">*</span></label>
-                    {{ form.event_type|safe }}
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                      </div>
+                      {{ form.event_type|safe }}
+                    </div>
                     {% if form.event_type.errors %}
                       <div class="invalid-feedback d-block">{{ form.event_type.errors.0 }}</div>
                     {% endif %}
@@ -102,7 +347,7 @@
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="{{ form.is_completed.id_for_label }}">Durum</label>
-                    <div class="custom-control custom-checkbox">
+                    <div class="custom-control custom-checkbox mt-2">
                       {{ form.is_completed|safe }}
                       <label class="custom-control-label" for="{{ form.is_completed.id_for_label }}">
                         Tamamlandı olarak işaretle
@@ -124,7 +369,12 @@
                 <div class="col-lg-12">
                   <div class="form-group">
                     <label class="form-control-label" for="{{ form.location.id_for_label }}">Konum</label>
-                    {{ form.location|safe }}
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                      </div>
+                      {{ form.location|safe }}
+                    </div>
                     {% if form.location.errors %}
                       <div class="invalid-feedback d-block">{{ form.location.errors.0 }}</div>
                     {% endif %}
@@ -136,7 +386,12 @@
                 <div class="col-lg-12">
                   <div class="form-group">
                     <label class="form-control-label" for="{{ form.description.id_for_label }}">Açıklama</label>
-                    {{ form.description|safe }}
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-align-left"></i></span>
+                      </div>
+                      {{ form.description|safe }}
+                    </div>
                     {% if form.description.errors %}
                       <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
                     {% endif %}
@@ -153,7 +408,12 @@
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="{{ form.customer.id_for_label }}">Müşteri</label>
-                    {{ form.customer|safe }}
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                      </div>
+                      {{ form.customer|safe }}
+                    </div>
                     {% if form.customer.errors %}
                       <div class="invalid-feedback d-block">{{ form.customer.errors.0 }}</div>
                     {% endif %}
@@ -162,7 +422,12 @@
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="{{ form.property.id_for_label }}">Gayrimenkul</label>
-                    {{ form.property|safe }}
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-home"></i></span>
+                      </div>
+                      {{ form.property|safe }}
+                    </div>
                     {% if form.property.errors %}
                       <div class="invalid-feedback d-block">{{ form.property.errors.0 }}</div>
                     {% endif %}
@@ -173,9 +438,17 @@
             
             <hr class="my-4">
             
-            <div class="text-right">
-              <a href="{% url 'calendar' %}" class="btn btn-secondary">İptal</a>
-              <button type="submit" class="btn btn-primary">Kaydet</button>
+            <div class="row justify-content-center">
+              <div class="col-md-6">
+                <a href="{% url 'calendar' %}" class="btn btn-secondary btn-block">
+                  <i class="fas fa-times mr-2"></i> İptal
+                </a>
+              </div>
+              <div class="col-md-6">
+                <button type="submit" class="btn btn-koc-red btn-block">
+                  <i class="fas fa-save mr-2"></i> Kaydet
+                </button>
+              </div>
             </div>
           </form>
         </div>
@@ -184,8 +457,12 @@
     
     <div class="col-lg-4">
       <div class="card">
-        <div class="card-header">
-          <h3 class="mb-0">Etkinlik Türleri</h3>
+        <div class="card-header bg-transparent">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Etkinlik Türleri</h3>
+            </div>
+          </div>
         </div>
         <div class="card-body">
           <div class="timeline timeline-one-side" data-timeline-content="axis">
@@ -249,6 +526,19 @@
               </div>
             </div>
           </div>
+          
+          <!-- Bilgilendirme kutusu -->
+          <div class="info-box d-flex align-items-start mt-4">
+            <div class="info-icon bg-info">
+              <i class="fas fa-info text-white"></i>
+            </div>
+            <div>
+              <h5 class="text-info">Senkronizasyon Bilgisi</h5>
+              <p class="text-sm mb-0">
+                Oluşturduğunuz ya da düzenlediğiniz etkinlikler, ajanda ve takvim sayfasında anında görüntülenecektir.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -285,7 +575,8 @@
       language: "tr",
       placeholder: "Seçiniz...",
       allowClear: true,
-      width: '100%'
+      width: '100%',
+      theme: 'bootstrap4'
     });
     
     // Etkinlik türüne göre form alanlarını göster/gizle
@@ -295,19 +586,25 @@
       // Etkinlik türüne göre belirli alanları göster/gizle
       if (selectedType === 'viewing') {
         // Gayrimenkul gösterimi için location ve property alanlarını zorunlu yap
-        $('#{{ form.location.id_for_label }}').parent().parent().find('label').html('Konum <span class="text-danger">*</span>');
-        $('#{{ form.property.id_for_label }}').parent().parent().find('label').html('Gayrimenkul <span class="text-danger">*</span>');
+        $('#{{ form.location.id_for_label }}').parent().parent().parent().find('label').html('Konum <span class="text-danger">*</span>');
+        $('#{{ form.property.id_for_label }}').parent().parent().parent().find('label').html('Gayrimenkul <span class="text-danger">*</span>');
+        $('#{{ form.location.id_for_label }}').attr('required', true);
+        $('#{{ form.property.id_for_label }}').attr('required', true);
       } else {
         // Diğer etkinlik türleri için bu alanları isteğe bağlı yap
-        $('#{{ form.location.id_for_label }}').parent().parent().find('label').html('Konum');
-        $('#{{ form.property.id_for_label }}').parent().parent().find('label').html('Gayrimenkul');
+        $('#{{ form.location.id_for_label }}').parent().parent().parent().find('label').html('Konum');
+        $('#{{ form.property.id_for_label }}').parent().parent().parent().find('label').html('Gayrimenkul');
+        $('#{{ form.location.id_for_label }}').removeAttr('required');
+        $('#{{ form.property.id_for_label }}').removeAttr('required');
       }
       
       if (selectedType === 'call') {
         // Telefon görüşmesi için müşteri alanını zorunlu yap
-        $('#{{ form.customer.id_for_label }}').parent().parent().find('label').html('Müşteri <span class="text-danger">*</span>');
+        $('#{{ form.customer.id_for_label }}').parent().parent().parent().find('label').html('Müşteri <span class="text-danger">*</span>');
+        $('#{{ form.customer.id_for_label }}').attr('required', true);
       } else {
-        $('#{{ form.customer.id_for_label }}').parent().parent().find('label').html('Müşteri');
+        $('#{{ form.customer.id_for_label }}').parent().parent().parent().find('label').html('Müşteri');
+        $('#{{ form.customer.id_for_label }}').removeAttr('required');
       }
     });
     

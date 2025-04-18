@@ -186,7 +186,7 @@ def event_create(request):
         # Validation
         if not title or not event_type or not start_date or not start_time:
             messages.error(request, "Lütfen zorunlu alanları doldurun.")
-            return redirect('event_create_form')
+            return redirect('calendar')
         
         try:
             # Tarih ve saat bilgilerini birleştir
@@ -222,11 +222,11 @@ def event_create(request):
             event.save()
             
             messages.success(request, "Etkinlik başarıyla oluşturuldu.")
-            return redirect('calendar_view')
+            return redirect('calendar')
             
         except Exception as e:
             messages.error(request, f"Bir hata oluştu: {str(e)}")
-            return redirect('event_create_form')
+            return redirect('calendar')
     
     # POST değilse form sayfasına yönlendir
     return redirect('event_create_form')
@@ -239,7 +239,7 @@ def event_detail(request, event_id):
     # Yetki kontrolü
     if not request.user.is_superuser and event.consultant != request.user:
         messages.error(request, "Bu etkinliği görüntüleme yetkiniz bulunmamaktadır.")
-        return redirect('calendar_view')
+        return redirect('calendar')
     
     # İlişkili etkinlikleri bul (aynı müşteri veya gayrimenkul ile ilgili)
     related_events = []
@@ -271,7 +271,7 @@ def event_delete(request, event_id):
     # Yetki kontrolü
     if not request.user.is_superuser and event.consultant != request.user:
         messages.error(request, "Bu etkinliği silme yetkiniz bulunmamaktadır.")
-        return redirect('calendar_view')
+        return redirect('calendar')
     
     if request.method == 'POST':
         event_title = event.title  # Silme mesajı için başlığı sakla
@@ -294,7 +294,7 @@ def todo_create(request):
         
         if not title:
             messages.error(request, "Başlık alanı zorunludur.")
-            return redirect('calendar_view')
+            return redirect('calendar')
         
         todo = TodoItem(
             title=title,
@@ -316,7 +316,7 @@ def todo_create(request):
         
         messages.success(request, "Yapılacak başarıyla eklendi.")
     
-    return redirect('calendar_view')
+    return redirect('calendar')
 
 @login_required(login_url="/login/")
 def todo_update(request, todo_id):
@@ -326,7 +326,7 @@ def todo_update(request, todo_id):
     # Sadece sahibi güncelleyebilir
     if todo.user != request.user:
         messages.error(request, "Bu yapılacağı güncelleme yetkiniz yok.")
-        return redirect('calendar_view')
+        return redirect('calendar')
     
     if request.method == 'POST':
         todo.title = request.POST.get('title', '')
@@ -346,7 +346,7 @@ def todo_update(request, todo_id):
         
         messages.success(request, "Yapılacak başarıyla güncellendi.")
     
-    return redirect('calendar_view')
+    return redirect('calendar')
 
 @login_required(login_url="/login/")
 def todo_delete(request, todo_id):
@@ -356,12 +356,12 @@ def todo_delete(request, todo_id):
     # Sadece sahibi silebilir
     if todo.user != request.user:
         messages.error(request, "Bu yapılacağı silme yetkiniz yok.")
-        return redirect('calendar_view')
+        return redirect('calendar')
     
     todo.delete()
     messages.success(request, "Yapılacak başarıyla silindi.")
     
-    return redirect('calendar_view')
+    return redirect('calendar')
 
 @login_required(login_url="/login/")
 def toggle_todo_status(request, todo_id):
@@ -391,7 +391,7 @@ def event_complete(request, event_id):
     # Yetki kontrolü
     if not request.user.is_superuser and event.consultant != request.user:
         messages.error(request, "Bu etkinliği güncelleme yetkiniz bulunmamaktadır.")
-        return redirect('calendar_view')
+        return redirect('calendar')
     
     if request.method == 'POST':
         event.is_completed = True
@@ -410,7 +410,7 @@ def event_reopen(request, event_id):
     # Yetki kontrolü
     if not request.user.is_superuser and event.consultant != request.user:
         messages.error(request, "Bu etkinliği güncelleme yetkiniz bulunmamaktadır.")
-        return redirect('calendar_view')
+        return redirect('calendar')
     
     if request.method == 'POST':
         event.is_completed = False
@@ -429,7 +429,7 @@ def event_update(request, event_id):
     # Yetki kontrolü
     if not request.user.is_superuser and event.consultant != request.user:
         messages.error(request, "Bu etkinliği düzenleme yetkiniz bulunmamaktadır.")
-        return redirect('calendar_view')
+        return redirect('calendar')
     
     if request.method == 'POST':
         # Form verilerini al

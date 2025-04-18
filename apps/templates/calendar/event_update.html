@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Yeni Etkinlik Oluştur {% endblock %}
+{% block title %} Etkinlik Güncelle {% endblock %}
 
 {% block stylesheets %}
 {{ block.super }}
@@ -189,12 +189,12 @@
     <div class="header-body">
       <div class="row align-items-center py-4">
         <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Yeni Etkinlik</h6>
+          <h6 class="h2 text-white d-inline-block mb-0">Etkinlik Güncelle</h6>
           <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
             <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
               <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
               <li class="breadcrumb-item"><a href="{% url 'calendar' %}">Ajanda</a></li>
-              <li class="breadcrumb-item active" aria-current="page">Yeni Etkinlik</li>
+              <li class="breadcrumb-item active" aria-current="page">Etkinlik Güncelle</li>
             </ol>
           </nav>
         </div>
@@ -216,15 +216,15 @@
           <div class="row align-items-center">
             <div class="col-8">
               <h3 class="mb-0">Etkinlik Bilgileri</h3>
-              <p class="text-sm text-muted mb-0">Ajandanıza yeni bir etkinlik ekleyin</p>
+              <p class="text-sm text-muted mb-0">Etkinlik bilgilerini güncelleyin</p>
             </div>
             <div class="col-4 text-right">
-              <span class="badge badge-koc-red">Yeni</span>
+              <span class="badge badge-koc-red">Güncelleme</span>
             </div>
           </div>
         </div>
         <div class="card-body">
-          <form method="post" action="{% url 'event_create' %}" id="event-form">
+          <form method="post" action="{% url 'event_update' event.id %}" id="event-form">
             {% csrf_token %}
             
             <h6 class="heading-small text-muted mb-4">Temel Bilgiler</h6>
@@ -237,7 +237,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-heading"></i></span>
                       </div>
-                      <input type="text" id="title" name="title" class="form-control" placeholder="Etkinlik başlığı" required>
+                      <input type="text" id="title" name="title" class="form-control" placeholder="Etkinlik başlığı" required value="{{ event.title }}">
                     </div>
                   </div>
                 </div>
@@ -251,7 +251,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-calendar"></i></span>
                       </div>
-                      <input type="date" id="start_date" name="start_date" class="form-control datepicker" required>
+                      <input type="date" id="start_date" name="start_date" class="form-control datepicker" required value="{{ event.start_date|date:'Y-m-d' }}">
                     </div>
                   </div>
                 </div>
@@ -262,7 +262,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-clock"></i></span>
                       </div>
-                      <input type="time" id="start_time" name="start_time" class="form-control" required>
+                      <input type="time" id="start_time" name="start_time" class="form-control" required value="{{ event.start_time|time:'H:i' }}">
                     </div>
                   </div>
                 </div>
@@ -276,7 +276,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
                       </div>
-                      <input type="date" id="end_date" name="end_date" class="form-control datepicker">
+                      <input type="date" id="end_date" name="end_date" class="form-control datepicker" value="{{ event.end_date|date:'Y-m-d' }}">
                     </div>
                     <small class="form-text text-muted">İsteğe bağlı</small>
                   </div>
@@ -288,7 +288,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-hourglass-end"></i></span>
                       </div>
-                      <input type="time" id="end_time" name="end_time" class="form-control">
+                      <input type="time" id="end_time" name="end_time" class="form-control" value="{{ event.end_time|time:'H:i' }}">
                     </div>
                     <small class="form-text text-muted">İsteğe bağlı. Belirtilmezse başlangıç zamanından 1 saat sonrası olarak hesaplanır.</small>
                   </div>
@@ -306,7 +306,7 @@
                       <select id="event_type" name="event_type" class="form-control" required>
                         <option value="">Seçiniz</option>
                         {% for value, label in event_types %}
-                          <option value="{{ value }}">{{ label }}</option>
+                          <option value="{{ value }}" {% if event.event_type == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                       </select>
                     </div>
@@ -319,7 +319,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
                       </div>
-                      <input type="text" id="location" name="location" class="form-control" placeholder="Etkinlik konumu">
+                      <input type="text" id="location" name="location" class="form-control" placeholder="Etkinlik konumu" value="{{ event.location }}">
                     </div>
                   </div>
                 </div>
@@ -338,7 +338,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-align-left"></i></span>
                       </div>
-                      <textarea id="description" name="description" class="form-control" rows="4" placeholder="Etkinlik açıklaması"></textarea>
+                      <textarea id="description" name="description" class="form-control" rows="4" placeholder="Etkinlik açıklaması">{{ event.description }}</textarea>
                     </div>
                   </div>
                 </div>
@@ -360,7 +360,7 @@
                       <select id="customer" name="customer" class="custom-select select2" style="width: calc(100% - 42px);">
                         <option value="">Seçiniz</option>
                         {% for customer in customers %}
-                          <option value="{{ customer.id }}">{{ customer.full_name }}</option>
+                          <option value="{{ customer.id }}" {% if event.customer and event.customer.id == customer.id %}selected{% endif %}>{{ customer.full_name }}</option>
                         {% endfor %}
                       </select>
                     </div>
@@ -376,7 +376,7 @@
                       <select id="property" name="property" class="custom-select select2" style="width: calc(100% - 42px);">
                         <option value="">Seçiniz</option>
                         {% for property in properties %}
-                          <option value="{{ property.id }}">{{ property.title }}</option>
+                          <option value="{{ property.id }}" {% if event.property and event.property.id == property.id %}selected{% endif %}>{{ property.title }}</option>
                         {% endfor %}
                       </select>
                     </div>
@@ -395,7 +395,7 @@
               </div>
               <div class="col-md-6">
                 <button type="submit" class="btn btn-koc-red btn-block">
-                  <i class="fas fa-save mr-2"></i> Kaydet
+                  <i class="fas fa-save mr-2"></i> Güncelle
                 </button>
               </div>
             </div>
@@ -496,7 +496,7 @@
             <div>
               <h5 class="text-info">Etkinlik Bilgileri</h5>
               <p class="text-sm mb-0">
-                Etkinlikler takvimde görünecek ve size hatırlatma olarak gelecektir.
+                Etkinlik bilgilerini güncelleyebilir ve değişiklikleri kaydedebilirsiniz.
               </p>
             </div>
           </div>
@@ -524,7 +524,7 @@
             <div>
               <h5 class="text-success">Senkronizasyon</h5>
               <p class="text-sm mb-0">
-                Oluşturduğunuz etkinlikler, takvim görünümünde anında görüntülenecektir.
+                Güncellediğiniz etkinlikler, takvim görünümünde anında görüntülenecektir.
               </p>
             </div>
           </div>
@@ -595,6 +595,9 @@
         $('#customer').removeAttr('required');
       }
     });
+    
+    // Sayfa yüklendiğinde mevcut etkinlik türüne göre alanları ayarla
+    $('#event_type').trigger('change');
     
     // Başlangıç tarihi değiştiğinde bitiş tarihini güncelle
     $('#start_date').on('change', function() {

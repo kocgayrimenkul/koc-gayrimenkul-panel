@@ -8,8 +8,7 @@ from . import views
 
 urlpatterns = [
     # Takvim ana görünümü
-    path('ajanda/', views.calendar_view, name='calendar_view'),
-    path('ajanda/takvim/', views.calendar_view, name='calendar'),
+    path('ajanda/', views.calendar_view, name='calendar'),
     
     # Etkinlik işlemleri
     path('ajanda/etkinlikler/', views.event_list, name='event_list'),
