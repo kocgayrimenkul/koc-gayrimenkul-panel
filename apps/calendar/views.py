@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, date
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
+from django.contrib.auth import get_user_model
 
 @login_required(login_url="/login/")
 def calendar_view(request):
@@ -291,6 +292,7 @@ def todo_create(request):
         priority = request.POST.get('priority', 'orta')
         customer_id = request.POST.get('customer', None)
         property_id = request.POST.get('property', None)
+        consultant_id = request.POST.get('consultant', None)
         
         if not title:
             messages.error(request, "Başlık alanı zorunludur.")
@@ -301,6 +303,7 @@ def todo_create(request):
             description=description,
             priority=priority,
             user=request.user,
+            assigned_by=request.user,
         )
         
         if due_date:
@@ -311,10 +314,20 @@ def todo_create(request):
         
         if property_id:
             todo.property_id = property_id
+            
+        if consultant_id:
+            todo.consultant_id = consultant_id
         
         todo.save()
         
         messages.success(request, "Yapılacak başarıyla eklendi.")
+        
+        # Yönlendirme kaynağını kontrol et
+        redirect_url = request.POST.get('redirect_url', 'calendar')
+        if redirect_url == 'todo_list':
+            return redirect('todo_list')
+        else:
+            return redirect('calendar')
     
     return redirect('calendar')
 
@@ -369,11 +382,15 @@ def toggle_todo_status(request, todo_id):
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         todo = get_object_or_404(TodoItem, id=todo_id)
         
-        # Sadece sahibi güncelleyebilir
-        if todo.user != request.user:
+        # Yetki kontrolü - kendi görevi veya atadığı görev
+        if not (todo.user == request.user or (todo.consultant == request.user and todo.consultant is not None)):
             return JsonResponse({'status': 'error', 'message': 'Yetki hatası'}, status=403)
         
         todo.is_completed = not todo.is_completed
+        if todo.is_completed:
+            todo.completed_at = timezone.now()
+        else:
+            todo.completed_at = None
         todo.save()
         
         return JsonResponse({
@@ -514,4 +531,175 @@ def event_update(request, event_id):
     }
     
     html_template = loader.get_template('calendar/event_update.html')
+    return HttpResponse(html_template.render(context, request))
+
+@login_required(login_url="/login/")
+def todo_list(request):
+    """Yapılacaklar listesi görünümü"""
+    
+    # Filtre parametreleri
+    priority = request.GET.get('priority', '')
+    status = request.GET.get('status', '')
+    user_filter = request.GET.get('user', '')
+    consultant_filter = request.GET.get('consultant', '')
+    
+    # Varsayılan olarak kullanıcının kendi görevleri + kendisine atanan görevler
+    todos = TodoItem.objects.filter(
+        Q(user=request.user) | Q(consultant=request.user)
+    )
+    
+    # Yöneticiler tüm görevleri görebilir
+    if request.user.is_superuser or request.user.groups.filter(name__in=['Yönetici', 'Müdür']).exists():
+        if not user_filter:  # Eğer kullanıcı filtresi uygulanmadıysa
+            todos = TodoItem.objects.all()
+        else:
+            todos = TodoItem.objects.filter(
+                Q(user_id=user_filter) | Q(consultant_id=user_filter)
+            )
+    
+    # Filtreler uygula
+    if priority:
+        todos = todos.filter(priority=priority)
+    
+    if status == 'completed':
+        todos = todos.filter(is_completed=True)
+    elif status == 'pending':
+        todos = todos.filter(is_completed=False)
+        
+    if consultant_filter:
+        todos = todos.filter(consultant_id=consultant_filter)
+    
+    # Kullanıcı ve danışman listeleri (filtre için)
+    users = []
+    consultants = []
+    
+    if request.user.is_superuser or request.user.groups.filter(name__in=['Yönetici', 'Müdür']).exists():
+        User = get_user_model()
+        users = User.objects.filter(is_active=True)
+        consultants = User.objects.filter(groups__name='Danışman', is_active=True).distinct()
+    
+    # İstatistikler
+    total_todos = todos.count()
+    completed_todos = todos.filter(is_completed=True).count()
+    pending_todos = todos.filter(is_completed=False).count()
+    
+    # Önceliğe göre sayılar
+    high_priority = todos.filter(priority='yuksek', is_completed=False).count()
+    medium_priority = todos.filter(priority='orta', is_completed=False).count()
+    low_priority = todos.filter(priority='dusuk', is_completed=False).count()
+    
+    context = {
+        'segment': 'todo_list',
+        'todos': todos,
+        'users': users,
+        'consultants': consultants,
+        'filters': {
+            'priority': priority,
+            'status': status,
+            'user': user_filter,
+            'consultant': consultant_filter,
+        },
+        'stats': {
+            'total': total_todos,
+            'completed': completed_todos,
+            'pending': pending_todos,
+            'high_priority': high_priority,
+            'medium_priority': medium_priority,
+            'low_priority': low_priority,
+        },
+        'priority_choices': TodoItem.PRIORITY_CHOICES,
+    }
+    
+    html_template = loader.get_template('calendar/todo_list.html')
+    return HttpResponse(html_template.render(context, request))
+
+@login_required(login_url="/login/")
+def todo_complete(request, todo_id):
+    """Görevi tamamlandı olarak işaretle"""
+    todo = get_object_or_404(TodoItem, id=todo_id)
+    
+    # Yetki kontrolü
+    if not (todo.user == request.user or (todo.consultant == request.user and todo.consultant is not None) or request.user.is_superuser):
+        messages.error(request, "Bu görevi güncelleme yetkiniz bulunmamaktadır.")
+        return redirect('todo_list')
+    
+    if request.method == 'POST':
+        todo.is_completed = True
+        todo.completed_at = timezone.now()
+        todo.save()
+        
+        messages.success(request, "Görev tamamlandı olarak işaretlendi.")
+        
+    return redirect('todo_list')
+
+@login_required(login_url="/login/")
+def todo_reopen(request, todo_id):
+    """Tamamlanmış görevi yeniden aç"""
+    todo = get_object_or_404(TodoItem, id=todo_id)
+    
+    # Yetki kontrolü
+    if not (todo.user == request.user or (todo.consultant == request.user and todo.consultant is not None) or request.user.is_superuser):
+        messages.error(request, "Bu görevi güncelleme yetkiniz bulunmamaktadır.")
+        return redirect('todo_list')
+    
+    if request.method == 'POST':
+        todo.is_completed = False
+        todo.completed_at = None
+        todo.save()
+        
+        messages.success(request, "Görev yeniden açıldı.")
+        
+    return redirect('todo_list')
+
+@login_required(login_url="/login/")
+def todo_edit_form(request, todo_id):
+    """Görev düzenleme formu sayfası"""
+    
+    # Görevi getir ve erişim kontrolü yap
+    todo = get_object_or_404(TodoItem, id=todo_id)
+    
+    # Sadece oluşturan kişi veya atanan danışman düzenleyebilir
+    if not (request.user == todo.user or request.user == todo.consultant):
+        messages.warning(request, "Bu görevi düzenleme yetkiniz bulunmamaktadır.")
+        return redirect('todo_list')
+    
+    # Form için gerekli verileri hazırla
+    User = get_user_model()
+    
+    customers = Customer.objects.all()
+    properties = Property.objects.all()
+    consultants = User.objects.filter(groups__name='Danışman', is_active=True).distinct()
+    
+    context = {
+        'segment': 'todo',
+        'customers': customers,
+        'properties': properties,
+        'consultants': consultants,
+        'priority_choices': TodoItem.PRIORITY_CHOICES,
+        'todo': todo,
+    }
+    
+    html_template = loader.get_template('calendar/todo_edit.html')
+    return HttpResponse(html_template.render(context, request))
+
+@login_required(login_url="/login/")
+def todo_create_form(request):
+    """Görev oluşturma formu sayfası"""
+    
+    # Form için gerekli verileri hazırla
+    User = get_user_model()
+    
+    customers = Customer.objects.all()
+    properties = Property.objects.all()
+    consultants = User.objects.filter(groups__name='Danışman', is_active=True).distinct()
+    
+    context = {
+        'segment': 'todo',
+        'customers': customers,
+        'properties': properties,
+        'consultants': consultants,
+        'priority_choices': TodoItem.PRIORITY_CHOICES,
+    }
+    
+    html_template = loader.get_template('calendar/todo_create.html')
     return HttpResponse(html_template.render(context, request))

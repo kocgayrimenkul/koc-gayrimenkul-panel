@@ -7,6 +7,7 @@ from django import forms
 from .models import Event, TodoItem
 from apps.customers.models import Customer
 from apps.portfolio.models import Property
+from django.contrib.auth.models import User
 
 
 class EventForm(forms.ModelForm):
@@ -68,6 +69,13 @@ class TodoItemForm(forms.ModelForm):
         label="Son Tarih"
     )
     
+    consultant = forms.ModelChoiceField(
+        queryset=User.objects.filter(groups__name='Danışman').distinct(),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control select2"}),
+        label="Atanan Danışman"
+    )
+    
     customer = forms.ModelChoiceField(
         queryset=Customer.objects.all(),
         required=False,
@@ -84,7 +92,7 @@ class TodoItemForm(forms.ModelForm):
     
     class Meta:
         model = TodoItem
-        fields = ['title', 'description', 'priority', 'due_date', 'customer', 'property']
+        fields = ['title', 'description', 'priority', 'due_date', 'consultant', 'customer', 'property']
         widgets = {
             'title': forms.TextInput(attrs={"class": "form-control", "placeholder": "Başlık"}),
             'description': forms.Textarea(attrs={"class": "form-control", "placeholder": "Açıklama", "rows": 3}),

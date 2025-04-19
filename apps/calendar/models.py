@@ -75,6 +75,8 @@ class TodoItem(models.Model):
     
     # İlişkiler
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="todos", verbose_name="Kullanıcı")
+    consultant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="assigned_todos", verbose_name="Atanan Danışman", null=True, blank=True)
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name="created_todos", verbose_name="Atayan", null=True, blank=True)
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True, 
                                 related_name="todos", verbose_name="Müşteri")
     property = models.ForeignKey(Property, on_delete=models.SET_NULL, null=True, blank=True, 
@@ -83,6 +85,7 @@ class TodoItem(models.Model):
     # Sistem bilgileri
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(verbose_name="Tamamlanma Zamanı", null=True, blank=True)
     
     def __str__(self):
         return self.title

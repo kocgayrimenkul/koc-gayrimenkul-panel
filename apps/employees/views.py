@@ -159,12 +159,8 @@ def employee_edit(request, employee_id):
             employee.role = role
             employee.is_active = is_active
             
-            # İşten ayrılma tarihi kontrolü
-            if not is_active and not employee.end_date:
-                employee.end_date = timezone.now().date()
-            elif is_active and employee.end_date:
-                employee.end_date = None
-                
+            # İşten ayrılma tarihi kontrolü kaldırıldı - Bu alan modelde bulunmuyor
+            
             employee.save()
             
             # Rol değiştiyse log oluştur

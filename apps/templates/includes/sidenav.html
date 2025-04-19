@@ -66,6 +66,12 @@
             </a>
           </li>
           <li class="nav-item">
+            <a class="nav-link {% if 'todo' in segment %} active {% endif %}" href="{% url 'todo_list' %}">
+              <i class="ni ni-check-bold text-info"></i>
+              <span class="nav-link-text">Görevler</span>
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="{% url 'logout' %}">
               <i class="ni ni-user-run text-red"></i>
               <span class="nav-link-text">Çıkış</span>

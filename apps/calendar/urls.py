@@ -21,8 +21,13 @@ urlpatterns = [
     path('ajanda/etkinlik/yeniden-ac/<int:event_id>/', views.event_reopen, name='event_reopen'),
     
     # Yapılacaklar işlemleri
+    path('ajanda/yapilacaklar/', views.todo_list, name='todo_list'),
     path('ajanda/yapilacak/ekle/', views.todo_create, name='todo_create'),
+    path('ajanda/yapilacak/ekle-form/', views.todo_create_form, name='todo_create_form'),
     path('ajanda/yapilacak/duzenle/<int:todo_id>/', views.todo_update, name='todo_update'),
+    path('ajanda/yapilacak/duzenle-form/<int:todo_id>/', views.todo_edit_form, name='todo_edit_form'),
     path('ajanda/yapilacak/sil/<int:todo_id>/', views.todo_delete, name='todo_delete'),
     path('ajanda/yapilacak/durum/<int:todo_id>/', views.toggle_todo_status, name='toggle_todo_status'),
+    path('ajanda/yapilacak/tamamla/<int:todo_id>/', views.todo_complete, name='todo_complete'),
+    path('ajanda/yapilacak/yeniden-ac/<int:todo_id>/', views.todo_reopen, name='todo_reopen'),
 ]

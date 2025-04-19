@@ -1,0 +1,732 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Görev Listesi {% endblock %}
+
+{% block stylesheets %}
+{{ block.super }}
+<link rel="stylesheet" href="/static/assets/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="/static/assets/vendor/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css">
+<link rel="stylesheet" href="/static/assets/vendor/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Kartlar */
+  .card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    background-color: #fff;
+  }
+  
+  .card-header h3 {
+    margin-bottom: 0;
+    font-weight: 600;
+  }
+  
+  /* DataTables özelleştirmeleri */
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current, 
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: #fff !important;
+    background: var(--koc-red) !important;
+    border-color: var(--koc-red) !important;
+  }
+  
+  .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    color: #fff !important;
+    background: var(--koc-red-light) !important;
+    border-color: var(--koc-red-light) !important;
+  }
+  
+  .table thead th {
+    font-weight: 600;
+    color: #525f7f;
+  }
+  
+  .table-actions {
+    white-space: nowrap;
+  }
+  
+  .table-action {
+    color: #8898aa;
+    font-size: 0.875rem;
+    margin-right: 0.5rem;
+    transition: all 0.15s ease;
+  }
+  
+  .table-action:hover {
+    color: var(--koc-red);
+  }
+  
+  .table-action-delete:hover {
+    color: #f5365c;
+  }
+  
+  /* Badges */
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    text-transform: none;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .badge-danger {
+    background-color: var(--koc-red);
+    color: #ffffff;
+  }
+  
+  .badge-warning {
+    background-color: #fb6340;
+    color: #ffffff;
+  }
+  
+  .badge-info {
+    background-color: #11cdef;
+    color: #ffffff;
+  }
+  
+  .badge-success {
+    background-color: #2dce89;
+    color: #ffffff;
+  }
+  
+  /* Devam eden görevler için özel stil */
+  .badge-status-pending {
+    background-color: #f5b759;
+    color: #ffffff;
+  }
+  
+  /* Modal özelleştirmeleri */
+  .modal-content {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 15px 35px rgba(50, 50, 93, 0.2), 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .modal-header {
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1.5rem;
+  }
+  
+  .modal-footer {
+    border-top: 1px solid rgba(0,0,0,0.05);
+    padding: 1.5rem;
+  }
+  
+  /* Pagination'daki önceki/sonraki ikonlarını düzelt */
+  .dataTables_wrapper .dataTables_paginate .previous,
+  .dataTables_wrapper .dataTables_paginate .next {
+    font-size: 0;
+  }
+  
+  .dataTables_wrapper .dataTables_paginate .previous:before {
+    content: "«";
+    font-size: 16px;
+  }
+  
+  .dataTables_wrapper .dataTables_paginate .next:before {
+    content: "»";
+    font-size: 16px;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Görev Listesi</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'calendar' %}">Ajanda</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Görevler</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'todo_create_form' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-plus mr-1"></i> Yeni Görev
+          </a>
+          <a href="{% url 'calendar' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-calendar mr-1"></i> Takvim Görünümü
+          </a>
+        </div>
+      </div>
+      
+      <!-- Görev İstatistikleri -->
+      <div class="row">
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Toplam Görev</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ stats.total }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-koc-red text-white rounded-circle shadow">
+                    <i class="ni ni-check-bold"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-success mr-2"><i class="fa fa-tasks"></i></span>
+                <span class="text-nowrap">Toplam görev sayısı</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Tamamlanan</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ stats.completed }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-success text-white rounded-circle shadow">
+                    <i class="ni ni-check-bold"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-success mr-2"><i class="fa fa-check"></i></span>
+                <span class="text-nowrap">Tamamlanan görevler</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Bekleyen</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ stats.pending }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-warning text-white rounded-circle shadow">
+                    <i class="ni ni-time-alarm"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-warning mr-2"><i class="fa fa-clock"></i></span>
+                <span class="text-nowrap">Devam eden görevler</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Yüksek Öncelikli</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ stats.high_priority }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-danger text-white rounded-circle shadow">
+                    <i class="ni ni-notification-70"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-danger mr-2"><i class="fa fa-exclamation-triangle"></i></span>
+                <span class="text-nowrap">Yüksek öncelikli görevler</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--6">
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-header bg-transparent">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Tüm Görevler</h3>
+              <p class="text-sm text-muted mb-0">
+                Bu sayfada sisteme kaydedilmiş tüm görevleri görüntüleyebilir ve yönetebilirsiniz.
+              </p>
+            </div>
+            <div class="col text-right">
+              <div class="dropdown">
+                <button class="btn btn-sm btn-koc-red dropdown-toggle" type="button" id="filterDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fas fa-filter mr-1"></i> Filtrele
+                </button>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="filterDropdown">
+                  <a class="dropdown-item filter-status" href="#" data-status="">Tümü</a>
+                  <a class="dropdown-item filter-status" href="#" data-status="completed">Tamamlananlar</a>
+                  <a class="dropdown-item filter-status" href="#" data-status="pending">Bekleyenler</a>
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item filter-priority" href="#" data-priority="yuksek">Yüksek Öncelikli</a>
+                  <a class="dropdown-item filter-priority" href="#" data-priority="orta">Orta Öncelikli</a>
+                  <a class="dropdown-item filter-priority" href="#" data-priority="dusuk">Düşük Öncelikli</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="table-responsive py-4">
+          <table class="table table-flush" id="datatable-todos">
+            <thead class="thead-light">
+              <tr>
+                <th>ID</th>
+                <th>Başlık</th>
+                <th>Öncelik</th>
+                <th>Atayan</th>
+                <th>Atanan</th>
+                <th>Son Tarih</th>
+                <th>Durum</th>
+                <th>Müşteri</th>
+                <th>Gayrimenkul</th>
+                <th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for todo in todos %}
+                <tr>
+                  <td>{{ todo.id }}</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="custom-control custom-checkbox mr-2">
+                        <input type="checkbox" class="custom-control-input todo-checkbox" id="todo-{{ todo.id }}" 
+                              {% if todo.is_completed %}checked{% endif %} data-id="{{ todo.id }}">
+                        <label class="custom-control-label" for="todo-{{ todo.id }}"></label>
+                      </div>
+                      <span class="font-weight-bold {% if todo.is_completed %}text-muted{% else %}text-koc-red{% endif %} {% if todo.is_completed %}text-decoration-line-through{% endif %}">
+                        {{ todo.title }}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    {% if todo.priority == 'yuksek' %}
+                      <span class="badge badge-danger"><i class="fas fa-exclamation-circle mr-1"></i>Yüksek</span>
+                    {% elif todo.priority == 'orta' %}
+                      <span class="badge badge-warning"><i class="fas fa-exclamation mr-1"></i>Orta</span>
+                    {% else %}
+                      <span class="badge badge-info"><i class="fas fa-info-circle mr-1"></i>Düşük</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if todo.assigned_by %}
+                      <span>{{ todo.assigned_by.get_full_name }}</span>
+                    {% else %}
+                      <span class="text-muted">{{ todo.user.get_full_name }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if todo.consultant %}
+                      <span class="font-weight-bold">{{ todo.consultant.get_full_name }}</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if todo.due_date %}
+                      <span data-toggle="tooltip" data-placement="top" title="{{ todo.due_date|date:'d F Y' }}">
+                        {{ todo.due_date|date:"d.m.Y" }}
+                      </span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if todo.is_completed %}
+                      <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Tamamlandı</span>
+                    {% else %}
+                      <span class="badge badge-status-pending"><i class="fas fa-clock mr-1"></i>Devam Ediyor</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if todo.customer %}
+                      <a href="{% url 'customer_detail' todo.customer.id %}" class="text-primary">
+                        {{ todo.customer.full_name }}
+                      </a>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if todo.property %}
+                      <a href="{% url 'property_detail' todo.property.id %}" class="text-primary">
+                        {{ todo.property.title }}
+                      </a>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td class="table-actions">
+                    <a href="{% url 'todo_edit_form' todo.id %}" class="table-action" data-original-title="Düzenle">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    
+                    {% if todo.is_completed %}
+                      <a href="#" class="table-action reopen-todo" data-id="{{ todo.id }}" data-original-title="Yeniden Aç">
+                        <i class="fas fa-undo"></i>
+                      </a>
+                    {% else %}
+                      <a href="#" class="table-action complete-todo" data-id="{{ todo.id }}" data-original-title="Tamamla">
+                        <i class="fas fa-check"></i>
+                      </a>
+                    {% endif %}
+                    
+                    <a href="#" class="table-action table-action-delete" data-toggle="modal" data-target="#modal-delete-{{ todo.id }}" data-original-title="Sil">
+                      <i class="fas fa-trash"></i>
+                    </a>
+                    
+                    <!-- Silme onay modalı -->
+                    <div class="modal fade" id="modal-delete-{{ todo.id }}" tabindex="-1" role="dialog" aria-labelledby="modal-delete-{{ todo.id }}" aria-hidden="true">
+                      <div class="modal-dialog modal-danger modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h6 class="modal-title" id="modal-title-delete">Görevi Sil</h6>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">×</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            <div class="py-3 text-center">
+                              <i class="ni ni-bell-55 ni-3x"></i>
+                              <h4 class="heading mt-4">Dikkat! Bu işlemi geri alamazsınız.</h4>
+                              <p>
+                                <strong>{{ todo.title }}</strong> görevini silmek istediğinizden emin misiniz?
+                              </p>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <form action="{% url 'todo_delete' todo.id %}" method="post">
+                              {% csrf_token %}
+                              <input type="hidden" name="redirect_url" value="todo_list">
+                              <button type="submit" class="btn btn-danger">Evet, sil</button>
+                            </form>
+                            <button type="button" class="btn btn-link ml-auto" data-dismiss="modal">İptal</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Tamamlama formu (gizli) -->
+                    <form id="complete-form-{{ todo.id }}" action="{% url 'todo_complete' todo.id %}" method="post" style="display: none;">
+                      {% csrf_token %}
+                    </form>
+                    
+                    <!-- Yeniden açma formu (gizli) -->
+                    <form id="reopen-form-{{ todo.id }}" action="{% url 'todo_reopen' todo.id %}" method="post" style="display: none;">
+                      {% csrf_token %}
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="10" class="text-center">
+                    <div class="my-5">
+                      <div class="icon icon-shape icon-lg bg-gradient-koc-red rounded-circle shadow text-white mb-4">
+                        <i class="fas fa-tasks"></i>
+                      </div>
+                      <h4 class="text-muted mb-3">Henüz görev kaydı bulunmamaktadır.</h4>
+                      <a href="{% url 'todo_create_form' %}" class="btn btn-sm btn-koc-red">
+                        <i class="fas fa-plus mr-1"></i> Yeni Görev Ekle
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Yapılacak Modal -->
+  <div class="modal fade" id="todoModal" tabindex="-1" role="dialog" aria-labelledby="todoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="todoModalLabel">Yeni Görev</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <form id="todoForm" action="{% url 'todo_create' %}" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="redirect_url" value="todo_list">
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-control-label" for="todo_title">Başlık <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="todo_title" name="title" required>
+            </div>
+            <div class="form-group">
+              <label class="form-control-label" for="todo_description">Açıklama</label>
+              <textarea class="form-control" id="todo_description" name="description" rows="3"></textarea>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label" for="priority">Öncelik</label>
+                  <select class="form-control" id="priority" name="priority">
+                    {% for value, label in priority_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label" for="due_date">Son Tarih</label>
+                  <input type="date" class="form-control" id="due_date" name="due_date">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label" for="consultant">Atanan Danışman</label>
+                  <select class="form-control select2" id="consultant" name="consultant">
+                    <option value="">Seçiniz</option>
+                    {% for user in consultants %}
+                      <option value="{{ user.id }}">{{ user.get_full_name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label" for="customer">Müşteri</label>
+                  <select class="form-control select2" id="customer" name="customer">
+                    <option value="">Seçiniz</option>
+                    {% for customer in customers %}
+                      <option value="{{ customer.id }}">{{ customer.full_name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label" for="property">Gayrimenkul</label>
+                  <select class="form-control select2" id="property" name="property">
+                    <option value="">Seçiniz</option>
+                    {% for property in properties %}
+                      <option value="{{ property.id }}">{{ property.title }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+            <button type="submit" class="btn btn-koc-red">Kaydet</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+  
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+{{ block.super }}
+<script src="/static/assets/vendor/datatables.net/js/jquery.dataTables.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
+<script src="/static/assets/vendor/select2/dist/js/select2.min.js"></script>
+
+<script>
+  $(document).ready(function() {
+    // Select2 başlat
+    $('.select2').select2({
+      placeholder: "Seçiniz",
+      allowClear: true,
+      dropdownParent: $('#todoModal')
+    });
+    
+    var todoTable = $('#datatable-todos').DataTable({
+      language: {
+        url: '/static/assets/vendor/datatables.net/i18n/tr.json',
+        paginate: {
+          previous: '',
+          next: ''
+        }
+      },
+      responsive: true,
+      order: [[5, 'asc']], // Son tarihe göre sırala
+      columnDefs: [
+        { targets: 0, visible: false }, // ID kolonunu gizle
+        { targets: 9, orderable: false } // İşlemler kolonunda sıralama olmasın
+      ],
+      lengthMenu: [
+        [10, 25, 50, -1],
+        [10, 25, 50, "Tümü"]
+      ],
+      dom: 'lfrtip',
+      buttons: [
+        {
+          extend: 'excel',
+          text: '<i class="fas fa-file-excel"></i> Excel',
+          className: 'btn btn-sm btn-neutral',
+          title: 'Koç Gayrimenkul - Görev Listesi'
+        },
+        {
+          extend: 'pdf',
+          text: '<i class="fas fa-file-pdf"></i> PDF',
+          className: 'btn btn-sm btn-neutral',
+          title: 'Koç Gayrimenkul - Görev Listesi'
+        },
+        {
+          extend: 'print',
+          text: '<i class="fas fa-print"></i> Yazdır',
+          className: 'btn btn-sm btn-neutral',
+          title: 'Koç Gayrimenkul - Görev Listesi'
+        }
+      ]
+    });
+    
+    // Tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+    
+    // Filtre dropdown işlevi - Durum
+    $('.filter-status').on('click', function(e) {
+      e.preventDefault();
+      var statusValue = $(this).data('status');
+      var statusColumn = todoTable.column(6); // Durum kolonu
+      
+      if (statusValue === 'completed') {
+        statusColumn.search('Tamamlandı').draw();
+      } else if (statusValue === 'pending') {
+        statusColumn.search('Devam Ediyor').draw();
+      } else {
+        statusColumn.search('').draw();
+      }
+    });
+    
+    // Filtre dropdown işlevi - Öncelik
+    $('.filter-priority').on('click', function(e) {
+      e.preventDefault();
+      var priorityValue = $(this).data('priority');
+      var priorityColumn = todoTable.column(2); // Öncelik kolonu
+      
+      if (priorityValue === 'yuksek') {
+        priorityColumn.search('Yüksek').draw();
+      } else if (priorityValue === 'orta') {
+        priorityColumn.search('Orta').draw();
+      } else if (priorityValue === 'dusuk') {
+        priorityColumn.search('Düşük').draw();
+      } else {
+        priorityColumn.search('').draw();
+      }
+    });
+    
+    // Görev checkbox işlevi
+    $('.todo-checkbox').on('change', function() {
+      var todoId = $(this).data('id');
+      var isCompleted = $(this).prop('checked');
+      
+      $.ajax({
+        url: '/ajanda/yapilacak/durum/' + todoId + '/',
+        type: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val()
+        },
+        success: function(response) {
+          if (response.status === 'success') {
+            // Sayfayı yenile
+            location.reload();
+          }
+        },
+        error: function() {
+          // Hata mesajı göster
+          alert('Görev durumu güncellenirken bir hata oluştu.');
+          // Checkbox'ı eski durumuna getir
+          $(this).prop('checked', !isCompleted);
+        }
+      });
+    });
+    
+    // Görevi tamamla butonu
+    $('.complete-todo').on('click', function(e) {
+      e.preventDefault();
+      var todoId = $(this).data('id');
+      $('#complete-form-' + todoId).submit();
+    });
+    
+    // Görevi yeniden aç butonu
+    $('.reopen-todo').on('click', function(e) {
+      e.preventDefault();
+      var todoId = $(this).data('id');
+      $('#reopen-form-' + todoId).submit();
+    });
+  });
+</script>
+{% endblock javascripts %} 
