@@ -1,0 +1,56 @@
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./certs:/etc/nginx/certs:rw
+      - ./vhost.d:/etc/nginx/vhost.d:ro
+      - ./html:/usr/share/nginx/html
+      - ./media:/app/media:ro  # Nginx'in medya dosyalarına erişimini sağlar
+    environment:
+      - RESOLVER=8.8.8.8 8.8.4.4  # Google DNS örnek
+    networks:
+      - nginx-proxy
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: letsencrypt
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/etc/nginx/certs:rw
+      - ./vhost.d:/etc/nginx/vhost.d:ro
+      - ./html:/usr/share/nginx/html
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    depends_on:
+      - nginx-proxy
+    networks:
+      - nginx-proxy
+
+  koc-gayrimenkul-panel:
+    build: .  # Mevcut dizindeki Dockerfile'ı kullan
+    container_name: koc-gayrimenkul-panel
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app  # Mevcut dizini /app'e bağla
+      - ./media:/app/media  # Medya dosyalarına erişimi sağlar
+      - ./staticfiles:/app/staticfiles  # Statik dosyalara erişimi sağlar
+    environment:
+      - VIRTUAL_HOST=panel.kocgayrimenkul.com
+      - LETSENCRYPT_HOST=panel.kocgayrimenkul.com
+      - LETSENCRYPT_EMAIL=info@kocgayrimenkul.com
+      - VIRTUAL_PORT=8000
+    depends_on:
+      - nginx-proxy
+      - letsencrypt
+    networks:
+      - nginx-proxy
+
+
+networks:
+  nginx-proxy:
+    external: true
