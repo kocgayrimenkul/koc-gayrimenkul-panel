@@ -24,4 +24,7 @@ urlpatterns = [
     
     # Gayrimenkul görsel silme
     path('property-image-delete/', views.property_image_delete, name='property_image_delete'),
+    
+    # AJAX ile gayrimenkul alan değişiklikleri
+    path('property-update-field/', views.property_update_field, name='property_update_field'),
 ]

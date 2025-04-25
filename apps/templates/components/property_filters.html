@@ -1,0 +1,148 @@
+<!-- Filtreler Komponenti -->
+<div id="filterColumn" class="col-xl-3 col-md-4">
+  <div class="card filter-card shadow-sm mb-4">
+    <div class="card-header filter-header">
+      <h5 class="text-white mb-0 d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-filter mr-2"></i> Filtreleme Seçenekleri</span>
+        <button type="button" class="btn btn-link text-white p-0" id="collapseAllFilters">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+      </h5>
+    </div>
+    <div class="card-body">
+      <form method="get" id="filterForm">
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#propertyTypeCollapse" aria-expanded="false">
+            <div><i class="ni ni-building"></i> Emlak Tipi</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse" id="propertyTypeCollapse">
+            <div class="pt-2">
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="type_all" name="type_all" {% if not filters.property_type %}checked{% endif %}>
+                <label class="custom-control-label" for="type_all">Tümü</label>
+              </div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="type_daire" name="type" value="daire" {% if filters.property_type == 'daire' %}checked{% endif %}>
+                <label class="custom-control-label" for="type_daire">Daire</label>
+              </div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="type_arsa" name="type" value="arsa" {% if filters.property_type == 'arsa' %}checked{% endif %}>
+                <label class="custom-control-label" for="type_arsa">Arsa</label>
+              </div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="type_isyeri" name="type" value="isyeri" {% if filters.property_type == 'isyeri' %}checked{% endif %}>
+                <label class="custom-control-label" for="type_isyeri">İşyeri</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#statusCollapse" aria-expanded="false">
+            <div><i class="ni ni-tag"></i> Durum</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse" id="statusCollapse">
+            <div class="pt-2">
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="status_all" name="status" value="" {% if not filters.status %}checked{% endif %}>
+                <label class="custom-control-label" for="status_all">Tümü</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="status_satilik" name="status" value="satilik" {% if filters.status == 'satilik' %}checked{% endif %}>
+                <label class="custom-control-label" for="status_satilik">Satılık</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="status_kiralik" name="status" value="kiralik" {% if filters.status == 'kiralik' %}checked{% endif %}>
+                <label class="custom-control-label" for="status_kiralik">Kiralık</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#neighborhoodCollapse" aria-expanded="false">
+            <div><i class="ni ni-pin-3"></i> Mahalle</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse" id="neighborhoodCollapse">
+            <div class="pt-2">
+              <select name="neighborhood" class="form-control form-control-sm">
+                <option value="">Tüm Mahalleler</option>
+                {% for neighborhood in neighborhoods %}
+                  <option value="{{ neighborhood.id }}" {% if filters.neighborhood_id == neighborhood.id|stringformat:"i" %}selected{% endif %}>
+                    {{ neighborhood.name }}
+                  </option>
+                {% empty %}
+                  <option value="">Mahalle bulunamadı</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#priceCollapse" aria-expanded="false">
+            <div><i class="ni ni-money-coins"></i> Fiyat Aralığı</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse" id="priceCollapse">
+            <div class="pt-2">
+              <div class="input-group input-group-sm mb-3">
+                <div class="input-group-prepend">
+                  <span class="input-group-text">Min</span>
+                </div>
+                <input type="number" name="min_price" class="form-control" placeholder="0" value="{{ filters.min_price }}">
+                <div class="input-group-append">
+                  <span class="input-group-text">TL</span>
+                </div>
+              </div>
+              <div class="input-group input-group-sm">
+                <div class="input-group-prepend">
+                  <span class="input-group-text">Max</span>
+                </div>
+                <input type="number" name="max_price" class="form-control" placeholder="∞" value="{{ filters.max_price }}">
+                <div class="input-group-append">
+                  <span class="input-group-text">TL</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#featuresCollapse" aria-expanded="false">
+            <div><i class="ni ni-bullet-list-67"></i> Diğer Özellikler</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse" id="featuresCollapse">
+            <div class="pt-2">
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="feature_credit" name="is_suitable_for_credit" value="1">
+                <label class="custom-control-label" for="feature_credit">Krediye Uygun</label>
+              </div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="feature_bargain" name="is_bargainable" value="1">
+                <label class="custom-control-label" for="feature_bargain">Pazarlıklı</label>
+              </div>
+              <div class="custom-control custom-checkbox mb-2">
+                <input type="checkbox" class="custom-control-input" id="feature_photo" name="photo_status" value="1">
+                <label class="custom-control-label" for="feature_photo">Fotoğraflı</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-center">
+          <button type="submit" class="btn btn-koc-red btn-sm">
+            <i class="fas fa-search mr-1"></i> Filtrele
+          </button>
+          <a href="{% url 'property_list' %}" class="btn btn-secondary btn-sm ml-2">
+            <i class="fas fa-undo mr-1"></i> Sıfırla
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 

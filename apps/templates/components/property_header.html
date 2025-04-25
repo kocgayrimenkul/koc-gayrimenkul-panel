@@ -1,0 +1,29 @@
+<!-- Gayrimenkul Sayfası Header Komponenti -->
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">{{ page_title|default:"Gayrimenkul Yönetimi" }}</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="#">Gayrimenkuller</a></li>
+              <li class="breadcrumb-item active" aria-current="page">{{ page_subtitle|default:"Portföy Listesi" }}</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          {% if show_filter_toggle|default:True %}
+          <button id="toggleFilters" class="btn btn-sm btn-neutral mr-2">
+            <i class="fas fa-filter mr-1"></i> Filtreleri Göster/Gizle
+          </button>
+          {% endif %}
+          <a href="{% url 'property_create' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-plus-circle mr-1"></i> Yeni Gayrimenkul Ekle
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

@@ -1,10 +1,7 @@
 {% extends "layouts/base.html" %}
-
 {% block title %} Yeni Gayrimenkul Ekle {% endblock %}
-
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}
-<link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
   :root {
@@ -33,83 +30,45 @@
     background-color: var(--koc-red-light);
     border-color: var(--koc-red-light);
   }
-  
-  /* Adım göstergesi */
-  .steps-container {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 30px;
+
+  .section-header {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--koc-red);
+    margin-bottom: 20px;
+    border-radius: 0 4px 4px 0;
   }
   
-  .step {
-    text-align: center;
-    position: relative;
-    flex: 1;
+  .section-title {
+    color: var(--koc-red);
+    margin-bottom: 0;
+    font-weight: 600;
   }
   
-  .step-circle {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: #f1f1f1;
-    color: #888;
+  .form-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    padding: 30px;
+    margin-bottom: 20px;
+  }
+
+  .form-section-title {
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    font-weight: bold;
-    position: relative;
-    z-index: 2;
-    transition: all 0.3s ease;
+    margin-bottom: 20px;
   }
   
-  .step-title {
-    margin-top: 10px;
-    color: #888;
-    font-size: 14px;
-    transition: all 0.3s ease;
-  }
-  
-  .step.active .step-circle {
-    background-color: var(--koc-red);
-    color: white;
-  }
-  
-  .step.active .step-title {
+  .form-section-title i {
     color: var(--koc-red);
-    font-weight: bold;
+    margin-right: 10px;
+    font-size: 18px;
   }
   
-  .step.completed .step-circle {
-    background-color: #28a745;
-    color: white;
-  }
-  
-  .step-line {
-    position: absolute;
-    top: 25px;
-    height: 2px;
-    background-color: #f1f1f1;
-    width: 100%;
-    left: -50%;
-    z-index: 1;
-  }
-  
-  .step:first-child .step-line {
-    display: none;
-  }
-  
-  .step.completed .step-line {
-    background-color: #28a745;
-  }
-  
-  /* Form bölümleri */
-  .form-section {
-    display: none;
-  }
-  
-  .form-section.active {
-    display: block;
+  /* Zorunlu alanlar */
+  .required-label::after {
+    content: " *";
+    color: var(--koc-red);
   }
   
   /* SWOT analiz kutusu */
@@ -147,29 +106,7 @@
     border-left: 3px solid #ffc107;
   }
   
-  /* Dropzone.js özelleştirmeleri */
-  .dropzone {
-    border: 2px dashed #5e72e4;
-    border-radius: 5px;
-    background: white;
-    min-height: 150px;
-    padding: 20px;
-    margin-bottom: 20px;
-  }
-  
-  .dropzone:hover {
-    border-color: #324cdd;
-  }
-  
-  .dropzone .dz-message {
-    text-align: center;
-    margin: 2em 0;
-  }
-  
-  .dropzone .dz-preview .dz-error-message {
-    color: red;
-  }
-  
+  /* Fotoğraf yükleme - önizleme alanı */
   .photo-container {
     display: flex;
     flex-wrap: wrap;
@@ -184,6 +121,7 @@
     position: relative;
     border-radius: 5px;
     border: 1px solid #ddd;
+    margin: 10px;
   }
   
   .photo-preview img {
@@ -208,52 +146,110 @@
     cursor: pointer;
   }
   
-  /* Fotoğraf yükleme - önizleme alanı */
-  #photo-preview {
-    display: flex;
-    flex-wrap: wrap;
+  /* Tip boxes */
+  .tip-box {
+    background-color: #f8f9fa;
+    border-left: 3px solid var(--koc-red);
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 0 5px 5px 0;
+    font-size: 0.9rem;
   }
-  
-  .preview-item {
-    margin: 10px;
-    position: relative;
+
+  /* Category options */
+  .category-option {
+    border: 2px solid #e9ecef;
+    padding: 15px;
     border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
   }
   
-  .preview-item img {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
+  .category-option:hover {
+    border-color: #ced4da;
+    background-color: #f8f9fa;
+  }
+  
+  .category-option.active {
+    border-color: var(--koc-red);
+    background-color: rgba(157, 34, 53, 0.05);
+    color: var(--koc-red);
+    font-weight: 600;
+    box-shadow: 0 3px 10px rgba(157, 34, 53, 0.1);
+  }
+  
+  .category-option input[type="radio"] {
+    margin-right: 10px;
+  }
+
+  .field-help {
+    color: #6c757d;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  
+  /* Yeni fotoğraf yükleme stili */
+  .upload-box {
+    border: 2px dashed #5e72e4;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative; /* Pozisyon ekleme - input için */
+  }
+  
+  .upload-box:hover {
+    background-color: #edf2ff;
+    border-color: #324cdd;
+  }
+  
+  .upload-box i {
+    font-size: 48px;
+    color: #5e72e4;
+    margin-bottom: 15px;
     display: block;
   }
   
-  .preview-item .remove-image {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(255,255,255,0.7);
-    color: var(--koc-red);
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
+  .upload-box h4 {
+    color: #5e72e4;
+    margin-bottom: 10px;
   }
   
-  .preview-item .remove-image:hover {
-    background: white;
-    transform: scale(1.1);
+  .upload-box p {
+    color: #8898aa;
+  }
+
+  /* Göz gizli dosya yukleme butonu */
+  .upload-box input[type="file"] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+  
+  #photo-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  
+  .upload-progress {
+    height: 5px;
+    margin-top: 10px;
+    display: none;
   }
 </style>
 {% endblock stylesheets %}
-
 {% block content %}
-
 <div class="header bg-gradient-koc-red pb-6">
   <div class="container-fluid">
     <div class="header-body">
@@ -272,7 +268,6 @@
     </div>
   </div>
 </div>
-
 <!-- Page content -->
 <div class="container-fluid mt--6">
   <div class="row">
@@ -282,180 +277,313 @@
           <div class="row align-items-center">
             <div class="col-8">
               <h3 class="mb-0">Gayrimenkul Ekleme</h3>
-              <p class="text-sm text-muted">Adım adım portföy oluşturun</p>
+              <p class="text-sm text-muted">Portföy bilgilerini doldurun</p>
             </div>
           </div>
         </div>
         <div class="card-body">
-          <!-- Adım göstergeleri -->
-          <div class="steps-container">
-            <div class="step active" id="step1">
-              <div class="step-circle">1</div>
-              <div class="step-line"></div>
-              <div class="step-title">Kategori Seçimi</div>
-            </div>
-            <div class="step" id="step2">
-              <div class="step-circle">2</div>
-              <div class="step-line"></div>
-              <div class="step-title">Temel Bilgiler</div>
-            </div>
-            <div class="step" id="step3">
-              <div class="step-circle">3</div>
-              <div class="step-line"></div>
-              <div class="step-title">Detay Bilgiler</div>
-            </div>
-            <div class="step" id="step4">
-              <div class="step-circle">4</div>
-              <div class="step-line"></div>
-              <div class="step-title">Lokasyon ve Çevre</div>
-            </div>
-            <div class="step" id="step5">
-              <div class="step-circle">5</div>
-              <div class="step-title">Fotoğraf ve Analiz</div>
-            </div>
-          </div>
-          
           <form method="post" enctype="multipart/form-data" id="property-form">
             {% csrf_token %}
             
-            <!-- 1. ADIM: Kategori Seçimi -->
-            <div class="form-section active" id="section1">
-              <div class="row mb-5">
-                <div class="col-md-8 offset-md-2">
-                  <div class="card shadow-sm">
-                    <div class="card-body text-center p-5">
-                      <h4 class="mb-4">Gayrimenkul Kategorisi</h4>
-                      <p class="text-muted mb-5">Lütfen önce gayrimenkulün kategorisini seçiniz</p>
-                      
-                      <div class="row mb-4">
-                        <div class="col-6">
-                          <div class="card">
-                            <div class="card-body p-4">
-                              <h5 class="mb-4">Satılık / Kiralık</h5>
-                              <div class="btn-group-toggle d-flex flex-column" data-toggle="buttons">
-                                {% for status_tuple in status_choices %}
-                                <label class="btn btn-outline-primary mb-2 category-option status-option">
-                                  <input type="radio" name="status" value="{{ status_tuple.0 }}"> {{ status_tuple.1 }}
-                                </label>
-                                {% endfor %}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-6">
-                          <div class="card">
-                            <div class="card-body p-4">
-                              <h5 class="mb-4">Gayrimenkul Tipi</h5>
-                              <div class="btn-group-toggle d-flex flex-column" data-toggle="buttons">
-                                {% for type_tuple in property_types %}
-                                <label class="btn btn-outline-primary mb-2 category-option type-option">
-                                  <input type="radio" name="property_type" value="{{ type_tuple.0 }}"> {{ type_tuple.1 }}
-                                </label>
-                                {% endfor %}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+            <!-- BÖLÜM 1: KATEGORİ SEÇİMİ -->
+            <div class="section-header">
+              <h4 class="section-title">
+                <i class="ni ni-tag mr-2"></i>Kategori Seçimi
+              </h4>
+            </div>
+
+            <div class="tip-box mb-4">
+              <i class="ni ni-bulb-61 mr-2"></i> 
+              <strong>İpucu:</strong> Gayrimenkulün tipini ve ilan türünü belirleyin. Bu, hangi alanların görüneceğini belirler.
+            </div>
+            
+            <div class="form-card">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                      <h5 class="mb-4 text-koc-red">Satılık / Kiralık</h5>
+                      <div class="d-flex flex-column">
+                        {% for status_tuple in status_choices %}
+                        <label class="category-option status-option">
+                          <input type="radio" name="status" value="{{ status_tuple.0 }}"> 
+                          <span>{{ status_tuple.1 }}</span>
+                        </label>
+                        {% endfor %}
                       </div>
-                      
-                      <div class="text-right">
-                        <button type="button" class="btn btn-koc-red next-btn" id="to-section2" disabled>
-                          Devam Et <i class="fas fa-arrow-right ml-1"></i>
-                        </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="card shadow-sm">
+                    <div class="card-body">
+                      <h5 class="mb-4 text-koc-red">Gayrimenkul Tipi</h5>
+                      <div class="d-flex flex-column">
+                        {% for type_tuple in property_types %}
+                        <label class="category-option type-option">
+                          <input type="radio" name="property_type" value="{{ type_tuple.0 }}">
+                          <span>{{ type_tuple.1 }}</span>
+                        </label>
+                        {% endfor %}
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+
+            <!-- BÖLÜM 2: TEMEL BİLGİLER -->
+            <div class="section-header">
+              <h4 class="section-title">
+                <i class="ni ni-single-copy-04 mr-2"></i>Temel Bilgiler
+              </h4>
+            </div>
+
+            <div class="tip-box mb-4">
+              <i class="ni ni-bulb-61 mr-2"></i> 
+              <strong>İpucu:</strong> Temel bilgileri eksiksiz girmeniz, gayrimenkulün daha hızlı bulunmasını sağlar.
+            </div>
             
-            <!-- 2. ADIM: Temel Bilgiler -->
-            <div class="form-section" id="section2">
-              <h6 class="heading-small text-muted mb-4">Temel Bilgiler</h6>
+            <div class="form-card">
               <div class="pl-lg-4">
                 <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
-                      <label class="form-control-label" for="title">Başlık <span class="text-danger">*</span></label>
-                      <input type="text" id="title" name="title" class="form-control" placeholder="Gayrimenkul başlığı" required>
+                      <label class="form-control-label required-label" for="title">Başlık</label>
+                      <input type="text" id="title" name="title" class="form-control" placeholder="İlan başlığı" required>
+                      <div class="field-help">Gayrimenkulü en iyi şekilde tanımlayan bir başlık yazın</div>
                     </div>
                   </div>
                   <div class="col-lg-6">
                     <div class="form-group">
-                      <label class="form-control-label" for="price">Fiyat (TL) <span class="text-danger">*</span></label>
-                      <input type="text" id="price" name="price" class="form-control" placeholder="Fiyat" required>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-12">
-                    <div class="form-group">
                       <label class="form-control-label" for="description">Açıklama</label>
-                      <textarea id="description" name="description" class="form-control" placeholder="Gayrimenkul hakkında açıklama" rows="4"></textarea>
+                      <textarea id="description" name="description" class="form-control" placeholder="İlan açıklaması" rows="3"></textarea>
                     </div>
                   </div>
                 </div>
-                
                 <div class="row">
-                  <div class="col-6">
-                    <button type="button" class="btn btn-secondary prev-btn" id="to-section1">
-                      <i class="fas fa-arrow-left mr-1"></i> Geri
-                    </button>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="property_type">Daire</label>
+                      <select id="property_type" name="property_type" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="daire">Daire</option>
+                        <option value="mustakil">Müstakil</option>
+                        <option value="dublex">Dublex</option>
+                        <option value="triplex">Triplex</option>
+                        <option value="residans">Residans</option>
+                        <option value="yazlik">Yazlık</option>
+                      </select>
+                    </div>
                   </div>
-                  <div class="col-6 text-right">
-                    <button type="button" class="btn btn-koc-red next-btn" id="to-section3">
-                      Devam Et <i class="fas fa-arrow-right ml-1"></i>
-                    </button>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="price">Fiyat</label>
+                      <div class="input-group">
+                        <input type="number" id="price" name="price" class="form-control" placeholder="TL cinsinden" required>
+                        <div class="input-group-append">
+                          <span class="input-group-text">₺</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="neighborhood">Mahalle</label>
+                      <select id="neighborhood" name="neighborhood" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        {% for neighborhood in neighborhoods %}
+                          <option value="{{ neighborhood.id }}">{{ neighborhood.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="room_count">Oda Sayısı</label>
+                      <select id="room_count" name="room_count" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="1+0">1+0</option>
+                        <option value="1+1">1+1</option>
+                        <option value="2+1">2+1</option>
+                        <option value="3+1">3+1</option>
+                        <option value="4+1">4+1</option>
+                        <option value="4+2">4+2</option>
+                        <option value="5+1">5+1</option>
+                        <option value="5+2">5+2</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="usage_status">Kullanım Durumu</label>
+                      <select id="usage_status" name="usage_status" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="bos">Boş</option>
+                        <option value="kiracili">Kiracılı</option>
+                        <option value="mulk_sahibi">Mülk Sahibi</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="floor_count">Kat Sayısı</label>
+                      <select id="floor_count" name="floor_count" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10+">10+</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+
+            <!-- MÜŞTERİ BİLGİLERİ -->
+            <div class="section-header">
+              <h4 class="section-title">
+                <i class="ni ni-single-02 mr-2"></i>Müşteri Bilgileri
+              </h4>
+            </div>
+
+            <div class="form-card">
+              <div class="pl-lg-4">
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="customer_name">Müşteri Adı</label>
+                      <input type="text" id="customer_name" name="customer_name" class="form-control" placeholder="Müşteri adı ve soyadı" required>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="customer_phone">Müşteri Telefonu</label>
+                      <input type="text" id="customer_phone" name="customer_phone" class="form-control" placeholder="(___) ___-____" required>
+                      <div class="field-help">Örn: (555) 123-4567</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="customer_tag">Müşteri Etiketi</label>
+                      <select id="customer_tag" name="customer_tag" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="alici">Alıcı</option>
+                        <option value="satici">Satıcı</option>
+                        <option value="kiraci">Kiracı</option>
+                        <option value="ev_sahibi">Ev Sahibi</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="customer_source">Müşteri Geliş Kaynağı</label>
+                      <select id="customer_source" name="customer_source" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="referans">Referans</option>
+                        <option value="sosyal_medya">Sosyal Medya</option>
+                        <option value="emlakjet">Emlakjet</option>
+                        <option value="sahibinden">Sahibinden</option>
+                        <option value="hürriyet">Hürriyet Emlak</option>
+                        <option value="diger">Diğer</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="from_who">Kimden</label>
+                      <select id="from_who" name="from_who" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="sahibinden">Sahibinden</option>
+                        <option value="emlakci">Emlakçı</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="has_photos">Fotoğraf</label>
+                      <select id="has_photos" name="has_photos" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="var">Var</option>
+                        <option value="yok">Yok</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="has_banner">Branda</label>
+                      <select id="has_banner" name="has_banner" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="var">Var</option>
+                        <option value="yok">Yok</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label required-label" for="has_poster">Afiş</label>
+                      <select id="has_poster" name="has_poster" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="var">Var</option>
+                        <option value="yok">Yok</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- BÖLÜM 3: DAİRE DETAYLARI -->
+            <div class="section-header">
+              <h4 class="section-title">
+                <i class="ni ni-building mr-2"></i>Daire Detayları
+              </h4>
+            </div>
+
+            <div class="tip-box mb-4">
+              <i class="ni ni-bulb-61 mr-2"></i> 
+              <strong>İpucu:</strong> Daire detaylarını eksiksiz girmeniz, gayrimenkulün daha doğru değerlendirilmesini sağlar.
+            </div>
             
-            <!-- 3. ADIM: Detay Bilgiler -->
-            <div class="form-section" id="section3">
-              <!-- Detay Bilgileri (Daire) -->
+            <div class="form-card">
               <div id="daire-details">
-                <h6 class="heading-small text-muted mb-4">Daire Detayları</h6>
                 <div class="pl-lg-4">
                   <div class="row">
                     <div class="col-lg-6">
                       <div class="form-group">
-                        <label class="form-control-label" for="gross_area">Brüt m²</label>
-                        <input type="number" step="0.01" id="gross_area" name="gross_area" class="form-control" placeholder="Brüt alan">
+                        <label class="form-control-label required-label" for="gross_area">Brüt m²</label>
+                        <input type="number" step="0.01" id="gross_area" name="gross_area" class="form-control" placeholder="Brüt alan" required>
                       </div>
                     </div>
                     <div class="col-lg-6">
                       <div class="form-group">
-                        <label class="form-control-label" for="net_area">Net m²</label>
-                        <input type="number" step="0.01" id="net_area" name="net_area" class="form-control" placeholder="Net alan">
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="room_count">Oda Sayısı</label>
-                        <input type="text" id="room_count" name="room_count" class="form-control" placeholder="Örn: 3+1">
-                      </div>
-                    </div>
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="floor">Bulunduğu Kat</label>
-                        <input type="text" id="floor" name="floor" class="form-control" placeholder="Örn: 3. Kat">
+                        <label class="form-control-label required-label" for="net_area">Net m²</label>
+                        <input type="number" step="0.01" id="net_area" name="net_area" class="form-control" placeholder="Net alan" required>
                       </div>
                     </div>
                   </div>
                   <div class="row">
                     <div class="col-lg-6">
                       <div class="form-group">
-                        <label class="form-control-label" for="building_age">Bina Yaşı</label>
-                        <input type="number" id="building_age" name="building_age" class="form-control" placeholder="Bina yaşı">
-                      </div>
-                    </div>
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label" for="heating">Isıtma</label>
-                        <select id="heating" name="heating" class="form-control">
+                        <label class="form-control-label required-label" for="heating">Isıtma</label>
+                        <select id="heating" name="heating" class="form-control" required>
                           <option value="">Seçiniz</option>
                           {% for heating_tuple in heating_choices %}
                             <option value="{{ heating_tuple.0 }}">{{ heating_tuple.1 }}</option>
@@ -463,62 +591,50 @@
                         </select>
                       </div>
                     </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label class="form-control-label required-label" for="dues">Aidat (TL)</label>
+                        <div class="input-group">
+                          <input type="number" step="0.01" id="dues" name="dues" class="form-control" placeholder="Aidat tutarı" required>
+                          <div class="input-group-append">
+                            <span class="input-group-text">₺</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div class="row">
                     <div class="col-lg-6">
                       <div class="form-group">
-                        <div class="custom-control custom-checkbox">
-                          <input type="checkbox" class="custom-control-input" id="has_balcony" name="has_balcony">
-                          <label class="custom-control-label" for="has_balcony">Balkon</label>
-                        </div>
+                        <label class="form-control-label required-label" for="balcony">Balkon</label>
+                        <select id="balcony" name="balcony" class="form-control" required>
+                          <option value="">Seçiniz</option>
+                          <option value="var">Var</option>
+                          <option value="yok">Yok</option>
+                        </select>
                       </div>
                     </div>
                     <div class="col-lg-6">
                       <div class="form-group">
-                        <label class="form-control-label" for="dues">Aidat (TL)</label>
-                        <input type="number" step="0.01" id="dues" name="dues" class="form-control" placeholder="Aidat tutarı">
+                        <label class="form-control-label required-label" for="deed_status">Tapu Durumu</label>
+                        <select id="deed_status" name="deed_status" class="form-control" required>
+                          <option value="">Seçiniz</option>
+                          {% for deed_tuple in deed_status_choices %}
+                            <option value="{{ deed_tuple.0 }}">{{ deed_tuple.1 }}</option>
+                          {% endfor %}
+                        </select>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <div class="form-section-title mt-4">
+                <i class="ni ni-ui-04"></i>
+                <h4>Diğer Bilgiler</h4>
+              </div>
               
-              <!-- Diğer Bilgiler -->
-              <h6 class="heading-small text-muted mb-4">Diğer Bilgiler</h6>
               <div class="pl-lg-4">
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="deed_status">Tapu Durumu</label>
-                      <select id="deed_status" name="deed_status" class="form-control">
-                        <option value="">Seçiniz</option>
-                        {% for deed_tuple in deed_status_choices %}
-                          <option value="{{ deed_tuple.0 }}">{{ deed_tuple.1 }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <div class="custom-control custom-checkbox mt-4">
-                        <input type="checkbox" class="custom-control-input" id="is_suitable_for_credit" name="is_suitable_for_credit" checked>
-                        <label class="custom-control-label" for="is_suitable_for_credit">Krediye Uygun</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="is_bargainable" name="is_bargainable" checked>
-                        <label class="custom-control-label" for="is_bargainable">Pazarlık Payı Var</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Portföy Sahibi Bilgileri -->
                 <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
@@ -529,7 +645,7 @@
                   <div class="col-lg-6">
                     <div class="form-group">
                       <label class="form-control-label" for="owner_phone">Mal Sahibi Telefon</label>
-                      <input type="text" id="owner_phone" name="owner_phone" class="form-control" placeholder="Mal sahibinin telefon numarası">
+                      <input type="text" id="owner_phone" name="owner_phone" class="form-control" placeholder="(___) ___-____">
                     </div>
                   </div>
                 </div>
@@ -547,25 +663,17 @@
                     </div>
                   </div>
                 </div>
-                
-                <div class="row">
-                  <div class="col-6">
-                    <button type="button" class="btn btn-secondary prev-btn" id="to-section2">
-                      <i class="fas fa-arrow-left mr-1"></i> Geri
-                    </button>
-                  </div>
-                  <div class="col-6 text-right">
-                    <button type="button" class="btn btn-koc-red next-btn" id="to-section4">
-                      Devam Et <i class="fas fa-arrow-right ml-1"></i>
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
-            
-            <!-- 4. ADIM: Lokasyon ve Çevre -->
-            <div class="form-section" id="section4">
-              <h6 class="heading-small text-muted mb-4">Lokasyon Bilgileri</h6>
+
+            <!-- BÖLÜM 4: LOKASYON ve ÇEVRE BİLGİLERİ -->
+            <div class="section-header">
+              <h4 class="section-title">
+                <i class="ni ni-pin-3 mr-2"></i>Lokasyon ve Çevre Bilgileri
+              </h4>
+            </div>
+
+            <div class="form-card">
               <div class="pl-lg-4">
                 <div class="row">
                   <div class="col-lg-6">
@@ -589,27 +697,31 @@
               </div>
               
               <!-- Çevre Bilgileri -->
-              <h6 class="heading-small text-muted mb-4">Çevre Bilgileri</h6>
+              <div class="form-section-title mt-4">
+                <i class="ni ni-world"></i>
+                <h4>Çevre Bilgileri</h4>
+              </div>
+
               <div class="pl-lg-4">
                 <div id="environments-container">
                   <div class="row environment-row">
                     <div class="col-lg-5">
                       <div class="form-group">
-                        <label class="form-control-label">Yer Adı</label>
-                        <input type="text" name="place_name" class="form-control" placeholder="Örn: Okul, Market, Park">
+                          <label class="form-control-label">Yer Adı</label>
+                          <input type="text" name="place_name" class="form-control" placeholder="Örn: Okul, Market, Park">
                       </div>
                     </div>
                     <div class="col-lg-5">
                       <div class="form-group">
-                        <label class="form-control-label">Mesafe (metre)</label>
-                        <input type="number" name="distance" class="form-control" placeholder="Metre cinsinden uzaklık">
+                          <label class="form-control-label">Mesafe (metre)</label>
+                          <input type="number" name="distance" class="form-control" placeholder="Metre cinsinden uzaklık">
                       </div>
                     </div>
                     <div class="col-lg-2">
                       <div class="form-group">
-                        <label class="form-control-label">&nbsp;</label>
-                        <button type="button" class="btn btn-danger btn-block remove-environment" style="display:none;">Kaldır</button>
-                      </div>
+                          <label class="form-control-label">&nbsp;</label>
+                          <button type="button" class="btn btn-danger btn-block remove-environment" style="display:none;">Kaldır</button>
+                        </div>
                     </div>
                   </div>
                 </div>
@@ -620,25 +732,23 @@
                     </button>
                   </div>
                 </div>
-                
-                <div class="row mt-4">
-                  <div class="col-6">
-                    <button type="button" class="btn btn-secondary prev-btn" id="to-section3">
-                      <i class="fas fa-arrow-left mr-1"></i> Geri
-                    </button>
-                  </div>
-                  <div class="col-6 text-right">
-                    <button type="button" class="btn btn-koc-red next-btn" id="to-section5">
-                      Devam Et <i class="fas fa-arrow-right ml-1"></i>
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
-            
-            <!-- 5. ADIM: Fotoğraf ve Analiz -->
-            <div class="form-section" id="section5">
-              <h6 class="heading-small text-muted mb-4">SWOT Analizi</h6>
+
+            <!-- BÖLÜM 5: FOTOĞRAF VE ANALİZ -->
+            <div class="section-header">
+              <h4 class="section-title">
+                <i class="ni ni-image mr-2"></i>Fotoğraf ve Analiz
+              </h4>
+            </div>
+
+            <div class="form-card">
+              <!-- SWOT Analizi -->
+              <div class="form-section-title">
+                <i class="ni ni-chart-bar-32"></i>
+                <h4>SWOT Analizi</h4>
+              </div>
+
               <div class="pl-lg-4">
                 <!-- SWOT analizi kutuları -->
                 <div class="row">
@@ -672,45 +782,52 @@
                 <!-- Gizli SWOT analizi alanı -->
                 <input type="hidden" id="swot_analysis" name="swot_analysis">
               </div>
-              
-              <!-- FOTOĞRAF YÜKLEME ALANI BAŞLANGICI -->
-              <h6 class="heading-small text-muted mb-4 mt-4">Gayrimenkul Fotoğrafları</h6>
+                
+              <!-- Fotoğraf Yükleme - YENİ VERSİYON -->
+              <div class="form-section-title mt-5">
+                <i class="ni ni-camera-compact"></i>
+                <h4>Gayrimenkul Fotoğrafları</h4>
+              </div>
+
               <div class="pl-lg-4">
                 <div class="row">
                   <div class="col-12">
-                    <div class="photo-upload-area">
-                      <!-- Dropzone alanı -->
-                      <div id="photo-dropzone" class="dropzone">
-                        <div class="dz-message">
-                          <h4>Fotoğrafları sürükleyip bırakın veya tıklayarak seçin</h4>
-                          <p>Maksimum dosya boyutu: 5MB | Kabul edilen formatlar: JPG, PNG</p>
-                        </div>
-                      </div>
-                      
-                      <!-- Kamera ile fotoğraf çekme butonu -->
-                      <button type="button" class="btn btn-outline-primary mb-3" id="take-photo-btn">
-                        <i class="ni ni-camera-compact"></i> Kamera ile Fotoğraf Çek
-                      </button>
-                      <input type="file" id="camera-input" accept="image/*" capture="camera" style="display: none;">
-                      
-                      <!-- Fotoğraf önizleme alanı -->
-                      <div class="photo-container" id="photo-preview-container"></div>
-                      
-                      <!-- Yüklenen fotoğraf ID'lerini saklamak için gizli alan -->
-                      <div id="uploaded-photos" class="d-none"></div>
+                    <div class="upload-box" id="upload-box">
+                      <i class="ni ni-cloud-upload-96"></i>
+                      <h4>Fotoğrafları seçin</h4>
+                      <p>Maksimum dosya boyutu: 5MB | Kabul edilen formatlar: JPG, PNG</p>
+                      <input type="file" id="photo-upload" name="photos[]" multiple accept="image/jpeg,image/png,image/jpg">
                     </div>
+                    
+                    <div class="progress upload-progress" id="upload-progress">
+                      <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    
+                    <!-- Fotoğraf önizleme alanı -->
+                    <div id="photo-preview-container" class="photo-container"></div>
+                    
+                    <!-- Yüklenen fotoğraf ID'lerini saklamak için gizli alan -->
+                    <div id="uploaded-photos" class="d-none"></div>
                   </div>
                 </div>
                 
-                <!-- Sayfa navigasyon butonları -->
-                <div class="d-flex justify-content-between mt-4">
-                  <button type="button" class="btn btn-secondary prev-section-btn" data-section="4">Geri</button>
-                  <button type="button" class="btn btn-primary next-section-btn" data-section="6">İleri</button>
+                <!-- Kamera ile fotoğraf çekme butonu -->
+                <div class="row mt-3">
+                  <div class="col-12">
+                    <button type="button" class="btn btn-outline-primary" id="take-photo-btn">
+                      <i class="ni ni-camera-compact mr-2"></i> Kamera ile Fotoğraf Çek
+                    </button>
+                    <input type="file" id="camera-input" accept="image/*" capture="camera" style="display: none;">
+                  </div>
                 </div>
               </div>
-              <!-- FOTOĞRAF YÜKLEME ALANI SONU -->
-              
-              <h6 class="heading-small text-muted mb-4 mt-4">Hedef Kitle</h6>
+                
+              <!-- Hedef Kitle -->
+              <div class="form-section-title mt-5">
+                <i class="ni ni-single-02"></i>
+                <h4>Hedef Kitle</h4>
+              </div>
+
               <div class="pl-lg-4">
                 <div class="row">
                   <div class="col-lg-12">
@@ -725,15 +842,11 @@
                     </div>
                   </div>
                 </div>
-                
+
+                <!-- Kaydet Butonu -->
                 <div class="row mt-4">
-                  <div class="col-6">
-                    <button type="button" class="btn btn-secondary prev-btn" id="to-section4">
-                      <i class="fas fa-arrow-left mr-1"></i> Geri
-                    </button>
-                  </div>
-                  <div class="col-6 text-right">
-                    <button type="submit" class="btn btn-success">
+                  <div class="col-12 text-right">
+                    <button type="submit" class="btn btn-success btn-lg" id="save-btn">
                       <i class="fas fa-save mr-1"></i> Gayrimenkulü Kaydet
                     </button>
                   </div>
@@ -745,73 +858,36 @@
       </div>
     </div>
   </div>
-
+  
   {% include "includes/footer.html" %}
-
+  
 </div>
-
 {% endblock content %}
-
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
-<script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.6/jquery.inputmask.min.js"></script>
 <script>
   $(document).ready(function() {
-    // Adım Adım Form İşlemleri
-    $(".next-btn").click(function() {
-      var targetSection = $(this).attr('id').split('-')[1];
-      $('.form-section.active').removeClass('active');
-      $('#' + targetSection).addClass('active');
-      
-      // Aktif adım göstergesini güncelle
-      $('.step').removeClass('active');
-      $('#' + targetSection.replace('section', 'step')).addClass('active');
-      
-      // Tamamlanan adımları işaretle
-      var currentStep = parseInt(targetSection.replace('section', ''));
-      for (var i = 1; i < currentStep; i++) {
-        $('#step' + i).addClass('completed');
-      }
-      
-      // Sayfa başına kaydır
-      $('html, body').animate({
-        scrollTop: $(".steps-container").offset().top - 100
-      }, 500);
-    });
-    
-    $(".prev-btn").click(function() {
-      var targetSection = $(this).attr('id').split('-')[1];
-      $('.form-section.active').removeClass('active');
-      $('#' + targetSection).addClass('active');
-      
-      // Aktif adım göstergesini güncelle
-      $('.step').removeClass('active');
-      $('#' + targetSection.replace('section', 'step')).addClass('active');
-      
-      // Tamamlanan adımları güncelle
-      $('.step').removeClass('completed');
-      var currentStep = parseInt(targetSection.replace('section', ''));
-      for (var i = 1; i < currentStep; i++) {
-        $('#step' + i).addClass('completed');
-      }
-      
-      // Sayfa başına kaydır
-      $('html, body').animate({
-        scrollTop: $(".steps-container").offset().top - 100
-      }, 500);
+    // Telefon numarası maskesi
+    $("#customer_phone, #owner_phone").inputmask({
+      mask: "(999) 999-9999",
+      placeholder: "(___) ___-____",
+      showMaskOnHover: true,
+      showMaskOnFocus: true
     });
     
     // Kategori Seçimi İşlemleri
     $(".category-option").click(function() {
-      $(this).siblings().removeClass('active');
-      $(this).addClass('active');
-      
-      // "Devam Et" düğmesini etkinleştir/devre dışı bırak
-      if ($(".status-option.active").length > 0 && $(".type-option.active").length > 0) {
-        $("#to-section2").prop('disabled', false);
-      } else {
-        $("#to-section2").prop('disabled', true);
+      // Kendi grubundaki diğer seçenekleri devre dışı bırak
+      if ($(this).hasClass('status-option')) {
+        $(".status-option").removeClass('active');
+      } else if ($(this).hasClass('type-option')) {
+        $(".type-option").removeClass('active');
       }
+      
+      // Bu seçeneği etkinleştir
+      $(this).addClass('active');
+      $(this).find('input[type="radio"]').prop('checked', true);
     });
     
     // Gayrimenkul tipine göre gösterilecek alanları kontrol et
@@ -830,6 +906,14 @@
         $('#daire-details').show();
       } else {
         $('#daire-details').hide();
+      }
+    });
+    
+    // Form alanlarında değişiklik olduğunda hata mesajlarını temizle
+    $('input, select, textarea').on('change keyup', function() {
+      if ($(this).hasClass('is-invalid')) {
+        $(this).removeClass('is-invalid');
+        $(this).next('.invalid-feedback').remove();
       }
     });
     
@@ -856,125 +940,151 @@
       var threats = $('#swot_threats').val();
       
       var swotAnalysis = 'Güçlü Yönler:\n' + strengths + '\n\n' +
-                         'Zayıf Yönler:\n' + weaknesses + '\n\n' +
-                         'Fırsatlar:\n' + opportunities + '\n\n' +
-                         'Tehditler:\n' + threats;
+                          'Zayıf Yönler:\n' + weaknesses + '\n\n' +
+                          'Fırsatlar:\n' + opportunities + '\n\n' +
+                          'Tehditler:\n' + threats;
       
       $('#swot_analysis').val(swotAnalysis);
     });
     
     // Fiyat alanına sayısal format
-    $('#price').on('input', function() {
+    $('#price, #dues').on('input', function() {
       // Sadece sayı ve virgül kabul et
       var value = $(this).val().replace(/[^0-9,.]/g, '');
       $(this).val(value);
     });
     
-    // Telefon alanına format
-    $('#owner_phone').on('input', function() {
-      var value = $(this).val().replace(/[^0-9]/g, '');
+    // Form doğrulama
+    $('#property-form').submit(function(e) {
+      let isValid = true;
+      const form = $(this);
       
-      // Telefon formatı: 0(5XX) XXX XX XX
-      if (value.length > 0) {
-        if (value.length <= 4) {
-          value = value;
-        } else if (value.length <= 7) {
-          value = value.substring(0, 4) + ' ' + value.substring(4);
-        } else if (value.length <= 9) {
-          value = value.substring(0, 4) + ' ' + value.substring(4, 7) + ' ' + value.substring(7);
+      // Zorunlu alanları kontrol et
+      form.find('input[required], select[required], textarea[required]').each(function() {
+        if (!$(this).val()) {
+          $(this).addClass('is-invalid');
+          isValid = false;
+          
+          // Hata mesajı ekle
+          if (!$(this).next('.invalid-feedback').length) {
+            $(this).after('<div class="invalid-feedback">Bu alan zorunludur</div>');
+          }
         } else {
-          value = value.substring(0, 4) + ' ' + value.substring(4, 7) + ' ' + value.substring(7, 9) + ' ' + value.substring(9, 11);
-        }
-      }
-      
-      $(this).val(value);
-    });
-    
-    // Dropzone ayarları
-    Dropzone.autoDiscover = false;
-    
-    $(document).ready(function() {
-      console.log("Dokuman yüklendi, Dropzone yapılandırması başlatılıyor...");
-      
-      // Telefon numarası formatı
-      // ... existing code ...
-      
-      // SWOT Analizi işlemleri
-      // ... existing code ...
-      
-      // Dropzone yapılandırması
-      var photoDropzone = new Dropzone("#photo-dropzone", {
-        url: "{% url 'property_image_upload' %}",
-        paramName: "image",
-        maxFilesize: 5, // MB
-        maxFiles: 30,
-        acceptedFiles: "image/jpeg,image/png,image/jpg",
-        addRemoveLinks: false,
-        autoProcessQueue: true,
-        dictDefaultMessage: "Fotoğrafları sürükleyip bırakın veya tıklayarak seçin",
-        dictFileTooBig: "Dosya çok büyük ({{filesize}}MB). Maksimum dosya boyutu: {{maxFilesize}}MB.",
-        dictInvalidFileType: "Bu dosya tipi yüklenemez.",
-        dictResponseError: "Sunucu hatası: {{statusCode}}",
-        headers: {
-          'X-CSRFToken': "{{ csrf_token }}"
+          $(this).removeClass('is-invalid');
+          $(this).next('.invalid-feedback').remove();
         }
       });
       
-      console.log("Dropzone başarıyla yapılandırıldı");
+      // Kategori seçimini kontrol et
+      if (!$(".status-option.active").length || !$(".type-option.active").length) {
+        isValid = false;
+        // Kullanıcıya bilgi ver
+        if (!$('#category-error').length) {
+          $('<div id="category-error" class="alert alert-danger mt-3">Lütfen hem Satılık/Kiralık hem de Gayrimenkul Tipi seçin</div>')
+            .insertBefore('.category-option').first().parent();
+        }
+      }
       
-      // Yükleme başarılı olduğunda
-      photoDropzone.on("success", function(file, response) {
-        if (response.success) {
-          console.log("Dosya başarıyla yüklendi:", response);
-          
-          // Dosya yüklendikten sonra fotoğraf önizleme ekle
-          var imageId = response.image_id;
-          var imageUrl = response.image_url;
-          
+      // Geçersiz alanları göster
+      if (!isValid) {
+        e.preventDefault();
+        const firstInvalid = form.find('.is-invalid').first();
+        if (firstInvalid.length) {
+          $('html, body').animate({
+            scrollTop: firstInvalid.offset().top - 150
+          }, 300);
+        }
+        return false;
+      }
+      
+      return true;
+    });
+    
+    // YENİ FOTOĞRAF YÜKLEME KODU - BASİTLEŞTİRİLMİŞ
+    // Dosya seçimi değiştiğinde
+    $('#photo-upload').on('change', function() {
+      handleFileUpload(this.files);
+    });
+    
+    // Kamera ile fotoğraf çekme
+    $('#take-photo-btn').on('click', function() {
+      $('#camera-input').click();
+    });
+    
+    $('#camera-input').on('change', function() {
+      if (this.files && this.files.length > 0) {
+        handleFileUpload(this.files);
+      }
+    });
+    
+    // Geçici olarak saklanan fotoğraflar
+    var tempPhotoFiles = [];
+    
+    // Dosya işleme fonksiyonu
+    function handleFileUpload(files) {
+      if (!files || files.length === 0) return;
+      
+      // Her dosya için
+      Array.from(files).forEach(function(file) {
+        // Dosya boyutu kontrolü (5MB = 5 * 1024 * 1024 bytes)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Dosya boyutu 5MB\'dan büyük olamaz: ' + file.name);
+          return;
+        }
+        
+        // Dosya tipi kontrolü
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+          alert('Sadece JPG ve PNG formatları kabul edilmektedir: ' + file.name);
+          return;
+        }
+        
+        // Dosyayı geçici diziye ekle
+        var photoId = 'temp_' + new Date().getTime() + '_' + tempPhotoFiles.length;
+        tempPhotoFiles.push({
+          id: photoId,
+          file: file
+        });
+        
+        // Dosyayı önizleme için göster
+        var reader = new FileReader();
+        reader.onload = function(e) {
           // Önizleme elemanı oluştur
-          var previewElement = $('<div class="photo-preview" data-id="' + imageId + '">' +
-            '<img src="' + imageUrl + '" alt="Property Image">' +
-            '<button type="button" class="delete-btn" data-id="' + imageId + '"><i class="ni ni-fat-remove"></i></button>' +
+          var previewElement = $('<div class="photo-preview" data-id="' + photoId + '">' +
+            '<img src="' + e.target.result + '" alt="Property Image">' +
+            '<button type="button" class="delete-btn" data-id="' + photoId + '"><i class="fas fa-times"></i></button>' +
             '</div>');
           
           // Önizleme alanına ekle
           $('#photo-preview-container').append(previewElement);
-          
-          // Yüklenen ID'yi gizli alana ekle
-          var hiddenInput = $('<input type="hidden" name="image_ids[]" value="' + imageId + '">');
-          $('#uploaded-photos').append(hiddenInput);
-          
-          // Dropzone'dan gelen elemanı kaldır
-          photoDropzone.removeFile(file);
-        } else {
-          console.error("Dosya yükleme hatası:", response.error);
-          alert("Dosya yüklenemedi: " + response.error);
-          photoDropzone.removeFile(file);
-        }
-      });
-      
-      // Yükleme hatası olduğunda
-      photoDropzone.on("error", function(file, errorMessage, xhr) {
-        console.error("Dosya yükleme hatası:", errorMessage);
-        var errorMsg = typeof errorMessage === 'string' ? errorMessage : 
-                       (errorMessage.error || "Bilinmeyen bir hata oluştu");
-        alert("Dosya yüklenemedi: " + errorMsg);
-      });
-      
-      // Fotoğraf silme işlemi
-      $(document).on('click', '.delete-btn', function() {
-        var imageId = $(this).data('id');
-        var previewElement = $(this).closest('.photo-preview');
+        };
         
+        reader.readAsDataURL(file);
+      });
+    }
+    
+    // Fotoğraf silme işlemi
+    $(document).on('click', '.delete-btn', function() {
+      var photoId = $(this).data('id');
+      var previewElement = $(this).closest('.photo-preview');
+      
+      // Geçici fotoğraf ise
+      if (photoId.startsWith('temp_')) {
+        // Diziden sil
+        tempPhotoFiles = tempPhotoFiles.filter(function(item) {
+          return item.id !== photoId;
+        });
+        
+        // Önizlemeden kaldır
+        previewElement.remove();
+      } else {
+        // Sunucuda kaydedilmiş bir fotoğrafsa, sunucudan sil
         if (confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) {
           $.ajax({
             url: "{% url 'property_image_delete' %}",
             type: "POST",
             data: {
-              'image_id': imageId
-            },
-            headers: {
-              'X-CSRFToken': "{{ csrf_token }}"
+              'image_id': photoId,
+              'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
             },
             success: function(response) {
               if (response.success) {
@@ -982,7 +1092,7 @@
                 previewElement.remove();
                 
                 // Gizli input'u da kaldır
-                $('#uploaded-photos input[value="' + imageId + '"]').remove();
+                $('#uploaded-photos input[value="' + photoId + '"]').remove();
               } else {
                 console.error("Silme hatası:", response.error);
                 alert("Fotoğraf silinemedi: " + response.error);
@@ -994,46 +1104,73 @@
             }
           });
         }
-      });
-      
-      // Kamera ile fotoğraf çekme
-      $('#take-photo-btn').on('click', function() {
-        $('#camera-input').click();
-      });
-      
-      $('#camera-input').on('change', function(e) {
-        if (this.files && this.files.length > 0) {
-          var file = this.files[0];
-          photoDropzone.addFile(file);
-        }
-      });
-      
-      // ... existing code ...
-      
-      // Form gönderildiğinde
-      $('form').on('submit', function(e) {
-        var loadingBtn = $('.submit-btn .loading');
-        var btnText = $('.submit-btn .btn-text');
-        
-        // Yükleme göstergesini aç
-        loadingBtn.removeClass('d-none');
-        btnText.addClass('d-none');
-        
-        // Tüm dosyaların yüklenip yüklenmediğini kontrol et
-        if (photoDropzone.getQueuedFiles().length > 0) {
-          e.preventDefault();
-          alert("Lütfen tüm fotoğrafların yüklenmesini bekleyin.");
-          
-          // Yükleme göstergesini kapat
-          loadingBtn.addClass('d-none');
-          btnText.removeClass('d-none');
-          return false;
-        }
-        
-        // Formu gönder
-        return true;
-      });
+      }
     });
+    
+    // Form gönderilmeden önce fotoğrafları ekle
+    $('#property-form').submit(function(e) {
+      // Form zaten doğrulandıysa ve geçici fotoğraflar varsa
+      if (tempPhotoFiles.length > 0) {
+        e.preventDefault();
+        
+        // Tüm fotoğrafları yüklemek için sayaç
+        var uploadedCount = 0;
+        var totalCount = tempPhotoFiles.length;
+        
+        // Progress bar göster
+        $('#upload-progress').show();
+        
+        // Her geçici fotoğraf için
+        tempPhotoFiles.forEach(function(item, index) {
+          var formData = new FormData();
+          formData.append('image', item.file);
+          formData.append('csrfmiddlewaretoken', $('[name=csrfmiddlewaretoken]').val());
+          
+          $.ajax({
+            url: "{% url 'property_image_upload' %}",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+              uploadedCount++;
+              
+              // Progress bar güncelle
+              var percentComplete = (uploadedCount / totalCount) * 100;
+              $('#upload-progress .progress-bar').css('width', percentComplete + '%');
+              
+              if (response.success) {
+                // Fotoğraf ID'sini form verisine ekle
+                var imageId = response.image_id;
+                var hiddenInput = $('<input type="hidden" name="image_ids[]" value="' + imageId + '">');
+                $('#uploaded-photos').append(hiddenInput);
+              }
+              
+              // Tüm fotoğraflar yüklendiyse formu gönder
+              if (uploadedCount === totalCount) {
+                $('#upload-progress').hide();
+                $('#property-form').unbind('submit').submit();
+              }
+            },
+            error: function(xhr, status, error) {
+              uploadedCount++;
+              console.error("AJAX hatası:", error);
+              
+              // Yine de devam et, tüm fotoğraflar yüklendiyse formu gönder
+              if (uploadedCount === totalCount) {
+                $('#upload-progress').hide();
+                $('#property-form').unbind('submit').submit();
+              }
+            }
+          });
+        });
+        
+        return false;
+      }
+    });
+    
+    // Debug mesajı
+    console.log("Fotoğraf yükleme kodları hazır!");
   });
 </script>
-{% endblock javascripts %} 
+{% endblock javascripts %}

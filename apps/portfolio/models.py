@@ -45,6 +45,67 @@ class Property(models.Model):
         ('diger', 'Diğer'),
     ]
     
+    # Yeni seçenekler
+    USAGE_STATUS_CHOICES = [
+        ('mulk_sahibi', 'Mülk Sahibi'),
+        ('kiracili', 'Kiracılı'),
+        ('bos', 'Boş'),
+    ]
+    
+    BANNER_STATUS_CHOICES = [
+        ('asildi', 'Asıldı'),
+        ('asilmadi', 'Asılmadı'),
+    ]
+    
+    POSTER_STATUS_CHOICES = [
+        ('asildi', 'Asıldı'),
+        ('asilmadi', 'Asılmadı'),
+    ]
+    
+    PHOTO_STATUS_CHOICES = [
+        ('cekildi', 'Çekildi'),
+        ('cektirmiyor', 'Çektirmiyor'),
+        ('cekilmedi', 'Çekilmedi'),
+        ('cekilmiyor', 'Çekilmiyor'),
+    ]
+    
+    LISTING_FROM_CHOICES = [
+        ('sahibinden', 'Sahibinden'),
+        ('emlakci', 'Emlakçı'),
+        ('banka', 'Banka'),
+        ('muteahhit', 'Müteahhit'),
+    ]
+    
+    CUSTOMER_TAG_CHOICES = [
+        ('vip', 'VIP'),
+        ('standart', 'Standart'),
+        ('ozel', 'Özel'),
+    ]
+    
+    CUSTOMER_SOURCE_CHOICES = [
+        ('internet', 'İnternet'),
+        ('referans', 'Referans'),
+        ('tabela', 'Tabela/Branda'),
+        ('sosyal_medya', 'Sosyal Medya'),
+        ('diger', 'Diğer'),
+    ]
+    
+    CATEGORY_CHOICES = [
+        ('konut', 'Konut'),
+        ('ticari', 'Ticari'),
+        ('arsa', 'Arsa'),
+        ('otel', 'Otel'),
+        ('diger', 'Diğer'),
+    ]
+    
+    LISTING_TYPE_CHOICES = [
+        ('acil', 'Acil'),
+        ('firsat', 'Fırsat'),
+        ('yeni', 'Yeni'),
+        ('ozel', 'Özel'),
+        ('normal', 'Normal'),
+    ]
+    
     # Temel Bilgiler
     title = models.CharField(max_length=200, verbose_name="İlan Başlığı")
     description = models.TextField(verbose_name="Açıklama")
@@ -66,6 +127,17 @@ class Property(models.Model):
     has_balcony = models.BooleanField(default=False, verbose_name="Balkon")
     dues = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Aidat", null=True, blank=True)
     
+    # Yeni detay bilgileri
+    floor_count = models.PositiveSmallIntegerField(verbose_name="Kat Sayısı", null=True, blank=True)
+    bathroom_count = models.PositiveSmallIntegerField(verbose_name="Banyo Sayısı", null=True, blank=True)
+    usage_status = models.CharField(max_length=20, choices=USAGE_STATUS_CHOICES, verbose_name="Kullanım Durumu", blank=True)
+    is_furnished = models.BooleanField(default=False, verbose_name="Eşyalı")
+    is_in_site = models.BooleanField(default=False, verbose_name="Site İçerisinde")
+    is_exchangeable = models.BooleanField(default=False, verbose_name="Takas")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, verbose_name="Kategori", blank=True) 
+    listing_type = models.CharField(max_length=20, choices=LISTING_TYPE_CHOICES, verbose_name="İlan Türü", blank=True)
+    listing_from = models.CharField(max_length=20, choices=LISTING_FROM_CHOICES, verbose_name="Kimden", blank=True)
+    
     # Diğer Bilgiler
     deed_status = models.CharField(max_length=20, choices=DEED_STATUS_CHOICES, verbose_name="Tapu Durumu", blank=True)
     is_suitable_for_credit = models.BooleanField(default=True, verbose_name="Krediye Uygunluk")
@@ -76,10 +148,14 @@ class Property(models.Model):
     owner_phone = models.CharField(max_length=20, verbose_name="Mal Sahibi Telefon", blank=True)
     owner_listing_number = models.CharField(max_length=50, verbose_name="Sahibinden İlan No", blank=True)
     branda_number = models.CharField(max_length=50, verbose_name="Branda No", blank=True)
+    customer_tag = models.CharField(max_length=20, choices=CUSTOMER_TAG_CHOICES, verbose_name="Müşteri Etiketi", blank=True)
+    customer_source = models.CharField(max_length=20, choices=CUSTOMER_SOURCE_CHOICES, verbose_name="Müşteri Geliş Kaynağı", blank=True)
     
     # Operasyonel Bilgiler
     key_holder = models.CharField(max_length=20, choices=KEY_HOLDER_CHOICES, verbose_name="Anahtar Kimde", blank=True)
-    photo_status = models.BooleanField(default=False, verbose_name="Fotoğraf Çekildi")
+    photo_status = models.CharField(max_length=20, choices=PHOTO_STATUS_CHOICES, verbose_name="Fotoğraf Durumu", blank=True, default='cekilmedi')
+    banner_status = models.CharField(max_length=20, choices=BANNER_STATUS_CHOICES, verbose_name="Branda Durumu", blank=True)
+    poster_status = models.CharField(max_length=20, choices=POSTER_STATUS_CHOICES, verbose_name="Afiş Durumu", blank=True)
     listing_date = models.DateField(default=timezone.now, verbose_name="İlan Tarihi")
     consultant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, 
                                   related_name="properties", verbose_name="Danışman")

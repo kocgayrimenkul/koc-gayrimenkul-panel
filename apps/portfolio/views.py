@@ -12,6 +12,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Property, PropertyEnvironment, PropertyImage
 from apps.customers.models import Neighborhood
+from apps.employees.models import EmployeeProfile
 from django.utils import timezone
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
@@ -27,6 +28,14 @@ def property_list(request):
     neighborhood_id = request.GET.get('neighborhood', '')
     min_price = request.GET.get('min_price', '')
     max_price = request.GET.get('max_price', '')
+    consultant_id = request.GET.get('consultant', '')
+    category = request.GET.get('category', '')
+    listing_type = request.GET.get('listing_type', '')
+    banner_status = request.GET.get('banner_status', '')
+    poster_status = request.GET.get('poster_status', '')
+    usage_status = request.GET.get('usage_status', '')
+    is_furnished = request.GET.get('is_furnished', '')
+    is_in_site = request.GET.get('is_in_site', '')
     
     # Başlangıç sorgusu
     properties_list = Property.objects.filter(is_active=True)
@@ -48,6 +57,26 @@ def property_list(request):
             properties_list = properties_list.filter(price__lte=float(max_price))
         except ValueError:
             pass
+    if consultant_id:
+        properties_list = properties_list.filter(consultant_id=consultant_id)
+    if category:
+        properties_list = properties_list.filter(category=category)
+    if listing_type:
+        properties_list = properties_list.filter(listing_type=listing_type)
+    if banner_status:
+        properties_list = properties_list.filter(banner_status=banner_status)
+    if poster_status:
+        properties_list = properties_list.filter(poster_status=poster_status)
+    if usage_status:
+        properties_list = properties_list.filter(usage_status=usage_status)
+    if is_furnished == 'true':
+        properties_list = properties_list.filter(is_furnished=True)
+    elif is_furnished == 'false':
+        properties_list = properties_list.filter(is_furnished=False)
+    if is_in_site == 'true':
+        properties_list = properties_list.filter(is_in_site=True)
+    elif is_in_site == 'false':
+        properties_list = properties_list.filter(is_in_site=False)
     
     # Sıralama
     properties_list = properties_list.order_by('-created_at')
@@ -68,16 +97,28 @@ def property_list(request):
     # İlgili mahalleler
     neighborhoods = Neighborhood.objects.all().order_by('name')
     
+    # Danışman listesi
+    consultants = EmployeeProfile.objects.filter(role='consultant', is_active=True).select_related('user')
+    
     context = {
         'segment': 'gayrimenkul',
         'properties': properties,
         'neighborhoods': neighborhoods,
+        'consultants': consultants,
         'filters': {
             'property_type': property_type,
             'status': status,
             'neighborhood_id': neighborhood_id,
             'min_price': min_price,
             'max_price': max_price,
+            'consultant_id': consultant_id,
+            'category': category,
+            'listing_type': listing_type,
+            'banner_status': banner_status,
+            'poster_status': poster_status,
+            'usage_status': usage_status,
+            'is_furnished': is_furnished,
+            'is_in_site': is_in_site,
         }
     }
     
@@ -396,6 +437,81 @@ def property_image_delete(request):
                 'message': 'Görsel başarıyla silindi',
                 'deleted_image': image_url
             })
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Geçersiz istek'}, status=400)
+
+@login_required(login_url="/login/")
+@csrf_exempt
+def property_update_field(request):
+    """AJAX ile gayrimenkul alanlarını güncelleme"""
+    if request.method == 'POST':
+        try:
+            property_id = request.POST.get('property_id')
+            field = request.POST.get('field')
+            value = request.POST.get('value')
+            
+            if not property_id or not field:
+                return JsonResponse({'success': False, 'error': 'Gayrimenkul ID ve alan adı gerekli'})
+            
+            try:
+                property_obj = Property.objects.get(id=property_id)
+            except Property.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Gayrimenkul bulunamadı'})
+            
+            # Güvenlik kontrolü
+            if not request.user.is_superuser and property_obj.consultant != request.user:
+                return JsonResponse({'success': False, 'error': 'Bu gayrimenkulü düzenleme yetkiniz yok'})
+            
+            # Alan türüne göre değer dönüşümü
+            if field == 'consultant':
+                try:
+                    from django.contrib.auth import get_user_model
+                    User = get_user_model()
+                    consultant = User.objects.get(id=value)
+                    property_obj.consultant = consultant
+                except User.DoesNotExist:
+                    return JsonResponse({'success': False, 'error': 'Danışman bulunamadı'})
+            elif field == 'neighborhood':
+                try:
+                    neighborhood = Neighborhood.objects.get(id=value)
+                    property_obj.neighborhood = neighborhood
+                except Neighborhood.DoesNotExist:
+                    return JsonResponse({'success': False, 'error': 'Mahalle bulunamadı'})
+            elif field == 'photo_status':
+                # Fotoğraf durumu için geçerli değerleri kontrol et
+                valid_photo_statuses = dict(Property.PHOTO_STATUS_CHOICES).keys()
+                if value in valid_photo_statuses:
+                    property_obj.photo_status = value
+                else:
+                    return JsonResponse({'success': False, 'error': f'Geçersiz fotoğraf durumu. Geçerli değerler: {", ".join(valid_photo_statuses)}'})
+            elif field in ['banner_status', 'poster_status', 'usage_status', 'category', 'listing_type']:
+                setattr(property_obj, field, value)
+            elif field in ['is_furnished', 'is_in_site', 'is_exchangeable']:
+                setattr(property_obj, field, value.lower() == 'true')
+            else:
+                return JsonResponse({'success': False, 'error': 'Geçersiz alan adı'})
+            
+            property_obj.save()
+            
+            # Başarılı yanıt
+            display_value = value
+            if field == 'consultant':
+                display_value = f"{consultant.first_name} {consultant.last_name}"
+            elif field == 'neighborhood':
+                display_value = neighborhood.name
+            elif field == 'photo_status':
+                display_value = dict(Property.PHOTO_STATUS_CHOICES).get(value, value)
+            
+            return JsonResponse({
+                'success': True, 
+                'message': 'Alan başarıyla güncellendi',
+                'display_value': display_value
+            })
+            
         except Exception as e:
             import traceback
             print(traceback.format_exc())

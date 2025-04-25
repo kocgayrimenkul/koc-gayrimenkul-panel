@@ -20,7 +20,11 @@ class PropertyForm(forms.ModelForm):
             'room_count', 'floor', 'building_age', 'heating', 'has_balcony',
             'dues', 'deed_status', 'is_suitable_for_credit', 'is_bargainable',
             'owner_name', 'owner_phone', 'owner_listing_number', 'branda_number',
-            'key_holder', 'photo_status', 'listing_date', 'swot_analysis', 'target_audience'
+            'key_holder', 'photo_status', 'listing_date', 'swot_analysis', 'target_audience',
+            'floor_count', 'bathroom_count', 'usage_status', 'is_furnished',
+            'is_in_site', 'is_exchangeable', 'category', 'listing_type',
+            'listing_from', 'customer_tag', 'customer_source',
+            'banner_status', 'poster_status', 'consultant'
         ]
         widgets = {
             'title': forms.TextInput(attrs={"class": "form-control", "placeholder": "İlan Başlığı"}),
@@ -50,6 +54,20 @@ class PropertyForm(forms.ModelForm):
             'listing_date': forms.DateInput(attrs={"class": "form-control datepicker", "placeholder": "İlan Tarihi"}),
             'swot_analysis': forms.Textarea(attrs={"class": "form-control", "placeholder": "SWOT Analizi", "rows": 4}),
             'target_audience': forms.TextInput(attrs={"class": "form-control", "placeholder": "Hedef Kitle"}),
+            'floor_count': forms.NumberInput(attrs={"class": "form-control", "placeholder": "Kat Sayısı"}),
+            'bathroom_count': forms.NumberInput(attrs={"class": "form-control", "placeholder": "Banyo Sayısı"}),
+            'usage_status': forms.Select(attrs={"class": "form-control"}),
+            'is_furnished': forms.CheckboxInput(attrs={"class": "custom-control-input"}),
+            'is_in_site': forms.CheckboxInput(attrs={"class": "custom-control-input"}),
+            'is_exchangeable': forms.CheckboxInput(attrs={"class": "custom-control-input"}),
+            'category': forms.Select(attrs={"class": "form-control"}),
+            'listing_type': forms.Select(attrs={"class": "form-control"}),
+            'listing_from': forms.Select(attrs={"class": "form-control"}),
+            'customer_tag': forms.Select(attrs={"class": "form-control"}),
+            'customer_source': forms.Select(attrs={"class": "form-control"}),
+            'banner_status': forms.Select(attrs={"class": "form-control"}),
+            'poster_status': forms.Select(attrs={"class": "form-control"}),
+            'consultant': forms.Select(attrs={"class": "form-control"}),
         }
 
 

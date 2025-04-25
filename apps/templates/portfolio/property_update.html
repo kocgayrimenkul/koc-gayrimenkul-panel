@@ -4,7 +4,6 @@
 
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}
-<link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
   :root {
@@ -33,14 +32,54 @@
     background-color: var(--koc-red-light);
     border-color: var(--koc-red-light);
   }
+
+  .section-header {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--koc-red);
+    margin-bottom: 20px;
+    border-radius: 0 4px 4px 0;
+  }
   
-  /* Formlar */
-  .form-section {
-    display: block;
-    margin-bottom: 30px;
+  .section-title {
+    color: var(--koc-red);
+    margin-bottom: 0;
+    font-weight: 600;
+  }
+  
+  .form-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    padding: 30px;
+    margin-bottom: 20px;
+  }
+
+  .form-section-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .form-section-title i {
+    color: var(--koc-red);
+    margin-right: 10px;
+    font-size: 18px;
+  }
+  
+  /* Zorunlu alanlar */
+  .required-label::after {
+    content: " *";
+    color: var(--koc-red);
   }
   
   /* SWOT analiz kutusu */
+  .swot-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 15px;
+  }
+  
   .swot-box {
     border: 1px solid #eee;
     border-radius: 5px;
@@ -69,89 +108,105 @@
     border-left: 3px solid #ffc107;
   }
   
-  /* Dropzone.js özelleştirmeleri */
-  .dropzone {
-    border: 2px dashed #dee2e6;
-    border-radius: 10px;
-    background: white;
-    min-height: 150px;
-    padding: 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .dropzone:hover {
-    border-color: var(--koc-red);
-    background-color: rgba(157, 34, 53, 0.03);
-  }
-  
-  .dropzone .dz-message {
-    margin: 2em 0;
-  }
-  
-  .dropzone .dz-preview .dz-image {
-    border-radius: 10px;
-    overflow: hidden;
-    position: relative;
-    display: block;
-    z-index: 10;
-  }
-  
-  .dropzone .dz-preview:hover .dz-image img {
-    transform: scale(1.05);
-    filter: contrast(1.1);
-  }
-  
-  .dropzone .dz-preview .dz-image img {
-    transition: all 0.3s ease;
-  }
-  
-  .dropzone .dz-preview .dz-error-message {
-    color: white;
-    background: rgba(157, 34, 53, 0.8);
-  }
-  
   /* Fotoğraf yükleme - önizleme alanı */
-  #photo-preview {
+  .photo-container {
     display: flex;
     flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
   }
   
-  .preview-item {
-    margin: 10px;
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-  }
-  
-  .preview-item img {
+  .photo-preview {
     width: 150px;
     height: 150px;
-    object-fit: cover;
-    display: block;
+    overflow: hidden;
+    position: relative;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin: 10px;
   }
   
-  .preview-item .remove-image {
+  .photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .photo-preview .delete-btn {
     position: absolute;
     top: 5px;
     right: 5px;
-    background: rgba(255,255,255,0.7);
-    color: var(--koc-red);
-    width: 24px;
-    height: 24px;
+    background: rgba(255, 0, 0, 0.7);
+    color: white;
+    border: none;
     border-radius: 50%;
+    width: 25px;
+    height: 25px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
   }
   
-  .preview-item .remove-image:hover {
-    background: white;
-    transform: scale(1.1);
+  /* Tip boxes */
+  .tip-box {
+    background-color: #f8f9fa;
+    border-left: 3px solid var(--koc-red);
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 0 5px 5px 0;
+    font-size: 0.9rem;
+  }
+
+  .field-help {
+    color: #6c757d;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  
+  /* Yeni fotoğraf yükleme stili */
+  .upload-box {
+    border: 2px dashed #5e72e4;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative; /* Pozisyon ekleme - input için */
+  }
+  
+  .upload-box:hover {
+    background-color: #edf2ff;
+    border-color: #324cdd;
+  }
+  
+  .upload-box i {
+    font-size: 48px;
+    color: #5e72e4;
+    margin-bottom: 15px;
+    display: block;
+  }
+  
+  .upload-box h4 {
+    color: #5e72e4;
+    margin-bottom: 10px;
+  }
+  
+  .upload-box p {
+    color: #8898aa;
+  }
+
+  /* Göz gizli dosya yukleme butonu */
+  .upload-box input[type="file"] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
   }
   
   /* Mevcut fotoğraflar galerisi */
@@ -205,6 +260,12 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  
+  .upload-progress {
+    height: 5px;
+    margin-top: 10px;
+    display: none;
   }
 </style>
 {% endblock stylesheets %}
@@ -416,30 +477,34 @@
                 <!-- Yeni fotoğraf yükleme -->
                 <div class="row">
                   <div class="col-12">
-                    <div class="card border-0 shadow-none bg-light p-3">
-                      <div class="dropzone-container">
-                        <div id="photo-dropzone" class="dropzone">
-                          <div class="dz-message">
-                            <i class="ni ni-image fa-3x text-muted mb-2"></i>
-                            <h4>Yeni fotoğrafları buraya sürükleyin</h4>
-                            <p class="text-muted">veya dosyaları seçmek için tıklayın</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="mt-3 text-center">
-                        <small class="text-muted">Maks. dosya boyutu: 5MB - Kabul edilen formatlar: JPG, PNG</small>
-                      </div>
-                      <div class="mt-3">
-                        <button type="button" id="camera-btn" class="btn btn-sm btn-outline-koc-red">
-                          <i class="fas fa-camera mr-1"></i> Kamera ile Çek
-                        </button>
-                        <input type="file" id="camera-input" accept="image/*" capture="camera" style="display: none;">
-                      </div>
+                    <div class="upload-box" id="upload-box">
+                      <i class="ni ni-cloud-upload-96"></i>
+                      <h4>Fotoğrafları seçin</h4>
+                      <p>Maksimum dosya boyutu: 5MB | Kabul edilen formatlar: JPG, PNG</p>
+                      <input type="file" id="photo-upload" name="photos[]" multiple accept="image/jpeg,image/png,image/jpg">
                     </div>
+                    
+                    <div class="progress upload-progress" id="upload-progress">
+                      <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    
+                    <!-- Fotoğraf önizleme alanı -->
+                    <div id="photo-preview-container" class="photo-container"></div>
+                    
+                    <!-- Yüklenen fotoğraf ID'lerini saklamak için gizli alan -->
+                    <div id="uploaded-photos" class="d-none"></div>
                   </div>
                 </div>
-                <div id="photo-preview" class="row mt-3"></div>
-                <div id="image-ids-container"></div>
+                
+                <!-- Kamera ile fotoğraf çekme butonu -->
+                <div class="row mt-3">
+                  <div class="col-12">
+                    <button type="button" class="btn btn-outline-primary" id="take-photo-btn">
+                      <i class="ni ni-camera-compact mr-2"></i> Kamera ile Fotoğraf Çek
+                    </button>
+                    <input type="file" id="camera-input" accept="image/*" capture="camera" style="display: none;">
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -522,7 +587,6 @@
 
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
-<script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
 <script>
   $(document).ready(function() {
     // SWOT alanlarını doldur
@@ -552,145 +616,181 @@
       $('#swot_analysis').val(swotAnalysis);
     });
     
-    // FOTOĞRAF YÜKLEME İŞLEMLERİ
-    try {
-      // Önce Dropzone'u devre dışı bırakalım
-      Dropzone.autoDiscover = false;
-      
-      // Daha sonra Dropzone özelleştirmesini yükleyelim
-      var photoDropzone = new Dropzone("#photo-dropzone", {
-        url: "{% url 'property_image_upload' %}",
-        paramName: "image",
-        maxFilesize: 5, // MB cinsinden
-        acceptedFiles: "image/jpeg,image/png,image/jpg",
-        addRemoveLinks: true,
-        clickable: true,
-        dictRemoveFile: "Kaldır",
-        dictCancelUpload: "İptal",
-        dictDefaultMessage: "Dosyaları buraya sürükleyin (veya tıklayın)",
-        dictFileTooBig: "Dosya çok büyük ({{filesize}}MB). Maximum dosya boyutu: {{maxFilesize}}MB.",
-        dictInvalidFileType: "Bu dosya türü yüklenemez.",
-        maxFiles: 10,
-        autoProcessQueue: true,
-        thumbnailWidth: 150,
-        thumbnailHeight: 150,
-        headers: {
-          'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val()
-        },
-        init: function() {
-          var myDropzone = this;
-          
-          // Form gönderildiğinde kalan dosyaları yükle
-          $("#property-form").on("submit", function(e) {
-            if (myDropzone.getQueuedFiles().length > 0) {
-              e.preventDefault();
-              e.stopPropagation();
-              myDropzone.processQueue();
-            }
-          });
-          
-          // Tüm fotoğraflar yüklendikten sonra formu gönder
-          this.on("queuecomplete", function() {
-            if (myDropzone.getUploadingFiles().length === 0 && myDropzone.getQueuedFiles().length === 0) {
-              $("#property-form").submit();
-            }
-          });
-          
-          // Fotoğraf başarıyla yüklendiğinde
-          this.on("success", function(file, response) {
-            if (response.success) {
-              // Görsel ID'sini gizli input olarak ekle
-              var imageId = response.image_id;
-              $('#image-ids-container').append('<input type="hidden" name="image_ids[]" value="' + imageId + '">');
-              
-              // Dosyaya ID ekle, daha sonra silme işlemi için
-              file.imageId = imageId;
-            } else {
-              console.error("Fotoğraf yükleme hatası:", response.error);
-              alert("Fotoğraf yüklenirken bir hata oluştu: " + response.error);
-            }
-          });
-          
-          // Hata olduğunda
-          this.on("error", function(file, errorMessage) {
-            console.error("Dropzone hatası:", errorMessage);
-          });
-          
-          // Resim kaldırıldığında
-          this.on("removedfile", function(file) {
-            if (file.imageId) {
-              // Resmi silme isteği gönder
-              $.ajax({
-                url: "{% url 'property_image_delete' %}",
-                type: "POST",
-                data: {
-                  image_id: file.imageId,
-                  csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
-                },
-                error: function(xhr, status, error) {
-                  console.error("Fotoğraf silme hatası:", error);
-                }
-              });
-              
-              // Gizli input'u kaldır
-              $('input[name="image_ids[]"][value="' + file.imageId + '"]').remove();
-            }
-          });
-        }
-      });
-      
-      // Kamera butonu
-      $("#camera-btn").click(function() {
-        $("#camera-input").click();
-      });
-      
-      // Kameradan fotoğraf çekildiğinde
-      $("#camera-input").change(function() {
-        if (this.files && this.files[0]) {
-          var file = this.files[0];
-          photoDropzone.addFile(file);
-        }
-      });
-      
-      // Mevcut fotoğrafları silme
-      $(".delete-image").click(function() {
-        var imageId = $(this).data('id');
-        var card = $(this).closest('.image-card');
-        
-        if (confirm('Bu fotoğrafı silmek istediğinize emin misiniz?')) {
-          // Resmi silme isteği gönder
-          $.ajax({
-            url: "{% url 'property_image_delete' %}",
-            type: "POST",
-            data: {
-              image_id: imageId,
-              csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
-            },
-            success: function(response) {
-              if (response.success) {
-                // Kartı kaldır
-                card.fadeOut(300, function() { $(this).remove(); });
-              } else {
-                alert('Fotoğraf silinirken bir hata oluştu: ' + response.error);
-              }
-            },
-            error: function() {
-              alert('Fotoğraf silinirken bir hata oluştu. Lütfen tekrar deneyin.');
-            }
-          });
-        }
-      });
-      
-      console.log("Dropzone başarıyla yüklendi ve yapılandırıldı!");
-    } catch (error) {
-      console.error("Dropzone yüklenirken bir hata oluştu:", error);
-    }
-    
     // Fiyat alanına sayısal format
     $('#price').on('input', function() {
       // Sadece sayı ve virgül kabul et
       var value = $(this).val().replace(/[^0-9,.]/g, '');
       $(this).val(value);
+    });
+    
+    // Mevcut fotoğrafları silme
+    $(".delete-image").click(function() {
+      var imageId = $(this).data('id');
+      var card = $(this).closest('.image-card');
+      
+      if (confirm('Bu fotoğrafı silmek istediğinize emin misiniz?')) {
+        // Resmi silme isteği gönder
+        $.ajax({
+          url: "{% url 'property_image_delete' %}",
+          type: "POST",
+          data: {
+            image_id: imageId,
+            csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+          },
+          success: function(response) {
+            if (response.success) {
+              // Kartı kaldır
+              card.fadeOut(300, function() { $(this).remove(); });
+            } else {
+              alert('Fotoğraf silinirken bir hata oluştu: ' + response.error);
+            }
+          },
+          error: function() {
+            alert('Fotoğraf silinirken bir hata oluştu. Lütfen tekrar deneyin.');
+          }
+        });
+      }
+    });
+
+    // YENİ FOTOĞRAF YÜKLEME KODU 
+    // Dosya seçimi değiştiğinde
+    $('#photo-upload').on('change', function() {
+      handleFileUpload(this.files);
+    });
+    
+    // Kamera ile fotoğraf çekme
+    $('#take-photo-btn').on('click', function() {
+      $('#camera-input').click();
+    });
+    
+    $('#camera-input').on('change', function() {
+      if (this.files && this.files.length > 0) {
+        handleFileUpload(this.files);
+      }
+    });
+    
+    // Geçici olarak saklanan fotoğraflar
+    var tempPhotoFiles = [];
+    
+    // Dosya işleme fonksiyonu
+    function handleFileUpload(files) {
+      if (!files || files.length === 0) return;
+      
+      // Her dosya için
+      Array.from(files).forEach(function(file) {
+        // Dosya boyutu kontrolü (5MB = 5 * 1024 * 1024 bytes)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Dosya boyutu 5MB\'dan büyük olamaz: ' + file.name);
+          return;
+        }
+        
+        // Dosya tipi kontrolü
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+          alert('Sadece JPG ve PNG formatları kabul edilmektedir: ' + file.name);
+          return;
+        }
+        
+        // Dosyayı geçici diziye ekle
+        var photoId = 'temp_' + new Date().getTime() + '_' + tempPhotoFiles.length;
+        tempPhotoFiles.push({
+          id: photoId,
+          file: file
+        });
+        
+        // Dosyayı önizleme için göster
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          // Önizleme elemanı oluştur
+          var previewElement = $('<div class="photo-preview" data-id="' + photoId + '">' +
+            '<img src="' + e.target.result + '" alt="Property Image">' +
+            '<button type="button" class="delete-btn" data-id="' + photoId + '"><i class="fas fa-times"></i></button>' +
+            '</div>');
+          
+          // Önizleme alanına ekle
+          $('#photo-preview-container').append(previewElement);
+        };
+        
+        reader.readAsDataURL(file);
+      });
+    }
+    
+    // Fotoğraf silme işlemi (geçici fotoğraflar için)
+    $(document).on('click', '.delete-btn', function() {
+      var photoId = $(this).data('id');
+      var previewElement = $(this).closest('.photo-preview');
+      
+      // Geçici fotoğraf ise
+      if (photoId.startsWith('temp_')) {
+        // Diziden sil
+        tempPhotoFiles = tempPhotoFiles.filter(function(item) {
+          return item.id !== photoId;
+        });
+        
+        // Önizlemeden kaldır
+        previewElement.remove();
+      }
+    });
+    
+    // Form gönderilmeden önce fotoğrafları ekle
+    $('#property-form').submit(function(e) {
+      // Form zaten doğrulandıysa ve geçici fotoğraflar varsa
+      if (tempPhotoFiles.length > 0) {
+        e.preventDefault();
+        
+        // Tüm fotoğrafları yüklemek için sayaç
+        var uploadedCount = 0;
+        var totalCount = tempPhotoFiles.length;
+        
+        // Progress bar göster
+        $('#upload-progress').show();
+        
+        // Her geçici fotoğraf için
+        tempPhotoFiles.forEach(function(item, index) {
+          var formData = new FormData();
+          formData.append('image', item.file);
+          formData.append('csrfmiddlewaretoken', $('[name=csrfmiddlewaretoken]').val());
+          
+          $.ajax({
+            url: "{% url 'property_image_upload' %}",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+              uploadedCount++;
+              
+              // Progress bar güncelle
+              var percentComplete = (uploadedCount / totalCount) * 100;
+              $('#upload-progress .progress-bar').css('width', percentComplete + '%');
+              
+              if (response.success) {
+                // Fotoğraf ID'sini form verisine ekle
+                var imageId = response.image_id;
+                var hiddenInput = $('<input type="hidden" name="image_ids[]" value="' + imageId + '">');
+                $('#uploaded-photos').append(hiddenInput);
+              }
+              
+              // Tüm fotoğraflar yüklendiyse formu gönder
+              if (uploadedCount === totalCount) {
+                $('#upload-progress').hide();
+                $('#property-form').unbind('submit').submit();
+              }
+            },
+            error: function(xhr, status, error) {
+              uploadedCount++;
+              console.error("AJAX hatası:", error);
+              
+              // Yine de devam et, tüm fotoğraflar yüklendiyse formu gönder
+              if (uploadedCount === totalCount) {
+                $('#upload-progress').hide();
+                $('#property-form').unbind('submit').submit();
+              }
+            }
+          });
+        });
+        
+        return false;
+      }
     });
   });
 </script>

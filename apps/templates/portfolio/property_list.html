@@ -95,10 +95,64 @@
   
   .badge-success {
     background-color: #2dce89;
+    color: white;
   }
   
   .badge-info {
     background-color: var(--koc-red-light);
+    color: white;
+  }
+  
+  .badge-danger {
+    background-color: #f5365c;
+    color: white;
+  }
+  
+  .badge-warning {
+    background-color: #fb6340;
+    color: white;
+  }
+  
+  .badge-secondary {
+    background-color: #8898aa;
+    color: white;
+  }
+  
+  .badge-primary {
+    background-color: #5e72e4;
+    color: white;
+  }
+  
+  /* Fotoğraf durumu etiketleri için özel stiller */
+  .photo-status-cekildi {
+    background-color: #2dce89 !important;
+    color: white !important;
+  }
+  
+  .photo-status-cektirmiyor {
+    background-color: #f5365c !important;
+    color: white !important;
+  }
+  
+  .photo-status-cekilmedi {
+    background-color: #ffd600 !important;
+    color: #212529 !important;
+  }
+  
+  .photo-status-cekilmiyor {
+    background-color: #11cdef !important;
+    color: white !important;
+  }
+  
+  .photo-status-belirsiz {
+    background-color: #8898aa !important;
+    color: white !important;
+  }
+  
+  /* Dropdown içerisindeki etiketler için stil */
+  .dropdown-item .badge {
+    font-size: 0.8rem;
+    padding: 5px 8px;
   }
   
   .table thead th {
@@ -241,25 +295,75 @@
   .filter-title {
     font-size: 0.9rem;
     font-weight: 600;
-    margin-bottom: 15px;
     color: var(--koc-red-dark);
     display: flex;
     align-items: center;
+    padding: 10px 0;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
   }
   
-  .filter-title i {
+  .filter-title:hover {
+    color: var(--koc-red);
+  }
+  
+  .filter-title i.ni {
     margin-right: 8px;
     font-size: 1rem;
   }
   
-  .custom-range {
-    width: 100%;
+  .filter-title i.fas {
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
   }
   
-  .range-values {
+  .filter-title i.fa-chevron-up {
+    transform: rotate(180deg);
+  }
+  
+  .filter-section {
+    transition: all 0.3s ease;
+  }
+  
+  .collapse.show {
+    animation: slideDown 0.3s ease forwards;
+  }
+  
+  .collapse.collapsing {
+    animation: slideUp 0.3s ease forwards;
+  }
+  
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes slideUp {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-10px); }
+  }
+  
+  /* Filtreleri aç/kapat düğmesi */
+  #collapseAllFilters {
+    width: 24px;
+    height: 24px;
     display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  #collapseAllFilters:hover {
+    transform: scale(1.1);
+  }
+  
+  #collapseAllFilters i {
+    transition: transform 0.2s ease;
+  }
+  
+  #collapseAllFilters i.fa-chevron-up {
+    transform: rotate(180deg);
   }
   
   /* Pagination stilleri */
@@ -367,171 +471,18 @@
 
 {% block content %}
 
-<div class="header bg-gradient-koc-red pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Gayrimenkul Yönetimi</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="#">Gayrimenkuller</a></li>
-              <li class="breadcrumb-item active" aria-current="page">Portföy Listesi</li>
-            </ol>
-          </nav>
-        </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{% url 'property_create' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-plus-circle mr-1"></i> Yeni Gayrimenkul Ekle
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+{% include "components/property_header.html" with page_title="Gayrimenkul Yönetimi" page_subtitle="Portföy Listesi" %}
 
 <!-- Page content -->
 <div class="container-fluid mt--6">
   <div class="row">
     <!-- Filtreler (sol sütun) -->
-    <div class="col-xl-3 col-md-4">
-      <div class="card filter-card shadow-sm mb-4">
-        <div class="card-header filter-header">
-          <h5 class="text-white mb-0">
-            <i class="fas fa-filter mr-2"></i> Filtreleme Seçenekleri
-          </h5>
-        </div>
-        <div class="card-body">
-          <form method="get" id="filterForm">
-            <div class="filter-section">
-              <div class="filter-title"><i class="ni ni-building"></i> Emlak Tipi</div>
-              <div class="custom-control custom-checkbox mb-2">
-                <input type="checkbox" class="custom-control-input" id="type_all" name="type_all" {% if not filters.property_type %}checked{% endif %}>
-                <label class="custom-control-label" for="type_all">Tümü</label>
-              </div>
-              <div class="custom-control custom-checkbox mb-2">
-                <input type="checkbox" class="custom-control-input" id="type_daire" name="type" value="daire" {% if filters.property_type == 'daire' %}checked{% endif %}>
-                <label class="custom-control-label" for="type_daire">Daire</label>
-              </div>
-              <div class="custom-control custom-checkbox mb-2">
-                <input type="checkbox" class="custom-control-input" id="type_arsa" name="type" value="arsa" {% if filters.property_type == 'arsa' %}checked{% endif %}>
-                <label class="custom-control-label" for="type_arsa">Arsa</label>
-              </div>
-              <div class="custom-control custom-checkbox mb-2">
-                <input type="checkbox" class="custom-control-input" id="type_isyeri" name="type" value="isyeri" {% if filters.property_type == 'isyeri' %}checked{% endif %}>
-                <label class="custom-control-label" for="type_isyeri">İşyeri</label>
-              </div>
-            </div>
-            
-            <div class="filter-section">
-              <div class="filter-title"><i class="ni ni-tag"></i> Durum</div>
-              <div class="custom-control custom-radio mb-2">
-                <input type="radio" class="custom-control-input" id="status_all" name="status" value="" {% if not filters.status %}checked{% endif %}>
-                <label class="custom-control-label" for="status_all">Tümü</label>
-              </div>
-              <div class="custom-control custom-radio mb-2">
-                <input type="radio" class="custom-control-input" id="status_satilik" name="status" value="satilik" {% if filters.status == 'satilik' %}checked{% endif %}>
-                <label class="custom-control-label" for="status_satilik">Satılık</label>
-              </div>
-              <div class="custom-control custom-radio mb-2">
-                <input type="radio" class="custom-control-input" id="status_kiralik" name="status" value="kiralik" {% if filters.status == 'kiralik' %}checked{% endif %}>
-                <label class="custom-control-label" for="status_kiralik">Kiralık</label>
-              </div>
-            </div>
-            
-            <div class="filter-section">
-              <div class="filter-title"><i class="ni ni-pin-3"></i> Mahalle</div>
-              <select name="neighborhood" class="form-control form-control-sm">
-                <option value="">Tüm Mahalleler</option>
-                {% for neighborhood in neighborhoods %}
-                  <option value="{{ neighborhood.id }}" {% if filters.neighborhood_id == neighborhood.id|stringformat:"i" %}selected{% endif %}>
-                    {{ neighborhood.name }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-            
-            <div class="filter-section">
-              <div class="filter-title"><i class="ni ni-money-coins"></i> Fiyat Aralığı</div>
-              <div class="input-group input-group-sm mb-3">
-                <div class="input-group-prepend">
-                  <span class="input-group-text">Min</span>
-                </div>
-                <input type="number" name="min_price" class="form-control" placeholder="0" value="{{ filters.min_price }}">
-                <div class="input-group-append">
-                  <span class="input-group-text">TL</span>
-                </div>
-              </div>
-              <div class="input-group input-group-sm">
-                <div class="input-group-prepend">
-                  <span class="input-group-text">Max</span>
-                </div>
-                <input type="number" name="max_price" class="form-control" placeholder="∞" value="{{ filters.max_price }}">
-                <div class="input-group-append">
-                  <span class="input-group-text">TL</span>
-                </div>
-              </div>
-            </div>
-            
-            <div class="filter-section">
-              <div class="filter-title"><i class="ni ni-bullet-list-67"></i> Diğer Özellikler</div>
-              <div class="custom-control custom-checkbox mb-2">
-                <input type="checkbox" class="custom-control-input" id="feature_credit" name="is_suitable_for_credit" value="1">
-                <label class="custom-control-label" for="feature_credit">Krediye Uygun</label>
-              </div>
-              <div class="custom-control custom-checkbox mb-2">
-                <input type="checkbox" class="custom-control-input" id="feature_bargain" name="is_bargainable" value="1">
-                <label class="custom-control-label" for="feature_bargain">Pazarlıklı</label>
-              </div>
-              <div class="custom-control custom-checkbox mb-2">
-                <input type="checkbox" class="custom-control-input" id="feature_photo" name="photo_status" value="1">
-                <label class="custom-control-label" for="feature_photo">Fotoğraflı</label>
-              </div>
-            </div>
-            
-            <div class="text-center">
-              <button type="submit" class="btn btn-koc-red btn-sm">
-                <i class="fas fa-search mr-1"></i> Filtrele
-              </button>
-              <a href="{% url 'property_list' %}" class="btn btn-secondary btn-sm ml-2">
-                <i class="fas fa-undo mr-1"></i> Sıfırla
-              </a>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    {% include "components/property_filters.html" %}
     
     <!-- Ana içerik (sağ sütun) -->
-    <div class="col-xl-9 col-md-8">
+    <div id="contentColumn" class="col-xl-9 col-md-8">
       <!-- Başlık ve görünüm seçenekleri -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div class="d-flex align-items-center">
-            <h3 class="mb-0 mr-3">Gayrimenkuller</h3>
-            <span class="badge badge-pill badge-koc-red">{{ properties|length }} Kayıt</span>
-          </div>
-          <div class="d-flex align-items-center">
-            <div class="input-group input-group-sm mr-3" style="width: 250px;">
-              <input type="text" class="form-control" placeholder="İlan başlığında ara...">
-              <div class="input-group-append">
-                <button class="btn btn-outline-koc-red" type="button">
-                  <i class="fas fa-search"></i>
-                </button>
-              </div>
-            </div>
-            <div class="btn-group view-toggle" role="group">
-              <button type="button" class="btn btn-outline-koc-red active" id="tableViewBtn" data-toggle="tooltip" title="Tablo Görünümü">
-                <i class="fas fa-list"></i>
-              </button>
-              <button type="button" class="btn btn-outline-koc-red" id="cardViewBtn" data-toggle="tooltip" title="Kart Görünümü">
-                <i class="fas fa-th-large"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {% include "components/property_toolbar.html" with list_title="Gayrimenkuller" %}
       
       <!-- Tablo görünümü -->
       <div id="tableView" class="card shadow-sm fade-in">
@@ -540,12 +491,19 @@
             <thead class="thead-light">
               <tr>
                 <th scope="col">Başlık</th>
+                <th scope="col">Sahibi</th>
+                <th scope="col">Telefon</th>
                 <th scope="col">Emlak Tipi</th>
                 <th scope="col">Durum</th>
+                <th scope="col">Oda</th>
                 <th scope="col">Fiyat</th>
+                <th scope="col">Brüt/Net m²</th>
+                <th scope="col">Kat</th>
                 <th scope="col">Mahalle</th>
-                <th scope="col">Özellikler</th>
-                <th scope="col">İlan Tarihi</th>
+                <th scope="col">Fotoğraf</th>
+                <th scope="col">Branda</th>
+                <th scope="col">Danışman</th>
+                <th scope="col">Kullanım</th>
                 <th scope="col" class="text-right">İşlemler</th>
               </tr>
             </thead>
@@ -557,9 +515,27 @@
                     <div class="media-body">
                       <span class="name mb-0 text-sm font-weight-bold">{{ property.title }}</span>
                       <small class="d-block text-muted">{{ property.address|truncatechars:40 }}</small>
+                      {% if property.sahibinden_link %}
+                      <small class="d-block">
+                        <a href="{{ property.sahibinden_link }}" target="_blank" class="text-info">
+                          <i class="fas fa-external-link-alt mr-1"></i>Sahibinden
+                        </a>
+                      </small>
+                      {% endif %}
                     </div>
                   </div>
                 </th>
+                <td>{{ property.owner_name|default:"-" }}</td>
+                <td>
+                  {% if property.phone %}
+                  <div class="d-flex align-items-center">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Flag_of_Turkey.svg/20px-Flag_of_Turkey.svg.png" alt="TR" class="mr-1" style="width: 16px;">
+                    {{ property.phone }}
+                  </div>
+                  {% else %}
+                  -
+                  {% endif %}
+                </td>
                 <td>
                   {% if property.property_type == 'daire' %}
                     <span class="badge badge-pill badge-koc-red">Daire</span>
@@ -576,33 +552,146 @@
                     <span class="badge badge-pill badge-kiralik">Kiralık</span>
                   {% endif %}
                 </td>
+                <td>{{ property.room_count|default:"" }}+{{ property.living_room_count|default:"" }}</td>
                 <td>
                   <strong>{{ property.price|floatformat:0 }} TL</strong>
+                  {% if property.price_usd %}
+                  <small class="text-muted d-block">${{ property.price_usd|floatformat:0 }}</small>
+                  {% endif %}
                   {% if property.is_bargainable %}
                     <small class="text-muted d-block">Pazarlıklı</small>
                   {% endif %}
                 </td>
-                <td>{{ property.neighborhood.name }}</td>
                 <td>
-                  <div class="d-flex">
-                    {% if property.property_type == 'daire' %}
-                      <span class="property-feature" data-toggle="tooltip" title="Oda Sayısı">
-                        <i class="fas fa-door-open"></i> {{ property.room_count|default:"?" }}
-                      </span>
-                      {% if property.gross_area %}
-                      <span class="property-feature ml-1" data-toggle="tooltip" title="Brüt Alan">
-                        <i class="fas fa-ruler-combined"></i> {{ property.gross_area }} m²
-                      </span>
-                      {% endif %}
-                    {% endif %}
-                    {% if property.is_suitable_for_credit %}
-                      <span class="property-feature ml-1" data-toggle="tooltip" title="Krediye Uygun">
-                        <i class="fas fa-check-circle"></i>
-                      </span>
-                    {% endif %}
+                  {% if property.gross_area %}
+                  <span class="d-block">Brüt: {{ property.gross_area }} m²</span>
+                  {% endif %}
+                  {% if property.net_area %}
+                  <span class="d-block">Net: {{ property.net_area }} m²</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if property.floor and property.building_floors %}
+                  {{ property.floor }}/{{ property.building_floors }}
+                  {% elif property.floor %}
+                  {{ property.floor }}
+                  {% else %}
+                  -
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                      {{ property.neighborhood.name }}
+                    </a>
+                    <div class="dropdown-menu">
+                      <h6 class="dropdown-header">Mahalle Seçin</h6>
+                      {% for neighborhood in neighborhoods %}
+                      <a class="dropdown-item neighborhood-item" href="#" data-neighborhood="{{ neighborhood.id }}" data-property-id="{{ property.id }}">
+                        {{ neighborhood.name }}
+                      </a>
+                      {% empty %}
+                      <a class="dropdown-item" href="#">Mahalle bulunamadı</a>
+                      {% endfor %}
+                    </div>
                   </div>
                 </td>
-                <td>{{ property.listing_date|date:"d.m.Y" }}</td>
+                <td>
+                  <div class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                      {% if property.photo_status == 'cekildi' %}
+                      <span class="badge badge-pill photo-status-cekildi">Çekildi</span>
+                      {% elif property.photo_status == 'cektirmiyor' %}
+                      <span class="badge badge-pill photo-status-cektirmiyor">Çektirmiyor</span>
+                      {% elif property.photo_status == 'cekilmedi' %}
+                      <span class="badge badge-pill photo-status-cekilmedi">Çekilmedi</span>
+                      {% elif property.photo_status == 'cekilmiyor' %}
+                      <span class="badge badge-pill photo-status-cekilmiyor">Çekilmiyor</span>
+                      {% else %}
+                      <span class="badge badge-pill photo-status-belirsiz">Belirsiz</span>
+                      {% endif %}
+                    </a>
+                    <div class="dropdown-menu">
+                      <h6 class="dropdown-header">Fotoğraf Durumu</h6>
+                      <a class="dropdown-item photo-status-item" href="#" data-status="cekildi" data-property-id="{{ property.id }}">
+                        <span class="badge badge-pill photo-status-cekildi mr-2">Çekildi</span>
+                      </a>
+                      <a class="dropdown-item photo-status-item" href="#" data-status="cektirmiyor" data-property-id="{{ property.id }}">
+                        <span class="badge badge-pill photo-status-cektirmiyor mr-2">Çektirmiyor</span>
+                      </a>
+                      <a class="dropdown-item photo-status-item" href="#" data-status="cekilmedi" data-property-id="{{ property.id }}">
+                        <span class="badge badge-pill photo-status-cekilmedi mr-2">Çekilmedi</span>
+                      </a>
+                      <a class="dropdown-item photo-status-item" href="#" data-status="cekilmiyor" data-property-id="{{ property.id }}">
+                        <span class="badge badge-pill photo-status-cekilmiyor mr-2">Çekilmiyor</span>
+                      </a>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                      {% if property.banner_status %}
+                      <span class="badge badge-pill badge-success">Var</span>
+                      {% else %}
+                      <span class="badge badge-pill badge-secondary">Yok</span>
+                      {% endif %}
+                    </a>
+                    <div class="dropdown-menu">
+                      <h6 class="dropdown-header">Branda Durumu</h6>
+                      <a class="dropdown-item banner-status-item" href="#" data-status="true" data-property-id="{{ property.id }}">
+                        <span class="badge badge-pill badge-success mr-2">Var</span>
+                      </a>
+                      <a class="dropdown-item banner-status-item" href="#" data-status="false" data-property-id="{{ property.id }}">
+                        <span class="badge badge-pill badge-secondary mr-2">Yok</span>
+                      </a>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                      {{ property.consultant|default:"-" }}
+                    </a>
+                    <div class="dropdown-menu">
+                      <h6 class="dropdown-header">Danışman Seçin</h6>
+                      {% for consultant in consultants %}
+                      <a class="dropdown-item consultant-item" href="#" data-consultant="{{ consultant.user.id }}" data-property-id="{{ property.id }}">
+                        {{ consultant.user.first_name }} {{ consultant.user.last_name }}
+                      </a>
+                      {% empty %}
+                      <a class="dropdown-item" href="#">Danışman bulunamadı</a>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                      {% if property.usage_status == 'mulk_sahibi' %}
+                      <span class="badge badge-pill badge-primary">Mülk Sahibi</span>
+                      {% elif property.usage_status == 'kiracili' %}
+                      <span class="badge badge-pill badge-info">Kiracılı</span>
+                      {% elif property.usage_status == 'bos' %}
+                      <span class="badge badge-pill badge-secondary">Boş</span>
+                      {% else %}
+                      <span class="badge badge-pill badge-light">Belirtilmedi</span>
+                      {% endif %}
+                    </a>
+                    <div class="dropdown-menu">
+                      <h6 class="dropdown-header">Kullanım Durumu</h6>
+                      <a class="dropdown-item usage-status-item" href="#" data-status="mulk_sahibi" data-property-id="{{ property.id }}">
+                        <span class="badge badge-pill badge-primary mr-2">Mülk Sahibi</span>
+                      </a>
+                      <a class="dropdown-item usage-status-item" href="#" data-status="kiracili" data-property-id="{{ property.id }}">
+                        <span class="badge badge-pill badge-info mr-2">Kiracılı</span>
+                      </a>
+                      <a class="dropdown-item usage-status-item" href="#" data-status="bos" data-property-id="{{ property.id }}">
+                        <span class="badge badge-pill badge-secondary mr-2">Boş</span>
+                      </a>
+                    </div>
+                  </div>
+                </td>
                 <td class="text-right">
                   <div class="dropdown">
                     <a class="btn btn-sm btn-icon-only text-koc-red" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -722,14 +811,23 @@
               <div class="card-body">
                 <h5 class="card-title text-truncate">{{ property.title }}</h5>
                 <p class="text-muted small mb-2 text-truncate">{{ property.address }}</p>
+                <div class="mb-2">
+                  <strong class="d-block">{{ property.owner_name|default:"Bilinmiyor" }}</strong>
+                  {% if property.phone %}
+                  <div class="d-flex align-items-center mb-1">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Flag_of_Turkey.svg/20px-Flag_of_Turkey.svg.png" alt="TR" class="mr-1" style="width: 16px;">
+                    {{ property.phone }}
+                  </div>
+                  {% endif %}
+                </div>
                 <div class="d-flex justify-content-between align-items-baseline mb-2">
                   <p class="property-price mb-0">{{ property.price|floatformat:0 }} TL</p>
                   <small class="text-muted">{{ property.neighborhood.name }}</small>
                 </div>
-                <div class="property-features">
+                <div class="property-features mb-2">
                   {% if property.property_type == 'daire' %}
                     <span class="property-feature">
-                      <i class="fas fa-door-open"></i> {{ property.room_count|default:"?" }}
+                      <i class="fas fa-door-open"></i> {{ property.room_count|default:"" }}+{{ property.living_room_count|default:"" }}
                     </span>
                     {% if property.gross_area %}
                     <span class="property-feature">
@@ -738,21 +836,149 @@
                     {% endif %}
                     {% if property.floor %}
                     <span class="property-feature">
-                      <i class="fas fa-building"></i> {{ property.floor }}
+                      <i class="fas fa-building"></i> {{ property.floor }}/{{ property.building_floors|default:"?" }}
                     </span>
                     {% endif %}
                   {% endif %}
-                  {% if property.is_suitable_for_credit %}
-                    <span class="property-feature">
-                      <i class="fas fa-check-circle"></i> Krediye Uygun
-                    </span>
-                  {% endif %}
-                  {% if property.is_bargainable %}
-                    <span class="property-feature">
-                      <i class="fas fa-handshake"></i> Pazarlıklı
-                    </span>
-                  {% endif %}
                 </div>
+                <div class="mb-2">
+                  <div class="d-flex flex-wrap gap-1">
+                    <!-- Mahalle bilgisi -->
+                    <div class="dropdown mr-2 mb-2">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        <span class="badge badge-pill badge-light">
+                          <i class="fas fa-map-marker-alt mr-1"></i> {{ property.neighborhood.name }}
+                        </span>
+                      </a>
+                      <div class="dropdown-menu">
+                        <h6 class="dropdown-header">Mahalle Seçin</h6>
+                        {% for neighborhood in neighborhoods %}
+                        <a class="dropdown-item neighborhood-item" href="#" data-neighborhood="{{ neighborhood.id }}" data-property-id="{{ property.id }}">
+                          {{ neighborhood.name }}
+                        </a>
+                        {% empty %}
+                        <a class="dropdown-item" href="#">Mahalle bulunamadı</a>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    
+                    <!-- Danışman bilgisi -->
+                    <div class="dropdown mr-2 mb-2">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        <span class="badge badge-pill badge-light">
+                          <i class="fas fa-user-tie mr-1"></i> {{ property.consultant|default:"Danışman?" }}
+                        </span>
+                      </a>
+                      <div class="dropdown-menu">
+                        <h6 class="dropdown-header">Danışman Seçin</h6>
+                        {% for consultant in consultants %}
+                        <a class="dropdown-item consultant-item" href="#" data-consultant="{{ consultant.user.id }}" data-property-id="{{ property.id }}">
+                          {{ consultant.user.first_name }} {{ consultant.user.last_name }}
+                        </a>
+                        {% empty %}
+                        <a class="dropdown-item" href="#">Danışman bulunamadı</a>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    
+                    <!-- Fotoğraf durumu -->
+                    <div class="dropdown" style="margin-right: 5px; margin-bottom: 5px;">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        {% if property.photo_status == 'cekildi' %}
+                        <span class="badge badge-pill photo-status-cekildi">Çekildi</span>
+                        {% elif property.photo_status == 'cektirmiyor' %}
+                        <span class="badge badge-pill photo-status-cektirmiyor">Çektirmiyor</span>
+                        {% elif property.photo_status == 'cekilmedi' %}
+                        <span class="badge badge-pill photo-status-cekilmedi">Çekilmedi</span>
+                        {% elif property.photo_status == 'cekilmiyor' %}
+                        <span class="badge badge-pill photo-status-cekilmiyor">Çekilmiyor</span>
+                        {% else %}
+                        <span class="badge badge-pill photo-status-belirsiz">Fotoğraf?</span>
+                        {% endif %}
+                      </a>
+                      <div class="dropdown-menu">
+                        <h6 class="dropdown-header">Fotoğraf Durumu</h6>
+                        <a class="dropdown-item photo-status-item" href="#" data-status="cekildi" data-property-id="{{ property.id }}">
+                          <span class="badge badge-pill photo-status-cekildi mr-2">Çekildi</span>
+                        </a>
+                        <a class="dropdown-item photo-status-item" href="#" data-status="cektirmiyor" data-property-id="{{ property.id }}">
+                          <span class="badge badge-pill photo-status-cektirmiyor mr-2">Çektirmiyor</span>
+                        </a>
+                        <a class="dropdown-item photo-status-item" href="#" data-status="cekilmedi" data-property-id="{{ property.id }}">
+                          <span class="badge badge-pill photo-status-cekilmedi mr-2">Çekilmedi</span>
+                        </a>
+                        <a class="dropdown-item photo-status-item" href="#" data-status="cekilmiyor" data-property-id="{{ property.id }}">
+                          <span class="badge badge-pill photo-status-cekilmiyor mr-2">Çekilmiyor</span>
+                        </a>
+                      </div>
+                    </div>
+                    
+                    <!-- Branda durumu -->
+                    <div class="dropdown mr-2 mb-2">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        {% if property.banner_status %}
+                        <span class="badge badge-pill badge-success">Branda Var</span>
+                        {% else %}
+                        <span class="badge badge-pill badge-secondary">Branda Yok</span>
+                        {% endif %}
+                      </a>
+                      <div class="dropdown-menu">
+                        <h6 class="dropdown-header">Branda Durumu</h6>
+                        <a class="dropdown-item banner-status-item" href="#" data-status="true" data-property-id="{{ property.id }}">
+                          <span class="badge badge-pill badge-success mr-2">Var</span>
+                        </a>
+                        <a class="dropdown-item banner-status-item" href="#" data-status="false" data-property-id="{{ property.id }}">
+                          <span class="badge badge-pill badge-secondary mr-2">Yok</span>
+                        </a>
+                      </div>
+                    </div>
+                    
+                    <!-- Kullanım durumu -->
+                    <div class="dropdown mb-2">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        {% if property.usage_status == 'mulk_sahibi' %}
+                        <span class="badge badge-pill badge-primary">Mülk Sahibi</span>
+                        {% elif property.usage_status == 'kiracili' %}
+                        <span class="badge badge-pill badge-info">Kiracılı</span>
+                        {% elif property.usage_status == 'bos' %}
+                        <span class="badge badge-pill badge-secondary">Boş</span>
+                        {% else %}
+                        <span class="badge badge-pill badge-light">Belirtilmedi</span>
+                        {% endif %}
+                      </a>
+                      <div class="dropdown-menu">
+                        <h6 class="dropdown-header">Kullanım Durumu</h6>
+                        <a class="dropdown-item usage-status-item" href="#" data-status="mulk_sahibi" data-property-id="{{ property.id }}">
+                          <span class="badge badge-pill badge-primary mr-2">Mülk Sahibi</span>
+                        </a>
+                        <a class="dropdown-item usage-status-item" href="#" data-status="kiracili" data-property-id="{{ property.id }}">
+                          <span class="badge badge-pill badge-info mr-2">Kiracılı</span>
+                        </a>
+                        <a class="dropdown-item usage-status-item" href="#" data-status="bos" data-property-id="{{ property.id }}">
+                          <span class="badge badge-pill badge-secondary mr-2">Boş</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <small class="d-block text-muted">Danışman: {{ property.consultant|default:"Atanmadı" }}</small>
+                {% if property.is_suitable_for_credit %}
+                  <span class="property-feature">
+                    <i class="fas fa-check-circle"></i> Krediye Uygun
+                  </span>
+                {% endif %}
+                {% if property.is_bargainable %}
+                  <span class="property-feature">
+                    <i class="fas fa-handshake"></i> Pazarlıklı
+                  </span>
+                {% endif %}
+                {% if property.sahibinden_link %}
+                <small class="d-block mt-2">
+                  <a href="{{ property.sahibinden_link }}" target="_blank" class="text-info">
+                    <i class="fas fa-external-link-alt mr-1"></i>Sahibinden
+                  </a>
+                </small>
+                {% endif %}
               </div>
               <div class="card-footer d-flex justify-content-between align-items-center">
                 <small class="text-muted">{{ property.listing_date|date:"d.m.Y" }}</small>
@@ -866,6 +1092,8 @@
       $('#cardView').hide();
       $('.view-toggle .btn').removeClass('active');
       $(this).addClass('active');
+      // Kullanıcı tercihini local storage'a kaydet
+      localStorage.setItem('preferredView', 'table');
     });
     
     $('#cardViewBtn').click(function() {
@@ -873,6 +1101,59 @@
       $('#cardView').show();
       $('.view-toggle .btn').removeClass('active');
       $(this).addClass('active');
+      // Kullanıcı tercihini local storage'a kaydet
+      localStorage.setItem('preferredView', 'card');
+    });
+    
+    // Sayfa yüklendiğinde kullanıcının tercihine göre görünümü ayarla
+    var preferredView = localStorage.getItem('preferredView');
+    if (preferredView === 'card') {
+      $('#cardViewBtn').click();
+    }
+    
+    // FILTRELEME BÖLÜMÜ YÖNETİMİ
+    
+    // Sayfa yüklendiğinde filtreleme tercihlerini ayarla
+    var isFilterCollapsed = localStorage.getItem('isFilterCollapsed');
+    if (isFilterCollapsed === 'true') {
+      $('#filterColumn').addClass('d-none');
+      $('#contentColumn').removeClass('col-xl-9 col-md-8').addClass('col-xl-12 col-md-12');
+    }
+    
+    // Filtreleme bölümünü açıp kapatma
+    $('#toggleFilters').click(function() {
+      $('#filterColumn').toggleClass('d-none');
+      
+      if ($('#filterColumn').hasClass('d-none')) {
+        $('#contentColumn').removeClass('col-xl-9 col-md-8').addClass('col-xl-12 col-md-12');
+        localStorage.setItem('isFilterCollapsed', 'true');
+      } else {
+        $('#contentColumn').removeClass('col-xl-12 col-md-12').addClass('col-xl-9 col-md-8');
+        localStorage.setItem('isFilterCollapsed', 'false');
+      }
+    });
+    
+    // Filtre başlık tıklamaları stil düzenlemesi
+    $('.filter-title').click(function() {
+      $(this).find('i.fas.fa-chevron-down').toggleClass('fa-chevron-down fa-chevron-up');
+    });
+    
+    // Tüm filtreleri aç/kapat
+    $('#collapseAllFilters').click(function() {
+      var $icon = $(this).find('i');
+      var isCollapsed = $icon.hasClass('fa-chevron-down');
+      
+      if (isCollapsed) {
+        // Tüm filtreleri aç
+        $('.collapse').collapse('show');
+        $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        $('.filter-title i.fas.fa-chevron-down').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+      } else {
+        // Tüm filtreleri kapat
+        $('.collapse').collapse('hide');
+        $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+        $('.filter-title i.fas.fa-chevron-up').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+      }
     });
     
     // Tüm checkbox seçildiğinde diğerlerinin seçimini kaldır
@@ -892,6 +1173,221 @@
         $('#type_all').prop('checked', true);
       }
     });
+    
+    // Danışman değiştirme
+    $('.consultant-item').click(function(e) {
+      e.preventDefault();
+      
+      var consultantId = $(this).data('consultant');
+      var propertyId = $(this).data('property-id');
+      var consultantName = $(this).text().trim();
+      var $clickedItem = $(this);
+      
+      // AJAX ile danışmanı güncelleme
+      $.ajax({
+        url: "{% url 'property_update_field' %}",
+        method: 'POST',
+        data: {
+          property_id: propertyId,
+          field: 'consultant',
+          value: consultantId,
+          csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+          if (response.success) {
+            // Tıklanan öğenin dropdown menüsünü bul
+            var $dropdown = $clickedItem.closest('.dropdown-menu');
+            var $toggle = $dropdown.siblings('.dropdown-toggle');
+            
+            // Eğer toggle içinde badge varsa (kart görünümü)
+            if ($toggle.find('.badge').length > 0) {
+              var badgeHtml = '<span class="badge badge-pill badge-light"><i class="fas fa-user-tie mr-1"></i> ' + consultantName + '</span>';
+              $toggle.html(badgeHtml);
+            } else {
+              // Tablo görünümü
+              $toggle.text(consultantName);
+            }
+            
+            // Kullanıcıya bilgi ver
+            showAlert('Danışman başarıyla güncellendi.', 'success');
+          } else {
+            showAlert(response.error || 'Danışman güncellenirken bir hata oluştu.', 'danger');
+          }
+        },
+        error: function() {
+          showAlert('Danışman güncellenirken bir hata oluştu.', 'danger');
+        }
+      });
+    });
+    
+    // Mahalle değiştirme
+    $('.neighborhood-item').click(function(e) {
+      e.preventDefault();
+      
+      var neighborhoodId = $(this).data('neighborhood');
+      var propertyId = $(this).data('property-id');
+      var neighborhoodName = $(this).text().trim();
+      var $clickedItem = $(this);
+      
+      // AJAX ile mahalleyi güncelleme
+      $.ajax({
+        url: "{% url 'property_update_field' %}",
+        method: 'POST',
+        data: {
+          property_id: propertyId,
+          field: 'neighborhood',
+          value: neighborhoodId,
+          csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+          if (response.success) {
+            // Tıklanan öğenin dropdown menüsünü bul
+            var $dropdown = $clickedItem.closest('.dropdown-menu');
+            var $toggle = $dropdown.siblings('.dropdown-toggle');
+            
+            // Eğer toggle içinde badge varsa (kart görünümü)
+            if ($toggle.find('.badge').length > 0) {
+              var badgeHtml = '<span class="badge badge-pill badge-light"><i class="fas fa-map-marker-alt mr-1"></i> ' + neighborhoodName + '</span>';
+              $toggle.html(badgeHtml);
+            } else {
+              // Tablo görünümü
+              $toggle.text(neighborhoodName);
+            }
+            
+            // Kullanıcıya bilgi ver
+            showAlert('Mahalle başarıyla güncellendi.', 'success');
+          } else {
+            showAlert(response.error || 'Mahalle güncellenirken bir hata oluştu.', 'danger');
+          }
+        },
+        error: function() {
+          showAlert('Mahalle güncellenirken bir hata oluştu.', 'danger');
+        }
+      });
+    });
+
+    // Fotoğraf durumu değiştirme
+    $('.photo-status-item').click(function(e) {
+      e.preventDefault();
+      
+      var photoStatus = $(this).data('status');
+      var propertyId = $(this).data('property-id');
+      var $clickedItem = $(this);
+      var statusBadge = $clickedItem.find('.badge').clone();
+      
+      // AJAX ile fotoğraf durumunu güncelleme
+      $.ajax({
+        url: "{% url 'property_update_field' %}",
+        method: 'POST',
+        data: {
+          property_id: propertyId,
+          field: 'photo_status',
+          value: photoStatus,
+          csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+          if (response.success) {
+            // Sadece tıklanan elementle ilgili dropdown'ı güncelle
+            $clickedItem.closest('.dropdown-menu').siblings('.dropdown-toggle').html(statusBadge);
+            
+            // Kullanıcıya bilgi ver
+            showAlert('Fotoğraf durumu başarıyla güncellendi.', 'success');
+          } else {
+            showAlert(response.error || 'Fotoğraf durumu güncellenirken bir hata oluştu.', 'danger');
+          }
+        },
+        error: function() {
+          showAlert('Fotoğraf durumu güncellenirken bir hata oluştu.', 'danger');
+        }
+      });
+    });
+
+    // Branda durumu değiştirme
+    $('.banner-status-item').click(function(e) {
+      e.preventDefault();
+      
+      var bannerStatus = $(this).data('status');
+      var propertyId = $(this).data('property-id');
+      var $clickedItem = $(this);
+      var badge = $clickedItem.find('.badge').clone();
+      
+      // AJAX ile branda durumunu güncelleme
+      $.ajax({
+        url: "{% url 'property_update_field' %}",
+        method: 'POST',
+        data: {
+          property_id: propertyId,
+          field: 'banner_status',
+          value: bannerStatus,
+          csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+          if (response.success) {
+            // Sadece tıklanan elementle ilgili dropdown'ı güncelle
+            $clickedItem.closest('.dropdown-menu').siblings('.dropdown-toggle').html(badge);
+            
+            // Kullanıcıya bilgi ver
+            showAlert('Branda durumu başarıyla güncellendi.', 'success');
+          } else {
+            showAlert(response.error || 'Branda durumu güncellenirken bir hata oluştu.', 'danger');
+          }
+        },
+        error: function() {
+          showAlert('Branda durumu güncellenirken bir hata oluştu.', 'danger');
+        }
+      });
+    });
+
+    // Kullanım durumu değiştirme
+    $('.usage-status-item').click(function(e) {
+      e.preventDefault();
+      
+      var usageStatus = $(this).data('status');
+      var propertyId = $(this).data('property-id');
+      var $clickedItem = $(this);
+      var badge = $clickedItem.find('.badge').clone();
+      
+      // AJAX ile kullanım durumunu güncelleme
+      $.ajax({
+        url: "{% url 'property_update_field' %}",
+        method: 'POST',
+        data: {
+          property_id: propertyId,
+          field: 'usage_status',
+          value: usageStatus,
+          csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+          if (response.success) {
+            // Sadece tıklanan elementle ilgili dropdown'ı güncelle
+            $clickedItem.closest('.dropdown-menu').siblings('.dropdown-toggle').html(badge);
+            
+            // Kullanıcıya bilgi ver
+            showAlert('Kullanım durumu başarıyla güncellendi.', 'success');
+          } else {
+            showAlert(response.error || 'Kullanım durumu güncellenirken bir hata oluştu.', 'danger');
+          }
+        },
+        error: function() {
+          showAlert('Kullanım durumu güncellenirken bir hata oluştu.', 'danger');
+        }
+      });
+    });
+    
+    // Uyarı gösterme yardımcı fonksiyonu
+    function showAlert(message, type) {
+      var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+                     message +
+                     '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                     '<span aria-hidden="true">&times;</span></button></div>';
+                     
+      $('.header-body').prepend(alertHtml);
+      
+      // 3 saniye sonra uyarıyı kapat
+      setTimeout(function() {
+        $('.alert').alert('close');
+      }, 3000);
+    }
   });
 </script>
 {% endblock javascripts %} 
