@@ -192,13 +192,13 @@ class PropertyEnvironment(models.Model):
 
 class PropertyImage(models.Model):
     """Gayrimenkul görselleri"""
-    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="images")
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="images", null=True, blank=True)
     image = models.ImageField(upload_to='properties/', verbose_name="Görsel")
     title = models.CharField(max_length=100, verbose_name="Görsel Başlığı", blank=True)
     order = models.PositiveSmallIntegerField(default=0, verbose_name="Sıralama")
     
     def __str__(self):
-        return f"{self.property.title} - {self.title or 'Görsel'}"
+        return f"{self.property.title if self.property else 'Bağlantısız'} - {self.title or 'Görsel'}"
     
     class Meta:
         verbose_name = "Gayrimenkul Görseli"

@@ -3,7 +3,7 @@
 Koç Gayrimenkul Panel - Portföy URL Yapılandırması
 """
 
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
@@ -27,4 +27,7 @@ urlpatterns = [
     
     # AJAX ile gayrimenkul alan değişiklikleri
     path('property-update-field/', views.property_update_field, name='property_update_field'),
+    
+    # Gayrimenkul silme
+    path('gayrimenkul/sil/<int:property_id>/', views.property_delete, name='property_delete'),
 ]

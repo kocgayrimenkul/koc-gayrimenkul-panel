@@ -40,9 +40,9 @@ services:
       - ./media:/app/media  # Medya dosyalarına erişimi sağlar
       - ./staticfiles:/app/staticfiles  # Statik dosyalara erişimi sağlar
     environment:
-      - VIRTUAL_HOST=panel.kocgayrimenkul.com
-      - LETSENCRYPT_HOST=panel.kocgayrimenkul.com
-      - LETSENCRYPT_EMAIL=info@kocgayrimenkul.com
+      - VIRTUAL_HOST=panelkocgayrimenkul.com
+      - LETSENCRYPT_HOST=panelkocgayrimenkul.com
+      - LETSENCRYPT_EMAIL=kocgayrimenkulveinsaat@gmail.com
       - VIRTUAL_PORT=8000
     depends_on:
       - nginx-proxy

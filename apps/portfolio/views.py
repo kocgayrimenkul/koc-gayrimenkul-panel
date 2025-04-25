@@ -160,6 +160,28 @@ def property_create(request):
         price = request.POST.get('price', '')
         neighborhood_id = request.POST.get('neighborhood', '')
         address = request.POST.get('address', '')
+        room_count = request.POST.get('room_count', '')
+        usage_status = request.POST.get('usage_status', '')
+        floor_count = request.POST.get('floor_count', '')
+        
+        # Müşteri bilgileri
+        customer_tag = request.POST.get('customer_tag', '')
+        customer_source = request.POST.get('customer_source', '')
+        listing_from = request.POST.get('from_who', '')
+        
+        # Branda/Afiş/Fotoğraf durumu
+        has_banner = request.POST.get('has_banner', '')
+        banner_status = 'asildi' if has_banner == 'var' else 'asilmadi'
+        
+        has_poster = request.POST.get('has_poster', '')
+        poster_status = 'asildi' if has_poster == 'var' else 'asilmadi'
+        
+        has_photos = request.POST.get('has_photos', '')
+        photo_status = 'cekildi' if has_photos == 'var' else 'cekilmedi'
+        
+        # Balkon kontrolü
+        balcony = request.POST.get('balcony', '')
+        has_balcony = balcony == 'var'
         
         # Validation
         if not title or not property_type or not status or not price or not neighborhood_id:
@@ -179,18 +201,24 @@ def property_create(request):
                 price=price,
                 neighborhood=neighborhood,
                 address=address,
+                room_count=room_count,
+                usage_status=usage_status,
+                floor_count=floor_count,
                 consultant=request.user,
+                customer_tag=customer_tag,
+                customer_source=customer_source,
+                listing_from=listing_from,
+                banner_status=banner_status,
+                poster_status=poster_status,
+                photo_status=photo_status,
             )
             
             # Detay bilgileri
             if property_type == 'daire':
                 property_obj.gross_area = request.POST.get('gross_area', None)
                 property_obj.net_area = request.POST.get('net_area', None)
-                property_obj.room_count = request.POST.get('room_count', '')
-                property_obj.floor = request.POST.get('floor', '')
-                property_obj.building_age = request.POST.get('building_age', None)
                 property_obj.heating = request.POST.get('heating', '')
-                property_obj.has_balcony = 'has_balcony' in request.POST
+                property_obj.has_balcony = has_balcony
                 property_obj.dues = request.POST.get('dues', None)
             
             # Diğer bilgiler
@@ -206,7 +234,6 @@ def property_create(request):
             
             # Operasyonel bilgiler
             property_obj.key_holder = request.POST.get('key_holder', '')
-            property_obj.photo_status = 'photo_status' in request.POST
             listing_date = request.POST.get('listing_date', '')
             if listing_date:
                 property_obj.listing_date = listing_date
@@ -216,6 +243,18 @@ def property_create(request):
             property_obj.target_audience = request.POST.get('target_audience', '')
             
             property_obj.save()
+            
+            # Debug için kaydedilen property değerlerini göster
+            print("Kaydedilen property değerleri:")
+            print(f"Başlık: {property_obj.title}")
+            print(f"Emlak Tipi: {property_obj.property_type}")
+            print(f"Balkon: {'var' if property_obj.has_balcony else 'yok'}")
+            print(f"Kimden: {property_obj.listing_from}")
+            print(f"Branda Durumu: {property_obj.banner_status}")
+            print(f"Afiş Durumu: {property_obj.poster_status}")
+            print(f"Fotoğraf Durumu: {property_obj.photo_status}")
+            print(f"Müşteri Etiketi: {property_obj.customer_tag}")
+            print(f"Müşteri Kaynağı: {property_obj.customer_source}")
             
             # Çevre bilgilerini ekle
             place_names = request.POST.getlist('place_name')
@@ -229,7 +268,30 @@ def property_create(request):
                         distance=distances[i]
                     )
             
-            # Yüklenen fotoğrafları gayrimenkulle ilişkilendir
+            # Fotoğrafları doğrudan işle
+            if request.FILES:
+                photos = request.FILES.getlist('photos[]')
+                for photo in photos:
+                    # Dosya boyutu kontrolü (5MB)
+                    if photo.size > 5 * 1024 * 1024:
+                        continue
+                    
+                    # Dosya tipi kontrolü
+                    if photo.content_type not in ['image/jpeg', 'image/png', 'image/jpg']:
+                        continue
+                    
+                    # Başlık oluştur
+                    title = photo.name.split('.')[0][:50]
+                    
+                    # Fotoğrafı kaydet ve property ile ilişkilendir
+                    PropertyImage.objects.create(
+                        property=property_obj,
+                        image=photo,
+                        title=title,
+                        order=0
+                    )
+            
+            # Ayrıca halihazırda yüklenmiş fotoğrafları da ilişkilendir (eski mekanizma için)
             image_ids = request.POST.getlist('image_ids[]')
             if image_ids:
                 for image_id in image_ids:
@@ -266,6 +328,33 @@ def property_update(request, property_id):
     property_obj = get_object_or_404(Property, id=property_id)
     neighborhoods = Neighborhood.objects.all().order_by('name')
     
+    # Debug için property değerlerini yazdır
+    print("Property değerleri:")
+    print(f"ID: {property_obj.id}")
+    print(f"Başlık: {property_obj.title}")
+    print(f"Açıklama: {property_obj.description}")
+    print(f"Emlak Tipi: {property_obj.property_type}")
+    print(f"Durum: {property_obj.status}")
+    print(f"Fiyat: {property_obj.price}")
+    print(f"Mahalle: {property_obj.neighborhood.name if property_obj.neighborhood else 'Yok'}")
+    print(f"Brüt Alan: {property_obj.gross_area}")
+    print(f"Net Alan: {property_obj.net_area}")
+    print(f"Oda Sayısı: {property_obj.room_count}")
+    print(f"Isıtma: {property_obj.heating}")
+    print(f"Balkon: {'var' if property_obj.has_balcony else 'yok'}")
+    print(f"Aidat: {property_obj.dues}")
+    print(f"Kullanım Durumu: {property_obj.usage_status}")
+    print(f"Tapu Durumu: {property_obj.deed_status}")
+    print(f"Mal Sahibi: {property_obj.owner_name}")
+    print(f"Mal Sahibi Telefon: {property_obj.owner_phone}")
+    print(f"Kimden: {property_obj.listing_from}")
+    print(f"Müşteri Etiketi: {property_obj.customer_tag}")
+    print(f"Branda Durumu: {property_obj.banner_status}")
+    print(f"Afiş Durumu: {property_obj.poster_status}")
+    print(f"Fotoğraf Durumu: {property_obj.photo_status}")
+    print(f"SWOT Analizi: {property_obj.swot_analysis[:50]}...")
+    print(f"Hedef Kitle: {property_obj.target_audience}")
+    
     # Sadece süper kullanıcı veya portföyün danışmanı güncelleyebilir
     if not request.user.is_superuser and property_obj.consultant != request.user:
         messages.error(request, "Bu gayrimenkulü düzenleme yetkiniz yok.")
@@ -279,17 +368,45 @@ def property_update(request, property_id):
         property_obj.price = request.POST.get('price', '').replace(',', '.')
         property_obj.neighborhood_id = request.POST.get('neighborhood', '')
         property_obj.address = request.POST.get('address', '')
+        property_obj.property_type = request.POST.get('property_type', '')
+        property_obj.room_count = request.POST.get('room_count', '')
+        property_obj.usage_status = request.POST.get('usage_status', '')
+        property_obj.floor_count = request.POST.get('floor_count', '')
+        
+        # Müşteri Bilgileri
+        property_obj.customer_tag = request.POST.get('customer_tag', '')
+        property_obj.customer_source = request.POST.get('customer_source', '')
+        property_obj.listing_from = request.POST.get('from_who', '')
+        
+        # Branda/Afiş/Fotoğraf durumu
+        has_banner = request.POST.get('has_banner', '')
+        if has_banner == 'var':
+            property_obj.banner_status = 'asildi'
+        elif has_banner == 'yok':
+            property_obj.banner_status = 'asilmadi'
+            
+        has_poster = request.POST.get('has_poster', '')
+        if has_poster == 'var':
+            property_obj.poster_status = 'asildi' 
+        elif has_poster == 'yok':
+            property_obj.poster_status = 'asilmadi'
+            
+        has_photos = request.POST.get('has_photos', '')
+        if has_photos == 'var':
+            property_obj.photo_status = 'cekildi'
+        elif has_photos == 'yok':
+            property_obj.photo_status = 'cekilmedi'
         
         # Detay bilgileri güncelle
         if property_obj.property_type == 'daire':
             property_obj.gross_area = request.POST.get('gross_area', None) or None
             property_obj.net_area = request.POST.get('net_area', None) or None
-            property_obj.room_count = request.POST.get('room_count', '')
-            property_obj.floor = request.POST.get('floor', '')
-            property_obj.building_age = request.POST.get('building_age', None) or None
             property_obj.heating = request.POST.get('heating', '')
-            property_obj.has_balcony = 'has_balcony' in request.POST
             property_obj.dues = request.POST.get('dues', None) or None
+            
+            # Balkon düzeltmesi (balcony form alanı -> has_balcony model alanı)
+            balcony = request.POST.get('balcony', '')
+            property_obj.has_balcony = balcony == 'var'
         
         # Diğer bilgileri güncelle
         property_obj.deed_status = request.POST.get('deed_status', '')
@@ -304,7 +421,6 @@ def property_update(request, property_id):
         
         # Operasyonel bilgileri güncelle
         property_obj.key_holder = request.POST.get('key_holder', '')
-        property_obj.photo_status = 'photo_status' in request.POST
         listing_date = request.POST.get('listing_date', '')
         if listing_date:
             property_obj.listing_date = listing_date
@@ -314,6 +430,16 @@ def property_update(request, property_id):
         property_obj.target_audience = request.POST.get('target_audience', '')
         
         property_obj.save()
+        
+        # Form işlendikten sonra değerleri kontrol et
+        print("POST sonrası property değerleri:")
+        print(f"Başlık: {property_obj.title}")
+        print(f"Emlak Tipi: {property_obj.property_type}")
+        print(f"Balkon: {'var' if property_obj.has_balcony else 'yok'}")
+        print(f"Kimden: {property_obj.listing_from}")
+        print(f"Branda Durumu: {property_obj.banner_status}")
+        print(f"Afiş Durumu: {property_obj.poster_status}")
+        print(f"Fotoğraf Durumu: {property_obj.photo_status}")
         
         # Çevre bilgilerini güncelle
         # Önce mevcut çevre bilgilerini sil
@@ -331,7 +457,30 @@ def property_update(request, property_id):
                     distance=distances[i]
                 )
         
-        # Yüklenen fotoğrafları gayrimenkulle ilişkilendir
+        # Fotoğrafları doğrudan işle
+        if request.FILES:
+            photos = request.FILES.getlist('photos[]')
+            for photo in photos:
+                # Dosya boyutu kontrolü (5MB)
+                if photo.size > 5 * 1024 * 1024:
+                    continue
+                
+                # Dosya tipi kontrolü
+                if photo.content_type not in ['image/jpeg', 'image/png', 'image/jpg']:
+                    continue
+                
+                # Başlık oluştur
+                title = photo.name.split('.')[0][:50]
+                
+                # Fotoğrafı kaydet ve property ile ilişkilendir
+                PropertyImage.objects.create(
+                    property=property_obj,
+                    image=photo,
+                    title=title,
+                    order=0
+                )
+        
+        # Ayrıca halihazırda yüklenmiş fotoğrafları da ilişkilendir (eski mekanizma için)
         image_ids = request.POST.getlist('image_ids[]')
         if image_ids:
             for image_id in image_ids:
@@ -510,6 +659,39 @@ def property_update_field(request):
                 'success': True, 
                 'message': 'Alan başarıyla güncellendi',
                 'display_value': display_value
+            })
+            
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Geçersiz istek'}, status=400)
+
+@login_required(login_url="/login/")
+@csrf_exempt
+def property_delete(request, property_id):
+    """AJAX ile gayrimenkul silme"""
+    if request.method == 'POST':
+        try:
+            try:
+                property_obj = Property.objects.get(id=property_id)
+            except Property.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Gayrimenkul bulunamadı'})
+            
+            # Güvenlik kontrolü
+            if not request.user.is_superuser and property_obj.consultant != request.user:
+                return JsonResponse({'success': False, 'error': 'Bu gayrimenkulü silme yetkiniz yok'})
+            
+            # Gayrimenkulün başlığını sakla
+            property_title = property_obj.title
+            
+            # Gayrimenkulle ilişkili çevre bilgilerini ve görselleri de sil
+            property_obj.delete()
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'"{property_title}" gayrimenkulü başarıyla silindi'
             })
             
         except Exception as e:

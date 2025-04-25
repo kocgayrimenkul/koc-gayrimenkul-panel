@@ -448,6 +448,14 @@
                     </div>
                   </div>
                 </div>
+                <div class="row">
+                  <div class="col-lg-12">
+                    <div class="form-group">
+                      <label class="form-control-label" for="address">Adres</label>
+                      <textarea id="address" name="address" class="form-control" placeholder="Adres detayları" rows="3"></textarea>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -674,28 +682,6 @@
             </div>
 
             <div class="form-card">
-              <div class="pl-lg-4">
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="neighborhood">Mahalle <span class="text-danger">*</span></label>
-                      <select id="neighborhood" name="neighborhood" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        {% for neighborhood in neighborhoods %}
-                          <option value="{{ neighborhood.id }}">{{ neighborhood.name }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="address">Adres</label>
-                      <textarea id="address" name="address" class="form-control" placeholder="Adres detayları" rows="3"></textarea>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
               <!-- Çevre Bilgileri -->
               <div class="form-section-title mt-4">
                 <i class="ni ni-world"></i>
@@ -799,15 +785,8 @@
                       <input type="file" id="photo-upload" name="photos[]" multiple accept="image/jpeg,image/png,image/jpg">
                     </div>
                     
-                    <div class="progress upload-progress" id="upload-progress">
-                      <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%"></div>
-                    </div>
-                    
                     <!-- Fotoğraf önizleme alanı -->
                     <div id="photo-preview-container" class="photo-container"></div>
-                    
-                    <!-- Yüklenen fotoğraf ID'lerini saklamak için gizli alan -->
-                    <div id="uploaded-photos" class="d-none"></div>
                   </div>
                 </div>
                 
@@ -1001,32 +980,17 @@
     });
     
     // YENİ FOTOĞRAF YÜKLEME KODU - BASİTLEŞTİRİLMİŞ
-    // Dosya seçimi değiştiğinde
-    $('#photo-upload').on('change', function() {
-      handleFileUpload(this.files);
-    });
-    
-    // Kamera ile fotoğraf çekme
-    $('#take-photo-btn').on('click', function() {
-      $('#camera-input').click();
-    });
-    
-    $('#camera-input').on('change', function() {
-      if (this.files && this.files.length > 0) {
-        handleFileUpload(this.files);
-      }
-    });
-    
-    // Geçici olarak saklanan fotoğraflar
-    var tempPhotoFiles = [];
-    
-    // Dosya işleme fonksiyonu
-    function handleFileUpload(files) {
+    // Fotoğraf önizleme
+    $('#photo-upload, #camera-input').on('change', function() {
+      const files = this.files;
       if (!files || files.length === 0) return;
       
-      // Her dosya için
-      Array.from(files).forEach(function(file) {
-        // Dosya boyutu kontrolü (5MB = 5 * 1024 * 1024 bytes)
+      // Önizleme konteynerini temizle
+      $('#photo-preview-container').empty();
+      
+      // Her dosya için önizleme oluştur
+      Array.from(files).forEach(function(file, index) {
+        // Dosya boyutu kontrolü
         if (file.size > 5 * 1024 * 1024) {
           alert('Dosya boyutu 5MB\'dan büyük olamaz: ' + file.name);
           return;
@@ -1038,20 +1002,12 @@
           return;
         }
         
-        // Dosyayı geçici diziye ekle
-        var photoId = 'temp_' + new Date().getTime() + '_' + tempPhotoFiles.length;
-        tempPhotoFiles.push({
-          id: photoId,
-          file: file
-        });
-        
         // Dosyayı önizleme için göster
-        var reader = new FileReader();
+        const reader = new FileReader();
         reader.onload = function(e) {
           // Önizleme elemanı oluştur
-          var previewElement = $('<div class="photo-preview" data-id="' + photoId + '">' +
+          const previewElement = $('<div class="photo-preview">' +
             '<img src="' + e.target.result + '" alt="Property Image">' +
-            '<button type="button" class="delete-btn" data-id="' + photoId + '"><i class="fas fa-times"></i></button>' +
             '</div>');
           
           // Önizleme alanına ekle
@@ -1060,117 +1016,12 @@
         
         reader.readAsDataURL(file);
       });
-    }
-    
-    // Fotoğraf silme işlemi
-    $(document).on('click', '.delete-btn', function() {
-      var photoId = $(this).data('id');
-      var previewElement = $(this).closest('.photo-preview');
-      
-      // Geçici fotoğraf ise
-      if (photoId.startsWith('temp_')) {
-        // Diziden sil
-        tempPhotoFiles = tempPhotoFiles.filter(function(item) {
-          return item.id !== photoId;
-        });
-        
-        // Önizlemeden kaldır
-        previewElement.remove();
-      } else {
-        // Sunucuda kaydedilmiş bir fotoğrafsa, sunucudan sil
-        if (confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) {
-          $.ajax({
-            url: "{% url 'property_image_delete' %}",
-            type: "POST",
-            data: {
-              'image_id': photoId,
-              'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
-            },
-            success: function(response) {
-              if (response.success) {
-                // Önizleme elemanını kaldır
-                previewElement.remove();
-                
-                // Gizli input'u da kaldır
-                $('#uploaded-photos input[value="' + photoId + '"]').remove();
-              } else {
-                console.error("Silme hatası:", response.error);
-                alert("Fotoğraf silinemedi: " + response.error);
-              }
-            },
-            error: function(xhr, status, error) {
-              console.error("AJAX hatası:", error);
-              alert("Bir hata oluştu. Lütfen tekrar deneyin.");
-            }
-          });
-        }
-      }
     });
     
-    // Form gönderilmeden önce fotoğrafları ekle
-    $('#property-form').submit(function(e) {
-      // Form zaten doğrulandıysa ve geçici fotoğraflar varsa
-      if (tempPhotoFiles.length > 0) {
-        e.preventDefault();
-        
-        // Tüm fotoğrafları yüklemek için sayaç
-        var uploadedCount = 0;
-        var totalCount = tempPhotoFiles.length;
-        
-        // Progress bar göster
-        $('#upload-progress').show();
-        
-        // Her geçici fotoğraf için
-        tempPhotoFiles.forEach(function(item, index) {
-          var formData = new FormData();
-          formData.append('image', item.file);
-          formData.append('csrfmiddlewaretoken', $('[name=csrfmiddlewaretoken]').val());
-          
-          $.ajax({
-            url: "{% url 'property_image_upload' %}",
-            type: "POST",
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-              uploadedCount++;
-              
-              // Progress bar güncelle
-              var percentComplete = (uploadedCount / totalCount) * 100;
-              $('#upload-progress .progress-bar').css('width', percentComplete + '%');
-              
-              if (response.success) {
-                // Fotoğraf ID'sini form verisine ekle
-                var imageId = response.image_id;
-                var hiddenInput = $('<input type="hidden" name="image_ids[]" value="' + imageId + '">');
-                $('#uploaded-photos').append(hiddenInput);
-              }
-              
-              // Tüm fotoğraflar yüklendiyse formu gönder
-              if (uploadedCount === totalCount) {
-                $('#upload-progress').hide();
-                $('#property-form').unbind('submit').submit();
-              }
-            },
-            error: function(xhr, status, error) {
-              uploadedCount++;
-              console.error("AJAX hatası:", error);
-              
-              // Yine de devam et, tüm fotoğraflar yüklendiyse formu gönder
-              if (uploadedCount === totalCount) {
-                $('#upload-progress').hide();
-                $('#property-form').unbind('submit').submit();
-              }
-            }
-          });
-        });
-        
-        return false;
-      }
+    // Kamera ile fotoğraf çekme
+    $('#take-photo-btn').on('click', function() {
+      $('#camera-input').click();
     });
-    
-    // Debug mesajı
-    console.log("Fotoğraf yükleme kodları hazır!");
   });
 </script>
 {% endblock javascripts %}
