@@ -18,6 +18,4 @@ urlpatterns = [
     path("", include("apps.home.urls"))                   # Ana sayfa ve diğer UI Kits
 ]
 
-# Eğer debug modu açıksa, medya dosyaları için URL yapılandırması
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

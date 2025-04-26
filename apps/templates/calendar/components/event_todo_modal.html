@@ -1,0 +1,187 @@
+<!-- Etkinlik ve Görev Oluşturma Modalı -->
+<div class="modal fade" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="eventModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="eventModalLabel">Yeni Kayıt</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Tab navları -->
+        <ul class="nav nav-tabs" id="modalTabs" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="event-tab" data-toggle="tab" href="#event-tab-content" role="tab" aria-controls="event-tab-content" aria-selected="true">
+              <i class="fas fa-calendar-day mr-2"></i>Etkinlik
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="todo-tab-modal" data-toggle="tab" href="#todo-tab-content" role="tab" aria-controls="todo-tab-content" aria-selected="false">
+              <i class="fas fa-tasks mr-2"></i>Görev
+            </a>
+          </li>
+        </ul>
+        
+        <!-- Tab içerikleri -->
+        <div class="tab-content mt-3" id="modalTabContent">
+          <!-- Etkinlik Tab İçeriği -->
+          <div class="tab-pane fade show active" id="event-tab-content" role="tabpanel" aria-labelledby="event-tab">
+            <form id="eventForm" action="{% url 'event_create' %}" method="post">
+              {% csrf_token %}
+              <div class="form-group">
+                <label class="form-control-label" for="title">Başlık <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="title" name="title" required>
+              </div>
+              <div class="form-group">
+                <label class="form-control-label" for="event_type">Etkinlik Tipi <span class="text-danger">*</span></label>
+                <select class="form-control" id="event_type" name="event_type" required>
+                  {% for value, label in event_types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="start_date">Başlangıç <span class="text-danger">*</span></label>
+                    <input type="datetime-local" class="form-control" id="start_date" name="start_date" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="end_date">Bitiş</label>
+                    <input type="datetime-local" class="form-control" id="end_date" name="end_date">
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-control-label" for="location">Konum</label>
+                <input type="text" class="form-control" id="location" name="location">
+              </div>
+              <div class="form-group">
+                <label class="form-control-label" for="description">Açıklama</label>
+                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="customer">Müşteri</label>
+                    <select class="form-control" id="customer" name="customer">
+                      <option value="">Seçiniz</option>
+                      {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.full_name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="property">Gayrimenkul</label>
+                    <select class="form-control" id="property" name="property">
+                      <option value="">Seçiniz</option>
+                      {% for property in properties %}
+                        <option value="{{ property.id }}">{{ property.title }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="submit" class="btn btn-koc-red">Kaydet</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Görev Tab İçeriği -->
+          <div class="tab-pane fade" id="todo-tab-content" role="tabpanel" aria-labelledby="todo-tab-modal">
+            <form id="todoFormModal" action="{% url 'todo_create' %}" method="post">
+              {% csrf_token %}
+              <div class="form-group">
+                <label class="form-control-label" for="todo_title_modal">Başlık <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="todo_title_modal" name="title" required>
+              </div>
+              <div class="form-group">
+                <label class="form-control-label" for="todo_description_modal">Açıklama</label>
+                <textarea class="form-control" id="todo_description_modal" name="description" rows="3"></textarea>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="priority_modal">Öncelik</label>
+                    <select class="form-control" id="priority_modal" name="priority">
+                      {% for value, label in priority_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="due_date_modal">Son Tarih</label>
+                    <input type="date" class="form-control" id="due_date_modal" name="due_date">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="consultant_modal">Atanan Danışman</label>
+                    <select class="form-control" id="consultant_modal" name="consultant">
+                      <option value="">Seçiniz</option>
+                      {% for user in consultants %}
+                        <option value="{{ user.id }}">{{ user.get_full_name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="customer_todo_modal">Müşteri</label>
+                    <select class="form-control" id="customer_todo_modal" name="customer">
+                      <option value="">Seçiniz</option>
+                      {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.full_name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="property_todo_modal">Gayrimenkul</label>
+                    <select class="form-control" id="property_todo_modal" name="property">
+                      <option value="">Seçiniz</option>
+                      {% for property in properties %}
+                        <option value="{{ property.id }}">{{ property.title }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="submit" class="btn btn-koc-red">Kaydet</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal JS -->
+<script>
+  // Modal kodlarını burada tanımlayabilirsiniz
+  // Bu kod, include edildiğinde çalışacaktır
+  document.addEventListener('DOMContentLoaded', function() {
+    // Modal tab'ları arasında geçiş yapıldığında
+    $('#modalTabs a').on('click', function (e) {
+      e.preventDefault();
+      $(this).tab('show');
+    });
+  });
+</script> 

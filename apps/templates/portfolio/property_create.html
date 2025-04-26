@@ -396,6 +396,30 @@
                 <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
+                      <label class="form-control-label required-label" for="floor">Bulunduğu Kat</label>
+                      <select id="floor" name="floor" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="Zemin">Zemin</option>
+                        <option value="Bodrum">Bodrum</option>
+                        <option value="Yarı Bodrum">Yarı Bodrum</option>
+                        <option value="Giriş">Giriş</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10+">10+</option>
+                        <option value="En Üst Kat">En Üst Kat</option>
+                        <option value="Çatı Katı">Çatı Katı</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group">
                       <label class="form-control-label required-label" for="neighborhood">Mahalle</label>
                       <select id="neighborhood" name="neighborhood" class="form-control" required>
                         <option value="">Seçiniz</option>
@@ -405,6 +429,8 @@
                       </select>
                     </div>
                   </div>
+                </div>
+                <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
                       <label class="form-control-label required-label" for="room_count">Oda Sayısı</label>
@@ -421,8 +447,6 @@
                       </select>
                     </div>
                   </div>
-                </div>
-                <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
                       <label class="form-control-label required-label" for="usage_status">Kullanım Durumu</label>
@@ -434,6 +458,8 @@
                       </select>
                     </div>
                   </div>
+                </div>
+                <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
                       <label class="form-control-label required-label" for="floor_count">Kat Sayısı</label>
@@ -452,9 +478,7 @@
                       </select>
                     </div>
                   </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-12">
+                  <div class="col-lg-6">
                     <div class="form-group">
                       <label class="form-control-label" for="address">Adres</label>
                       <textarea id="address" name="address" class="form-control" placeholder="Adres detayları" rows="3"></textarea>
@@ -1079,9 +1103,6 @@
       const files = this.files;
       if (!files || files.length === 0) return;
       
-      // Önizleme konteynerini temizle
-      $('#photo-preview-container').empty();
-      
       // Her dosya için önizleme oluştur
       Array.from(files).forEach(function(file, index) {
         // Dosya boyutu kontrolü
@@ -1102,7 +1123,13 @@
           // Önizleme elemanı oluştur
           const previewElement = $('<div class="photo-preview">' +
             '<img src="' + e.target.result + '" alt="Property Image">' +
+            '<button type="button" class="delete-btn"><i class="fas fa-times"></i></button>' +
             '</div>');
+          
+          // Silme düğmesi işlevselliği
+          previewElement.find('.delete-btn').on('click', function() {
+            previewElement.remove();
+          });
           
           // Önizleme alanına ekle
           $('#photo-preview-container').append(previewElement);

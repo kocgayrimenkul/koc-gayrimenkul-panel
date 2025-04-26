@@ -7,6 +7,7 @@
 <!-- Toast UI Calendar ve bağımlılıkları -->
 <link rel="stylesheet" href="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.css" />
 <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/static/assets/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
   :root {
@@ -279,6 +280,113 @@
   .view-switch-btn:hover:not(.active) {
     background-color: #e9ecef;
   }
+  
+  /* Tab stilleri */
+  .nav-tabs .nav-item .nav-link {
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    color: #525f7f;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+  }
+  
+  .nav-tabs .nav-item .nav-link.active {
+    color: var(--koc-red);
+    border-bottom: 2px solid var(--koc-red);
+    background-color: transparent;
+  }
+  
+  .nav-tabs .nav-item .nav-link:hover:not(.active) {
+    color: var(--koc-red-light);
+    border-bottom: 2px solid var(--koc-red-light);
+  }
+  
+  .tab-content {
+    padding: 1rem 0;
+  }
+  
+  /* DataTables özelleştirmeleri */
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current, 
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: #fff !important;
+    background: var(--koc-red) !important;
+    border-color: var(--koc-red) !important;
+  }
+  
+  .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    color: #fff !important;
+    background: var(--koc-red-light) !important;
+    border-color: var(--koc-red-light) !important;
+  }
+  
+  .dataTables_wrapper .dataTables_filter input {
+    border-radius: 0.375rem;
+    border: 1px solid #e9ecef;
+    padding: 0.5rem;
+    margin-left: 0.5rem;
+  }
+  
+  .text-decoration-line-through {
+    text-decoration: line-through;
+  }
+  
+  /* Badges */
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.35rem 0.5rem;
+    text-transform: none;
+  }
+  
+  .badge-primary {
+    background-color: var(--koc-red);
+  }
+  
+  .badge-info {
+    background-color: #11cdef;
+  }
+  
+  .badge-warning {
+    background-color: #fb6340;
+  }
+  
+  .badge-success {
+    background-color: #2dce89;
+  }
+  
+  .badge-danger {
+    background-color: var(--koc-red);
+  }
+  
+  .badge-yellow {
+    background-color: #ffd600;
+    color: #212529;
+  }
+  
+  .badge-purple {
+    background-color: #8965e0;
+  }
+  
+  /* Table actions */
+  .table-actions {
+    white-space: nowrap;
+  }
+  
+  .table-action {
+    color: #8898aa;
+    font-size: 0.875rem;
+    margin-right: 0.5rem;
+    transition: all 0.15s ease;
+  }
+  
+  .table-action:hover {
+    color: var(--koc-red);
+  }
+  
+  .table-action-delete:hover {
+    color: #f5365c;
+  }
 </style>
 {% endblock stylesheets %}
 
@@ -369,7 +477,7 @@
                           <i class="fas fa-edit mr-2"></i> Düzenle
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item text-danger" href="#" onclick="deleteTodo({{ todo.id }})">
+                        <a class="dropdown-item text-danger delete-todo-btn" href="#" data-id="{{ todo.id }}">
                           <i class="fas fa-trash mr-2"></i> Sil
                         </a>
                       </div>
@@ -392,149 +500,247 @@
     </div>
     
     <div class="col-xl-9">
-      <!-- Takvim kartı -->
+      <!-- Takvim ve Tablar kartı -->
       <div class="card">
         <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <h3 class="mb-0">Takvim</h3>
-            </div>
-          </div>
+          <ul class="nav nav-tabs card-header-tabs" id="calendarTabs" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" id="calendar-tab" data-toggle="tab" href="#calendar-content" role="tab" aria-controls="calendar-content" aria-selected="true">
+                <i class="fas fa-calendar-alt mr-2"></i>Takvim
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="events-tab" data-toggle="tab" href="#events-content" role="tab" aria-controls="events-content" aria-selected="false">
+                <i class="fas fa-list-alt mr-2"></i>Etkinlikler
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="todos-tab" data-toggle="tab" href="#todos-content" role="tab" aria-controls="todos-content" aria-selected="false">
+                <i class="fas fa-tasks mr-2"></i>Görevler
+              </a>
+            </li>
+          </ul>
         </div>
         <div class="card-body p-3">
-          <!-- Takvim Açıklamaları -->
-          <div class="calendar-legend">
-            <div class="legend-item">
-              <div class="legend-bullet meeting-bullet"></div>
-              <span>Toplantı</span>
+          <div class="tab-content" id="calendarTabContent">
+            <!-- Takvim Tab İçeriği -->
+            <div class="tab-pane fade show active" id="calendar-content" role="tabpanel" aria-labelledby="calendar-tab">
+              <!-- Takvim Açıklamaları -->
+              <div class="calendar-legend">
+                <div class="legend-item">
+                  <div class="legend-bullet meeting-bullet"></div>
+                  <span>Toplantı</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-bullet viewing-bullet"></div>
+                  <span>Görüntüleme</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-bullet call-bullet"></div>
+                  <span>Arama</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-bullet reminder-bullet"></div>
+                  <span>Hatırlatma</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-bullet appointment-bullet"></div>
+                  <span>Randevu</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-bullet task-bullet"></div>
+                  <span>Görev</span>
+                </div>
+              </div>
+              
+              <!-- Takvim Kontrolleri -->
+              <div class="calendar-controls">
+                <div>
+                  <button id="prevButton" class="btn btn-sm btn-outline-secondary calendar-control-btn">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <button id="todayButton" class="btn btn-sm btn-outline-primary calendar-control-btn">Bugün</button>
+                  <button id="nextButton" class="btn btn-sm btn-outline-secondary calendar-control-btn">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                  <span id="calendarTitle" class="ml-3 calendar-title"></span>
+                </div>
+                <div class="view-switch">
+                  <button id="monthViewButton" class="view-switch-btn active">Ay</button>
+                  <button id="weekViewButton" class="view-switch-btn">Hafta</button>
+                  <button id="dayViewButton" class="view-switch-btn">Gün</button>
+                </div>
+              </div>
+              
+              <div id="calendar"></div>
             </div>
-            <div class="legend-item">
-              <div class="legend-bullet viewing-bullet"></div>
-              <span>Görüntüleme</span>
+            
+            <!-- Etkinlikler Tab İçeriği -->
+            <div class="tab-pane fade" id="events-content" role="tabpanel" aria-labelledby="events-tab">
+              <div class="text-right mb-3">
+                <a href="{% url 'event_create_form' %}" class="btn btn-sm btn-koc-red">
+                  <i class="fas fa-plus mr-1"></i> Yeni Etkinlik
+                </a>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-flush" id="datatable-events-tab">
+                  <thead class="thead-light">
+                    <tr>
+                      <th>Başlık</th>
+                      <th>Etkinlik Türü</th>
+                      <th>Başlangıç</th>
+                      <th>Durum</th>
+                      <th>İşlemler</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for event in events %}
+                      <tr>
+                        <td>
+                          <a href="{% url 'event_detail' event.id %}" class="font-weight-bold text-koc-red">
+                            {{ event.title }}
+                          </a>
+                        </td>
+                        <td>
+                          {% if event.event_type == 'meeting' %}
+                            <span class="badge badge-primary">Toplantı</span>
+                          {% elif event.event_type == 'viewing' %}
+                            <span class="badge badge-info">Gayrimenkul Gösterimi</span>
+                          {% elif event.event_type == 'call' %}
+                            <span class="badge badge-warning">Telefon Görüşmesi</span>
+                          {% elif event.event_type == 'reminder' %}
+                            <span class="badge badge-yellow">Hatırlatıcı</span>
+                          {% elif event.event_type == 'appointment' %}
+                            <span class="badge badge-success">Randevu</span>
+                          {% elif event.event_type == 'task' %}
+                            <span class="badge badge-purple">Görev</span>
+                          {% else %}
+                            <span class="badge badge-default">Diğer</span>
+                          {% endif %}
+                        </td>
+                        <td>{{ event.start_time|date:"d.m.Y H:i" }}</td>
+                        <td>
+                          {% if event.is_completed %}
+                            <span class="badge badge-success">Tamamlandı</span>
+                          {% else %}
+                            <span class="badge badge-warning">Devam Ediyor</span>
+                          {% endif %}
+                        </td>
+                        <td class="table-actions">
+                          <a href="{% url 'event_detail' event.id %}" class="table-action" data-toggle="tooltip" data-original-title="Görüntüle">
+                            <i class="fas fa-eye"></i>
+                          </a>
+                          <a href="{% url 'event_update' event.id %}" class="table-action" data-toggle="tooltip" data-original-title="Düzenle">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                        </td>
+                      </tr>
+                    {% empty %}
+                      <tr>
+                        <td colspan="5" class="text-center py-4">
+                          <p class="mb-0 text-muted">Henüz etkinlik kaydı bulunmamaktadır.</p>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <div class="text-center mt-3">
+                <a href="{% url 'event_list' %}" class="btn btn-link text-koc-red">
+                  <i class="fas fa-external-link-alt mr-1"></i> Tüm Etkinlikleri Görüntüle
+                </a>
+              </div>
             </div>
-            <div class="legend-item">
-              <div class="legend-bullet call-bullet"></div>
-              <span>Arama</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-bullet reminder-bullet"></div>
-              <span>Hatırlatma</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-bullet appointment-bullet"></div>
-              <span>Randevu</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-bullet task-bullet"></div>
-              <span>Görev</span>
+            
+            <!-- Görevler Tab İçeriği -->
+            <div class="tab-pane fade" id="todos-content" role="tabpanel" aria-labelledby="todos-tab">
+              <div class="text-right mb-3">
+                <button type="button" class="btn btn-sm btn-koc-red" data-toggle="modal" data-target="#todoModal">
+                  <i class="fas fa-plus mr-1"></i> Yeni Görev
+                </button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-flush" id="datatable-todos-tab">
+                  <thead class="thead-light">
+                    <tr>
+                      <th>Başlık</th>
+                      <th>Öncelik</th>
+                      <th>Son Tarih</th>
+                      <th>Durum</th>
+                      <th>İşlemler</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for todo in todos %}
+                      <tr>
+                        <td>
+                          <div class="d-flex align-items-center">
+                            <div class="custom-control custom-checkbox mr-2">
+                              <input type="checkbox" class="custom-control-input todo-tab-checkbox" id="todo-tab-{{ todo.id }}" 
+                                     {% if todo.is_completed %}checked{% endif %} data-id="{{ todo.id }}">
+                              <label class="custom-control-label" for="todo-tab-{{ todo.id }}"></label>
+                            </div>
+                            <span class="font-weight-bold {% if todo.is_completed %}text-muted{% else %}text-koc-red{% endif %} {% if todo.is_completed %}text-decoration-line-through{% endif %}">
+                              {{ todo.title }}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          {% if todo.priority == 'yuksek' %}
+                            <span class="badge badge-danger">Yüksek</span>
+                          {% elif todo.priority == 'orta' %}
+                            <span class="badge badge-warning">Orta</span>
+                          {% else %}
+                            <span class="badge badge-info">Düşük</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if todo.due_date %}
+                            {{ todo.due_date|date:"d.m.Y" }}
+                          {% else %}
+                            <span class="text-muted">-</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          {% if todo.is_completed %}
+                            <span class="badge badge-success">Tamamlandı</span>
+                          {% else %}
+                            <span class="badge badge-warning">Devam Ediyor</span>
+                          {% endif %}
+                        </td>
+                        <td class="table-actions">
+                          <a href="#" class="table-action" data-toggle="modal" data-target="#todoModal" data-todo-id="{{ todo.id }}">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="#" class="table-action table-action-delete delete-todo-btn" data-id="{{ todo.id }}">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </td>
+                      </tr>
+                    {% empty %}
+                      <tr>
+                        <td colspan="5" class="text-center py-4">
+                          <p class="mb-0 text-muted">Henüz görev kaydı bulunmamaktadır.</p>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <div class="text-center mt-3">
+                <a href="{% url 'todo_list' %}" class="btn btn-link text-koc-red">
+                  <i class="fas fa-external-link-alt mr-1"></i> Tüm Görevleri Görüntüle
+                </a>
+              </div>
             </div>
           </div>
-          
-          <!-- Takvim Kontrolleri -->
-          <div class="calendar-controls">
-            <div>
-              <button id="prevButton" class="btn btn-sm btn-outline-secondary calendar-control-btn">
-                <i class="fas fa-chevron-left"></i>
-              </button>
-              <button id="todayButton" class="btn btn-sm btn-outline-primary calendar-control-btn">Bugün</button>
-              <button id="nextButton" class="btn btn-sm btn-outline-secondary calendar-control-btn">
-                <i class="fas fa-chevron-right"></i>
-              </button>
-              <span id="calendarTitle" class="ml-3 calendar-title"></span>
-            </div>
-            <div class="view-switch">
-              <button id="monthViewButton" class="view-switch-btn active">Ay</button>
-              <button id="weekViewButton" class="view-switch-btn">Hafta</button>
-              <button id="dayViewButton" class="view-switch-btn">Gün</button>
-            </div>
-          </div>
-          
-          <div id="calendar"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Etkinlik Modal -->
-  <div class="modal fade" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="eventModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="eventModalLabel">Yeni Etkinlik</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <form id="eventForm" action="{% url 'event_create' %}" method="post">
-          {% csrf_token %}
-          <div class="modal-body">
-            <div class="form-group">
-              <label class="form-control-label" for="title">Başlık <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="title" name="title" required>
-            </div>
-            <div class="form-group">
-              <label class="form-control-label" for="event_type">Etkinlik Tipi <span class="text-danger">*</span></label>
-              <select class="form-control" id="event_type" name="event_type" required>
-                {% for value, label in event_types %}
-                  <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label class="form-control-label" for="start_date">Başlangıç <span class="text-danger">*</span></label>
-                  <input type="datetime-local" class="form-control" id="start_date" name="start_date" required>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label class="form-control-label" for="end_date">Bitiş</label>
-                  <input type="datetime-local" class="form-control" id="end_date" name="end_date">
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-control-label" for="location">Konum</label>
-              <input type="text" class="form-control" id="location" name="location">
-            </div>
-            <div class="form-group">
-              <label class="form-control-label" for="description">Açıklama</label>
-              <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-            </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label class="form-control-label" for="customer">Müşteri</label>
-                  <select class="form-control" id="customer" name="customer">
-                    <option value="">Seçiniz</option>
-                    {% for customer in customers %}
-                      <option value="{{ customer.id }}">{{ customer.full_name }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label class="form-control-label" for="property">Gayrimenkul</label>
-                  <select class="form-control" id="property" name="property">
-                    <option value="">Seçiniz</option>
-                    {% for property in properties %}
-                      <option value="{{ property.id }}">{{ property.title }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
-            <button type="submit" class="btn btn-koc-red">Kaydet</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+  <!-- Etkinlik ve Görev modalı component olarak include ediliyor -->
+  {% include "calendar/components/event_todo_modal.html" %}
 
   <!-- Yapılacak Modal -->
   <div class="modal fade" id="todoModal" tabindex="-1" role="dialog" aria-labelledby="todoModalLabel" aria-hidden="true">
@@ -588,6 +794,8 @@
 {% block javascripts %}
 <script src="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+<script src="/static/assets/vendor/datatables.net/js/jquery.dataTables.min.js"></script>
+<script src="/static/assets/vendor/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -702,7 +910,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // Etkinlikleri takvime yükle
-  const events = {{ events_json|safe }};
+  const events = JSON.parse('{{ events_json|escapejs }}');
   const calendarEvents = events.map(event => {
     let calendarId;
     switch(event.extendedProps.type) {
@@ -819,14 +1027,34 @@ document.addEventListener('DOMContentLoaded', function() {
     // Önceki seçimi temizle
     calendar.clearGridSelections();
     
+    // Seçilen tarihi biçimlendir
+    const selectedDate = formatDateTime(event.start.toDate());
+    const selectedDateOnly = selectedDate.split('T')[0]; // Sadece tarih kısmını al
+    
+    // Etkinlik modalını aç
     $('#eventModal').modal('show');
-    $('#start_date').val(formatDateTime(event.start.toDate()));
+    
+    // Tarih seçildiğinde etkinlik ve görev form alanlarını ayarla
+    $('#start_date').val(selectedDate);
     
     if (event.end) {
       $('#end_date').val(formatDateTime(event.end.toDate()));
     }
+    
+    // Görev son tarihini ayarla
+    $('#due_date_modal').val(selectedDateOnly);
+    
+    // Etkinlik tab'ını aktif yap
+    $('#modalTabs a[href="#event-tab-content"]').tab('show');
   });
   
+  // Modal tab'ları arasında geçiş yapıldığında
+  $('#modalTabs a').on('click', function (e) {
+    e.preventDefault();
+    $(this).tab('show');
+  });
+  
+  // Tarih formatını ayarlama fonksiyonu
   function formatDateTime(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -838,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Yapılacaklar listesi işlevleri
-  $('.todo-checkbox').on('change', function() {
+  $('.todo-checkbox, .todo-tab-checkbox').on('change', function() {
     var todoId = $(this).data('id');
     var isCompleted = $(this).prop('checked');
     
@@ -918,12 +1146,71 @@ document.addEventListener('DOMContentLoaded', function() {
                 showConfirmButton: false,
                 timer: 3000
               });
+              
+              // Sayfayı yenile
+              setTimeout(function() {
+                location.reload();
+              }, 1000);
             }
           }
         });
       }
     });
   };
+  
+  // Silme butonlarına olay dinleyici ekle
+  $(document).on('click', '.delete-todo-btn', function(e) {
+    e.preventDefault();
+    const todoId = $(this).data('id');
+    deleteTodo(todoId);
+  });
+  
+  // DataTables başlat
+  $('#datatable-events-tab').DataTable({
+    language: {
+      url: '/static/assets/vendor/datatables.net/i18n/tr.json'
+    },
+    responsive: true,
+    lengthChange: false,
+    pageLength: 5,
+    ordering: true,
+    info: false,
+    searching: true
+  });
+  
+  $('#datatable-todos-tab').DataTable({
+    language: {
+      url: '/static/assets/vendor/datatables.net/i18n/tr.json'
+    },
+    responsive: true,
+    lengthChange: false,
+    pageLength: 5,
+    ordering: true,
+    info: false,
+    searching: true
+  });
+  
+  // Tab değişiminde takvim yeniden çizimi
+  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    if (e.target.id === 'calendar-tab') {
+      calendar.render();
+    }
+  });
+
+  // Filtre dropdown işlevi
+  $('.filter-status').on('click', function(e) {
+    e.preventDefault();
+    var statusValue = $(this).data('status');
+    var statusColumn = todoTable.column(6); // Durum kolonu
+    
+    if (statusValue === 'completed') {
+      statusColumn.search('Tamamlandı').draw();
+    } else if (statusValue === 'pending') {
+      statusColumn.search('Devam Ediyor').draw();
+    } else {
+      statusColumn.search('').draw();
+    }
+  });
 });
 </script>
 {% endblock javascripts %} 
