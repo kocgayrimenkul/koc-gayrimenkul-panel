@@ -35,12 +35,7 @@
               <span class="nav-link-text">Ajanda</span>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'event_list' in segment %} active {% endif %}" href="{% url 'event_list' %}">
-              <i class="ni ni-bullet-list-67 text-warning"></i>
-              <span class="nav-link-text">Etkinlikler</span>
-            </a>
-          </li>
+          
           <li class="nav-item">
             <a class="nav-link {% if 'map' in segment %} active {% endif %}" href="/map.html">
               <i class="ni ni-pin-3 text-primary"></i>
@@ -65,12 +60,7 @@
               <span class="nav-link-text">Satışlar</span>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'todo' in segment %} active {% endif %}" href="{% url 'todo_list' %}">
-              <i class="ni ni-check-bold text-info"></i>
-              <span class="nav-link-text">Görevler</span>
-            </a>
-          </li>
+        
           <li class="nav-item">
             <a class="nav-link" href="{% url 'logout' %}">
               <i class="ni ni-user-run text-red"></i>

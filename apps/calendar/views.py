@@ -29,7 +29,7 @@ def calendar_view(request):
     # İlgili kullanıcıya ait etkinlikler
     if request.user.is_superuser:
         # Süper kullanıcı ise tüm etkinlikleri görebilir
-        events = Event.objects.filter(start_time__date__gte=today)
+        events = Event.objects.all()
     else:
         # Normal kullanıcı ise sadece kendi etkinliklerini görebilir
         events = Event.objects.filter(consultant=request.user, start_time__date__gte=today)
@@ -58,25 +58,46 @@ def calendar_view(request):
     # JSON formatında etkinlik verisi oluştur
     events_json = []
     for event in events:
+        # Event type'a göre renk belirle
         color = ""
-        if event.event_type == 'gorusme':
-            color = "#2dce89"  # Yeşil
-        elif event.event_type == 'gosterim':
-            color = "#5e72e4"  # Mavi
-        elif event.event_type == 'toplanti':
-            color = "#fb6340"  # Turuncu
+        if event.event_type == 'meeting':
+            color = "#9d2235"  # Koç kırmızısı - Toplantı
+        elif event.event_type == 'viewing':
+            color = "#11cdef"  # Mavi - Gayrimenkul Gösterimi
+        elif event.event_type == 'call':
+            color = "#fb6340"  # Turuncu - Telefon Görüşmesi
+        elif event.event_type == 'reminder':
+            color = "#ffd600"  # Sarı - Hatırlatıcı
+        elif event.event_type == 'appointment':
+            color = "#2dce89"  # Yeşil - Randevu
+        elif event.event_type == 'task':
+            color = "#8965e0"  # Mor - Görev
         else:
-            color = "#f5365c"  # Kırmızı
+            color = "#6c757d"  # Gri - Diğer
+        
+        # End time kontrolü (None olabilir)
+        end_time = ""
+        if event.end_time:
+            end_time = event.end_time.strftime('%Y-%m-%dT%H:%M:%S')
+        else:
+            # Bitiş zamanı yoksa başlangıç zamanı + 1 saat
+            end_time = (event.start_time + timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S')
         
         events_json.append({
             'id': event.id,
             'title': event.title,
             'start': event.start_time.strftime('%Y-%m-%dT%H:%M:%S'),
-            'end': event.end_time.strftime('%Y-%m-%dT%H:%M:%S'),
-            'color': color,
+            'end': end_time,
+            'backgroundColor': color,
+            'borderColor': color,
+            'allDay': False,
             'url': reverse('event_detail', args=[event.id]),
-            'description': event.description[:50] + '...' if len(event.description) > 50 else event.description,
-            'is_completed': event.is_completed
+            'extendedProps': {
+                'type': event.event_type,
+                'description': event.description[:100] + '...' if len(event.description) > 100 else event.description,
+                'location': event.location,
+                'is_completed': event.is_completed
+            }
         })
     
     context = {

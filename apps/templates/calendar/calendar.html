@@ -341,22 +341,27 @@
   
   .badge-primary {
     background-color: var(--koc-red);
+    color: #ffffff;
   }
   
   .badge-info {
     background-color: #11cdef;
+    color: #212529;
   }
   
   .badge-warning {
     background-color: #fb6340;
+    color: #ffffff;
   }
   
   .badge-success {
     background-color: #2dce89;
+    color: #ffffff;
   }
   
   .badge-danger {
     background-color: var(--koc-red);
+    color: #ffffff;
   }
   
   .badge-yellow {
@@ -366,6 +371,12 @@
   
   .badge-purple {
     background-color: #8965e0;
+    color: #ffffff;
+  }
+  
+  .badge-default {
+    background-color: #6c757d;
+    color: #ffffff;
   }
   
   /* Table actions */
@@ -577,18 +588,40 @@
             
             <!-- Etkinlikler Tab İçeriği -->
             <div class="tab-pane fade" id="events-content" role="tabpanel" aria-labelledby="events-tab">
-              <div class="text-right mb-3">
-                <a href="{% url 'event_create_form' %}" class="btn btn-sm btn-koc-red">
-                  <i class="fas fa-plus mr-1"></i> Yeni Etkinlik
-                </a>
+              <div class="row align-items-center mb-3">
+                <div class="col">
+                  <h5 class="mb-0">Etkinlikler</h5>
+                  <p class="text-sm text-muted mb-0">
+                    Tüm etkinliklerin listesi. Filtreleme ve arama yapabilirsiniz.
+                  </p>
+                </div>
+                <div class="col text-right">
+                  <div class="dropdown d-inline-block mr-2">
+                    <button class="btn btn-sm btn-koc-red dropdown-toggle" type="button" id="filterDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-filter mr-1"></i> Filtrele
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="filterDropdown">
+                      <a class="dropdown-item filter-status" href="#" data-status="all">Tümü</a>
+                      <a class="dropdown-item filter-status" href="#" data-status="completed">Tamamlananlar</a>
+                      <a class="dropdown-item filter-status" href="#" data-status="pending">Bekleyenler</a>
+                      <a class="dropdown-item filter-status" href="#" data-status="today">Bugün</a>
+                      <a class="dropdown-item filter-status" href="#" data-status="week">Bu Hafta</a>
+                    </div>
+                  </div>
+                  <a href="{% url 'event_create_form' %}" class="btn btn-sm btn-koc-red">
+                    <i class="fas fa-plus mr-1"></i> Yeni Etkinlik
+                  </a>
+                </div>
               </div>
               <div class="table-responsive">
                 <table class="table table-flush" id="datatable-events-tab">
                   <thead class="thead-light">
                     <tr>
+                      <th>ID</th>
                       <th>Başlık</th>
                       <th>Etkinlik Türü</th>
                       <th>Başlangıç</th>
+                      <th>Bitiş</th>
                       <th>Durum</th>
                       <th>İşlemler</th>
                     </tr>
@@ -596,6 +629,7 @@
                   <tbody>
                     {% for event in events %}
                       <tr>
+                        <td>{{ event.id }}</td>
                         <td>
                           <a href="{% url 'event_detail' event.id %}" class="font-weight-bold text-koc-red">
                             {{ event.title }}
@@ -618,7 +652,20 @@
                             <span class="badge badge-default">Diğer</span>
                           {% endif %}
                         </td>
-                        <td>{{ event.start_time|date:"d.m.Y H:i" }}</td>
+                        <td>
+                          <span data-toggle="tooltip" data-placement="top" title="{{ event.start_time|date:'d F Y H:i' }}">
+                            {{ event.start_time|date:"d.m.Y H:i" }}
+                          </span>
+                        </td>
+                        <td>
+                          {% if event.end_time %}
+                            <span data-toggle="tooltip" data-placement="top" title="{{ event.end_time|date:'d F Y H:i' }}">
+                              {{ event.end_time|date:"d.m.Y H:i" }}
+                            </span>
+                          {% else %}
+                            <span class="text-muted">-</span>
+                          {% endif %}
+                        </td>
                         <td>
                           {% if event.is_completed %}
                             <span class="badge badge-success">Tamamlandı</span>
@@ -633,12 +680,53 @@
                           <a href="{% url 'event_update' event.id %}" class="table-action" data-toggle="tooltip" data-original-title="Düzenle">
                             <i class="fas fa-edit"></i>
                           </a>
+                          <a href="#" class="table-action table-action-delete" data-toggle="modal" data-target="#modal-delete-{{ event.id }}" data-original-title="Sil">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                          
+                          <!-- Silme onay modalı -->
+                          <div class="modal fade" id="modal-delete-{{ event.id }}" tabindex="-1" role="dialog" aria-labelledby="modal-delete-{{ event.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-danger modal-dialog-centered" role="document">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h6 class="modal-title" id="modal-title-delete">Etkinliği Sil</h6>
+                                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">×</span>
+                                  </button>
+                                </div>
+                                <div class="modal-body">
+                                  <div class="py-3 text-center">
+                                    <i class="ni ni-bell-55 ni-3x"></i>
+                                    <h4 class="heading mt-4">Dikkat! Bu işlemi geri alamazsınız.</h4>
+                                    <p>
+                                      <strong>{{ event.title }}</strong> etkinliğini silmek istediğinizden emin misiniz?
+                                    </p>
+                                  </div>
+                                </div>
+                                <div class="modal-footer">
+                                  <form action="{% url 'event_delete' event.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Evet, sil</button>
+                                  </form>
+                                  <button type="button" class="btn btn-link ml-auto" data-dismiss="modal">İptal</button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     {% empty %}
                       <tr>
-                        <td colspan="5" class="text-center py-4">
-                          <p class="mb-0 text-muted">Henüz etkinlik kaydı bulunmamaktadır.</p>
+                        <td colspan="7" class="text-center">
+                          <div class="my-4">
+                            <div class="icon icon-shape bg-gradient-koc-red text-white rounded-circle shadow mb-3">
+                              <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <h5 class="text-muted mb-3">Henüz etkinlik kaydı bulunmamaktadır.</h5>
+                            <a href="{% url 'event_create_form' %}" class="btn btn-sm btn-koc-red">
+                              <i class="fas fa-plus mr-1"></i> Yeni Etkinlik Ekle
+                            </a>
+                          </div>
                         </td>
                       </tr>
                     {% endfor %}
@@ -1019,7 +1107,12 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Takvim etkinliklerine tıklama olayları
   calendar.on('clickEvent', function(event) {
-    window.location.href = '/ajanda/etkinlik/' + event.id + '/';
+    console.log('Event clicked:', event);
+    if (event && event.event && event.event.id) {
+      window.location.href = '/ajanda/etkinlik/' + event.event.id + '/';
+    } else {
+      console.error('Event ID bulunamadı:', event);
+    }
   });
   
   // Tarih seçme olayları
@@ -1168,14 +1261,25 @@ document.addEventListener('DOMContentLoaded', function() {
   // DataTables başlat
   $('#datatable-events-tab').DataTable({
     language: {
-      url: '/static/assets/vendor/datatables.net/i18n/tr.json'
+      url: '/static/assets/vendor/datatables.net/i18n/tr.json',
+      paginate: {
+        previous: '',
+        next: ''
+      }
     },
     responsive: true,
-    lengthChange: false,
+    columnDefs: [
+      { targets: 0, visible: false }, // ID kolonunu gizle
+      { targets: 6, orderable: false } // İşlemler kolonunda sıralama olmasın
+    ],
+    order: [[3, 'desc']], // Başlangıç tarihine göre sırala (en yakın en üstte)
+    lengthMenu: [
+      [5, 10, 25, -1],
+      [5, 10, 25, "Tümü"]
+    ],
     pageLength: 5,
-    ordering: true,
-    info: false,
-    searching: true
+    searching: true,
+    info: false
   });
   
   $('#datatable-todos-tab').DataTable({
@@ -1200,17 +1304,20 @@ document.addEventListener('DOMContentLoaded', function() {
   // Filtre dropdown işlevi
   $('.filter-status').on('click', function(e) {
     e.preventDefault();
-    var statusValue = $(this).data('status');
-    var statusColumn = todoTable.column(6); // Durum kolonu
+    const statusValue = $(this).data('status');
+    const eventsTable = $('#datatable-events-tab').DataTable();
     
     if (statusValue === 'completed') {
-      statusColumn.search('Tamamlandı').draw();
+      eventsTable.column(5).search('Tamamlandı').draw();
     } else if (statusValue === 'pending') {
-      statusColumn.search('Devam Ediyor').draw();
+      eventsTable.column(5).search('Devam Ediyor').draw();
     } else {
-      statusColumn.search('').draw();
+      eventsTable.column(5).search('').draw();
     }
   });
+  
+  // Tooltips
+  $('[data-toggle="tooltip"]').tooltip();
 });
 </script>
 {% endblock javascripts %} 
