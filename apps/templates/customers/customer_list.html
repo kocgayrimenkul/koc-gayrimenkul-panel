@@ -319,6 +319,67 @@
     font-weight: 600;
     color: #8898aa;
   }
+  
+  /* Filtreleme bölümü stilleri */
+  .filter-section {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+  
+  .filter-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--koc-red-dark);
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+  }
+  
+  .filter-title:hover {
+    color: var(--koc-red);
+  }
+  
+  .filter-title i.ni {
+    margin-right: 8px;
+    font-size: 1rem;
+  }
+  
+  .filter-title i.fas {
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+  }
+  
+  .filter-title i.fa-chevron-up {
+    transform: rotate(180deg);
+  }
+  
+  /* Filtreleri aç/kapat düğmesi */
+  #collapseAllFilters {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  #collapseAllFilters:hover {
+    transform: scale(1.1);
+  }
+  
+  #collapseAllFilters i {
+    transition: transform 0.2s ease;
+  }
+  
+  #collapseAllFilters i.fa-chevron-up {
+    transform: rotate(180deg);
+  }
 </style>
 {% endblock stylesheets %}
 
@@ -462,109 +523,10 @@
 <div class="container-fluid mt--6">
   <div class="row">
     <!-- Filtreler (sol sütun) -->
-    <div class="col-xl-3 col-md-4">
-      <div class="card customer-filter-card shadow-sm mb-4">
-        <div class="card-header filter-header">
-          <h5 class="text-white mb-0">
-            <i class="fas fa-filter mr-2"></i> Filtrele
-          </h5>
-        </div>
-        <div class="card-body">
-          <form method="get" id="filterForm">
-            <!-- Görüşme Durumu -->
-            <div class="form-group mb-3">
-              <label class="form-control-label text-muted font-weight-bold">Görüşme Durumu</label>
-              <div class="custom-control custom-radio mb-2">
-                <input type="radio" class="custom-control-input" id="status_all" name="status" value="" {% if not filter_status %}checked{% endif %}>
-                <label class="custom-control-label" for="status_all">Tümü</label>
-              </div>
-              <div class="custom-control custom-radio mb-2">
-                <input type="radio" class="custom-control-input" id="status_bekliyor" name="status" value="bekliyor" {% if filter_status == 'bekliyor' %}checked{% endif %}>
-                <label class="custom-control-label" for="status_bekliyor">Bekliyor</label>
-              </div>
-              <div class="custom-control custom-radio mb-2">
-                <input type="radio" class="custom-control-input" id="status_olumlu" name="status" value="olumlu" {% if filter_status == 'olumlu' %}checked{% endif %}>
-                <label class="custom-control-label" for="status_olumlu">Olumlu</label>
-              </div>
-              <div class="custom-control custom-radio mb-3">
-                <input type="radio" class="custom-control-input" id="status_olumsuz" name="status" value="olumsuz" {% if filter_status == 'olumsuz' %}checked{% endif %}>
-                <label class="custom-control-label" for="status_olumsuz">Olumsuz</label>
-              </div>
-            </div>
-            
-            <!-- Tarih Aralığı -->
-            <div class="form-group mb-3">
-              <label class="form-control-label text-muted font-weight-bold">Tarih Aralığı</label>
-              <div class="custom-control custom-radio mb-2">
-                <input type="radio" class="custom-control-input" id="date_all" name="date" value="" {% if not filter_date %}checked{% endif %}>
-                <label class="custom-control-label" for="date_all">Tümü</label>
-              </div>
-              <div class="custom-control custom-radio mb-2">
-                <input type="radio" class="custom-control-input" id="date_today" name="date" value="today" {% if filter_date == 'today' %}checked{% endif %}>
-                <label class="custom-control-label" for="date_today">Bugün</label>
-              </div>
-              <div class="custom-control custom-radio mb-2">
-                <input type="radio" class="custom-control-input" id="date_week" name="date" value="week" {% if filter_date == 'week' %}checked{% endif %}>
-                <label class="custom-control-label" for="date_week">Son 7 Gün</label>
-              </div>
-              <div class="custom-control custom-radio mb-3">
-                <input type="radio" class="custom-control-input" id="date_month" name="date" value="month" {% if filter_date == 'month' %}checked{% endif %}>
-                <label class="custom-control-label" for="date_month">Son 30 Gün</label>
-              </div>
-            </div>
-            
-            <!-- Mahalle -->
-            <div class="form-group mb-4">
-              <label class="form-control-label text-muted font-weight-bold">Mahalle</label>
-              <select name="neighborhood" class="form-control form-control-sm">
-                <option value="">Tüm Mahalleler</option>
-                <!-- Burada dinamik olarak mahalle listesi gelecek -->
-              </select>
-            </div>
-            
-            <!-- Butonlar -->
-            <div class="text-center">
-              <button type="submit" class="btn btn-koc-red btn-sm">
-                <i class="fas fa-search mr-1"></i> Filtrele
-              </button>
-              <a href="{% url 'customer_list' %}" class="btn btn-secondary btn-sm ml-2">
-                <i class="fas fa-undo mr-1"></i> Sıfırla
-              </a>
-            </div>
-          </form>
-        </div>
-      </div>
-      
-      <!-- İstatistikler grafiği -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-header bg-transparent border-0">
-          <h6 class="text-uppercase text-muted ls-1 mb-1">Özet</h6>
-          <h5 class="h3 mb-0">Müşteri Analizi</h5>
-        </div>
-        <div class="card-body">
-          <div class="chart">
-            <canvas id="chart-customer-stats" class="chart-canvas"></canvas>
-          </div>
-          <div class="row text-center mt-3">
-            <div class="col">
-              <span class="dot bg-warning mr-2" style="display:inline-block;width:10px;height:10px;border-radius:50%;"></span>
-              <span class="text-sm">Bekliyor</span>
-            </div>
-            <div class="col">
-              <span class="dot bg-success mr-2" style="display:inline-block;width:10px;height:10px;border-radius:50%;"></span>
-              <span class="text-sm">Olumlu</span>
-            </div>
-    <div class="col">
-              <span class="dot bg-danger mr-2" style="display:inline-block;width:10px;height:10px;border-radius:50%;"></span>
-              <span class="text-sm">Olumsuz</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    {% include "components/customer_filters.html" %}
     
     <!-- Ana içerik (sağ sütun) -->
-    <div class="col-xl-9 col-md-8">
+    <div id="contentColumn" class="col-xl-9 col-md-8">
       <!-- Görünüm seçenekleri -->
       <div class="card mb-4">
         <div class="card-body py-3">
@@ -573,6 +535,9 @@
               <h5 class="mb-0">Müşteriler <span class="text-muted text-sm">({{ customers.count }} kayıt)</span></h5>
             </div>
             <div class="col-md-6 text-md-right">
+              <button id="toggleFilters" class="btn btn-sm btn-outline-secondary mr-2">
+                <i class="fas fa-filter mr-1"></i> Filtreler
+              </button>
               <div class="btn-group view-toggle">
                 <button type="button" class="btn btn-sm btn-outline-primary active" data-view="grid">
                   <i class="fas fa-th-large"></i>
@@ -627,6 +592,12 @@
                     <span class="text-sm text-muted"><i class="ni ni-calendar-grid-58 mr-2"></i> Kayıt:</span>
                     <span class="text-sm font-weight-bold">{{ customer.created_at|date:"d.m.Y" }}</span>
                   </div>
+                  {% if customer.response_date %}
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-sm text-muted"><i class="ni ni-time-alarm mr-2"></i> Geri Dönüş:</span>
+                    <span class="text-sm font-weight-bold badge badge-info">{{ customer.response_date|date:"d.m.Y" }}</span>
+                  </div>
+                  {% endif %}
                 </div>
                 
                 <div class="customer-status">
@@ -677,6 +648,7 @@
                   <th scope="col">Telefon</th>
                   <th scope="col">Mahalle</th>
                 <th scope="col">Kayıt Tarihi</th>
+                <th scope="col">Geri Dönüş</th>
                 <th scope="col">Durum</th>
                   <th scope="col" class="text-right">İşlemler</th>
               </tr>
@@ -698,6 +670,13 @@
                 <td>{{ customer.neighborhood.name }}</td>
                   <td>{{ customer.created_at|date:"d.m.Y" }}</td>
                   <td>
+                    {% if customer.response_date %}
+                      <span class="badge badge-pill badge-info">{{ customer.response_date|date:"d.m.Y" }}</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
                     {% if customer.meeting_status == 'bekliyor' %}
                     <span class="badge badge-status badge-bekliyor">Bekliyor</span>
                     {% elif customer.meeting_status == 'olumlu' %}
@@ -717,7 +696,7 @@
               </tr>
               {% empty %}
               <tr>
-                  <td colspan="6" class="text-center py-5">
+                  <td colspan="7" class="text-center py-5">
                     <i class="ni ni-user-run" style="font-size: 2rem; color: #f0f0f0;"></i>
                     <h4 class="mt-3">Henüz müşteri kaydı yok</h4>
                     <p class="text-muted">Hiç müşteri kaydı bulunmuyor veya seçilen filtrelere uyan müşteri yok.</p>
@@ -795,18 +774,65 @@
       }
     });
     
+    // FILTRELEME BÖLÜMÜ YÖNETİMİ
+    
+    // Sayfa yüklendiğinde filtreleme tercihlerini ayarla
+    var isFilterCollapsed = localStorage.getItem('isFilterCollapsed');
+    if (isFilterCollapsed === 'true') {
+      $('#filterColumn').addClass('d-none');
+      $('#contentColumn').removeClass('col-xl-9 col-md-8').addClass('col-xl-12 col-md-12');
+    }
+    
+    // Filtreleme bölümünü açıp kapatma
+    $('#toggleFilters').click(function() {
+      $('#filterColumn').toggleClass('d-none');
+      
+      if ($('#filterColumn').hasClass('d-none')) {
+        $('#contentColumn').removeClass('col-xl-9 col-md-8').addClass('col-xl-12 col-md-12');
+        localStorage.setItem('isFilterCollapsed', 'true');
+      } else {
+        $('#contentColumn').removeClass('col-xl-12 col-md-12').addClass('col-xl-9 col-md-8');
+        localStorage.setItem('isFilterCollapsed', 'false');
+      }
+    });
+    
+    // Filtre başlık tıklamaları stil düzenlemesi
+    $('.filter-title').click(function() {
+      $(this).find('i.fas.fa-chevron-down').toggleClass('fa-chevron-down fa-chevron-up');
+    });
+    
+    // Tüm filtreleri aç/kapat
+    $('#collapseAllFilters').click(function() {
+      var $icon = $(this).find('i');
+      var isCollapsed = $icon.hasClass('fa-chevron-down');
+      
+      if (isCollapsed) {
+        // Tüm filtreleri aç
+        $('.collapse').collapse('show');
+        $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        $('.filter-title i.fas.fa-chevron-down').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+      } else {
+        // Tüm filtreleri kapat
+        $('.collapse').collapse('hide');
+        $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+        $('.filter-title i.fas.fa-chevron-up').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+      }
+    });
+    
     // Grafik oluşturma
     var ctx = document.getElementById('chart-customer-stats').getContext('2d');
+    
+    // Django template değişkenlerini JavaScript değişkenlerine aktarma
+    var bekleyenSayisi = parseInt("{{ bekleyen_musteri_sayisi|default:1 }}");
+    var olumluSayisi = parseInt("{{ olumlu_musteri_sayisi|default:1 }}");
+    var olumsuzSayisi = parseInt("{{ olumsuz_musteri_sayisi|default:1 }}");
+    
     var myChart = new Chart(ctx, {
       type: 'doughnut',
       data: {
         labels: ['Bekleyen', 'Olumlu', 'Olumsuz'],
         datasets: [{
-          data: [
-            {% if bekleyen_musteri_sayisi %}{{ bekleyen_musteri_sayisi }}{% else %}1{% endif %},
-            {% if olumlu_musteri_sayisi %}{{ olumlu_musteri_sayisi }}{% else %}1{% endif %},
-            {% if olumsuz_musteri_sayisi %}{{ olumsuz_musteri_sayisi }}{% else %}1{% endif %}
-          ],
+          data: [bekleyenSayisi, olumluSayisi, olumsuzSayisi],
           backgroundColor: ['#ffc107', '#2dce89', '#f5365c'],
           borderWidth: 0
         }]

@@ -264,6 +264,11 @@
             </ol>
           </nav>
         </div>
+        <div class="col-lg-6 col-5 text-right">
+          <button id="fill-random-data" class="btn btn-sm btn-koc-red">
+            <i class="fas fa-magic mr-1"></i> Rastgele Doldur
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -847,6 +852,95 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.6/jquery.inputmask.min.js"></script>
 <script>
   $(document).ready(function() {
+    // Rastgele Doldur Butonu
+    $('#fill-random-data').click(function(e) {
+      e.preventDefault();
+      
+      // Rastgele isimler
+      const isimler = ["Ahmet", "Mehmet", "Ayşe", "Fatma", "Ali", "Veli", "Zeynep", "Gül", "Mustafa", "Kemal", "Murat", "Sevim"];
+      const soyisimler = ["Yılmaz", "Koç", "Demir", "Çelik", "Kaya", "Yıldız", "Aydın", "Özdemir", "Arslan", "Doğan", "Şahin", "Çetin"];
+      
+      // Rastgele mahalleler (örnek olarak)
+      const mahalleler = $('select#neighborhood option').map(function() {
+        return $(this).val();
+      }).get().filter(val => val !== "");
+      
+      // Statü ve tip seçimi
+      const randomStatusIndex = Math.floor(Math.random() * $('.status-option').length);
+      $('.status-option').eq(randomStatusIndex).click();
+      
+      const randomTypeIndex = Math.floor(Math.random() * $('.type-option').length);
+      $('.type-option').eq(randomTypeIndex).click();
+      
+      // Temel bilgiler
+      $('#title').val("Satılık " + ["Lüks", "Ferah", "Modern", "Merkezi", "Yeni", "Geniş"][Math.floor(Math.random() * 6)] + " Daire");
+      $('#description').val("Bu gayrimenkul merkezi konumda olup, çevre düzenlemesi ve sosyal imkanları ile öne çıkmaktadır. Detaylı bilgi için arayınız.");
+      
+      $('#property_type').val("daire").trigger('change');
+      $('#price').val(Math.floor(Math.random() * 5000000) + 500000);
+      
+      if (mahalleler.length > 0) {
+        $('#neighborhood').val(mahalleler[Math.floor(Math.random() * mahalleler.length)]);
+      }
+      
+      $('#room_count').val(["1+0", "1+1", "2+1", "3+1", "4+1"][Math.floor(Math.random() * 5)]);
+      $('#usage_status').val(["bos", "kiracili", "mulk_sahibi"][Math.floor(Math.random() * 3)]);
+      $('#floor_count').val(Math.floor(Math.random() * 9) + 1);
+      $('#address').val("Örnek Caddesi, No:" + Math.floor(Math.random() * 100) + ", " + ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"][Math.floor(Math.random() * 5)]);
+      
+      // Müşteri bilgileri
+      const randomName = isimler[Math.floor(Math.random() * isimler.length)];
+      const randomSurname = soyisimler[Math.floor(Math.random() * soyisimler.length)];
+      $('#customer_name').val(randomName + " " + randomSurname);
+      
+      const randomPhone = "05" + Math.floor(Math.random() * 10) + Math.floor(Math.random() * 10) + 
+                           Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
+      $('#customer_phone').val(randomPhone);
+      
+      $('#customer_tag').val(["alici", "satici", "kiraci", "ev_sahibi"][Math.floor(Math.random() * 4)]);
+      $('#customer_source').val(["referans", "sosyal_medya", "emlakjet", "sahibinden", "hürriyet", "diger"][Math.floor(Math.random() * 6)]);
+      $('#from_who').val(["sahibinden", "emlakci"][Math.floor(Math.random() * 2)]);
+      $('#has_photos').val(["var", "yok"][Math.floor(Math.random() * 2)]);
+      $('#has_banner').val(["var", "yok"][Math.floor(Math.random() * 2)]);
+      $('#has_poster').val(["var", "yok"][Math.floor(Math.random() * 2)]);
+      
+      // Daire detayları
+      $('#gross_area').val(Math.floor(Math.random() * 100) + 100);
+      $('#net_area').val(Math.floor(Math.random() * 50) + 80);
+      $('#heating').val(["dogalgaz", "merkezi", "soba", "klima", "yok"][Math.floor(Math.random() * 5)]);
+      $('#dues').val(Math.floor(Math.random() * 1000) + 100);
+      $('#balcony').val(["var", "yok"][Math.floor(Math.random() * 2)]);
+      $('#deed_status').val(["kat_mulkiyetli", "kat_irtifakli", "arsa_tapulu", "hisseli_tapu"][Math.floor(Math.random() * 4)]);
+      
+      // Diğer bilgiler
+      const ownerName = isimler[Math.floor(Math.random() * isimler.length)];
+      const ownerSurname = soyisimler[Math.floor(Math.random() * soyisimler.length)];
+      $('#owner_name').val(ownerName + " " + ownerSurname);
+      
+      const ownerPhone = "05" + Math.floor(Math.random() * 10) + Math.floor(Math.random() * 10) + 
+                          Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
+      $('#owner_phone').val(ownerPhone);
+      
+      $('#owner_listing_number').val(Math.floor(Math.random() * 1000000) + 100000);
+      $('#branda_number').val(Math.floor(Math.random() * 1000) + 100);
+      
+      // Çevre bilgileri - ilk satırı doldur
+      $('input[name="place_name"]').first().val(["Okul", "Market", "Park", "Hastane", "AVM", "Metro", "Otobüs Durağı"][Math.floor(Math.random() * 7)]);
+      $('input[name="distance"]').first().val(Math.floor(Math.random() * 1000) + 50);
+      
+      // SWOT analizi
+      $('#swot_strengths').val("Merkezi konum, toplu ulaşım olanaklarına yakınlık, yeni bina, güvenlikli site.");
+      $('#swot_weaknesses').val("Otopark sorunu, küçük balkon, gürültülü cadde.");
+      $('#swot_opportunities').val("Yatırım potansiyeli, kira getirisi, değerlenme potansiyeli.");
+      $('#swot_threats').val("Bölgede artan konut arzı, ekonomik dalgalanmalar.");
+      
+      // Hedef kitle
+      $('#target_audience').val(["Yatırımcı", "Aile", "Öğrenci", "Çift", "İş İnsanı"][Math.floor(Math.random() * 5)]);
+      
+      // Uyarı mesajı
+      alert("Form rastgele verilerle dolduruldu! Fotoğraf yüklemesi hariç tüm alanlar dolduruldu.");
+    });
+    
     // Telefon numarası maskesi
     $("#customer_phone, #owner_phone").inputmask({
       mask: "(999) 999-9999",

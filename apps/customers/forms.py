@@ -13,7 +13,8 @@ class CustomerForm(forms.ModelForm):
     
     class Meta:
         model = Customer
-        fields = ['full_name', 'phone', 'neighborhood', 'apartment', 'meeting_status', 'meeting_result', 'notes']
+        fields = ['full_name', 'phone', 'neighborhood', 'apartment', 'meeting_status', 
+                 'meeting_result', 'response_date', 'notes']
         widgets = {
             'full_name': forms.TextInput(attrs={"class": "form-control", "placeholder": "Adı Soyadı"}),
             'phone': forms.TextInput(attrs={"class": "form-control", "placeholder": "Telefon"}),
@@ -21,6 +22,7 @@ class CustomerForm(forms.ModelForm):
             'apartment': forms.TextInput(attrs={"class": "form-control", "placeholder": "Daire Bilgisi"}),
             'meeting_status': forms.Select(attrs={"class": "form-control"}),
             'meeting_result': forms.Textarea(attrs={"class": "form-control", "placeholder": "Görüşme Sonucu", "rows": 4}),
+            'response_date': forms.DateInput(attrs={"class": "form-control", "type": "date", "placeholder": "Geri Dönüş Tarihi"}),
             'notes': forms.Textarea(attrs={"class": "form-control", "placeholder": "Müşteri ile ilgili notlar", "rows": 4}),
         }
 

@@ -1,0 +1,163 @@
+<!-- Müşteri Filtreleme Komponenti -->
+<div id="filterColumn" class="col-xl-3 col-md-4">
+  <div class="card customer-filter-card shadow-sm mb-4">
+    <div class="card-header filter-header">
+      <h5 class="text-white mb-0 d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-filter mr-2"></i> Filtrele</span>
+        <button type="button" class="btn btn-link text-white p-0" id="collapseAllFilters">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+      </h5>
+    </div>
+    <div class="card-body">
+      <form method="get" id="filterForm">
+        <!-- Görüşme Durumu -->
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#statusCollapse" aria-expanded="true">
+            <div><i class="ni ni-chat-round"></i> Görüşme Durumu</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse show" id="statusCollapse">
+            <div class="pt-2">
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="status_all" name="status" value="" {% if not filter_status %}checked{% endif %}>
+                <label class="custom-control-label" for="status_all">Tümü</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="status_bekliyor" name="status" value="bekliyor" {% if filter_status == 'bekliyor' %}checked{% endif %}>
+                <label class="custom-control-label" for="status_bekliyor">Bekliyor</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="status_olumlu" name="status" value="olumlu" {% if filter_status == 'olumlu' %}checked{% endif %}>
+                <label class="custom-control-label" for="status_olumlu">Olumlu</label>
+              </div>
+              <div class="custom-control custom-radio mb-3">
+                <input type="radio" class="custom-control-input" id="status_olumsuz" name="status" value="olumsuz" {% if filter_status == 'olumsuz' %}checked{% endif %}>
+                <label class="custom-control-label" for="status_olumsuz">Olumsuz</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Geri Dönüş Tarihi -->
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#responseCollapse" aria-expanded="true">
+            <div><i class="ni ni-time-alarm"></i> Geri Dönüş Tarihi</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse show" id="responseCollapse">
+            <div class="pt-2">
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="response_all" name="response" value="" {% if not filter_response %}checked{% endif %}>
+                <label class="custom-control-label" for="response_all">Tümü</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="response_yes" name="response" value="yes" {% if filter_response == 'yes' %}checked{% endif %}>
+                <label class="custom-control-label" for="response_yes">Geri Dönüş Yapılmış</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="response_no" name="response" value="no" {% if filter_response == 'no' %}checked{% endif %}>
+                <label class="custom-control-label" for="response_no">Geri Dönüş Yapılmamış</label>
+              </div>
+              <div class="custom-control custom-radio mb-3">
+                <input type="radio" class="custom-control-input" id="response_today" name="response" value="today" {% if filter_response == 'today' %}checked{% endif %}>
+                <label class="custom-control-label" for="response_today">Bugün Dönüş Yapılmış</label>
+              </div>
+              <div class="custom-control custom-radio mb-3">
+                <input type="radio" class="custom-control-input" id="response_week" name="response" value="week" {% if filter_response == 'week' %}checked{% endif %}>
+                <label class="custom-control-label" for="response_week">Son 7 Gün İçinde</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Tarih Aralığı -->
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#dateCollapse" aria-expanded="true">
+            <div><i class="ni ni-calendar-grid-58"></i> Tarih Aralığı</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse show" id="dateCollapse">
+            <div class="pt-2">
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="date_all" name="date" value="" {% if not filter_date %}checked{% endif %}>
+                <label class="custom-control-label" for="date_all">Tümü</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="date_today" name="date" value="today" {% if filter_date == 'today' %}checked{% endif %}>
+                <label class="custom-control-label" for="date_today">Bugün</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="date_week" name="date" value="week" {% if filter_date == 'week' %}checked{% endif %}>
+                <label class="custom-control-label" for="date_week">Son 7 Gün</label>
+              </div>
+              <div class="custom-control custom-radio mb-3">
+                <input type="radio" class="custom-control-input" id="date_month" name="date" value="month" {% if filter_date == 'month' %}checked{% endif %}>
+                <label class="custom-control-label" for="date_month">Son 30 Gün</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Mahalle -->
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#neighborhoodCollapse" aria-expanded="true">
+            <div><i class="ni ni-pin-3"></i> Mahalle</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse show" id="neighborhoodCollapse">
+            <div class="pt-2">
+              <select name="neighborhood" class="form-control form-control-sm">
+                <option value="">Tüm Mahalleler</option>
+                {% for neighborhood in neighborhoods %}
+                  <option value="{{ neighborhood.id }}" {% if filter_neighborhood == neighborhood.id|stringformat:"i" %}selected{% endif %}>
+                    {{ neighborhood.name }}
+                  </option>
+                {% empty %}
+                  <option value="">Mahalle bulunamadı</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Butonlar -->
+        <div class="text-center">
+          <button type="submit" class="btn btn-koc-red btn-sm">
+            <i class="fas fa-search mr-1"></i> Filtrele
+          </button>
+          <a href="{% url 'customer_list' %}" class="btn btn-secondary btn-sm ml-2">
+            <i class="fas fa-undo mr-1"></i> Sıfırla
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- İstatistikler grafiği -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0">
+      <h6 class="text-uppercase text-muted ls-1 mb-1">Özet</h6>
+      <h5 class="h3 mb-0">Müşteri Analizi</h5>
+    </div>
+    <div class="card-body">
+      <div class="chart">
+        <canvas id="chart-customer-stats" class="chart-canvas"></canvas>
+      </div>
+      <div class="row text-center mt-3">
+        <div class="col">
+          <span class="dot bg-warning mr-2" style="display:inline-block;width:10px;height:10px;border-radius:50%;"></span>
+          <span class="text-sm">Bekliyor</span>
+        </div>
+        <div class="col">
+          <span class="dot bg-success mr-2" style="display:inline-block;width:10px;height:10px;border-radius:50%;"></span>
+          <span class="text-sm">Olumlu</span>
+        </div>
+        <div class="col">
+          <span class="dot bg-danger mr-2" style="display:inline-block;width:10px;height:10px;border-radius:50%;"></span>
+          <span class="text-sm">Olumsuz</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

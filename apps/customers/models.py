@@ -40,6 +40,8 @@ class Customer(models.Model):
     meeting_result = models.TextField(verbose_name="Görüşme Sonucu", blank=True)
     meeting_status = models.CharField(max_length=20, choices=MEETING_STATUS_CHOICES, 
                                      default='bekliyor', verbose_name="Görüşme Durumu")
+    response_date = models.DateField(verbose_name="Geri Dönüş Tarihi", null=True, blank=True, 
+                                    help_text="Danışmanın müşteriye geri dönüş yaptığı tarih")
     notes = models.TextField(verbose_name="Notlar", blank=True, null=True)
     
     def save(self, *args, **kwargs):

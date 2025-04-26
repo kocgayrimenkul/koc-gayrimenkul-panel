@@ -8,8 +8,8 @@ from .models import Customer, Neighborhood
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'phone', 'neighborhood', 'meeting_status', 'created_at', 'consultant')
-    list_filter = ('meeting_status', 'neighborhood', 'consultant')
+    list_display = ('full_name', 'phone', 'neighborhood', 'meeting_status', 'response_date', 'created_at', 'consultant')
+    list_filter = ('meeting_status', 'neighborhood', 'consultant', 'response_date')
     search_fields = ('full_name', 'phone', 'apartment', 'notes')
     date_hierarchy = 'created_at'
     fieldsets = (
@@ -17,7 +17,7 @@ class CustomerAdmin(admin.ModelAdmin):
             'fields': ('full_name', 'phone', 'neighborhood', 'apartment', 'consultant')
         }),
         ('Görüşme Bilgileri', {
-            'fields': ('meeting_status', 'meeting_result')
+            'fields': ('meeting_status', 'meeting_result', 'response_date')
         }),
         ('Ek Bilgiler', {
             'fields': ('notes',)
@@ -27,5 +27,5 @@ class CustomerAdmin(admin.ModelAdmin):
 @admin.register(Neighborhood)
 class NeighborhoodAdmin(admin.ModelAdmin):
     list_display = ('name', 'district', 'consultant')
-    list_filter = ('district', 'consultant')
+    list_filter = ('consultant',)
     search_fields = ('name', 'district') 

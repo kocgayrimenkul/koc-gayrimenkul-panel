@@ -4,32 +4,40 @@ Koç Gayrimenkul Panel
 """
 
 import os
-# from decouple import config
+import environ
 from unipath import Path
-
-# Settings için basit bir config fonksiyonu
-def config(key, default=None, cast=None):
-    """Ortam değişkenlerinden veya default değerden okur"""
-    value = os.environ.get(key, default)
-    if cast and value is not None:
-        if cast == bool:
-            return value.lower() in ('true', 'yes', 'y', '1')
-        return cast(value)
-    return value
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = Path(__file__).parent
 CORE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# django-environ kurulumu
+env = environ.Env(
+    # varsayılan değerler
+    DEBUG=(bool, True),
+    SECRET_KEY=(str, 'S#perS3crEt_1122'),
+    SERVER=(str, '127.0.0.1'),
+    DB_NAME=(str, 'koc_gayrimenkul'),
+    DB_USER=(str, 'root'),
+    DB_PASSWORD=(str, ''),
+    DB_HOST=(str, 'localhost'),
+    DB_PORT=(str, '3306'),
+)
+
+# .env dosyasının yolu
+env_file = os.path.join(CORE_DIR, '.env')
+
+# .env dosyasını oku (varsa)
+environ.Env.read_env(env_file=env_file)
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='S#perS3crEt_1122')
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = env('DEBUG')
 
-DEBUG = True
 # load production server from .env
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', config('SERVER', default='127.0.0.1')]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', env('SERVER')]
 
 # Application definition
 
@@ -100,11 +108,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME', default='koc_gayrimenkul'),
-        'USER': config('DB_USER', default='root'),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='3306'),
+        'NAME': env('DB_NAME', default='koc_gayrimenkul'),
+        'USER': env('DB_USER', default='root'),
+        'PASSWORD': env('DB_PASSWORD', default=''),
+        'HOST': env('DB_HOST', default='localhost'),
+        'PORT': env('DB_PORT', default='3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
         }

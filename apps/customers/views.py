@@ -13,7 +13,7 @@ from django.contrib import messages
 from .models import Customer, Neighborhood
 from apps.portfolio.models import Property  # Property modelini ekledik
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 @login_required(login_url="/login/")
 def customer_list(request):
@@ -42,6 +42,31 @@ def customer_list(request):
         month_ago = timezone.now().date() - timedelta(days=30)
         customers = customers.filter(created_at__date__gte=month_ago)
     
+    # Geri dönüş tarihi filtreleme
+    filter_response = request.GET.get('response', '')
+    today = timezone.now().date()
+    if filter_response == 'yes':
+        # Geri dönüş yapılmış
+        customers = customers.filter(response_date__isnull=False)
+    elif filter_response == 'no':
+        # Geri dönüş yapılmamış
+        customers = customers.filter(response_date__isnull=True)
+    elif filter_response == 'today':
+        # Bugün geri dönüş yapılmış
+        customers = customers.filter(response_date=today)
+    elif filter_response == 'week':
+        # Son 7 gün içinde geri dönüş yapılmış
+        week_ago = today - timedelta(days=7)
+        customers = customers.filter(response_date__gte=week_ago, response_date__lte=today)
+        
+    # Mahalle filtresi
+    filter_neighborhood = request.GET.get('neighborhood', '')
+    if filter_neighborhood:
+        customers = customers.filter(neighborhood_id=filter_neighborhood)
+        
+    # Mahalleleri çek (filtre için)
+    neighborhoods = Neighborhood.objects.all().order_by('name')
+    
     # İstatistikler için sayıları hesapla
     all_customers = customers
     olumlu_musteri_sayisi = all_customers.filter(meeting_status='olumlu').count()
@@ -51,8 +76,11 @@ def customer_list(request):
     context = {
         'segment': 'musteri',
         'customers': customers,
+        'neighborhoods': neighborhoods,
         'filter_status': filter_status,
         'filter_date': filter_date,
+        'filter_response': filter_response,
+        'filter_neighborhood': filter_neighborhood,
         'olumlu_musteri_sayisi': olumlu_musteri_sayisi,
         'olumsuz_musteri_sayisi': olumsuz_musteri_sayisi,
         'bekleyen_musteri_sayisi': bekleyen_musteri_sayisi,
@@ -77,10 +105,22 @@ def customer_detail(request, customer_id):
     if request.method == 'POST':
         meeting_result = request.POST.get('meeting_result', '')
         meeting_status = request.POST.get('meeting_status', 'bekliyor')
+        response_date_str = request.POST.get('response_date', '')
         
         # Görüşme sonucunu güncelle
         customer.meeting_result = meeting_result
         customer.meeting_status = meeting_status
+        
+        # Geri dönüş tarihini işle
+        if response_date_str:
+            try:
+                response_date = timezone.datetime.strptime(response_date_str, '%Y-%m-%d').date()
+                customer.response_date = response_date
+            except ValueError:
+                messages.warning(request, "Geri dönüş tarihi geçerli bir format değil. Tarih bilgisi güncellenmedi.")
+        else:
+            customer.response_date = None
+            
         customer.save()
         
         messages.success(request, "Görüşme sonucu başarıyla kaydedildi.")
@@ -115,6 +155,8 @@ def customer_edit(request, customer_id):
         apartment = request.POST.get('apartment', '')
         neighborhood_id = request.POST.get('neighborhood', '')
         notes = request.POST.get('notes', '')
+        meeting_status = request.POST.get('meeting_status', 'bekliyor')
+        response_date_str = request.POST.get('response_date', '')
         
         # Validation
         if not full_name or not phone or not neighborhood_id:
@@ -134,6 +176,18 @@ def customer_edit(request, customer_id):
             customer.apartment = apartment
             customer.neighborhood = neighborhood
             customer.notes = notes
+            customer.meeting_status = meeting_status
+            
+            # Geri dönüş tarihini işle
+            if response_date_str:
+                try:
+                    response_date = timezone.datetime.strptime(response_date_str, '%Y-%m-%d').date()
+                    customer.response_date = response_date
+                except ValueError:
+                    messages.warning(request, "Geri dönüş tarihi geçerli bir format değil. Tarih bilgisi güncellenmedi.")
+            else:
+                customer.response_date = None
+                
             customer.save()
             
             messages.success(request, "Müşteri bilgileri başarıyla güncellendi.")
@@ -227,6 +281,8 @@ def customer_create(request):
         property_id = request.POST.get('property_id', '')  # Seçilen daire ID'si
         neighborhood_id = request.POST.get('neighborhood', '')
         notes = request.POST.get('notes', '')
+        meeting_status = request.POST.get('meeting_status', 'bekliyor')
+        response_date_str = request.POST.get('response_date', '')
         
         # Validation
         if not full_name or not phone or not neighborhood_id:
@@ -251,6 +307,14 @@ def customer_create(request):
                 except Property.DoesNotExist:
                     pass
             
+            # Geri dönüş tarihini işle
+            response_date = None
+            if response_date_str:
+                try:
+                    response_date = timezone.datetime.strptime(response_date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    messages.warning(request, "Geri dönüş tarihi geçerli bir format değil. Tarih bilgisi kaydedilmedi.")
+            
             # Yeni müşteri oluştur
             customer = Customer(
                 full_name=full_name,
@@ -258,7 +322,9 @@ def customer_create(request):
                 apartment=apartment_info,
                 neighborhood=neighborhood,
                 consultant=request.user,  # Müşteriyi oluşturan danışmana doğrudan ata
-                notes=notes
+                notes=notes,
+                meeting_status=meeting_status,
+                response_date=response_date
             )
             customer.save()
             
