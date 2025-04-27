@@ -223,6 +223,59 @@
               <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
+                    <label class="form-control-label" for="source">Müşteri Kaynağı <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-bullhorn"></i></span>
+                      </div>
+                      <select id="source" name="source" class="form-control" required>
+                        <option value="">Kaynak Seçiniz</option>
+                        <option value="branda" {% if customer.source == 'branda' %}selected{% endif %}>Branda</option>
+                        <option value="sahibinden" {% if customer.source == 'sahibinden' %}selected{% endif %}>Sahibinden</option>
+                        <option value="referans" {% if customer.source == 'referans' %}selected{% endif %}>Referans</option>
+                        <option value="emlakjet" {% if customer.source == 'emlakjet' %}selected{% endif %}>Emlakjet</option>
+                        <option value="sosyal_medya" {% if customer.source == 'sosyal_medya' %}selected{% endif %}>Sosyal Medya</option>
+                        <option value="diger" {% if customer.source == 'diger' %}selected{% endif %}>Diğer</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="meeting_type">Görüşme Türü <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-tasks"></i></span>
+                      </div>
+                      <select id="meeting_type" name="meeting_type" class="form-control" required>
+                        <option value="">Görüşme Türü Seçiniz</option>
+                        <option value="bilgi_alma" {% if customer.meeting_type == 'bilgi_alma' %}selected{% endif %}>Bilgi Alma</option>
+                        <option value="daire_gezdirme" {% if customer.meeting_type == 'daire_gezdirme' %}selected{% endif %}>Daire Gezdirme</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="contact_reason">Arama Nedeni</label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-comment-alt"></i></span>
+                      </div>
+                      <select id="contact_reason" name="contact_reason" class="form-control">
+                        <option value="">Arama Nedeni Seçiniz</option>
+                        <option value="satin_alma" {% if customer.contact_reason == 'satin_alma' %}selected{% endif %}>Satın Alma</option>
+                        <option value="kiralama" {% if customer.contact_reason == 'kiralama' %}selected{% endif %}>Kiralama</option>
+                        <option value="fiyat_bilgisi" {% if customer.contact_reason == 'fiyat_bilgisi' %}selected{% endif %}>Fiyat Bilgisi</option>
+                        <option value="genel_bilgi" {% if customer.contact_reason == 'genel_bilgi' %}selected{% endif %}>Genel Bilgi</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
                     <label class="form-control-label" for="response_date">Geri Dönüş Tarihi</label>
                     <div class="input-group input-group-merge">
                       <div class="input-group-prepend">
@@ -234,6 +287,8 @@
                     <small class="form-text text-muted">Danışmanın müşteriye geri dönüş yaptığı tarih</small>
                   </div>
                 </div>
+              </div>
+              <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="meeting_status">Görüşme Durumu</label>
@@ -249,9 +304,7 @@
                     </div>
                   </div>
                 </div>
-              </div>
-              <div class="row">
-                <div class="col-lg-12">
+                <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="notes">Notlar</label>
                     <div class="input-group input-group-merge">

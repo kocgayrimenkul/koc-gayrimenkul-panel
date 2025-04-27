@@ -30,6 +30,27 @@ class Customer(models.Model):
         ('olumsuz', 'Olumsuz'),
     ]
     
+    SOURCE_CHOICES = [
+        ('branda', 'Branda'),
+        ('sahibinden', 'Sahibinden'),
+        ('referans', 'Referans'),
+        ('emlakjet', 'Emlakjet'),
+        ('sosyal_medya', 'Sosyal Medya'),
+        ('diger', 'Diğer'),
+    ]
+    
+    MEETING_TYPE_CHOICES = [
+        ('bilgi_alma', 'Bilgi Alma'),
+        ('daire_gezdirme', 'Daire Gezdirme'),
+    ]
+    
+    CONTACT_REASON_CHOICES = [
+        ('satin_alma', 'Satın Alma'),
+        ('kiralama', 'Kiralama'),
+        ('fiyat_bilgisi', 'Fiyat Bilgisi'),
+        ('genel_bilgi', 'Genel Bilgi'),
+    ]
+    
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Kayıt Tarihi")
     full_name = models.CharField(max_length=100, verbose_name="Adı Soyadı")
     phone = models.CharField(max_length=20, verbose_name="Telefon")
@@ -37,6 +58,12 @@ class Customer(models.Model):
     neighborhood = models.ForeignKey(Neighborhood, on_delete=models.CASCADE, verbose_name="Mahalle")
     consultant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, 
                                   related_name="customers", verbose_name="Danışman")
+    
+    # Eklenen yeni alanlar
+    source = models.CharField(max_length=50, choices=SOURCE_CHOICES, blank=True, null=True, verbose_name="Müşteri Kaynağı")
+    meeting_type = models.CharField(max_length=50, choices=MEETING_TYPE_CHOICES, blank=True, null=True, verbose_name="Görüşme Türü")
+    contact_reason = models.CharField(max_length=50, choices=CONTACT_REASON_CHOICES, blank=True, null=True, verbose_name="Arama Nedeni")
+    
     meeting_result = models.TextField(verbose_name="Görüşme Sonucu", blank=True)
     meeting_status = models.CharField(max_length=20, choices=MEETING_STATUS_CHOICES, 
                                      default='bekliyor', verbose_name="Görüşme Durumu")

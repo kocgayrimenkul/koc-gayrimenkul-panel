@@ -14,6 +14,7 @@ from .models import Customer, Neighborhood
 from apps.portfolio.models import Property  # Property modelini ekledik
 from django.utils import timezone
 from datetime import datetime, timedelta, date
+from django.db.models import Count
 
 @login_required(login_url="/login/")
 def customer_list(request):
@@ -63,6 +64,16 @@ def customer_list(request):
     filter_neighborhood = request.GET.get('neighborhood', '')
     if filter_neighborhood:
         customers = customers.filter(neighborhood_id=filter_neighborhood)
+    
+    # Kaynak filtresi
+    filter_source = request.GET.get('source', '')
+    if filter_source:
+        customers = customers.filter(source=filter_source)
+    
+    # Görüşme türü filtresi
+    filter_meeting_type = request.GET.get('meeting_type', '')
+    if filter_meeting_type:
+        customers = customers.filter(meeting_type=filter_meeting_type)
         
     # Mahalleleri çek (filtre için)
     neighborhoods = Neighborhood.objects.all().order_by('name')
@@ -73,6 +84,12 @@ def customer_list(request):
     olumsuz_musteri_sayisi = all_customers.filter(meeting_status='olumsuz').count()
     bekleyen_musteri_sayisi = all_customers.filter(meeting_status='bekliyor').count()
     
+    # Müşteri kaynakları için istatistik
+    kaynak_istatistikleri = all_customers.values('source').annotate(toplam=Count('id')).order_by('-toplam')
+    
+    # Görüşme türleri için istatistik
+    gorusme_turu_istatistikleri = all_customers.values('meeting_type').annotate(toplam=Count('id')).order_by('-toplam')
+    
     context = {
         'segment': 'musteri',
         'customers': customers,
@@ -81,9 +98,13 @@ def customer_list(request):
         'filter_date': filter_date,
         'filter_response': filter_response,
         'filter_neighborhood': filter_neighborhood,
+        'filter_source': filter_source,
+        'filter_meeting_type': filter_meeting_type,
         'olumlu_musteri_sayisi': olumlu_musteri_sayisi,
         'olumsuz_musteri_sayisi': olumsuz_musteri_sayisi,
         'bekleyen_musteri_sayisi': bekleyen_musteri_sayisi,
+        'kaynak_istatistikleri': kaynak_istatistikleri,
+        'gorusme_turu_istatistikleri': gorusme_turu_istatistikleri,
     }
     
     html_template = loader.get_template('customers/customer_list.html')
@@ -105,11 +126,15 @@ def customer_detail(request, customer_id):
     if request.method == 'POST':
         meeting_result = request.POST.get('meeting_result', '')
         meeting_status = request.POST.get('meeting_status', 'bekliyor')
+        meeting_type = request.POST.get('meeting_type', '')
+        contact_reason = request.POST.get('contact_reason', '')
         response_date_str = request.POST.get('response_date', '')
         
         # Görüşme sonucunu güncelle
         customer.meeting_result = meeting_result
         customer.meeting_status = meeting_status
+        customer.meeting_type = meeting_type
+        customer.contact_reason = contact_reason
         
         # Geri dönüş tarihini işle
         if response_date_str:
@@ -154,6 +179,9 @@ def customer_edit(request, customer_id):
         phone = request.POST.get('phone', '')
         apartment = request.POST.get('apartment', '')
         neighborhood_id = request.POST.get('neighborhood', '')
+        source = request.POST.get('source', '')
+        meeting_type = request.POST.get('meeting_type', '')
+        contact_reason = request.POST.get('contact_reason', '')
         notes = request.POST.get('notes', '')
         meeting_status = request.POST.get('meeting_status', 'bekliyor')
         response_date_str = request.POST.get('response_date', '')
@@ -175,6 +203,9 @@ def customer_edit(request, customer_id):
             customer.phone = phone
             customer.apartment = apartment
             customer.neighborhood = neighborhood
+            customer.source = source
+            customer.meeting_type = meeting_type
+            customer.contact_reason = contact_reason
             customer.notes = notes
             customer.meeting_status = meeting_status
             
@@ -222,6 +253,7 @@ def customer_register(request):
         phone = request.POST.get('phone', '')
         apartment = request.POST.get('apartment', '')
         neighborhood_id = request.POST.get('neighborhood', '')
+        source = request.POST.get('source', '')
         
         # Validation
         if not full_name or not phone or not neighborhood_id:
@@ -241,6 +273,7 @@ def customer_register(request):
                 phone=phone,
                 apartment=apartment,
                 neighborhood=neighborhood,
+                source=source,
                 # Danışman otomatik olarak model save metodunda atanacak
             )
             customer.save()
@@ -280,12 +313,15 @@ def customer_create(request):
         apartment = request.POST.get('apartment', '')
         property_id = request.POST.get('property_id', '')  # Seçilen daire ID'si
         neighborhood_id = request.POST.get('neighborhood', '')
+        source = request.POST.get('source', '')
+        meeting_type = request.POST.get('meeting_type', '')
+        contact_reason = request.POST.get('contact_reason', '')
         notes = request.POST.get('notes', '')
         meeting_status = request.POST.get('meeting_status', 'bekliyor')
         response_date_str = request.POST.get('response_date', '')
         
         # Validation
-        if not full_name or not phone or not neighborhood_id:
+        if not full_name or not phone or not neighborhood_id or not source or not meeting_type:
             messages.error(request, "Lütfen tüm zorunlu alanları doldurun.")
             return render(request, 'customers/customer_create.html', {
                 'segment': 'musteri_ekle',
@@ -322,6 +358,9 @@ def customer_create(request):
                 apartment=apartment_info,
                 neighborhood=neighborhood,
                 consultant=request.user,  # Müşteriyi oluşturan danışmana doğrudan ata
+                source=source,
+                meeting_type=meeting_type,
+                contact_reason=contact_reason,
                 notes=notes,
                 meeting_status=meeting_status,
                 response_date=response_date

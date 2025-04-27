@@ -190,6 +190,25 @@
               <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
+                    <label class="form-control-label" for="source">Müşteri Kaynağı <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-bullhorn"></i></span>
+                      </div>
+                      <select id="source" name="source" class="form-control" required>
+                        <option value="">Kaynak Seçiniz</option>
+                        <option value="branda" {% if form_data.source == 'branda' %}selected{% endif %}>Branda</option>
+                        <option value="sahibinden" {% if form_data.source == 'sahibinden' %}selected{% endif %}>Sahibinden</option>
+                        <option value="referans" {% if form_data.source == 'referans' %}selected{% endif %}>Referans</option>
+                        <option value="emlakjet" {% if form_data.source == 'emlakjet' %}selected{% endif %}>Emlakjet</option>
+                        <option value="sosyal_medya" {% if form_data.source == 'sosyal_medya' %}selected{% endif %}>Sosyal Medya</option>
+                        <option value="diger" {% if form_data.source == 'diger' %}selected{% endif %}>Diğer</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
                     <label class="form-control-label" for="neighborhood">Mahalle <span class="text-danger">*</span></label>
                     <div class="input-group input-group-merge">
                       <div class="input-group-prepend">
@@ -206,6 +225,8 @@
                     </div>
                   </div>
                 </div>
+              </div>
+              <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="property_id">Portföydeki Daire</label>
@@ -225,9 +246,7 @@
                     <small class="form-text text-muted">Daire seçildiğinde, daire bilgisi otomatik doldurulacaktır.</small>
                   </div>
                 </div>
-              </div>
-              <div class="row">
-                <div class="col-lg-12">
+                <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="apartment">Daire Detayları</label>
                     <div class="input-group input-group-merge">
@@ -238,6 +257,40 @@
                         placeholder="Daire bilgisi, detaylar" value="{{ form_data.apartment|default:'' }}">
                     </div>
                     <small class="form-text text-muted">Portföyden daire seçilmezse, bu alandaki bilgiler kullanılacaktır.</small>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="meeting_type">Görüşme Türü <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-tasks"></i></span>
+                      </div>
+                      <select id="meeting_type" name="meeting_type" class="form-control" required>
+                        <option value="">Görüşme Türü Seçiniz</option>
+                        <option value="bilgi_alma" {% if form_data.meeting_type == 'bilgi_alma' %}selected{% endif %}>Bilgi Alma</option>
+                        <option value="daire_gezdirme" {% if form_data.meeting_type == 'daire_gezdirme' %}selected{% endif %}>Daire Gezdirme</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="contact_reason">Arama Nedeni</label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-comment-alt"></i></span>
+                      </div>
+                      <select id="contact_reason" name="contact_reason" class="form-control">
+                        <option value="">Arama Nedeni Seçiniz</option>
+                        <option value="satin_alma" {% if form_data.contact_reason == 'satin_alma' %}selected{% endif %}>Satın Alma</option>
+                        <option value="kiralama" {% if form_data.contact_reason == 'kiralama' %}selected{% endif %}>Kiralama</option>
+                        <option value="fiyat_bilgisi" {% if form_data.contact_reason == 'fiyat_bilgisi' %}selected{% endif %}>Fiyat Bilgisi</option>
+                        <option value="genel_bilgi" {% if form_data.contact_reason == 'genel_bilgi' %}selected{% endif %}>Genel Bilgi</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -723,7 +723,13 @@
                   <div class="col-lg-6">
                     <div class="form-group">
                       <label class="form-control-label" for="owner_listing_number">Sahibinden İlan No</label>
-                      <input type="text" id="owner_listing_number" name="owner_listing_number" class="form-control" placeholder="Sahibinden.com ilan numarası" value="{{ property.owner_listing_number }}">
+                      <div class="input-group">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                        </div>
+                        <input type="text" id="owner_listing_number" name="owner_listing_number" class="form-control" placeholder="Sahibinden.com ilan numarası" value="{{ property.owner_listing_number }}">
+                      </div>
+                      <div class="field-help">Sahibinden.com veya benzer platformdaki ilan numarası</div>
                     </div>
                   </div>
                   <div class="col-lg-6">

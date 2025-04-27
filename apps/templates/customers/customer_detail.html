@@ -265,6 +265,52 @@
           </div>
           {% endif %}
           
+          <h6 class="heading-small text-muted mb-3 mt-4">Görüşme Bilgileri</h6>
+          
+          {% if customer.source %}
+          <div class="detail-item">
+            <div class="d-flex justify-content-between">
+              <span><i class="fas fa-bullhorn icon"></i> Müşteri Kaynağı</span>
+              <strong>
+                {% if customer.source == 'branda' %}Branda
+                {% elif customer.source == 'sahibinden' %}Sahibinden
+                {% elif customer.source == 'referans' %}Referans
+                {% elif customer.source == 'emlakjet' %}Emlakjet
+                {% elif customer.source == 'sosyal_medya' %}Sosyal Medya
+                {% else %}{{ customer.source|title }}{% endif %}
+              </strong>
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if customer.meeting_type %}
+          <div class="detail-item">
+            <div class="d-flex justify-content-between">
+              <span><i class="fas fa-tasks icon"></i> Görüşme Türü</span>
+              <strong>
+                {% if customer.meeting_type == 'bilgi_alma' %}Bilgi Alma
+                {% elif customer.meeting_type == 'daire_gezdirme' %}Daire Gezdirme
+                {% else %}{{ customer.meeting_type|title }}{% endif %}
+              </strong>
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if customer.contact_reason %}
+          <div class="detail-item">
+            <div class="d-flex justify-content-between">
+              <span><i class="fas fa-comment-alt icon"></i> Arama Nedeni</span>
+              <strong>
+                {% if customer.contact_reason == 'satin_alma' %}Satın Alma
+                {% elif customer.contact_reason == 'kiralama' %}Kiralama
+                {% elif customer.contact_reason == 'fiyat_bilgisi' %}Fiyat Bilgisi
+                {% elif customer.contact_reason == 'genel_bilgi' %}Genel Bilgi
+                {% else %}{{ customer.contact_reason|title }}{% endif %}
+              </strong>
+            </div>
+          </div>
+          {% endif %}
+          
           <h6 class="heading-small text-muted mb-3 mt-4">Sistem Bilgileri</h6>
           <div class="detail-item">
             <div class="d-flex justify-content-between">
@@ -319,6 +365,40 @@
         <div class="card-body">
           <form method="post">
             {% csrf_token %}
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label" for="meeting_type">Görüşme Türü</label>
+                  <div class="input-group input-group-merge">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="fas fa-tasks"></i></span>
+                    </div>
+                    <select id="meeting_type" name="meeting_type" class="form-control">
+                      <option value="">Görüşme Türü Seçiniz</option>
+                      <option value="bilgi_alma" {% if customer.meeting_type == 'bilgi_alma' %}selected{% endif %}>Bilgi Alma</option>
+                      <option value="daire_gezdirme" {% if customer.meeting_type == 'daire_gezdirme' %}selected{% endif %}>Daire Gezdirme</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-control-label" for="contact_reason">Arama Nedeni</label>
+                  <div class="input-group input-group-merge">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="fas fa-comment-alt"></i></span>
+                    </div>
+                    <select id="contact_reason" name="contact_reason" class="form-control">
+                      <option value="">Arama Nedeni Seçiniz</option>
+                      <option value="satin_alma" {% if customer.contact_reason == 'satin_alma' %}selected{% endif %}>Satın Alma</option>
+                      <option value="kiralama" {% if customer.contact_reason == 'kiralama' %}selected{% endif %}>Kiralama</option>
+                      <option value="fiyat_bilgisi" {% if customer.contact_reason == 'fiyat_bilgisi' %}selected{% endif %}>Fiyat Bilgisi</option>
+                      <option value="genel_bilgi" {% if customer.contact_reason == 'genel_bilgi' %}selected{% endif %}>Genel Bilgi</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="form-group">
               <label class="form-control-label" for="meeting_result">Görüşme Notları</label>
               <div class="input-group input-group-merge">

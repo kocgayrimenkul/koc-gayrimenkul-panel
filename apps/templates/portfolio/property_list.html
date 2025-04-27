@@ -493,7 +493,7 @@
                 <th scope="col">Başlık</th>
                 <th scope="col">Sahibi</th>
                 <th scope="col">Telefon</th>
-                <th scope="col">Emlak Tipi</th>
+                <th scope="col">İlan No</th>
                 <th scope="col">Durum</th>
                 <th scope="col">Oda</th>
                 <th scope="col">Fiyat</th>
@@ -537,12 +537,12 @@
                   {% endif %}
                 </td>
                 <td>
-                  {% if property.property_type == 'daire' %}
-                    <span class="badge badge-pill badge-koc-red">Daire</span>
-                  {% elif property.property_type == 'arsa' %}
-                    <span class="badge badge-pill badge-koc-dark">Arsa</span>
-                  {% elif property.property_type == 'isyeri' %}
-                    <span class="badge badge-pill badge-koc-light">İşyeri</span>
+                  {% if property.owner_listing_number %}
+                    <a href="https://www.sahibinden.com/{{ property.owner_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Sahibinden.com'da görüntüle">
+                      <span class="badge badge-pill badge-info">{{ property.owner_listing_number }}</span>
+                    </a>
+                  {% else %}
+                    <span class="badge badge-pill badge-light">-</span>
                   {% endif %}
                 </td>
                 <td>
@@ -839,6 +839,14 @@
                       <i class="fas fa-building"></i> {{ property.floor }}/{{ property.building_floors|default:"?" }}
                     </span>
                     {% endif %}
+                  {% endif %}
+                  
+                  {% if property.owner_listing_number %}
+                  <span class="property-feature">
+                    <a href="https://www.sahibinden.com/{{ property.owner_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Sahibinden.com'da görüntüle">
+                      <i class="fas fa-hashtag"></i> {{ property.owner_listing_number }}
+                    </a>
+                  </span>
                   {% endif %}
                 </div>
                 <div class="mb-2">
