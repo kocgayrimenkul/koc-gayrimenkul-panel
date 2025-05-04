@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'apps.portfolio',        # Portföy yönetimi
     'apps.calendar',         # Takvim/ajanda
     'apps.employees',        # Çalışan yönetimi
+    'apps.presentation',     # Daire sunumu
 ]
 
 # Django 3.2+ için modellerdeki otomatik primary key tipi ayarı

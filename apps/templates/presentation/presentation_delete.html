@@ -1,0 +1,182 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Daire Sunumu Sil {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .warning-card {
+    border-left: 4px solid #f5365c;
+  }
+  
+  .card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  }
+  
+  .detail-item {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: #f8f9fe;
+    margin-bottom: 1rem;
+  }
+  
+  .detail-item .icon {
+    color: var(--koc-red);
+    margin-right: 0.5rem;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Daire Sunumu Sil</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'presentation_list' %}">Daire Sunumları</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Sil</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'presentation_detail' presentation.id %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-eye mr-1"></i> Detaya Dön
+          </a>
+          <a href="{% url 'presentation_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> Listeye Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ana İçerik -->
+<div class="container-fluid mt--6">
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <div class="row">
+    <div class="col-xl-8 mx-auto">
+      <div class="card warning-card">
+        <div class="card-header bg-transparent">
+          <h3 class="mb-0 text-danger">
+            <i class="fas fa-exclamation-triangle mr-2"></i> Dikkat: Bu işlem geri alınamaz!
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="text-center mb-4">
+            <div class="icon icon-shape icon-shape-danger rounded-circle mb-4">
+              <i class="fas fa-trash-alt"></i>
+            </div>
+            <h2>Daire Sunumunu Silmek İstediğinize Emin Misiniz?</h2>
+            <p class="lead">
+              "<strong>{{ presentation.title }}</strong>" başlıklı daire sunumu kaydını ve 
+              bu kayda ait tüm geri bildirimleri kalıcı olarak silmek üzeresiniz.
+            </p>
+          </div>
+          
+          <div class="detail-item">
+            <div class="row">
+              <div class="col-md-6">
+                <p class="text-sm mb-1"><i class="ni ni-building icon"></i> <strong>Daire:</strong></p>
+                <p>{{ presentation.property.title }}</p>
+              </div>
+              <div class="col-md-6">
+                <p class="text-sm mb-1"><i class="ni ni-calendar-grid-58 icon"></i> <strong>Sunum Tarihi:</strong></p>
+                <p>{{ presentation.presentation_date|date:"d.m.Y H:i" }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="row">
+              <div class="col-md-6">
+                <p class="text-sm mb-1"><i class="ni ni-single-02 icon"></i> <strong>Sunan Kişi:</strong></p>
+                <p>{{ presentation.presenter.first_name }} {{ presentation.presenter.last_name }}</p>
+              </div>
+              <div class="col-md-6">
+                <p class="text-sm mb-1"><i class="ni ni-circle-08 icon"></i> <strong>Müşteri:</strong></p>
+                <p>{{ presentation.customer_name }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="alert alert-warning mt-4">
+            <i class="fas fa-info-circle mr-1"></i> Bu işlem geri alınamaz ve tüm ilişkili veriler silinecektir.
+          </div>
+          
+          <div class="text-center mt-5">
+            <form method="POST" action="{% url 'presentation_delete' presentation.id %}">
+              {% csrf_token %}
+              <a href="{% url 'presentation_detail' presentation.id %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times mr-1"></i> İptal
+              </a>
+              <button type="submit" class="btn btn-danger btn-lg">
+                <i class="fas fa-trash-alt mr-1"></i> Evet, Sunumu Sil
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+</div>
+
+{% endblock content %}

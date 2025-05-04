@@ -2,50 +2,325 @@
 
 {% block title %} Harita {% endblock title %}
 
-{% block content %}
+{% block stylesheets %}
+{{ block.super }}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin=""/>
+<style>
+  #map-container {
+    height: 600px;
+    width: 100%;
+    border-radius: 0.375rem;
+  }
+  
+  .property-popup {
+    max-width: 320px;
+    font-family: 'Open Sans', sans-serif;
+  }
+  
+  .property-popup img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .property-popup h5 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-weight: 700;
+    color: #5e72e4;
+    font-size: 16px;
+  }
+  
+  .property-popup p {
+    margin-bottom: 8px;
+    color: #525f7f;
+    font-size: 13px;
+  }
+  
+  .property-popup .price {
+    font-weight: bold;
+    color: #2dce89;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+  }
+  
+  .property-popup .badges {
+    margin-bottom: 12px;
+  }
+  
+  .property-popup .badge {
+    display: inline-block;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  .property-popup .btn-details {
+    width: 100%;
+    margin-top: 10px;
+    background-color: #5e72e4;
+    border-color: #5e72e4;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+  
+  .property-popup .btn-details:hover {
+    background-color: #324cdd;
+    border-color: #324cdd;
+    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+  
+  .leaflet-popup-content-wrapper {
+    border-radius: 6px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+  
+  .leaflet-popup-content {
+    margin: 12px 16px;
+  }
+  
+  .leaflet-container a.leaflet-popup-close-button {
+    color: #adb5bd;
+  }
+  
+  .map-controls {
+    margin-bottom: 15px;
+  }
+  
+  /* Marker renkleri */
+  .marker-satilik {
+    filter: hue-rotate(120deg); /* Yeşil tonu */
+  }
+  
+  .marker-kiralik {
+    filter: hue-rotate(220deg); /* Mavi tonu */
+  }
+</style>
+{% endblock stylesheets %}
 
+{% block content %}
     <!-- Header -->
     <div class="header bg-primary pb-6">
       <div class="container-fluid">
         <div class="header-body">
           <div class="row align-items-center py-4">
             <div class="col-lg-6 col-7">
-              <h6 class="h2 text-white d-inline-block mb-0">Google Haritalar</h6>
+              <h6 class="h2 text-white d-inline-block mb-0">Gayrimenkul Haritası</h6>
               <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
                 <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-                  <li class="breadcrumb-item"><a href="#"><i class="fas fa-home"></i></a></li>
-                  <li class="breadcrumb-item"><a href="#">Haritalar</a></li>
-                  <li class="breadcrumb-item active" aria-current="page">Google Haritalar</li>
+                  <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+                  <li class="breadcrumb-item"><a href="{% url 'property_list' %}">Gayrimenkuller</a></li>
+                  <li class="breadcrumb-item active" aria-current="page">Harita Görünümü</li>
                 </ol>
               </nav>
             </div>
             <div class="col-lg-6 col-5 text-right">
-              <a href="#" class="btn btn-sm btn-neutral">Yeni</a>
-              <a href="#" class="btn btn-sm btn-neutral">Filtreler</a>
+              <a href="{% url 'property_create' %}" class="btn btn-sm btn-neutral">
+                <i class="fas fa-plus mr-1"></i> Yeni Gayrimenkul Ekle
+              </a>
+              <a href="{% url 'property_list' %}" class="btn btn-sm btn-neutral">
+                <i class="fas fa-list mr-1"></i> Liste Görünümü
+              </a>
             </div>
           </div>
         </div>
       </div>
     </div>
+    
     <!-- Page content -->
     <div class="container-fluid mt--6">
       <div class="row">
         <div class="col">
-          <div class="card border-0">
-            <div id="map-default" class="map-canvas" data-lat="40.748817" data-lng="-73.985428" style="height: 600px;"></div>
+          <div class="card">
+            <div class="card-header">
+              <h3 class="mb-0">Gayrimenkul Haritası</h3>
+              <p class="text-sm mb-0">Tüm portföyünüzü harita üzerinde görüntüleyin</p>
+            </div>
+            
+            <div class="card-body">
+              <div class="map-controls">
+                <div class="row">
+                  <div class="col-md-5">
+                    <div class="form-group">
+                      <label class="form-control-label">Filtrele:</label>
+                      <select class="form-control form-control-sm" id="filter-property-type">
+                        <option value="">Tüm Emlak Tipleri</option>
+                        <option value="daire">Daire</option>
+                        <option value="mustakil">Müstakil</option>
+                        <option value="dublex">Dublex</option>
+                        <option value="arsa">Arsa</option>
+                        <option value="isyeri">İşyeri</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-5">
+                    <div class="form-group">
+                      <label class="form-control-label">Durum:</label>
+                      <select class="form-control form-control-sm" id="filter-status">
+                        <option value="">Tüm Durumlar</option>
+                        <option value="satilik">Satılık</option>
+                        <option value="kiralik">Kiralık</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-2 d-flex align-items-end">
+                    <button id="btnShowAllProperties" class="btn btn-sm btn-default btn-block">Tümünü Göster</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div id="map-container"></div>
+            </div>
           </div>
         </div>
       </div>
 
       {% include "includes/footer.html" %}
-      
     </div>
-
 {% endblock content %}
 
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
+{{ block.super }}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTTfWur0PDbZWPr7Pmq8K3jiDp0_xUziI"></script>
-
+<script>
+$(document).ready(function() {
+  // Harita başlat
+  var map = L.map('map-container').setView([41.0082, 28.9784], 10); // İstanbul merkezi
+  
+  // OpenStreetMap katmanı ekle
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+  
+  // Marker grupları
+  var markers = L.layerGroup().addTo(map);
+  var properties = [];
+  
+  // AJAX ile gayrimenkul verilerini çek
+  function loadProperties() {
+    $.ajax({
+      url: "{% url 'api_properties' %}",
+      type: "GET",
+      dataType: "json",
+      success: function(data) {
+        properties = data;
+        renderMarkers();
+      },
+      error: function(error) {
+        console.error("Gayrimenkul verileri yüklenirken hata:", error);
+        $('#map-container').after(`
+          <div class="alert alert-danger mt-3">
+            <i class="fas fa-exclamation-triangle mr-2"></i> Gayrimenkul verileri yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.
+          </div>
+        `);
+      }
+    });
+  }
+  
+  // Marker'ları haritaya ekle
+  function renderMarkers() {
+    // Mevcut marker'ları temizle
+    markers.clearLayers();
+    $('.alert').remove();
+    
+    // Filtreler
+    var propertyTypeFilter = $('#filter-property-type').val();
+    var statusFilter = $('#filter-status').val();
+    
+    // Filtrelenmiş gayrimenkulleri işle
+    var filteredProperties = properties.filter(function(property) {
+      var matchesType = !propertyTypeFilter || property.property_type === propertyTypeFilter;
+      var matchesStatus = !statusFilter || property.status === statusFilter;
+      return matchesType && matchesStatus;
+    });
+    
+    // Her gayrimenkul için marker ekle
+    filteredProperties.forEach(function(property) {
+      // Koordinatları kontrol et
+      if (property.map_coordinates) {
+        var coords = property.map_coordinates.split(',');
+        var lat = parseFloat(coords[0]);
+        var lng = parseFloat(coords[1]);
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          // Duruma göre marker sınıfı belirle
+          var statusClass = property.status === 'satilik' ? 'marker-satilik' : 'marker-kiralik';
+          
+          // Popup içeriği oluştur
+          var popupContent = `
+            <div class="property-popup">
+              ${property.image_url ? `<img src="${property.image_url}" alt="${property.apartment_name}">` : ''}
+              <h5>${property.apartment_name}</h5>
+              <p><i class="fas fa-map-marker-alt mr-1"></i> ${property.address}</p>
+              <div class="price">${property.price_formatted}</div>
+              <div class="badges">
+                <span class="badge badge-${property.status === 'satilik' ? 'success' : 'primary'}">${property.status === 'satilik' ? 'Satılık' : 'Kiralık'}</span>
+                <span class="badge badge-secondary">${property.property_type_display}</span>
+                ${property.is_bargainable ? '<span class="badge badge-info">Pazarlıklı</span>' : ''}
+              </div>
+              <a href="/gayrimenkul/${property.id}/" class="btn-details">
+                <i class="fas fa-external-link-alt mr-1"></i> Detayları Görüntüle
+              </a>
+            </div>
+          `;
+          
+          // Marker oluştur ve haritaya ekle
+          var marker = L.marker([lat, lng])
+            .bindPopup(popupContent, {
+              maxWidth: 320,
+              minWidth: 280
+            });
+          
+          markers.addLayer(marker);
+        }
+      }
+    });
+    
+    // Eğer marker yoksa uyarı göster
+    if (markers.getLayers().length === 0) {
+      $('#map-container').after(`
+        <div class="alert alert-warning mt-3">
+          <i class="fas fa-info-circle mr-2"></i> Filtrelere uygun gayrimenkul bulunamadı veya gayrimenkullerin konum bilgisi yok.
+        </div>
+      `);
+    } else {
+      // Tüm marker'ların görüneceği şekilde haritayı ayarla
+      var markerGroup = L.featureGroup(markers.getLayers());
+      map.fitBounds(markerGroup.getBounds(), {padding: [50, 50]});
+    }
+  }
+  
+  // Filtreleme olayları
+  $('#filter-property-type, #filter-status').change(function() {
+    renderMarkers();
+  });
+  
+  // Tümünü göster butonu
+  $('#btnShowAllProperties').click(function() {
+    $('#filter-property-type, #filter-status').val('');
+    renderMarkers();
+  });
+  
+  // Sayfayı yüklediğimizde
+  loadProperties();
+});
+</script>
 {% endblock javascripts %}

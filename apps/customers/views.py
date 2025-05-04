@@ -70,11 +70,6 @@ def customer_list(request):
     if filter_source:
         customers = customers.filter(source=filter_source)
     
-    # Görüşme türü filtresi
-    filter_meeting_type = request.GET.get('meeting_type', '')
-    if filter_meeting_type:
-        customers = customers.filter(meeting_type=filter_meeting_type)
-        
     # Mahalleleri çek (filtre için)
     neighborhoods = Neighborhood.objects.all().order_by('name')
     
@@ -87,9 +82,6 @@ def customer_list(request):
     # Müşteri kaynakları için istatistik
     kaynak_istatistikleri = all_customers.values('source').annotate(toplam=Count('id')).order_by('-toplam')
     
-    # Görüşme türleri için istatistik
-    gorusme_turu_istatistikleri = all_customers.values('meeting_type').annotate(toplam=Count('id')).order_by('-toplam')
-    
     context = {
         'segment': 'musteri',
         'customers': customers,
@@ -99,12 +91,10 @@ def customer_list(request):
         'filter_response': filter_response,
         'filter_neighborhood': filter_neighborhood,
         'filter_source': filter_source,
-        'filter_meeting_type': filter_meeting_type,
         'olumlu_musteri_sayisi': olumlu_musteri_sayisi,
         'olumsuz_musteri_sayisi': olumsuz_musteri_sayisi,
         'bekleyen_musteri_sayisi': bekleyen_musteri_sayisi,
         'kaynak_istatistikleri': kaynak_istatistikleri,
-        'gorusme_turu_istatistikleri': gorusme_turu_istatistikleri,
     }
     
     html_template = loader.get_template('customers/customer_list.html')
@@ -126,15 +116,11 @@ def customer_detail(request, customer_id):
     if request.method == 'POST':
         meeting_result = request.POST.get('meeting_result', '')
         meeting_status = request.POST.get('meeting_status', 'bekliyor')
-        meeting_type = request.POST.get('meeting_type', '')
-        contact_reason = request.POST.get('contact_reason', '')
         response_date_str = request.POST.get('response_date', '')
         
         # Görüşme sonucunu güncelle
         customer.meeting_result = meeting_result
         customer.meeting_status = meeting_status
-        customer.meeting_type = meeting_type
-        customer.contact_reason = contact_reason
         
         # Geri dönüş tarihini işle
         if response_date_str:
@@ -177,11 +163,8 @@ def customer_edit(request, customer_id):
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '')
         phone = request.POST.get('phone', '')
-        apartment = request.POST.get('apartment', '')
         neighborhood_id = request.POST.get('neighborhood', '')
         source = request.POST.get('source', '')
-        meeting_type = request.POST.get('meeting_type', '')
-        contact_reason = request.POST.get('contact_reason', '')
         notes = request.POST.get('notes', '')
         meeting_status = request.POST.get('meeting_status', 'bekliyor')
         response_date_str = request.POST.get('response_date', '')
@@ -201,11 +184,8 @@ def customer_edit(request, customer_id):
             # Müşteriyi güncelle
             customer.full_name = full_name
             customer.phone = phone
-            customer.apartment = apartment
             customer.neighborhood = neighborhood
             customer.source = source
-            customer.meeting_type = meeting_type
-            customer.contact_reason = contact_reason
             customer.notes = notes
             customer.meeting_status = meeting_status
             
@@ -251,7 +231,6 @@ def customer_register(request):
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '')
         phone = request.POST.get('phone', '')
-        apartment = request.POST.get('apartment', '')
         neighborhood_id = request.POST.get('neighborhood', '')
         source = request.POST.get('source', '')
         
@@ -271,7 +250,6 @@ def customer_register(request):
             customer = Customer(
                 full_name=full_name,
                 phone=phone,
-                apartment=apartment,
                 neighborhood=neighborhood,
                 source=source,
                 # Danışman otomatik olarak model save metodunda atanacak
@@ -310,18 +288,15 @@ def customer_create(request):
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '')
         phone = request.POST.get('phone', '')
-        apartment = request.POST.get('apartment', '')
         property_id = request.POST.get('property_id', '')  # Seçilen daire ID'si
         neighborhood_id = request.POST.get('neighborhood', '')
         source = request.POST.get('source', '')
-        meeting_type = request.POST.get('meeting_type', '')
-        contact_reason = request.POST.get('contact_reason', '')
         notes = request.POST.get('notes', '')
         meeting_status = request.POST.get('meeting_status', 'bekliyor')
         response_date_str = request.POST.get('response_date', '')
         
         # Validation
-        if not full_name or not phone or not neighborhood_id or not source or not meeting_type:
+        if not full_name or not phone or not neighborhood_id or not source:
             messages.error(request, "Lütfen tüm zorunlu alanları doldurun.")
             return render(request, 'customers/customer_create.html', {
                 'segment': 'musteri_ekle',
@@ -332,16 +307,6 @@ def customer_create(request):
         
         try:
             neighborhood = Neighborhood.objects.get(id=neighborhood_id)
-            
-            # Eğer daire seçilmişse, daire bilgilerini kullan
-            apartment_info = apartment
-            if property_id:
-                try:
-                    property_obj = Property.objects.get(id=property_id)
-                    # Daire bilgisini otomatik oluştur
-                    apartment_info = f"{property_obj.title} - {property_obj.address}"
-                except Property.DoesNotExist:
-                    pass
             
             # Geri dönüş tarihini işle
             response_date = None
@@ -355,12 +320,9 @@ def customer_create(request):
             customer = Customer(
                 full_name=full_name,
                 phone=phone,
-                apartment=apartment_info,
                 neighborhood=neighborhood,
                 consultant=request.user,  # Müşteriyi oluşturan danışmana doğrudan ata
                 source=source,
-                meeting_type=meeting_type,
-                contact_reason=contact_reason,
                 notes=notes,
                 meeting_status=meeting_status,
                 response_date=response_date

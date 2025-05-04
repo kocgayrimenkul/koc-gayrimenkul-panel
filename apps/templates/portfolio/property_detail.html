@@ -1,10 +1,13 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} {{ property.title }} {% endblock %}
+{% block title %} {{ property.apartment_name }} {% endblock %}
 
 {% block stylesheets %}
 {{ block.super }}
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin=""/>
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
   :root {
@@ -222,13 +225,6 @@
     font-size: 0.9rem;
   }
   
-  .property-description {
-    font-size: 1rem;
-    color: #525f7f;
-    line-height: 1.7;
-    white-space: pre-line;
-  }
-  
   .btn-koc-red {
     background-color: var(--koc-red);
     border-color: var(--koc-red);
@@ -239,6 +235,13 @@
     background-color: var(--koc-red-dark);
     border-color: var(--koc-red-dark);
     color: white;
+  }
+  
+  /* Harita stili */
+  #property-map {
+    height: 400px;
+    width: 100%;
+    border-radius: 0.75rem;
   }
 </style>
 {% endblock stylesheets %}
@@ -255,7 +258,7 @@
             <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
               <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
               <li class="breadcrumb-item"><a href="{% url 'property_list' %}">Gayrimenkuller</a></li>
-              <li class="breadcrumb-item active" aria-current="page">{{ property.title }}</li>
+              <li class="breadcrumb-item active" aria-current="page">{{ property.apartment_name }}</li>
             </ol>
           </nav>
         </div>
@@ -279,14 +282,6 @@
     <div class="row">
       <div class="col-md-8">
         <div class="property-badges">
-          {% if property.property_type == 'daire' %}
-            <span class="badge badge-pill badge-white">Daire</span>
-          {% elif property.property_type == 'arsa' %}
-            <span class="badge badge-pill badge-white">Arsa</span>
-          {% elif property.property_type == 'isyeri' %}
-            <span class="badge badge-pill badge-white">İşyeri</span>
-          {% endif %}
-          
           {% if property.status == 'satilik' %}
             <span class="badge badge-pill badge-success">Satılık</span>
           {% elif property.status == 'kiralik' %}
@@ -301,7 +296,7 @@
             <span class="badge badge-pill badge-white">Pazarlıklı</span>
           {% endif %}
         </div>
-        <h1 class="property-title">{{ property.title }}</h1>
+        <h1 class="property-title">{{ property.apartment_name }}</h1>
         <p class="property-address"><i class="fas fa-map-marker-alt mr-2"></i>{{ property.address }}</p>
         <p class="property-address"><i class="fas fa-map mr-2"></i>{{ property.neighborhood.name }}</p>
       </div>
@@ -318,7 +313,7 @@
   </div>
   
   <div class="row">
-    <!-- Sol Sütun: Gayrimenkul resimleri ve açıklaması -->
+    <!-- Sol Sütun: Gayrimenkul resimleri ve harita -->
     <div class="col-lg-8">
       <!-- Resim Galerisi -->
       <div class="detail-card mb-4">
@@ -346,31 +341,15 @@
         {% endif %}
       </div>
       
-      <!-- Açıklama -->
+      <!-- Harita -->
       <div class="detail-card mb-4">
         <div class="detail-card-header">
-          <i class="fas fa-align-left"></i> Açıklama
+          <i class="fas fa-map-marked-alt"></i> Konum
         </div>
         <div class="card-body">
-          <div class="property-description">
-            {{ property.description|linebreaks }}
-          </div>
+          <div id="property-map"></div>
         </div>
       </div>
-      
-      <!-- SWOT Analizi -->
-      {% if property.swot_analysis %}
-        <div class="detail-card mb-4">
-          <div class="detail-card-header">
-            <i class="fas fa-chart-line"></i> SWOT Analizi
-          </div>
-          <div class="card-body">
-            <div class="property-description">
-              {{ property.swot_analysis|linebreaks }}
-            </div>
-          </div>
-        </div>
-      {% endif %}
       
       <!-- Çevre Bilgileri -->
       {% if environments %}
@@ -581,17 +560,31 @@
             </li>
           {% endif %}
           
+          {% if property.emlakjet_listing_number %}
+            <li>
+              <span class="detail-label">Emlakjet İlan No</span>
+              <span class="detail-value">{{ property.emlakjet_listing_number }}</span>
+            </li>
+          {% endif %}
+          
+          {% if property.hepsiemlak_listing_number %}
+            <li>
+              <span class="detail-label">Hepsiemlak İlan No</span>
+              <span class="detail-value">{{ property.hepsiemlak_listing_number }}</span>
+            </li>
+          {% endif %}
+          
+          {% if property.website_listing_number %}
+            <li>
+              <span class="detail-label">Web Sitesi İlan No</span>
+              <span class="detail-value">{{ property.website_listing_number }}</span>
+            </li>
+          {% endif %}
+          
           {% if property.branda_number %}
             <li>
               <span class="detail-label">Branda No</span>
               <span class="detail-value">{{ property.branda_number }}</span>
-            </li>
-          {% endif %}
-          
-          {% if property.target_audience %}
-            <li>
-              <span class="detail-label">Hedef Kitle</span>
-              <span class="detail-value">{{ property.target_audience }}</span>
             </li>
           {% endif %}
         </ul>
@@ -619,6 +612,9 @@
 {% block javascripts %}
 {{ block.super }}
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
 <script>
   $(document).ready(function() {
     // Swiper başlat
@@ -635,6 +631,37 @@
         prevEl: '.swiper-button-prev',
       },
     });
+    
+    // Harita başlat
+    var map = L.map('property-map');
+    
+    // OpenStreetMap katmanı ekle
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Gayrimenkul koordinatları varsa haritada göster
+    var coordinates = "{{ property.map_coordinates }}";
+    if (coordinates && coordinates.includes(',')) {
+      var latLng = coordinates.split(',');
+      var lat = parseFloat(latLng[0].trim());
+      var lng = parseFloat(latLng[1].trim());
+      
+      if (!isNaN(lat) && !isNaN(lng)) {
+        // Marker ekle
+        var marker = L.marker([lat, lng]).addTo(map);
+        marker.bindPopup("{{ property.apartment_name }}").openPopup();
+        
+        // Görünüm ayarla
+        map.setView([lat, lng], 15);
+      } else {
+        // Koordinat yoksa İstanbul merkezini göster
+        map.setView([41.0082, 28.9784], 10);
+      }
+    } else {
+      // Koordinat yoksa İstanbul merkezini göster
+      map.setView([41.0082, 28.9784], 10);
+    }
   });
 </script>
 {% endblock javascripts %} 

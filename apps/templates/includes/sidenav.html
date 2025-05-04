@@ -37,15 +37,16 @@
           </li>
           
           <li class="nav-item">
+            <a class="nav-link {% if 'presentation' in segment %} active {% endif %}" href="{% url 'presentation_list' %}">
+              <i class="ni ni-books text-info"></i>
+              <span class="nav-link-text">Daire Sunumu</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
             <a class="nav-link {% if 'map' in segment %} active {% endif %}" href="/map.html">
               <i class="ni ni-pin-3 text-primary"></i>
               <span class="nav-link-text">Harita</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if 'profile' in segment %} active {% endif %}" href="/profile.html">
-              <i class="ni ni-single-02 text-yellow"></i>
-              <span class="nav-link-text">Profil</span>
             </a>
           </li>
           <li class="nav-item">
@@ -55,30 +56,13 @@
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if 'satis' in segment %} active {% endif %}" href="/satis.html">
-              <i class="ni ni-money-coins text-success"></i>
-              <span class="nav-link-text">Satışlar</span>
-            </a>
-          </li>
-        
-          <li class="nav-item">
             <a class="nav-link" href="{% url 'logout' %}">
               <i class="ni ni-user-run text-red"></i>
               <span class="nav-link-text">Çıkış</span>
             </a>
           </li>            
         </ul>
-        <!-- Divider -->
-        <hr class="my-3">
-        <!-- Navigation -->
-        <ul class="navbar-nav mb-md-3">
-          <li class="nav-item">
-            <a class="nav-link" href="/ayarlar.html">
-              <i class="ni ni-settings"></i>
-              <span class="nav-link-text">Ayarlar</span>
-            </a>
-          </li>
-        </ul>
+        
       </div>
     </div>
   </div>

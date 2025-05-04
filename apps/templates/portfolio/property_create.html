@@ -2,6 +2,9 @@
 {% block title %} Yeni Gayrimenkul Ekle {% endblock %}
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin=""/>
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
   :root {
@@ -247,6 +250,14 @@
     margin-top: 10px;
     display: none;
   }
+
+  /* Harita stili */
+  #map-container {
+    height: 400px;
+    width: 100%;
+    border-radius: 5px;
+    z-index: 1;
+  }
 </style>
 {% endblock stylesheets %}
 {% block content %}
@@ -354,31 +365,9 @@
                 <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
-                      <label class="form-control-label required-label" for="title">Başlık</label>
-                      <input type="text" id="title" name="title" class="form-control" placeholder="İlan başlığı" required>
-                      <div class="field-help">Gayrimenkulü en iyi şekilde tanımlayan bir başlık yazın</div>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="description">Açıklama</label>
-                      <textarea id="description" name="description" class="form-control" placeholder="İlan açıklaması" rows="3"></textarea>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label required-label" for="property_type">Daire</label>
-                      <select id="property_type" name="property_type" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        <option value="daire">Daire</option>
-                        <option value="mustakil">Müstakil</option>
-                        <option value="dublex">Dublex</option>
-                        <option value="triplex">Triplex</option>
-                        <option value="residans">Residans</option>
-                        <option value="yazlik">Yazlık</option>
-                      </select>
+                      <label class="form-control-label required-label" for="apartment_name">Daire Adı</label>
+                      <input type="text" id="apartment_name" name="apartment_name" class="form-control" placeholder="Örn: Bahçelievler 2+1 Daire, Vadi Rezidans 3+1" required>
+                      <div class="field-help">Gayrimenkulü en iyi şekilde tanımlayan bir isim yazın</div>
                     </div>
                   </div>
                   <div class="col-lg-6">
@@ -485,13 +474,60 @@
                     </div>
                   </div>
                 </div>
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label" for="property_type">Gayrimenkul Tipi</label>
+                      <select id="property_type" name="property_type" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="daire">Daire</option>
+                        <option value="mustakil">Müstakil</option>
+                        <option value="dublex">Dublex</option>
+                        <option value="arsa">Arsa</option>
+                        <option value="isyeri">İşyeri</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label" for="status">Satılık / Kiralık</label>
+                      <select id="status" name="status" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="satilik">Satılık</option>
+                        <option value="kiralik">Kiralık</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label" for="has_photos">Fotoğraf</label>
+                      <select id="has_photos" name="has_photos" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="var">Var</option>
+                        <option value="yok">Yok</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label" for="has_banner">Branda</label>
+                      <select id="has_banner" name="has_banner" class="form-control" required>
+                        <option value="">Seçiniz</option>
+                        <option value="var">Var</option>
+                        <option value="yok">Yok</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- MÜŞTERİ BİLGİLERİ -->
+            <!-- BÖLÜM 3: PORTFÖY SAHİBİ BİLGİLERİ -->
             <div class="section-header">
               <h4 class="section-title">
-                <i class="ni ni-single-02 mr-2"></i>Müşteri Bilgileri
+                <i class="ni ni-single-02 mr-2"></i>Portföy Sahibi Bilgileri
               </h4>
             </div>
 
@@ -500,86 +536,84 @@
                 <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
-                      <label class="form-control-label required-label" for="customer_name">Müşteri Adı</label>
-                      <input type="text" id="customer_name" name="customer_name" class="form-control" placeholder="Müşteri adı ve soyadı" required>
+                      <label class="form-control-label" for="owner_name">Mal Sahibi</label>
+                      <input type="text" id="owner_name" name="owner_name" class="form-control" placeholder="Mal sahibinin adı soyadı">
                     </div>
                   </div>
                   <div class="col-lg-6">
                     <div class="form-group">
-                      <label class="form-control-label required-label" for="customer_phone">Müşteri Telefonu</label>
-                      <input type="text" id="customer_phone" name="customer_phone" class="form-control" placeholder="(___) ___-____" required>
-                      <div class="field-help">Örn: (555) 123-4567</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label required-label" for="customer_tag">Müşteri Etiketi</label>
-                      <select id="customer_tag" name="customer_tag" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        <option value="alici">Alıcı</option>
-                        <option value="satici">Satıcı</option>
-                        <option value="kiraci">Kiracı</option>
-                        <option value="ev_sahibi">Ev Sahibi</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label required-label" for="customer_source">Müşteri Geliş Kaynağı</label>
-                      <select id="customer_source" name="customer_source" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        <option value="referans">Referans</option>
-                        <option value="sosyal_medya">Sosyal Medya</option>
-                        <option value="emlakjet">Emlakjet</option>
-                        <option value="sahibinden">Sahibinden</option>
-                        <option value="hürriyet">Hürriyet Emlak</option>
-                        <option value="diger">Diğer</option>
-                      </select>
+                      <label class="form-control-label" for="owner_phone">Mal Sahibi Telefon</label>
+                      <input type="text" id="owner_phone" name="owner_phone" class="form-control" placeholder="(___) ___-____">
                     </div>
                   </div>
                 </div>
                 <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
-                      <label class="form-control-label required-label" for="from_who">Kimden</label>
-                      <select id="from_who" name="from_who" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        <option value="sahibinden">Sahibinden</option>
-                        <option value="emlakci">Emlakçı</option>
-                      </select>
+                      <label class="form-control-label" for="owner_listing_number">Sahibinden İlan No</label>
+                      <div class="input-group">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                        </div>
+                        <input type="text" id="owner_listing_number" name="owner_listing_number" class="form-control" placeholder="Sahibinden.com ilan numarası">
+                      </div>
+                      <div class="field-help">Sahibinden.com platformdaki ilan numarası</div>
                     </div>
                   </div>
                   <div class="col-lg-6">
                     <div class="form-group">
-                      <label class="form-control-label required-label" for="has_photos">Fotoğraf</label>
-                      <select id="has_photos" name="has_photos" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        <option value="var">Var</option>
-                        <option value="yok">Yok</option>
-                      </select>
+                      <label class="form-control-label" for="emlakjet_listing_number">Emlakjet İlan No</label>
+                      <div class="input-group">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                        </div>
+                        <input type="text" id="emlakjet_listing_number" name="emlakjet_listing_number" class="form-control" placeholder="Emlakjet.com ilan numarası">
+                      </div>
+                      <div class="field-help">Emlakjet.com platformdaki ilan numarası</div>
                     </div>
                   </div>
                 </div>
                 <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
-                      <label class="form-control-label required-label" for="has_banner">Branda</label>
-                      <select id="has_banner" name="has_banner" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        <option value="var">Var</option>
-                        <option value="yok">Yok</option>
-                      </select>
+                      <label class="form-control-label" for="hepsiemlak_listing_number">Hepsiemlak İlan No</label>
+                      <div class="input-group">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                        </div>
+                        <input type="text" id="hepsiemlak_listing_number" name="hepsiemlak_listing_number" class="form-control" placeholder="Hepsiemlak.com ilan numarası">
+                      </div>
+                      <div class="field-help">Hepsiemlak.com platformdaki ilan numarası</div>
                     </div>
                   </div>
                   <div class="col-lg-6">
                     <div class="form-group">
-                      <label class="form-control-label required-label" for="has_poster">Afiş</label>
-                      <select id="has_poster" name="has_poster" class="form-control" required>
+                      <label class="form-control-label" for="website_listing_number">Web Sitesi İlan No</label>
+                      <div class="input-group">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                        </div>
+                        <input type="text" id="website_listing_number" name="website_listing_number" class="form-control" placeholder="Web sitesi ilan numarası">
+                      </div>
+                      <div class="field-help">Kendi web sitenizdeki ilan numarası</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label" for="branda_number">Branda No</label>
+                      <input type="text" id="branda_number" name="branda_number" class="form-control" placeholder="Branda numarası">
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label class="form-control-label" for="key_holder">Anahtar Kimde</label>
+                      <select id="key_holder" name="key_holder" class="form-control">
                         <option value="">Seçiniz</option>
-                        <option value="var">Var</option>
-                        <option value="yok">Yok</option>
+                        {% for key_id, key_name in key_holder_choices %}
+                          <option value="{{ key_id }}">{{ key_name }}</option>
+                        {% endfor %}
                       </select>
                     </div>
                   </div>
@@ -587,7 +621,7 @@
               </div>
             </div>
 
-            <!-- BÖLÜM 3: DAİRE DETAYLARI -->
+            <!-- BÖLÜM 4: DAİRE DETAYLARI -->
             <div class="section-header">
               <h4 class="section-title">
                 <i class="ni ni-building mr-2"></i>Daire Detayları
@@ -665,147 +699,67 @@
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div class="form-section-title mt-4">
-                <i class="ni ni-ui-04"></i>
-                <h4>Diğer Bilgiler</h4>
+            <!-- BÖLÜM 4: LOKASYON ve HARİTA BİLGİLERİ -->
+            <div class="section-header">
+              <h4 class="section-title">
+                <i class="ni ni-pin-3 mr-2"></i>Lokasyon ve Harita Bilgileri
+              </h4>
+            </div>
+
+            <div class="form-card">
+              <!-- Harita Konumu -->
+              <div class="form-section-title">
+                <i class="ni ni-world"></i>
+                <h4>Harita Konumu</h4>
               </div>
               
               <div class="pl-lg-4">
                 <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="owner_name">Mal Sahibi</label>
-                      <input type="text" id="owner_name" name="owner_name" class="form-control" placeholder="Mal sahibinin adı soyadı">
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="owner_phone">Mal Sahibi Telefon</label>
-                      <input type="text" id="owner_phone" name="owner_phone" class="form-control" placeholder="(___) ___-____">
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="owner_listing_number">Sahibinden İlan No</label>
-                      <div class="input-group">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
-                        </div>
-                        <input type="text" id="owner_listing_number" name="owner_listing_number" class="form-control" placeholder="Sahibinden.com ilan numarası">
-                      </div>
-                      <div class="field-help">Sahibinden.com veya benzer platformdaki ilan numarası</div>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="branda_number">Branda No</label>
-                      <input type="text" id="branda_number" name="branda_number" class="form-control" placeholder="Branda numarası">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- BÖLÜM 4: LOKASYON ve ÇEVRE BİLGİLERİ -->
-            <div class="section-header">
-              <h4 class="section-title">
-                <i class="ni ni-pin-3 mr-2"></i>Lokasyon ve Çevre Bilgileri
-              </h4>
-            </div>
-
-            <div class="form-card">
-              <!-- Çevre Bilgileri -->
-              <div class="form-section-title mt-4">
-                <i class="ni ni-world"></i>
-                <h4>Çevre Bilgileri</h4>
-              </div>
-
-              <div class="pl-lg-4">
-                <div id="environments-container">
-                  <div class="row environment-row">
-                    <div class="col-lg-5">
-                      <div class="form-group">
-                          <label class="form-control-label">Yer Adı</label>
-                          <input type="text" name="place_name" class="form-control" placeholder="Örn: Okul, Market, Park">
-                      </div>
-                    </div>
-                    <div class="col-lg-5">
-                      <div class="form-group">
-                          <label class="form-control-label">Mesafe (metre)</label>
-                          <input type="number" name="distance" class="form-control" placeholder="Metre cinsinden uzaklık">
-                      </div>
-                    </div>
-                    <div class="col-lg-2">
-                      <div class="form-group">
-                          <label class="form-control-label">&nbsp;</label>
-                          <button type="button" class="btn btn-danger btn-block remove-environment" style="display:none;">Kaldır</button>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="row mt-3">
                   <div class="col-lg-12">
-                    <button type="button" class="btn btn-sm btn-primary" id="add-environment">
-                      <i class="fas fa-plus"></i> Çevre Bilgisi Ekle
-                    </button>
+                    <div class="form-group">
+                      <label class="form-control-label" for="map_coordinates">Harita Koordinatları</label>
+                      <input type="text" id="map_coordinates" name="map_coordinates" class="form-control" placeholder="Enlem, Boylam (örn: 41.015137, 28.979530)">
+                      <div class="field-help">Haritada seçtiğiniz konum otomatik olarak doldurulacaktır veya kendiniz yazabilirsiniz</div>
+                    </div>
+                    
+                    <!-- Konum arama ve butonlar -->
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <div class="input-group">
+                          <input type="text" id="location-search" class="form-control" placeholder="Adres veya konum arayın...">
+                          <div class="input-group-append">
+                            <button class="btn btn-outline-primary" type="button" id="search-location-btn">
+                              <i class="fa fa-search"></i> Ara
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-6 text-right">
+                        <button class="btn btn-outline-info" type="button" id="get-current-location">
+                          <i class="fa fa-map-marker-alt"></i> Konumumu Kullan
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div id="map-container"></div>
+                    <div class="field-help mt-2">Gayrimenkulün konumunu haritada işaretlemek için tıklayın</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- BÖLÜM 5: FOTOĞRAF VE ANALİZ -->
+            <!-- BÖLÜM 5: FOTOĞRAF YÜKLEME -->
             <div class="section-header">
               <h4 class="section-title">
-                <i class="ni ni-image mr-2"></i>Fotoğraf ve Analiz
+                <i class="ni ni-image mr-2"></i>Fotoğraflar
               </h4>
             </div>
 
-            <div class="form-card">
-              <!-- SWOT Analizi -->
+            <div class="form-card">                
+              <!-- Fotoğraf Yükleme -->
               <div class="form-section-title">
-                <i class="ni ni-chart-bar-32"></i>
-                <h4>SWOT Analizi</h4>
-              </div>
-
-              <div class="pl-lg-4">
-                <!-- SWOT analizi kutuları -->
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="swot-box strengths">
-                      <h6>Güçlü Yönler</h6>
-                      <textarea id="swot_strengths" class="form-control" rows="3" placeholder="Gayrimenkulün güçlü yönleri..."></textarea>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="swot-box weaknesses">
-                      <h6>Zayıf Yönler</h6>
-                      <textarea id="swot_weaknesses" class="form-control" rows="3" placeholder="Gayrimenkulün zayıf yönleri..."></textarea>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="swot-box opportunities">
-                      <h6>Fırsatlar</h6>
-                      <textarea id="swot_opportunities" class="form-control" rows="3" placeholder="Gayrimenkul ile ilgili fırsatlar..."></textarea>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="swot-box threats">
-                      <h6>Tehditler</h6>
-                      <textarea id="swot_threats" class="form-control" rows="3" placeholder="Gayrimenkul için olası tehditler..."></textarea>
-                    </div>
-                  </div>
-                </div>
-                <!-- Gizli SWOT analizi alanı -->
-                <input type="hidden" id="swot_analysis" name="swot_analysis">
-              </div>
-                
-              <!-- Fotoğraf Yükleme - YENİ VERSİYON -->
-              <div class="form-section-title mt-5">
                 <i class="ni ni-camera-compact"></i>
                 <h4>Gayrimenkul Fotoğrafları</h4>
               </div>
@@ -834,28 +788,6 @@
                     <input type="file" id="camera-input" accept="image/*" capture="camera" style="display: none;">
                   </div>
                 </div>
-              </div>
-                
-              <!-- Hedef Kitle -->
-              <div class="form-section-title mt-5">
-                <i class="ni ni-single-02"></i>
-                <h4>Hedef Kitle</h4>
-              </div>
-
-              <div class="pl-lg-4">
-                <div class="row">
-                  <div class="col-lg-12">
-                    <div class="form-group">
-                      <label class="form-control-label" for="target_audience">Hedeflenen Müşteri Profili</label>
-                      <div class="input-group input-group-merge">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text"><i class="fas fa-users"></i></span>
-                        </div>
-                        <input type="text" id="target_audience" name="target_audience" class="form-control" placeholder="Örn: Yatırımcı, Kiracı, Aile, Öğrenci...">
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
                 <!-- Kaydet Butonu -->
                 <div class="row mt-4">
@@ -880,8 +812,182 @@
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.6/jquery.inputmask.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
 <script>
   $(document).ready(function() {
+    // OpenStreetMap haritasını başlat
+    var map, marker;
+    
+    function initMap() {
+      // İstanbul'un koordinatları (varsayılan)
+      var defaultLat = 41.015137;
+      var defaultLng = 28.979530;
+      
+      // Eğer form doldurulurken koordinat girilmişse, onu kullan
+      var coordinates = $('#map_coordinates').val();
+      if (coordinates) {
+        var coords = coordinates.split(',');
+        if (coords.length === 2) {
+          var lat = parseFloat(coords[0].trim());
+          var lng = parseFloat(coords[1].trim());
+          if (!isNaN(lat) && !isNaN(lng)) {
+            defaultLat = lat;
+            defaultLng = lng;
+          }
+        }
+      }
+      
+      // Haritayı başlat
+      map = L.map('map-container').setView([defaultLat, defaultLng], 12);
+      
+      // Harita katmanı ekle (OpenStreetMap)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(map);
+      
+      // Marker ekle
+      marker = L.marker([defaultLat, defaultLng], {
+        draggable: true
+      }).addTo(map);
+      
+      // Haritaya tıklandığında marker'ı güncelle
+      map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        updateCoordinates(e.latlng);
+      });
+      
+      // Marker sürüklendiğinde koordinatları güncelle
+      marker.on('dragend', function() {
+        var position = marker.getLatLng();
+        updateCoordinates(position);
+      });
+      
+      // Koordinat giriş değişikliğini izle
+      $('#map_coordinates').on('change', function() {
+        var coords = $(this).val().split(',');
+        if (coords.length === 2) {
+          var lat = parseFloat(coords[0].trim());
+          var lng = parseFloat(coords[1].trim());
+          if (!isNaN(lat) && !isNaN(lng)) {
+            var newLatLng = L.latLng(lat, lng);
+            marker.setLatLng(newLatLng);
+            map.setView(newLatLng, 12);
+          }
+        }
+      });
+      
+      // Mevcut konumu al
+      $('#get-current-location').on('click', function() {
+        if ("geolocation" in navigator) {
+          $(this).html('<i class="fa fa-spinner fa-spin"></i> Konum Alınıyor...');
+          
+          navigator.geolocation.getCurrentPosition(function(position) {
+            var lat = position.coords.latitude;
+            var lng = position.coords.longitude;
+            var userLocation = L.latLng(lat, lng);
+            
+            // Markeri ve haritayı güncelle
+            marker.setLatLng(userLocation);
+            map.setView(userLocation, 15);
+            updateCoordinates(userLocation);
+            
+            // Butonu normale döndür
+            $('#get-current-location').html('<i class="fa fa-map-marker-alt"></i> Konumumu Kullan');
+          }, function(error) {
+            // Hata durumunda
+            var errorMessage = "";
+            switch(error.code) {
+              case error.PERMISSION_DENIED:
+                errorMessage = "Konum izni reddedildi.";
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMessage = "Konum bilgisi alınamadı.";
+                break;
+              case error.TIMEOUT:
+                errorMessage = "Konum talebi zaman aşımına uğradı.";
+                break;
+              case error.UNKNOWN_ERROR:
+                errorMessage = "Bilinmeyen bir hata oluştu.";
+                break;
+            }
+            alert("Konum alınamadı: " + errorMessage);
+            $('#get-current-location').html('<i class="fa fa-map-marker-alt"></i> Konumumu Kullan');
+          }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        } else {
+          alert("Tarayıcınız konum servislerini desteklemiyor.");
+        }
+      });
+      
+      // Konum arama işlevi
+      $('#search-location-btn').on('click', searchLocation);
+      $('#location-search').on('keypress', function(e) {
+        if (e.which === 13) {
+          searchLocation();
+          e.preventDefault();
+        }
+      });
+      
+      function searchLocation() {
+        var searchQuery = $('#location-search').val().trim();
+        if (!searchQuery) return;
+        
+        $('#search-location-btn').html('<i class="fa fa-spinner fa-spin"></i>');
+        
+        // OpenStreetMap Nominatim API kullanarak arama yap
+        $.ajax({
+          url: 'https://nominatim.openstreetmap.org/search',
+          type: 'get',
+          data: {
+            q: searchQuery,
+            format: 'json',
+            addressdetails: 1,
+            limit: 1
+          },
+          dataType: 'json',
+          success: function(data) {
+            if (data && data.length > 0) {
+              var result = data[0];
+              var lat = parseFloat(result.lat);
+              var lng = parseFloat(result.lon);
+              var location = L.latLng(lat, lng);
+              
+              // Markeri ve haritayı güncelle
+              marker.setLatLng(location);
+              map.setView(location, 15);
+              updateCoordinates(location);
+            } else {
+              alert("Aradığınız konum bulunamadı.");
+            }
+            $('#search-location-btn').html('<i class="fa fa-search"></i> Ara');
+          },
+          error: function() {
+            alert("Konum araması sırasında bir hata oluştu.");
+            $('#search-location-btn').html('<i class="fa fa-search"></i> Ara');
+          }
+        });
+      }
+    }
+    
+    // Koordinat alanını güncelle
+    function updateCoordinates(latlng) {
+      $('#map_coordinates').val(latlng.lat.toFixed(6) + ', ' + latlng.lng.toFixed(6));
+    }
+    
+    // Haritayı başlat
+    initMap();
+    
+    // Harita görünüm sorununu çöz (bazen harita tam görünmez)
+    setTimeout(function() {
+      map.invalidateSize();
+    }, 500);
+    
     // Rastgele Doldur Butonu
     $('#fill-random-data').click(function(e) {
       e.preventDefault();
@@ -895,18 +1001,10 @@
         return $(this).val();
       }).get().filter(val => val !== "");
       
-      // Statü ve tip seçimi
-      const randomStatusIndex = Math.floor(Math.random() * $('.status-option').length);
-      $('.status-option').eq(randomStatusIndex).click();
-      
-      const randomTypeIndex = Math.floor(Math.random() * $('.type-option').length);
-      $('.type-option').eq(randomTypeIndex).click();
-      
       // Temel bilgiler
-      $('#title').val("Satılık " + ["Lüks", "Ferah", "Modern", "Merkezi", "Yeni", "Geniş"][Math.floor(Math.random() * 6)] + " Daire");
-      $('#description').val("Bu gayrimenkul merkezi konumda olup, çevre düzenlemesi ve sosyal imkanları ile öne çıkmaktadır. Detaylı bilgi için arayınız.");
-      
+      $('#apartment_name').val("Satılık " + ["Lüks", "Ferah", "Modern", "Merkezi", "Yeni", "Geniş"][Math.floor(Math.random() * 6)] + " Daire");
       $('#property_type').val("daire").trigger('change');
+      $('#status').val("satilik").trigger('change');
       $('#price').val(Math.floor(Math.random() * 5000000) + 500000);
       
       if (mahalleler.length > 0) {
@@ -916,33 +1014,10 @@
       $('#room_count').val(["1+0", "1+1", "2+1", "3+1", "4+1"][Math.floor(Math.random() * 5)]);
       $('#usage_status').val(["bos", "kiracili", "mulk_sahibi"][Math.floor(Math.random() * 3)]);
       $('#floor_count').val(Math.floor(Math.random() * 9) + 1);
+      $('#floor').val(["Zemin", "1", "2", "3", "4", "5"][Math.floor(Math.random() * 6)]);
       $('#address').val("Örnek Caddesi, No:" + Math.floor(Math.random() * 100) + ", " + ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya"][Math.floor(Math.random() * 5)]);
       
-      // Müşteri bilgileri
-      const randomName = isimler[Math.floor(Math.random() * isimler.length)];
-      const randomSurname = soyisimler[Math.floor(Math.random() * soyisimler.length)];
-      $('#customer_name').val(randomName + " " + randomSurname);
-      
-      const randomPhone = "05" + Math.floor(Math.random() * 10) + Math.floor(Math.random() * 10) + 
-                           Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
-      $('#customer_phone').val(randomPhone);
-      
-      $('#customer_tag').val(["alici", "satici", "kiraci", "ev_sahibi"][Math.floor(Math.random() * 4)]);
-      $('#customer_source').val(["referans", "sosyal_medya", "emlakjet", "sahibinden", "hürriyet", "diger"][Math.floor(Math.random() * 6)]);
-      $('#from_who').val(["sahibinden", "emlakci"][Math.floor(Math.random() * 2)]);
-      $('#has_photos').val(["var", "yok"][Math.floor(Math.random() * 2)]);
-      $('#has_banner').val(["var", "yok"][Math.floor(Math.random() * 2)]);
-      $('#has_poster').val(["var", "yok"][Math.floor(Math.random() * 2)]);
-      
-      // Daire detayları
-      $('#gross_area').val(Math.floor(Math.random() * 100) + 100);
-      $('#net_area').val(Math.floor(Math.random() * 50) + 80);
-      $('#heating').val(["dogalgaz", "merkezi", "soba", "klima", "yok"][Math.floor(Math.random() * 5)]);
-      $('#dues').val(Math.floor(Math.random() * 1000) + 100);
-      $('#balcony').val(["var", "yok"][Math.floor(Math.random() * 2)]);
-      $('#deed_status').val(["kat_mulkiyetli", "kat_irtifakli", "arsa_tapulu", "hisseli_tapu"][Math.floor(Math.random() * 4)]);
-      
-      // Diğer bilgiler
+      // Mal Sahibi bilgileri
       const ownerName = isimler[Math.floor(Math.random() * isimler.length)];
       const ownerSurname = soyisimler[Math.floor(Math.random() * soyisimler.length)];
       $('#owner_name').val(ownerName + " " + ownerSurname);
@@ -952,64 +1027,40 @@
       $('#owner_phone').val(ownerPhone);
       
       $('#owner_listing_number').val(Math.floor(Math.random() * 1000000) + 100000);
+      $('#emlakjet_listing_number').val(Math.floor(Math.random() * 1000000) + 100000);
+      $('#hepsiemlak_listing_number').val(Math.floor(Math.random() * 1000000) + 100000);
+      $('#website_listing_number').val(Math.floor(Math.random() * 1000000) + 100000);
       $('#branda_number').val(Math.floor(Math.random() * 1000) + 100);
+      $('#key_holder').val(["sahibi", "danisman", "kiracı", "diger"][Math.floor(Math.random() * 4)]);
       
-      // Çevre bilgileri - ilk satırı doldur
-      $('input[name="place_name"]').first().val(["Okul", "Market", "Park", "Hastane", "AVM", "Metro", "Otobüs Durağı"][Math.floor(Math.random() * 7)]);
-      $('input[name="distance"]').first().val(Math.floor(Math.random() * 1000) + 50);
+      // Daire detayları
+      $('#gross_area').val(Math.floor(Math.random() * 100) + 100);
+      $('#net_area').val(Math.floor(Math.random() * 50) + 80);
+      $('#heating').val(["dogalgaz", "merkezi", "soba", "klima", "yok"][Math.floor(Math.random() * 5)]);
+      $('#dues').val(Math.floor(Math.random() * 1000) + 100);
+      $('#balcony').val(["var", "yok"][Math.floor(Math.random() * 2)]);
+      $('#deed_status').val(["kat_mulkiyetli", "kat_irtifakli", "arsa", "diger"][Math.floor(Math.random() * 4)]);
+      $('#has_photos').val(["var", "yok"][Math.floor(Math.random() * 2)]);
+      $('#has_banner').val(["var", "yok"][Math.floor(Math.random() * 2)]);
       
-      // SWOT analizi
-      $('#swot_strengths').val("Merkezi konum, toplu ulaşım olanaklarına yakınlık, yeni bina, güvenlikli site.");
-      $('#swot_weaknesses').val("Otopark sorunu, küçük balkon, gürültülü cadde.");
-      $('#swot_opportunities').val("Yatırım potansiyeli, kira getirisi, değerlenme potansiyeli.");
-      $('#swot_threats').val("Bölgede artan konut arzı, ekonomik dalgalanmalar.");
-      
-      // Hedef kitle
-      $('#target_audience').val(["Yatırımcı", "Aile", "Öğrenci", "Çift", "İş İnsanı"][Math.floor(Math.random() * 5)]);
+      // Harita koordinatlarını güncelle (İstanbul)
+      $('#map_coordinates').val("41.0082, 28.9784");
+      var newLatLng = L.latLng(41.0082, 28.9784);
+      if (marker && map) {
+        marker.setLatLng(newLatLng);
+        map.setView(newLatLng, 12);
+      }
       
       // Uyarı mesajı
       alert("Form rastgele verilerle dolduruldu! Fotoğraf yüklemesi hariç tüm alanlar dolduruldu.");
     });
     
     // Telefon numarası maskesi
-    $("#customer_phone, #owner_phone").inputmask({
+    $("#owner_phone").inputmask({
       mask: "(999) 999-9999",
       placeholder: "(___) ___-____",
       showMaskOnHover: true,
       showMaskOnFocus: true
-    });
-    
-    // Kategori Seçimi İşlemleri
-    $(".category-option").click(function() {
-      // Kendi grubundaki diğer seçenekleri devre dışı bırak
-      if ($(this).hasClass('status-option')) {
-        $(".status-option").removeClass('active');
-      } else if ($(this).hasClass('type-option')) {
-        $(".type-option").removeClass('active');
-      }
-      
-      // Bu seçeneği etkinleştir
-      $(this).addClass('active');
-      $(this).find('input[type="radio"]').prop('checked', true);
-    });
-    
-    // Gayrimenkul tipine göre gösterilecek alanları kontrol et
-    $('#property_type, .type-option').change(function() {
-      var selectedType;
-      
-      if ($(this).hasClass('type-option')) {
-        if ($(this).hasClass('active')) {
-          selectedType = $(this).find('input').val();
-        }
-      } else {
-        selectedType = $(this).val();
-      }
-      
-      if (selectedType === 'daire') {
-        $('#daire-details').show();
-      } else {
-        $('#daire-details').hide();
-      }
     });
     
     // Form alanlarında değişiklik olduğunda hata mesajlarını temizle
@@ -1018,36 +1069,6 @@
         $(this).removeClass('is-invalid');
         $(this).next('.invalid-feedback').remove();
       }
-    });
-    
-    // Çevre bilgisi ekleme
-    $('#add-environment').click(function() {
-      var newRow = $('.environment-row:first').clone();
-      newRow.find('input').val('');
-      newRow.find('.remove-environment').show();
-      $('#environments-container').append(newRow);
-    });
-    
-    // Çevre bilgisi kaldırma (delegated event)
-    $('#environments-container').on('click', '.remove-environment', function() {
-      if ($('.environment-row').length > 1) {
-        $(this).closest('.environment-row').remove();
-      }
-    });
-    
-    // SWOT analizi birleştirme
-    $('#property-form').submit(function() {
-      var strengths = $('#swot_strengths').val();
-      var weaknesses = $('#swot_weaknesses').val();
-      var opportunities = $('#swot_opportunities').val();
-      var threats = $('#swot_threats').val();
-      
-      var swotAnalysis = 'Güçlü Yönler:\n' + strengths + '\n\n' +
-                          'Zayıf Yönler:\n' + weaknesses + '\n\n' +
-                          'Fırsatlar:\n' + opportunities + '\n\n' +
-                          'Tehditler:\n' + threats;
-      
-      $('#swot_analysis').val(swotAnalysis);
     });
     
     // Fiyat alanına sayısal format
@@ -1078,16 +1099,6 @@
         }
       });
       
-      // Kategori seçimini kontrol et
-      if (!$(".status-option.active").length || !$(".type-option.active").length) {
-        isValid = false;
-        // Kullanıcıya bilgi ver
-        if (!$('#category-error').length) {
-          $('<div id="category-error" class="alert alert-danger mt-3">Lütfen hem Satılık/Kiralık hem de Gayrimenkul Tipi seçin</div>')
-            .insertBefore('.category-option').first().parent();
-        }
-      }
-      
       // Geçersiz alanları göster
       if (!isValid) {
         e.preventDefault();
@@ -1103,7 +1114,6 @@
       return true;
     });
     
-    // YENİ FOTOĞRAF YÜKLEME KODU - BASİTLEŞTİRİLMİŞ
     // Fotoğraf önizleme
     $('#photo-upload, #camera-input').on('change', function() {
       const files = this.files;

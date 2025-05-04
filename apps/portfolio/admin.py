@@ -4,26 +4,71 @@ Koç Gayrimenkul Panel - Portföy Yönetimi Admin Yapılandırması
 """
 
 from django.contrib import admin
-from .models import Property, PropertyEnvironment, PropertyImage
+from .models import Property, PropertyImage, PropertyEnvironment
+
+# Inline modeller
+class PropertyImageInline(admin.TabularInline):
+    model = PropertyImage
+    extra = 0
+    fields = ['image', 'title', 'order']
 
 class PropertyEnvironmentInline(admin.TabularInline):
     model = PropertyEnvironment
-    extra = 1
+    extra = 0
+    fields = ['place_name', 'distance']
 
-class PropertyImageInline(admin.TabularInline):
-    model = PropertyImage
-    extra = 1
-
+# Ana modeller
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ('title', 'property_type', 'status', 'price', 'neighborhood', 'is_active', 'listing_date', 'consultant')
-    list_filter = ('property_type', 'status', 'neighborhood', 'is_active', 'consultant')
-    search_fields = ('title', 'description', 'address', 'owner_name')
-    date_hierarchy = 'listing_date'
-    inlines = [PropertyEnvironmentInline, PropertyImageInline]
+    list_display = ['apartment_name', 'property_type', 'status', 'price', 'neighborhood', 'created_at', 'is_active']
+    list_filter = ['status', 'property_type', 'is_active', 'neighborhood', 'consultant']
+    search_fields = ['apartment_name', 'address', 'owner_name', 'owner_phone']
+    readonly_fields = ['created_at', 'updated_at']
+    inlines = [PropertyImageInline, PropertyEnvironmentInline]
+    fieldsets = [
+        ('Temel Bilgiler', {
+            'fields': [
+                'apartment_name', 'description', 'property_type', 'status', 'price', 'category', 'listing_type',
+                'is_active'
+            ]
+        }),
+        ('Lokasyon', {
+            'fields': [
+                'neighborhood', 'address', 'map_coordinates'
+            ]
+        }),
+        ('Detay Bilgiler', {
+            'fields': [
+                'gross_area', 'net_area', 'room_count', 'floor', 'building_age', 
+                'heating', 'has_balcony', 'dues', 'floor_count', 'bathroom_count',
+                'usage_status', 'is_furnished', 'is_in_site', 'is_exchangeable'
+            ]
+        }),
+        ('Diğer Bilgiler', {
+            'fields': [
+                'deed_status', 'is_suitable_for_credit', 'is_bargainable'
+            ]
+        }),
+        ('Portföy Sahibi Bilgileri', {
+            'fields': [
+                'owner_name', 'owner_phone', 'owner_listing_number', 'emlakjet_listing_number',
+                'hepsiemlak_listing_number', 'website_listing_number', 'branda_number'
+            ]
+        }),
+        ('Operasyonel Bilgiler', {
+            'fields': [
+                'key_holder', 'photo_status', 'banner_status', 'listing_date', 'consultant'
+            ]
+        }),
+        ('Sistem Bilgileri', {
+            'fields': [
+                'created_at', 'updated_at'
+            ]
+        }),
+    ]
 
 @admin.register(PropertyImage)
 class PropertyImageAdmin(admin.ModelAdmin):
-    list_display = ('property', 'title', 'order')
-    list_filter = ('property',)
-    search_fields = ('property__title', 'title') 
+    list_display = ['id', 'property', 'title', 'order']
+    list_filter = ['property']
+    search_fields = ['property__apartment_name', 'title'] 

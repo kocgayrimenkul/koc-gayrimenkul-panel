@@ -15,6 +15,7 @@ urlpatterns = [
     path("", include("apps.portfolio.urls")),             # Portföy yönetimi
     path("", include("apps.calendar.urls")),              # Takvim/ajanda
     path("", include("apps.employees.urls")),             # Çalışan yönetimi
+    path("", include("apps.presentation.urls")),          # Daire sunumu
     path("", include("apps.home.urls"))                   # Ana sayfa ve diğer UI Kits
 ]
 

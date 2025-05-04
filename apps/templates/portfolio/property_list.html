@@ -490,10 +490,10 @@
           <table class="table align-items-center table-flush table-hover">
             <thead class="thead-light">
               <tr>
-                <th scope="col">Başlık</th>
+                <th scope="col">Daire Adı</th>
                 <th scope="col">Sahibi</th>
                 <th scope="col">Telefon</th>
-                <th scope="col">İlan No</th>
+                <th scope="col">İlan Numaraları</th>
                 <th scope="col">Durum</th>
                 <th scope="col">Oda</th>
                 <th scope="col">Fiyat</th>
@@ -501,7 +501,6 @@
                 <th scope="col">Kat</th>
                 <th scope="col">Mahalle</th>
                 <th scope="col">Fotoğraf</th>
-                <th scope="col">Branda</th>
                 <th scope="col">Danışman</th>
                 <th scope="col">Kullanım</th>
                 <th scope="col" class="text-right">İşlemler</th>
@@ -513,7 +512,7 @@
                 <th scope="row">
                   <div class="media align-items-center">
                     <div class="media-body">
-                      <span class="name mb-0 text-sm font-weight-bold">{{ property.title }}</span>
+                      <span class="name mb-0 text-sm font-weight-bold">{{ property.apartment_name }}</span>
                       <small class="d-block text-muted">{{ property.address|truncatechars:40 }}</small>
                       {% if property.sahibinden_link %}
                       <small class="d-block">
@@ -538,10 +537,27 @@
                 </td>
                 <td>
                   {% if property.owner_listing_number %}
-                    <a href="https://www.sahibinden.com/{{ property.owner_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Sahibinden.com'da görüntüle">
-                      <span class="badge badge-pill badge-info">{{ property.owner_listing_number }}</span>
-                    </a>
-                  {% else %}
+                    <div class="mb-1">
+                      <a href="https://www.sahibinden.com/{{ property.owner_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Sahibinden.com'da görüntüle">
+                        <span class="badge badge-pill badge-info"><i class="fas fa-external-link-alt mr-1"></i>Sahibinden: {{ property.owner_listing_number }}</span>
+                      </a>
+                    </div>
+                  {% endif %}
+                  {% if property.emlakjet_listing_number %}
+                    <div class="mb-1">
+                      <a href="https://www.emlakjet.com/ilan/{{ property.emlakjet_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Emlakjet'de görüntüle">
+                        <span class="badge badge-pill badge-success"><i class="fas fa-external-link-alt mr-1"></i>Emlakjet: {{ property.emlakjet_listing_number }}</span>
+                      </a>
+                    </div>
+                  {% endif %}
+                  {% if property.website_listing_number %}
+                    <div>
+                      <a href="https://www.kocgayrimenkul.com/ilan/{{ property.website_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Web Sitesinde görüntüle">
+                        <span class="badge badge-pill badge-warning"><i class="fas fa-external-link-alt mr-1"></i>Web: {{ property.website_listing_number }}</span>
+                      </a>
+                    </div>
+                  {% endif %}
+                  {% if not property.owner_listing_number and not property.emlakjet_listing_number and not property.website_listing_number %}
                     <span class="badge badge-pill badge-light">-</span>
                   {% endif %}
                 </td>
@@ -631,26 +647,6 @@
                 <td>
                   <div class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                      {% if property.banner_status %}
-                      <span class="badge badge-pill badge-success">Var</span>
-                      {% else %}
-                      <span class="badge badge-pill badge-secondary">Yok</span>
-                      {% endif %}
-                    </a>
-                    <div class="dropdown-menu">
-                      <h6 class="dropdown-header">Branda Durumu</h6>
-                      <a class="dropdown-item banner-status-item" href="#" data-status="true" data-property-id="{{ property.id }}">
-                        <span class="badge badge-pill badge-success mr-2">Var</span>
-                      </a>
-                      <a class="dropdown-item banner-status-item" href="#" data-status="false" data-property-id="{{ property.id }}">
-                        <span class="badge badge-pill badge-secondary mr-2">Yok</span>
-                      </a>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                       {{ property.consultant|default:"-" }}
                     </a>
                     <div class="dropdown-menu">
@@ -705,7 +701,7 @@
                         <i class="fas fa-edit text-koc-red mr-2"></i> Düzenle
                       </a>
                       <div class="dropdown-divider"></div>
-                      <a class="dropdown-item text-danger delete-property" href="#" data-property-id="{{ property.id }}" data-property-title="{{ property.title }}">
+                      <a class="dropdown-item text-danger delete-property" href="#" data-property-id="{{ property.id }}" data-property-title="{{ property.apartment_name }}">
                         <i class="fas fa-trash-alt mr-2"></i> Sil
                       </a>
                     </div>
@@ -809,7 +805,7 @@
                 <i class="ni ni-building text-muted" style="font-size: 3rem;"></i>
               </div>
               <div class="card-body">
-                <h5 class="card-title text-truncate">{{ property.title }}</h5>
+                <h5 class="card-title text-truncate">{{ property.apartment_name }}</h5>
                 <p class="text-muted small mb-2 text-truncate">{{ property.address }}</p>
                 <div class="mb-2">
                   <strong class="d-block">{{ property.owner_name|default:"Bilinmiyor" }}</strong>
@@ -841,12 +837,30 @@
                     {% endif %}
                   {% endif %}
                   
-                  {% if property.owner_listing_number %}
-                  <span class="property-feature">
-                    <a href="https://www.sahibinden.com/{{ property.owner_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Sahibinden.com'da görüntüle">
-                      <i class="fas fa-hashtag"></i> {{ property.owner_listing_number }}
-                    </a>
-                  </span>
+                  {% if property.owner_listing_number or property.emlakjet_listing_number or property.website_listing_number %}
+                  <div class="my-2">
+                    {% if property.owner_listing_number %}
+                    <div class="mb-1">
+                      <a href="https://www.sahibinden.com/{{ property.owner_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Sahibinden.com'da görüntüle">
+                        <span class="badge badge-pill badge-info"><i class="fas fa-external-link-alt mr-1"></i>Sahibinden: {{ property.owner_listing_number }}</span>
+                      </a>
+                    </div>
+                    {% endif %}
+                    {% if property.emlakjet_listing_number %}
+                    <div class="mb-1">
+                      <a href="https://www.emlakjet.com/ilan/{{ property.emlakjet_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Emlakjet'de görüntüle">
+                        <span class="badge badge-pill badge-success"><i class="fas fa-external-link-alt mr-1"></i>Emlakjet: {{ property.emlakjet_listing_number }}</span>
+                      </a>
+                    </div>
+                    {% endif %}
+                    {% if property.website_listing_number %}
+                    <div>
+                      <a href="https://www.kocgayrimenkul.com/ilan/{{ property.website_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Web Sitesinde görüntüle">
+                        <span class="badge badge-pill badge-warning"><i class="fas fa-external-link-alt mr-1"></i>Web: {{ property.website_listing_number }}</span>
+                      </a>
+                    </div>
+                    {% endif %}
+                  </div>
                   {% endif %}
                 </div>
                 <div class="mb-2">
@@ -917,26 +931,6 @@
                         </a>
                         <a class="dropdown-item photo-status-item" href="#" data-status="cekilmiyor" data-property-id="{{ property.id }}">
                           <span class="badge badge-pill photo-status-cekilmiyor mr-2">Çekilmiyor</span>
-                        </a>
-                      </div>
-                    </div>
-                    
-                    <!-- Branda durumu -->
-                    <div class="dropdown mr-2 mb-2">
-                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                        {% if property.banner_status %}
-                        <span class="badge badge-pill badge-success">Branda Var</span>
-                        {% else %}
-                        <span class="badge badge-pill badge-secondary">Branda Yok</span>
-                        {% endif %}
-                      </a>
-                      <div class="dropdown-menu">
-                        <h6 class="dropdown-header">Branda Durumu</h6>
-                        <a class="dropdown-item banner-status-item" href="#" data-status="true" data-property-id="{{ property.id }}">
-                          <span class="badge badge-pill badge-success mr-2">Var</span>
-                        </a>
-                        <a class="dropdown-item banner-status-item" href="#" data-status="false" data-property-id="{{ property.id }}">
-                          <span class="badge badge-pill badge-secondary mr-2">Yok</span>
                         </a>
                       </div>
                     </div>
@@ -1306,42 +1300,6 @@
         },
         error: function() {
           showAlert('Fotoğraf durumu güncellenirken bir hata oluştu.', 'danger');
-        }
-      });
-    });
-
-    // Branda durumu değiştirme
-    $('.banner-status-item').click(function(e) {
-      e.preventDefault();
-      
-      var bannerStatus = $(this).data('status');
-      var propertyId = $(this).data('property-id');
-      var $clickedItem = $(this);
-      var badge = $clickedItem.find('.badge').clone();
-      
-      // AJAX ile branda durumunu güncelleme
-      $.ajax({
-        url: "{% url 'property_update_field' %}",
-        method: 'POST',
-        data: {
-          property_id: propertyId,
-          field: 'banner_status',
-          value: bannerStatus,
-          csrfmiddlewaretoken: '{{ csrf_token }}'
-        },
-        success: function(response) {
-          if (response.success) {
-            // Sadece tıklanan elementle ilgili dropdown'ı güncelle
-            $clickedItem.closest('.dropdown-menu').siblings('.dropdown-toggle').html(badge);
-            
-            // Kullanıcıya bilgi ver
-            showAlert('Branda durumu başarıyla güncellendi.', 'success');
-          } else {
-            showAlert(response.error || 'Branda durumu güncellenirken bir hata oluştu.', 'danger');
-          }
-        },
-        error: function() {
-          showAlert('Branda durumu güncellenirken bir hata oluştu.', 'danger');
         }
       });
     });

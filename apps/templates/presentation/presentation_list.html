@@ -1,0 +1,359 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Daire Sunumları {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+    --koc-gray: #f5f5f5;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .btn-outline-koc-red {
+    color: var(--koc-red);
+    border-color: var(--koc-red);
+    background-color: transparent;
+  }
+  
+  .btn-outline-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Sayfa özel stilleri */
+  .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: none;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .filter-header {
+    background: linear-gradient(45deg, var(--koc-red-dark), var(--koc-red));
+    border-bottom: none;
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .table thead th {
+    border-top: none;
+    border-bottom: 2px solid var(--koc-red);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(var(--koc-red-rgb), 0.04);
+  }
+  
+  .badge-bekliyor {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .badge-tamamlandi {
+    background-color: #2dce89;
+    color: white;
+  }
+  
+  .badge-iptal {
+    background-color: #f5365c;
+    color: white;
+  }
+  
+  .status-badge {
+    padding: 0.5rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Daire Sunumları</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item active" aria-current="page">Daire Sunumları</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'presentation_create' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-plus mr-1"></i> Yeni Sunum Ekle
+          </a>
+        </div>
+      </div>
+      
+      <!-- İstatistik Kartları -->
+      <div class="row">
+        <div class="col-xl-4 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Bekleyen Sunumlar</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ bekleyen_sunum_sayisi }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-warning text-white rounded-circle shadow">
+                    <i class="ni ni-time-alarm"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Tamamlanan Sunumlar</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ tamamlanan_sunum_sayisi }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-success text-white rounded-circle shadow">
+                    <i class="ni ni-check-bold"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">İptal Edilen Sunumlar</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ iptal_sunum_sayisi }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-danger text-white rounded-circle shadow">
+                    <i class="ni ni-fat-remove"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ana İçerik -->
+<div class="container-fluid mt--6">
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- Filtreler -->
+  <div class="row">
+    <div class="col">
+      <div class="card shadow">
+        <div class="card-header filter-header">
+          <h3 class="mb-0 text-white">Filtreleme</h3>
+        </div>
+        <div class="card-body">
+          <form method="GET" action="{% url 'presentation_list' %}">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="status">Durum</label>
+                  <select class="form-control" id="status" name="status">
+                    <option value="">Tümü</option>
+                    <option value="bekliyor" {% if filter_status == 'bekliyor' %}selected{% endif %}>Bekliyor</option>
+                    <option value="tamamlandi" {% if filter_status == 'tamamlandi' %}selected{% endif %}>Tamamlandı</option>
+                    <option value="iptal" {% if filter_status == 'iptal' %}selected{% endif %}>İptal</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="date">Tarih</label>
+                  <select class="form-control" id="date" name="date">
+                    <option value="">Tümü</option>
+                    <option value="today" {% if filter_date == 'today' %}selected{% endif %}>Bugün</option>
+                    <option value="week" {% if filter_date == 'week' %}selected{% endif %}>Son 7 Gün</option>
+                    <option value="month" {% if filter_date == 'month' %}selected{% endif %}>Son 30 Gün</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12 text-right">
+                <button type="submit" class="btn btn-koc-red">
+                  <i class="fas fa-filter mr-1"></i> Filtrele
+                </button>
+                <a href="{% url 'presentation_list' %}" class="btn btn-outline-secondary">
+                  <i class="fas fa-eraser mr-1"></i> Filtreleri Temizle
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Sunumlar Tablosu -->
+  <div class="row mt-4">
+    <div class="col">
+      <div class="card shadow">
+        <div class="card-header border-0">
+          <h3 class="mb-0">Daire Sunumları</h3>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">Sunum Başlığı</th>
+                <th scope="col">Daire</th>
+                <th scope="col">Sunan Kişi</th>
+                <th scope="col">Müşteri</th>
+                <th scope="col">Sunum Tarihi</th>
+                <th scope="col">Durum</th>
+                <th scope="col">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for presentation in presentations %}
+              <tr>
+                <td>
+                  <a href="{% url 'presentation_detail' presentation.id %}" class="text-koc-red font-weight-bold">
+                    {{ presentation.title }}
+                  </a>
+                </td>
+                <td>{{ presentation.property.title }}</td>
+                <td>{{ presentation.presenter.first_name }} {{ presentation.presenter.last_name }}</td>
+                <td>{{ presentation.customer_name }}</td>
+                <td>{{ presentation.presentation_date|date:"d.m.Y H:i" }}</td>
+                <td>
+                  {% if presentation.status == 'bekliyor' %}
+                  <span class="badge status-badge badge-bekliyor">Bekliyor</span>
+                  {% elif presentation.status == 'tamamlandi' %}
+                  <span class="badge status-badge badge-tamamlandi">Tamamlandı</span>
+                  {% elif presentation.status == 'iptal' %}
+                  <span class="badge status-badge badge-iptal">İptal</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="dropdown">
+                    <a class="btn btn-sm btn-icon-only text-light" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                      <a class="dropdown-item" href="{% url 'presentation_detail' presentation.id %}">
+                        <i class="fas fa-eye mr-2"></i> Detay
+                      </a>
+                      <a class="dropdown-item" href="{% url 'presentation_edit' presentation.id %}">
+                        <i class="fas fa-edit mr-2"></i> Düzenle
+                      </a>
+                      {% if user.is_superuser %}
+                      <a class="dropdown-item text-danger" href="{% url 'presentation_delete' presentation.id %}">
+                        <i class="fas fa-trash mr-2"></i> Sil
+                      </a>
+                      {% endif %}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-5">
+                  <div class="empty-state">
+                    <i class="ni ni-folder-17 display-4 text-muted"></i>
+                    <p class="mt-3">Henüz hiç daire sunumu kaydı bulunamadı.</p>
+                    <a href="{% url 'presentation_create' %}" class="btn btn-sm btn-koc-red mt-2">
+                      <i class="fas fa-plus mr-1"></i> Yeni Sunum Oluştur
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+  
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+  $(document).ready(function() {
+    // Select2 etkinleştirme (eğer kullanılıyorsa)
+    if($.fn.select2) {
+      $('.select2').select2();
+    }
+  });
+</script>
+{% endblock javascripts %} 

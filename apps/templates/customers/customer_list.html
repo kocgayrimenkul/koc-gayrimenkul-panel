@@ -582,12 +582,6 @@
                     <span class="text-sm text-muted"><i class="ni ni-mobile-button mr-2"></i> Telefon:</span>
                     <span class="text-sm font-weight-bold">{{ customer.phone }}</span>
                   </div>
-                  {% if customer.apartment %}
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-sm text-muted"><i class="ni ni-building mr-2"></i> Daire:</span>
-                    <span class="text-sm font-weight-bold">{{ customer.apartment }}</span>
-                  </div>
-                  {% endif %}
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-sm text-muted"><i class="ni ni-calendar-grid-58 mr-2"></i> Kayıt:</span>
                     <span class="text-sm font-weight-bold">{{ customer.created_at|date:"d.m.Y" }}</span>

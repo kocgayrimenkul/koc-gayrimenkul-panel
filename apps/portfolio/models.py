@@ -14,6 +14,8 @@ class Property(models.Model):
     # Kategori Seçenekleri
     PROPERTY_TYPE_CHOICES = [
         ('daire', 'Daire'),
+        ('mustakil', 'Müstakil'),
+        ('dublex', 'Dublex'),
         ('arsa', 'Arsa'),
         ('isyeri', 'İşyeri'),
     ]
@@ -57,37 +59,11 @@ class Property(models.Model):
         ('asilmadi', 'Asılmadı'),
     ]
     
-    POSTER_STATUS_CHOICES = [
-        ('asildi', 'Asıldı'),
-        ('asilmadi', 'Asılmadı'),
-    ]
-    
     PHOTO_STATUS_CHOICES = [
         ('cekildi', 'Çekildi'),
         ('cektirmiyor', 'Çektirmiyor'),
         ('cekilmedi', 'Çekilmedi'),
         ('cekilmiyor', 'Çekilmiyor'),
-    ]
-    
-    LISTING_FROM_CHOICES = [
-        ('sahibinden', 'Sahibinden'),
-        ('emlakci', 'Emlakçı'),
-        ('banka', 'Banka'),
-        ('muteahhit', 'Müteahhit'),
-    ]
-    
-    CUSTOMER_TAG_CHOICES = [
-        ('vip', 'VIP'),
-        ('standart', 'Standart'),
-        ('ozel', 'Özel'),
-    ]
-    
-    CUSTOMER_SOURCE_CHOICES = [
-        ('internet', 'İnternet'),
-        ('referans', 'Referans'),
-        ('tabela', 'Tabela/Branda'),
-        ('sosyal_medya', 'Sosyal Medya'),
-        ('diger', 'Diğer'),
     ]
     
     CATEGORY_CHOICES = [
@@ -107,8 +83,8 @@ class Property(models.Model):
     ]
     
     # Temel Bilgiler
-    title = models.CharField(max_length=200, verbose_name="İlan Başlığı")
-    description = models.TextField(verbose_name="Açıklama")
+    apartment_name = models.CharField(max_length=200, verbose_name="Daire Adı", null=True)
+    description = models.TextField(verbose_name="Detay", blank=True)
     property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, verbose_name="Emlak Tipi")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, verbose_name="Durum")
     price = models.DecimalField(max_digits=14, decimal_places=2, verbose_name="Fiyat")
@@ -116,6 +92,7 @@ class Property(models.Model):
     # Lokasyon Bilgileri
     neighborhood = models.ForeignKey(Neighborhood, on_delete=models.CASCADE, verbose_name="Mahalle")
     address = models.TextField(verbose_name="Açık Adres", blank=True)
+    map_coordinates = models.CharField(max_length=100, verbose_name="Harita Koordinatları", blank=True, null=True)
     
     # Detay Bilgiler - Daire için
     gross_area = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Brüt m²", null=True, blank=True)
@@ -136,7 +113,6 @@ class Property(models.Model):
     is_exchangeable = models.BooleanField(default=False, verbose_name="Takas")
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, verbose_name="Kategori", blank=True) 
     listing_type = models.CharField(max_length=20, choices=LISTING_TYPE_CHOICES, verbose_name="İlan Türü", blank=True)
-    listing_from = models.CharField(max_length=20, choices=LISTING_FROM_CHOICES, verbose_name="Kimden", blank=True)
     
     # Diğer Bilgiler
     deed_status = models.CharField(max_length=20, choices=DEED_STATUS_CHOICES, verbose_name="Tapu Durumu", blank=True)
@@ -147,22 +123,18 @@ class Property(models.Model):
     owner_name = models.CharField(max_length=100, verbose_name="Mal Sahibi", blank=True)
     owner_phone = models.CharField(max_length=20, verbose_name="Mal Sahibi Telefon", blank=True)
     owner_listing_number = models.CharField(max_length=50, verbose_name="Sahibinden İlan No", blank=True)
+    emlakjet_listing_number = models.CharField(max_length=50, verbose_name="Emlakjet İlan No", blank=True)
+    hepsiemlak_listing_number = models.CharField(max_length=50, verbose_name="Hepsiemlak İlan No", blank=True)
+    website_listing_number = models.CharField(max_length=50, verbose_name="Web Sitesi İlan No", blank=True)
     branda_number = models.CharField(max_length=50, verbose_name="Branda No", blank=True)
-    customer_tag = models.CharField(max_length=20, choices=CUSTOMER_TAG_CHOICES, verbose_name="Müşteri Etiketi", blank=True)
-    customer_source = models.CharField(max_length=20, choices=CUSTOMER_SOURCE_CHOICES, verbose_name="Müşteri Geliş Kaynağı", blank=True)
     
     # Operasyonel Bilgiler
     key_holder = models.CharField(max_length=20, choices=KEY_HOLDER_CHOICES, verbose_name="Anahtar Kimde", blank=True)
     photo_status = models.CharField(max_length=20, choices=PHOTO_STATUS_CHOICES, verbose_name="Fotoğraf Durumu", blank=True, default='cekilmedi')
     banner_status = models.CharField(max_length=20, choices=BANNER_STATUS_CHOICES, verbose_name="Branda Durumu", blank=True)
-    poster_status = models.CharField(max_length=20, choices=POSTER_STATUS_CHOICES, verbose_name="Afiş Durumu", blank=True)
     listing_date = models.DateField(default=timezone.now, verbose_name="İlan Tarihi")
     consultant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, 
                                   related_name="properties", verbose_name="Danışman")
-    
-    # Analiz Bilgileri
-    swot_analysis = models.TextField(verbose_name="SWOT Analizi", blank=True)
-    target_audience = models.CharField(max_length=100, verbose_name="Hedef Kitle", blank=True)
     
     # Sistem Bilgileri
     created_at = models.DateTimeField(auto_now_add=True)
@@ -170,7 +142,7 @@ class Property(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Aktif")
     
     def __str__(self):
-        return self.title
+        return self.apartment_name if self.apartment_name else "İsimsiz Gayrimenkul"
     
     class Meta:
         verbose_name = "Portföy"
@@ -198,7 +170,7 @@ class PropertyImage(models.Model):
     order = models.PositiveSmallIntegerField(default=0, verbose_name="Sıralama")
     
     def __str__(self):
-        return f"{self.property.title if self.property else 'Bağlantısız'} - {self.title or 'Görsel'}"
+        return f"{self.property.apartment_name if self.property and self.property.apartment_name else 'Bağlantısız'} - {self.title or 'Görsel'}"
     
     class Meta:
         verbose_name = "Gayrimenkul Görseli"

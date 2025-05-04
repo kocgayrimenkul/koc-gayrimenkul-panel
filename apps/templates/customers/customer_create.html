@@ -243,58 +243,8 @@
                         {% endfor %}
                       </select>
                     </div>
-                    <small class="form-text text-muted">Daire seçildiğinde, daire bilgisi otomatik doldurulacaktır.</small>
                   </div>
                 </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="apartment">Daire Detayları</label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-building"></i></span>
-                      </div>
-                      <input type="text" id="apartment" name="apartment" class="form-control" 
-                        placeholder="Daire bilgisi, detaylar" value="{{ form_data.apartment|default:'' }}">
-                    </div>
-                    <small class="form-text text-muted">Portföyden daire seçilmezse, bu alandaki bilgiler kullanılacaktır.</small>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="meeting_type">Görüşme Türü <span class="text-danger">*</span></label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-tasks"></i></span>
-                      </div>
-                      <select id="meeting_type" name="meeting_type" class="form-control" required>
-                        <option value="">Görüşme Türü Seçiniz</option>
-                        <option value="bilgi_alma" {% if form_data.meeting_type == 'bilgi_alma' %}selected{% endif %}>Bilgi Alma</option>
-                        <option value="daire_gezdirme" {% if form_data.meeting_type == 'daire_gezdirme' %}selected{% endif %}>Daire Gezdirme</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="contact_reason">Arama Nedeni</label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-comment-alt"></i></span>
-                      </div>
-                      <select id="contact_reason" name="contact_reason" class="form-control">
-                        <option value="">Arama Nedeni Seçiniz</option>
-                        <option value="satin_alma" {% if form_data.contact_reason == 'satin_alma' %}selected{% endif %}>Satın Alma</option>
-                        <option value="kiralama" {% if form_data.contact_reason == 'kiralama' %}selected{% endif %}>Kiralama</option>
-                        <option value="fiyat_bilgisi" {% if form_data.contact_reason == 'fiyat_bilgisi' %}selected{% endif %}>Fiyat Bilgisi</option>
-                        <option value="genel_bilgi" {% if form_data.contact_reason == 'genel_bilgi' %}selected{% endif %}>Genel Bilgi</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="response_date">Geri Dönüş Tarihi</label>
@@ -308,6 +258,8 @@
                     <small class="form-text text-muted">Danışmanın müşteriye geri dönüş yaptığı tarih</small>
                   </div>
                 </div>
+              </div>
+              <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="meeting_status">Görüşme Durumu</label>
@@ -425,22 +377,6 @@
       }
       $(this).val(value);
     });
-    
-    // Daire seçildiğinde işlem yap
-    $('#property_id').on('change', function() {
-      if ($(this).val()) {
-        // Daire seçildiğinde, daire detayları alanını disable et
-        $('#apartment').prop('disabled', true);
-      } else {
-        // Daire seçilmediğinde, daire detayları alanını aktif et
-        $('#apartment').prop('disabled', false);
-      }
-    });
-    
-    // Sayfa yüklendiğinde daire seçimi kontrolü
-    if ($('#property_id').val()) {
-      $('#apartment').prop('disabled', true);
-    }
     
     // Form submit doğrulama
     $('form').on('submit', function(e) {

@@ -1,0 +1,427 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Daire Sunumu Düzenle {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Form stilleri */
+  .form-control:focus {
+    border-color: var(--koc-red);
+    box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
+  }
+  
+  .card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  }
+  
+  label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    color: #525f7f;
+  }
+  
+  .form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .form-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  
+  .form-section-title {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: var(--koc-red);
+    font-weight: 600;
+  }
+  
+  .invalid-feedback {
+    color: var(--koc-red);
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Daire Sunumu Düzenle</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'presentation_list' %}">Daire Sunumları</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Düzenle</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'presentation_detail' presentation.id %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-eye mr-1"></i> Detayları Gör
+          </a>
+          <a href="{% url 'presentation_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> Listeye Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- Form Kartı -->
+  <div class="row">
+    <div class="col-xl-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Daire Sunumu Bilgileri</h3>
+          <small class="text-muted">ID: {{ presentation.id }} | Oluşturulma: {{ presentation.created_at|date:"d.m.Y H:i" }}</small>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{% url 'presentation_edit' presentation.id %}">
+            {% csrf_token %}
+            
+            <!-- Sunum Temel Bilgileri -->
+            <div class="form-section">
+              <h4 class="form-section-title">Sunum Temel Bilgileri</h4>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.title.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.presentation_date.id_for_label }}">{{ form.presentation_date.label }}</label>
+                    {{ form.presentation_date }}
+                    {% if form.presentation_date.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.presentation_date.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.property.id_for_label }}">{{ form.property.label }}</label>
+                    {{ form.property }}
+                    {% if form.property.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.property.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.presenter.id_for_label }}">{{ form.presenter.label }}</label>
+                    {{ form.presenter }}
+                    {% if form.presenter.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.presenter.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Müşteri Bilgileri -->
+            <div class="form-section">
+              <h4 class="form-section-title">Müşteri Bilgileri</h4>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.customer_name.id_for_label }}">{{ form.customer_name.label }}</label>
+                    {{ form.customer_name }}
+                    {% if form.customer_name.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.customer_name.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.customer_phone.id_for_label }}">{{ form.customer_phone.label }}</label>
+                    {{ form.customer_phone }}
+                    {% if form.customer_phone.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.customer_phone.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.customer_source.id_for_label }}">{{ form.customer_source.label }}</label>
+                    {{ form.customer_source }}
+                    {% if form.customer_source.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.customer_source.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.neighborhood.id_for_label }}">{{ form.neighborhood.label }}</label>
+                    {{ form.neighborhood }}
+                    {% if form.neighborhood.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.neighborhood.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                    <small class="form-text text-muted">Mahalle seçildiğinde ilgili danışman otomatik atanacaktır.</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Gezdirilen Diğer Daireler -->
+            <div class="form-section">
+              <h4 class="form-section-title">Gezdirilen Diğer Daireler</h4>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="{{ form.other_property1.id_for_label }}">{{ form.other_property1.label }}</label>
+                    {{ form.other_property1 }}
+                    {% if form.other_property1.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.other_property1.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="{{ form.other_property2.id_for_label }}">{{ form.other_property2.label }}</label>
+                    {{ form.other_property2 }}
+                    {% if form.other_property2.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.other_property2.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="{{ form.other_property3.id_for_label }}">{{ form.other_property3.label }}</label>
+                    {{ form.other_property3 }}
+                    {% if form.other_property3.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.other_property3.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label for="{{ form.other_properties_notes.id_for_label }}">{{ form.other_properties_notes.label }}</label>
+                    {{ form.other_properties_notes }}
+                    {% if form.other_properties_notes.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.other_properties_notes.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Durum ve Notlar -->
+            <div class="form-section">
+              <h4 class="form-section-title">Durum ve Notlar</h4>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+                    {{ form.status }}
+                    {% if form.status.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.status.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.notes.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Butonlar -->
+            <div class="form-group text-right">
+              <a href="{% url 'presentation_detail' presentation.id %}" class="btn btn-secondary">
+                <i class="fas fa-times mr-1"></i> İptal
+              </a>
+              <button type="submit" class="btn btn-koc-red">
+                <i class="fas fa-save mr-1"></i> Değişiklikleri Kaydet
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+  
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+  $(document).ready(function() {
+    // Select2 etkinleştirme
+    if($.fn.select2) {
+      $('.select2').select2({
+        placeholder: "Seçiniz",
+        allowClear: true
+      });
+    }
+    
+    // DateTime picker etkinleştirme (eğer flatpickr kullanılıyorsa)
+    if(typeof flatpickr !== 'undefined') {
+      flatpickr('input[type="datetime-local"]', {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        time_24hr: true
+      });
+    }
+    
+    // Mahalle seçildiğinde danışman otomatik atanması
+    $('#{{ form.neighborhood.id_for_label }}').change(function() {
+      var neighborhoodId = $(this).val();
+      if (neighborhoodId) {
+        $.ajax({
+          url: '/daire-sunumu/mahalle-danismani/',
+          data: {
+            'neighborhood_id': neighborhoodId
+          },
+          dataType: 'json',
+          success: function(data) {
+            if (data.consultant_id) {
+              $('#{{ form.presenter.id_for_label }}').val(data.consultant_id).trigger('change');
+            }
+          }
+        });
+      }
+    });
+  });
+</script>
+{% endblock javascripts %} 

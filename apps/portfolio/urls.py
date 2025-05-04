@@ -34,6 +34,9 @@ urlpatterns = [
     
     # Gayrimenkul silme
     path('gayrimenkul/sil/<int:property_id>/', views.property_delete, name='property_delete'),
+    
+    # API URL'leri
+    path('api/properties/', views.api_properties, name='api_properties'),
 ] 
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
