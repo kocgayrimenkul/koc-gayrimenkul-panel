@@ -56,6 +56,12 @@
             </a>
           </li>
           <li class="nav-item">
+            <a class="nav-link {% if 'mahalleler' in segment %} active {% endif %}" href="{% url 'neighborhood_list' %}">
+              <i class="ni ni-map-big text-warning"></i>
+              <span class="nav-link-text">Mahalle Yönetimi</span>
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="{% url 'logout' %}">
               <i class="ni ni-user-run text-red"></i>
               <span class="nav-link-text">Çıkış</span>

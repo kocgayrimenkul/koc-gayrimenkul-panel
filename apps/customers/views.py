@@ -15,6 +15,8 @@ from apps.portfolio.models import Property  # Property modelini ekledik
 from django.utils import timezone
 from datetime import datetime, timedelta, date
 from django.db.models import Count
+from django.contrib.auth.models import Group
+from apps.authentication.models import CustomUser
 
 @login_required(login_url="/login/")
 def customer_list(request):
@@ -426,12 +428,11 @@ def neighborhood_edit(request, neighborhood_id=None):
         return redirect('neighborhood_list')
     
     # Danışmanları çek
-    from django.contrib.auth.models import User, Group
     consultant_group = Group.objects.filter(name='Danışman').first()
     if consultant_group:
-        consultants = User.objects.filter(groups=consultant_group)
+        consultants = CustomUser.objects.filter(groups=consultant_group)
     else:
-        consultants = User.objects.filter(is_staff=True)
+        consultants = CustomUser.objects.filter(is_staff=True)
     
     context = {
         'segment': 'mahalleler',
@@ -457,7 +458,6 @@ def consultants_by_neighborhood(request, neighborhood_id):
                 }]
             else:
                 # Tüm danışmanları getir
-                from django.contrib.auth.models import Group
                 consultant_group = Group.objects.filter(name='Danışman').first()
                 if consultant_group:
                     users = consultant_group.user_set.all()

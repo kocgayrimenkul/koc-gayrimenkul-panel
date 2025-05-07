@@ -1,0 +1,291 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} {% if neighborhood %}Mahalle Düzenle{% else %}Yeni Mahalle Ekle{% endif %} {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Form elemanları */
+  .form-control:focus {
+    border-color: var(--koc-red-light);
+    box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
+  }
+  
+  /* Kartlar */
+  .card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  /* Bilgi kutuları */
+  .info-box {
+    background-color: #f8f9fe;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .info-box i {
+    font-size: 1.5rem;
+    margin-right: 10px;
+  }
+  
+  .info-box h5 {
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  
+  .info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f8f9fe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+  }
+  
+  .info-icon i {
+    font-size: 18px;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">{% if neighborhood %}Mahalle Düzenle{% else %}Yeni Mahalle Ekle{% endif %}</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'neighborhood_list' %}">Mahalle Yönetimi</a></li>
+              <li class="breadcrumb-item active" aria-current="page">{% if neighborhood %}Düzenle{% else %}Yeni Ekle{% endif %}</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'neighborhood_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> Mahalle Listesine Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <div class="row">
+    <div class="col-xl-8 order-xl-1">
+      <div class="card">
+        <div class="card-header">
+          <div class="row align-items-center">
+            <div class="col-8">
+              <h3 class="mb-0">{% if neighborhood %}Mahalle Bilgilerini Düzenle{% else %}Yeni Mahalle Oluştur{% endif %}</h3>
+              <p class="text-sm text-muted mb-0">{% if neighborhood %}{{ neighborhood.name }} mahallesi bilgilerini düzenleyin{% else %}Yeni bir mahalle ekleyin ve danışman atayın{% endif %}</p>
+            </div>
+            <div class="col-4 text-right">
+              <span class="badge badge-koc-red">Yönetici</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{% if neighborhood %}{% url 'neighborhood_edit' neighborhood.id %}{% else %}{% url 'neighborhood_add' %}{% endif %}">
+            {% csrf_token %}
+            <!-- Mahalle Bilgileri -->
+            <h6 class="heading-small text-muted mb-4">Mahalle Bilgileri</h6>
+            <div class="pl-lg-4">
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="name">Mahalle Adı <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                      </div>
+                      <input type="text" id="name" name="name" class="form-control" required 
+                        placeholder="Mahalle adı" value="{% if neighborhood %}{{ neighborhood.name }}{% endif %}">
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="district">İlçe</label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-city"></i></span>
+                      </div>
+                      <input type="text" id="district" name="district" class="form-control" 
+                        placeholder="İlçe adı" value="{% if neighborhood %}{{ neighborhood.district }}{% endif %}">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="consultant">Bağlı Danışman</label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                      </div>
+                      <select id="consultant" name="consultant" class="form-control">
+                        <option value="">Danışman Seçiniz</option>
+                        {% for consultant in consultants %}
+                          <option value="{{ consultant.id }}" {% if neighborhood.consultant.id == consultant.id %}selected{% endif %}>
+                            {{ consultant.get_full_name|default:consultant.username }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <hr class="my-4" />
+            <div class="row justify-content-center">
+              <div class="col-md-6 text-center">
+                <button type="submit" class="btn btn-koc-red btn-lg btn-block">
+                  <i class="fas fa-save mr-2"></i> {% if neighborhood %}Değişiklikleri Kaydet{% else %}Mahalle Oluştur{% endif %}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-xl-4 order-xl-2">
+      <div class="card">
+        <div class="card-header bg-transparent">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Bilgilendirme</h3>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Bilgilendirme kutusu 1 -->
+          <div class="info-box d-flex align-items-start mb-4">
+            <div class="info-icon bg-info">
+              <i class="fas fa-info text-white"></i>
+            </div>
+            <div>
+              <h5 class="text-info">Mahalle-Danışman İlişkisi</h5>
+              <p class="text-sm mb-0">
+                Her mahalleye bir danışman atanabilir. Müşteri kayıtları oluşturulduğunda, sistem müşteriyi mahallesine göre ilgili danışmana otomatik olarak atayacaktır.
+              </p>
+            </div>
+          </div>
+          
+          <!-- Bilgilendirme kutusu 2 -->
+          <div class="info-box d-flex align-items-start mb-4">
+            <div class="info-icon bg-warning">
+              <i class="fas fa-exclamation text-white"></i>
+            </div>
+            <div>
+              <h5 class="text-warning">Dikkat Edilecek Hususlar</h5>
+              <ul class="pl-3 mb-0 text-sm">
+                <li>Mahalle adı zorunludur.</li>
+                <li>Bir danışman birden fazla mahalleye atanabilir.</li>
+                <li>Danışmanı olmayan mahalleler için müşteri kayıtlarında danışman ataması yapılmaz.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <!-- Bilgilendirme kutusu 3 -->
+          <div class="info-box d-flex align-items-start">
+            <div class="info-icon bg-success">
+              <i class="fas fa-check text-white"></i>
+            </div>
+            <div>
+              <h5 class="text-success">Etkili Danışman Ataması</h5>
+              <p class="text-sm mb-0">
+                Danışmanlarınızı coğrafi yakınlık ve uzmanlık alanlarına göre mahallelere atayarak iş verimliliğini artırabilirsiniz.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include "includes/footer.html" %}
+
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script>
+  $(document).ready(function() {
+    // JavaScript işlemleri buraya eklenebilir
+  });
+</script>
+{% endblock javascripts %} 
