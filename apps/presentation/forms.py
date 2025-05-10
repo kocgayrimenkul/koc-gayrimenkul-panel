@@ -58,7 +58,8 @@ class PresentationForm(forms.ModelForm):
         model = Presentation
         fields = ['title', 'property', 'presenter', 'presentation_date', 'customer_name', 
                  'customer_phone', 'customer_source', 'neighborhood', 
-                 'other_property1', 'other_property2', 'other_property3', 'other_properties_notes',
+                 'other_property1', 'other_property2', 'other_property3',
+                 'property_notes1', 'property_notes2', 'property_notes3',
                  'notes', 'status']
         widgets = {
             'title': forms.TextInput(attrs={"class": "form-control", "placeholder": "Sunum Başlığı"}),
@@ -66,7 +67,9 @@ class PresentationForm(forms.ModelForm):
             'customer_name': forms.TextInput(attrs={"class": "form-control", "placeholder": "Müşteri Adı"}),
             'customer_phone': forms.TextInput(attrs={"class": "form-control", "placeholder": "Müşteri Telefonu"}),
             'customer_source': forms.Select(attrs={"class": "form-control"}),
-            'other_properties_notes': forms.Textarea(attrs={"class": "form-control", "placeholder": "Gezdirilen daireler hakkında notlar", "rows": 3}),
+            'property_notes1': forms.Textarea(attrs={"class": "form-control", "placeholder": "Daire 1 için notlar", "rows": 3}),
+            'property_notes2': forms.Textarea(attrs={"class": "form-control", "placeholder": "Daire 2 için notlar", "rows": 3}),
+            'property_notes3': forms.Textarea(attrs={"class": "form-control", "placeholder": "Daire 3 için notlar", "rows": 3}),
             'notes': forms.Textarea(attrs={"class": "form-control", "placeholder": "Sunum ile ilgili notlar", "rows": 4}),
             'status': forms.Select(attrs={"class": "form-control"}),
         }

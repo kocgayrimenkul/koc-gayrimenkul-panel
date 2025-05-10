@@ -18,6 +18,18 @@ import json
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from apps.employees.models import EmployeeProfile
+
+def get_user_role(user):
+    """Kullanıcının rolünü döndürür"""
+    # Superuser ise admin rolünü döndür
+    if user.is_superuser:
+        return 'admin'
+    
+    try:
+        return user.employee_profile.role
+    except EmployeeProfile.DoesNotExist:
+        return None
 
 @login_required(login_url="/login/")
 def calendar_view(request):
@@ -25,14 +37,19 @@ def calendar_view(request):
     
     # Bugün ve sonraki etkinlikler
     today = timezone.now().date()
+    role = get_user_role(request.user)
     
     # İlgili kullanıcıya ait etkinlikler
-    if request.user.is_superuser:
-        # Süper kullanıcı ise tüm etkinlikleri görebilir
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
+        # Yönetici, Müdür ve Santral tüm etkinlikleri görebilir
         events = Event.objects.all()
     else:
-        # Normal kullanıcı ise sadece kendi etkinliklerini görebilir
-        events = Event.objects.filter(consultant=request.user, start_time__date__gte=today)
+        # Danışman kendi etkinliklerini ve kendisine atanan etkinlikleri görebilir
+        events = Event.objects.filter(
+            Q(consultant=request.user) | 
+            Q(customer__consultant=request.user),
+            start_time__date__gte=today
+        )
     
     # Tarih filtreleme
     filter_date = request.GET.get('date', '')
@@ -48,12 +65,27 @@ def calendar_view(request):
     if filter_type:
         events = events.filter(event_type=filter_type)
     
-    # Yapılacaklar listesi
-    todos = TodoItem.objects.filter(user=request.user, is_completed=False).order_by('priority', 'due_date')
+    # Yapılacaklar listesi - Kendi görevleri ve kendisine atanan görevler
+    todos = TodoItem.objects.filter(
+        Q(user=request.user) | Q(consultant=request.user),
+        is_completed=False
+    ).order_by('priority', 'due_date')
     
-    # Ek context
-    customers = Customer.objects.filter(consultant=request.user)
+    # Müşteri listesi - Role göre filtrele
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
+        customers = Customer.objects.all()
+    else:
+        customers = Customer.objects.filter(consultant=request.user)
+    
+    # Gayrimenkul listesi
     properties = Property.objects.filter(is_active=True)
+    
+    # Danışman listesi
+    User = get_user_model()
+    consultants = User.objects.filter(
+        employee_profile__role='consultant',
+        is_active=True
+    ).distinct()
     
     # JSON formatında etkinlik verisi oluştur
     events_json = []
@@ -75,13 +107,8 @@ def calendar_view(request):
         else:
             color = "#6c757d"  # Gri - Diğer
         
-        # End time kontrolü (None olabilir)
-        end_time = ""
-        if event.end_time:
-            end_time = event.end_time.strftime('%Y-%m-%dT%H:%M:%S')
-        else:
-            # Bitiş zamanı yoksa başlangıç zamanı + 1 saat
-            end_time = (event.start_time + timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S')
+        # End time kontrolü
+        end_time = event.end_time.strftime('%Y-%m-%dT%H:%M:%S') if event.end_time else (event.start_time + timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S')
         
         events_json.append({
             'id': event.id,
@@ -107,10 +134,12 @@ def calendar_view(request):
         'todos': todos,
         'customers': customers,
         'properties': properties,
+        'consultants': consultants,
         'event_types': Event.EVENT_TYPE_CHOICES,
         'priority_choices': TodoItem.PRIORITY_CHOICES,
         'filter_date': filter_date if isinstance(filter_date, date) else '',
         'filter_type': filter_type,
+        'user_role': role,  # Şablonda rol bazlı UI kontrolü için
     }
     
     html_template = loader.get_template('calendar/calendar.html')
@@ -120,16 +149,21 @@ def calendar_view(request):
 def event_list(request):
     """Etkinlik listesi görünümü"""
     
+    role = get_user_role(request.user)
+    
     # Filtreleme parametreleri
     event_type = request.GET.get('type', '')
     status = request.GET.get('status', '')
     date_filter = request.GET.get('date', '')
     
-    # Tüm etkinlikleri çek
-    if request.user.is_superuser:
+    # Role göre etkinlikleri getir
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
         events = Event.objects.all()
     else:
-        events = Event.objects.filter(consultant=request.user)
+        events = Event.objects.filter(
+            Q(consultant=request.user) | 
+            Q(customer__consultant=request.user)
+        )
     
     # Filtreleri uygula
     if event_type:
@@ -162,7 +196,8 @@ def event_list(request):
             'event_type': event_type,
             'status': status,
             'date': date_filter,
-        }
+        },
+        'user_role': role,
     }
     
     html_template = loader.get_template('calendar/event_list.html')
@@ -193,6 +228,13 @@ def event_create_form(request):
 @login_required(login_url="/login/")
 def event_create(request):
     """Etkinlik oluşturma"""
+    role = get_user_role(request.user)
+    
+    # Sadece belirli roller etkinlik oluşturabilir
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
+        messages.error(request, "Etkinlik oluşturma yetkiniz bulunmamaktadır.")
+        return redirect('calendar')
+    
     if request.method == 'POST':
         title = request.POST.get('title', '')
         description = request.POST.get('description', '')
@@ -218,7 +260,6 @@ def event_create(request):
             if end_date and end_time:
                 end_datetime = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M')
             else:
-                # Eğer bitiş zamanı belirtilmemişse, başlangıç zamanından 1 saat sonra
                 end_datetime = start_datetime + timedelta(hours=1)
             
             # Yeni etkinlik oluştur
@@ -235,6 +276,10 @@ def event_create(request):
             # İlişkili müşteri ve gayrimenkul ekle
             if customer_id:
                 customer = Customer.objects.get(id=customer_id)
+                # Danışman sadece kendi müşterilerine etkinlik ekleyebilir
+                if role == 'consultant' and customer.consultant != request.user:
+                    messages.error(request, "Bu müşteri için etkinlik oluşturma yetkiniz yok.")
+                    return redirect('calendar')
                 event.customer = customer
             
             if property_id:
@@ -250,18 +295,19 @@ def event_create(request):
             messages.error(request, f"Bir hata oluştu: {str(e)}")
             return redirect('calendar')
     
-    # POST değilse form sayfasına yönlendir
     return redirect('event_create_form')
 
 @login_required(login_url="/login/")
 def event_detail(request, event_id):
     """Etkinlik detay görünümü"""
     event = get_object_or_404(Event, id=event_id)
+    role = get_user_role(request.user)
     
     # Yetki kontrolü
-    if not request.user.is_superuser and event.consultant != request.user:
-        messages.error(request, "Bu etkinliği görüntüleme yetkiniz bulunmamaktadır.")
-        return redirect('calendar')
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'secretary']:
+        if event.consultant != request.user and (event.customer and event.customer.consultant != request.user):
+            messages.error(request, "Bu etkinliği görüntüleme yetkiniz bulunmamaktadır.")
+            return redirect('calendar')
     
     # İlişkili etkinlikleri bul (aynı müşteri veya gayrimenkul ile ilgili)
     related_events = []
@@ -279,7 +325,8 @@ def event_detail(request, event_id):
     context = {
         'segment': 'calendar',
         'event': event,
-        'related_events': related_events[:5],  # En fazla 5 etkinlik göster
+        'related_events': related_events[:5],
+        'user_role': role,
     }
     
     html_template = loader.get_template('calendar/event_detail.html')
@@ -289,14 +336,16 @@ def event_detail(request, event_id):
 def event_delete(request, event_id):
     """Etkinlik silme"""
     event = get_object_or_404(Event, id=event_id)
+    role = get_user_role(request.user)
     
-    # Yetki kontrolü
-    if not request.user.is_superuser and event.consultant != request.user:
-        messages.error(request, "Bu etkinliği silme yetkiniz bulunmamaktadır.")
-        return redirect('calendar')
+    # Yetki kontrolü - Sadece yönetici, müdür ve etkinliği oluşturan danışman silebilir
+    if not request.user.is_superuser and role not in ['admin', 'manager']:
+        if event.consultant != request.user:
+            messages.error(request, "Bu etkinliği silme yetkiniz bulunmamaktadır.")
+            return redirect('calendar')
     
     if request.method == 'POST':
-        event_title = event.title  # Silme mesajı için başlığı sakla
+        event_title = event.title
         event.delete()
         messages.success(request, f'"{event_title}" etkinliği başarıyla silindi.')
         return redirect('event_list')
@@ -356,11 +405,13 @@ def todo_create(request):
 def todo_update(request, todo_id):
     """Yapılacak güncelleme"""
     todo = get_object_or_404(TodoItem, id=todo_id)
+    role = get_user_role(request.user)
     
-    # Sadece sahibi güncelleyebilir
-    if todo.user != request.user:
-        messages.error(request, "Bu yapılacağı güncelleme yetkiniz yok.")
-        return redirect('calendar')
+    # Yetki kontrolü
+    if not request.user.is_superuser and role not in ['admin', 'manager']:
+        if todo.user != request.user and todo.consultant != request.user:
+            messages.error(request, "Bu yapılacağı güncelleme yetkiniz yok.")
+            return redirect('todo_list')
     
     if request.method == 'POST':
         todo.title = request.POST.get('title', '')
@@ -558,25 +609,22 @@ def event_update(request, event_id):
 def todo_list(request):
     """Yapılacaklar listesi görünümü"""
     
-    # Filtre parametreleri
+    role = get_user_role(request.user)
+    
+    # Filtreleme parametreleri
     priority = request.GET.get('priority', '')
     status = request.GET.get('status', '')
     user_filter = request.GET.get('user', '')
     consultant_filter = request.GET.get('consultant', '')
     
-    # Varsayılan olarak kullanıcının kendi görevleri + kendisine atanan görevler
-    todos = TodoItem.objects.filter(
-        Q(user=request.user) | Q(consultant=request.user)
-    )
-    
-    # Yöneticiler tüm görevleri görebilir
-    if request.user.is_superuser or request.user.groups.filter(name__in=['Yönetici', 'Müdür']).exists():
-        if not user_filter:  # Eğer kullanıcı filtresi uygulanmadıysa
-            todos = TodoItem.objects.all()
-        else:
-            todos = TodoItem.objects.filter(
-                Q(user_id=user_filter) | Q(consultant_id=user_filter)
-            )
+    # Role göre yapılacakları getir
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        todos = TodoItem.objects.all()
+    else:
+        todos = TodoItem.objects.filter(
+            Q(user=request.user) | 
+            Q(consultant=request.user)
+        )
     
     # Filtreler uygula
     if priority:
@@ -587,17 +635,20 @@ def todo_list(request):
     elif status == 'pending':
         todos = todos.filter(is_completed=False)
         
-    if consultant_filter:
+    if consultant_filter and role in ['admin', 'manager']:
         todos = todos.filter(consultant_id=consultant_filter)
     
     # Kullanıcı ve danışman listeleri (filtre için)
     users = []
     consultants = []
     
-    if request.user.is_superuser or request.user.groups.filter(name__in=['Yönetici', 'Müdür']).exists():
+    if role in ['admin', 'manager']:
         User = get_user_model()
         users = User.objects.filter(is_active=True)
-        consultants = User.objects.filter(groups__name='Danışman', is_active=True).distinct()
+        consultants = User.objects.filter(
+            employee_profile__role='consultant',
+            is_active=True
+        ).distinct()
     
     # İstatistikler
     total_todos = todos.count()
@@ -629,6 +680,7 @@ def todo_list(request):
             'low_priority': low_priority,
         },
         'priority_choices': TodoItem.PRIORITY_CHOICES,
+        'user_role': role,
     }
     
     html_template = loader.get_template('calendar/todo_list.html')
@@ -707,12 +759,26 @@ def todo_edit_form(request, todo_id):
 def todo_create_form(request):
     """Görev oluşturma formu sayfası"""
     
+    role = get_user_role(request.user)
+    
+    # Yetki kontrolü
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
+        messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
+        return redirect('todo_list')
+    
     # Form için gerekli verileri hazırla
     User = get_user_model()
     
-    customers = Customer.objects.all()
+    # Yetkiye göre müşteri ve danışman listesi
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        customers = Customer.objects.all()
+        consultants = User.objects.filter(groups__name='Danışman', is_active=True).distinct()
+    else:
+        # Sadece kendi müşterilerini görebilir
+        customers = Customer.objects.filter(consultant=request.user)
+        consultants = User.objects.filter(id=request.user.id)
+    
     properties = Property.objects.all()
-    consultants = User.objects.filter(groups__name='Danışman', is_active=True).distinct()
     
     context = {
         'segment': 'todo',
@@ -724,3 +790,17 @@ def todo_create_form(request):
     
     html_template = loader.get_template('calendar/todo_create.html')
     return HttpResponse(html_template.render(context, request))
+
+@login_required(login_url="/login/")
+def todo_detail(request, todo_id):
+    """Yapılacak detay sayfası"""
+    todo = get_object_or_404(TodoItem, id=todo_id)
+    role = get_user_role(request.user)
+    
+    # Yetki kontrolü
+    if not request.user.is_superuser and role not in ['admin', 'manager']:
+        if todo.user != request.user and todo.consultant != request.user:
+            messages.error(request, "Bu yapılacağı görüntüleme yetkiniz yok.")
+            return redirect('todo_list')
+    
+    # ... mevcut kod ...

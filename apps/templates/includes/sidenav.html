@@ -12,12 +12,6 @@
         <!-- Nav items -->
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link {% if 'index' in segment %} active {% endif %}" href="/">
-              <i class="ni ni-tv-2 text-primary"></i>
-              <span class="nav-link-text">Gösterge Paneli</span>
-            </a>
-          </li>
-          <li class="nav-item">
             <a class="nav-link {% if 'gayrimenkul' in segment %} active {% endif %}" href="{% url 'property_list' %}">
               <i class="ni ni-building text-orange"></i>
               <span class="nav-link-text">Gayrimenkuller</span>
@@ -40,6 +34,13 @@
             <a class="nav-link {% if 'presentation' in segment %} active {% endif %}" href="{% url 'presentation_list' %}">
               <i class="ni ni-books text-info"></i>
               <span class="nav-link-text">Daire Sunumu</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link {% if 'fsbo' in segment %} active {% endif %}" href="{% url 'fsbo_list' %}">
+              <i class="ni ni-mobile-button text-danger"></i>
+              <span class="nav-link-text">FSBO Aramaları</span>
             </a>
           </li>
           

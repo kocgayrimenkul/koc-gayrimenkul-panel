@@ -15,18 +15,36 @@ from apps.portfolio.models import Property
 from apps.customers.models import Neighborhood
 from django.utils import timezone
 from datetime import datetime, timedelta, date
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Q
+from apps.employees.models import EmployeeProfile
+
+def get_user_role(user):
+    """Kullanıcının rolünü döndürür"""
+    # Superuser ise admin rolünü döndür
+    if user.is_superuser:
+        return 'admin'
+    
+    try:
+        return user.employee_profile.role
+    except (EmployeeProfile.DoesNotExist, AttributeError):
+        return None
 
 @login_required(login_url="/login/")
 def presentation_list(request):
     """Sunum listesi görüntüleme"""
     
-    # Eğer kullanıcı süper kullanıcı ise tüm sunumları göster
-    if request.user.is_superuser:
+    role = get_user_role(request.user)
+    
+    # Yönetici, Müdür, Santral veya superuser ise tüm sunumları göster
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
         presentations = Presentation.objects.all()
     else:
-        # Sadece kullanıcının kendi sunumlarını göster
-        presentations = Presentation.objects.filter(presenter=request.user)
+        # Danışmanın atandığı mahalleleri bul
+        consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+        # Bu mahallelerdeki sunumları getir
+        presentations = Presentation.objects.filter(
+            Q(neighborhood__in=consultant_neighborhoods) | Q(presenter=request.user)
+        ).distinct()
     
     # Filtreleme işlemleri
     filter_status = request.GET.get('status', '')
@@ -69,10 +87,14 @@ def presentation_detail(request, presentation_id):
     # Sunum kaydını çek
     presentation = get_object_or_404(Presentation, id=presentation_id)
     
-    # Süper kullanıcı değilse ve sunum ile ilişkisi yoksa erişimi engelle
-    if not request.user.is_superuser and presentation.presenter != request.user:
-        messages.error(request, "Bu sunum kaydını görüntüleme yetkiniz yok.")
-        return redirect('presentation_list')
+    role = get_user_role(request.user)
+    
+    # Yönetici, Müdür, Santral veya superuser değilse ve sunum ile ilişkisi yoksa erişimi engelle
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'secretary']:
+        consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+        if not (presentation.neighborhood in consultant_neighborhoods or presentation.presenter == request.user):
+            messages.error(request, "Bu sunum kaydını görüntüleme yetkiniz yok.")
+            return redirect('presentation_list')
     
     # Sunum geri bildirimleri
     feedbacks = presentation.feedbacks.all()
@@ -105,20 +127,44 @@ def presentation_detail(request, presentation_id):
 def presentation_create(request):
     """Yeni sunum oluşturma"""
     
+    role = get_user_role(request.user)
+    
+    # Sadece Yönetici, Müdür, Danışmanlar ve superuser sunum oluşturabilir
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
+        messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
+        return redirect('home')
+    
+    # Danışmanın erişebileceği mahalleleri getir
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        neighborhoods = Neighborhood.objects.all().order_by('name')
+    else:
+        neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
+    
     # Eğer POST isteği ise form verilerini işle
     if request.method == 'POST':
         form = PresentationForm(request.POST)
         if form.is_valid():
-            presentation = form.save()
+            presentation = form.save(commit=False)
+            
+            # Danışman sadece kendi mahallelerine sunum ekleyebilir
+            if role == 'consultant':
+                if not neighborhoods.filter(id=presentation.neighborhood.id).exists():
+                    messages.error(request, "Bu mahalleye sunum ekleme yetkiniz yok.")
+                    return redirect('presentation_list')
+                
+                # Sunan kişi olarak mahallenin danışmanını ata
+                presentation.presenter = presentation.neighborhood.consultant
+            
+            presentation.save()
             messages.success(request, "Sunum başarıyla oluşturuldu.")
             return redirect('presentation_detail', presentation_id=presentation.id)
     else:
-        # Eğer süper kullanıcı değilse presenter alanını otomatik doldur
-        if request.user.is_superuser:
-            form = PresentationForm()
-        else:
+        # Eğer yönetici, müdür veya superuser değilse presenter alanını otomatik doldur
+        if not request.user.is_superuser and role not in ['admin', 'manager']:
             form = PresentationForm(initial={'presenter': request.user})
             form.fields['presenter'].widget.attrs['readonly'] = True
+        else:
+            form = PresentationForm()
             
     # Daireleri çek
     properties = Property.objects.filter(property_type='daire', is_active=True)
@@ -127,6 +173,7 @@ def presentation_create(request):
         'segment': 'daire_sunumu',
         'form': form,
         'properties': properties,
+        'neighborhoods': neighborhoods,
     }
     
     html_template = loader.get_template('presentation/presentation_create.html')
@@ -139,29 +186,51 @@ def presentation_edit(request, presentation_id):
     # Sunum kaydını çek
     presentation = get_object_or_404(Presentation, id=presentation_id)
     
-    # Süper kullanıcı değilse ve sunum ile ilişkisi yoksa erişimi engelle
-    if not request.user.is_superuser and presentation.presenter != request.user:
-        messages.error(request, "Bu sunum kaydını düzenleme yetkiniz yok.")
-        return redirect('presentation_list')
+    role = get_user_role(request.user)
+    
+    # Yönetici, Müdür, Santral veya superuser değilse ve sunum ile ilişkisi yoksa erişimi engelle
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'secretary']:
+        consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+        if not (presentation.neighborhood in consultant_neighborhoods or presentation.presenter == request.user):
+            messages.error(request, "Bu sunum kaydını düzenleme yetkiniz yok.")
+            return redirect('presentation_list')
+    
+    # Danışmanın erişebileceği mahalleleri getir
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        neighborhoods = Neighborhood.objects.all().order_by('name')
+    else:
+        neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
     
     # Eğer POST isteği ise form verilerini işle
     if request.method == 'POST':
         form = PresentationForm(request.POST, instance=presentation)
         if form.is_valid():
-            form.save()
+            presentation = form.save(commit=False)
+            
+            # Danışman sadece kendi mahallelerine sunum atayabilir
+            if role == 'consultant':
+                if not neighborhoods.filter(id=presentation.neighborhood.id).exists():
+                    messages.error(request, "Bu mahalleye sunum atama yetkiniz yok.")
+                    return redirect('presentation_list')
+                
+                # Sunan kişi olarak mahallenin danışmanını ata
+                presentation.presenter = presentation.neighborhood.consultant
+            
+            presentation.save()
             messages.success(request, "Sunum başarıyla güncellendi.")
             return redirect('presentation_detail', presentation_id=presentation.id)
     else:
         form = PresentationForm(instance=presentation)
         
-        # Eğer süper kullanıcı değilse presenter alanını readonly yap
-        if not request.user.is_superuser:
+        # Eğer yönetici, müdür veya superuser değilse presenter alanını readonly yap
+        if not request.user.is_superuser and role not in ['admin', 'manager']:
             form.fields['presenter'].widget.attrs['readonly'] = True
     
     context = {
         'segment': 'daire_sunumu',
         'form': form,
         'presentation': presentation,
+        'neighborhoods': neighborhoods,
     }
     
     html_template = loader.get_template('presentation/presentation_edit.html')
@@ -174,8 +243,10 @@ def presentation_delete(request, presentation_id):
     # Sunum kaydını çek
     presentation = get_object_or_404(Presentation, id=presentation_id)
     
-    # Sadece süper kullanıcılar sunumları silebilir
-    if not request.user.is_superuser:
+    role = get_user_role(request.user)
+    
+    # Sadece Yönetici, Müdürler ve superuser sunum silebilir
+    if not request.user.is_superuser and role not in ['admin', 'manager']:
         messages.error(request, "Sunum silme yetkiniz yok.")
         return redirect('presentation_list')
     

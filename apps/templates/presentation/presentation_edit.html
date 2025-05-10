@@ -285,6 +285,17 @@
                     </div>
                     {% endif %}
                   </div>
+                  <div class="form-group">
+                    <label for="{{ form.property_notes1.id_for_label }}">{{ form.property_notes1.label }}</label>
+                    {{ form.property_notes1 }}
+                    {% if form.property_notes1.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.property_notes1.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
                 </div>
                 <div class="col-md-4">
                   <div class="form-group">
@@ -293,6 +304,17 @@
                     {% if form.other_property2.errors %}
                     <div class="invalid-feedback d-block">
                       {% for error in form.other_property2.errors %}
+                      {{ error }}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                  <div class="form-group">
+                    <label for="{{ form.property_notes2.id_for_label }}">{{ form.property_notes2.label }}</label>
+                    {{ form.property_notes2 }}
+                    {% if form.property_notes2.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.property_notes2.errors %}
                       {{ error }}
                       {% endfor %}
                     </div>
@@ -311,16 +333,12 @@
                     </div>
                     {% endif %}
                   </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
                   <div class="form-group">
-                    <label for="{{ form.other_properties_notes.id_for_label }}">{{ form.other_properties_notes.label }}</label>
-                    {{ form.other_properties_notes }}
-                    {% if form.other_properties_notes.errors %}
+                    <label for="{{ form.property_notes3.id_for_label }}">{{ form.property_notes3.label }}</label>
+                    {{ form.property_notes3 }}
+                    {% if form.property_notes3.errors %}
                     <div class="invalid-feedback d-block">
-                      {% for error in form.other_properties_notes.errors %}
+                      {% for error in form.property_notes3.errors %}
                       {{ error }}
                       {% endfor %}
                     </div>

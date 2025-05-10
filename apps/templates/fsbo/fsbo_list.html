@@ -1,0 +1,788 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} FSBO Aramaları {% endblock %}
+
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+    --koc-gray: #f5f5f5;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .btn-outline-koc-red {
+    color: var(--koc-red);
+    border-color: var(--koc-red);
+    background-color: transparent;
+  }
+  
+  .btn-outline-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Sayfa özel stilleri */
+  .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: none;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .filter-card {
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+  
+  .filter-header {
+    background: linear-gradient(45deg, var(--koc-red-dark), var(--koc-red));
+    border-bottom: none;
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .badge-koc-red {
+    background-color: var(--koc-red);
+    color: white;
+  }
+  
+  .table thead th {
+    border-top: none;
+    border-bottom: 2px solid var(--koc-red);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(var(--koc-red-rgb), 0.04);
+  }
+  
+  /* FSBO kartı stilleri */
+  .fsbo-card {
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    border: none;
+  }
+  
+  .fsbo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+  }
+  
+  .fsbo-card .card-body {
+    padding: 1.5rem;
+  }
+  
+  .fsbo-card .avatar {
+    width: 64px;
+    height: 64px;
+    background-color: var(--koc-red);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+  }
+  
+  .fsbo-card .fsbo-info {
+    margin-bottom: 1rem;
+  }
+  
+  .fsbo-card .fsbo-status {
+    padding: 0.5rem 0;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Durum badge'leri */
+  .badge-status {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-radius: 30px;
+  }
+  
+  .badge-olumlu {
+    background-color: #2dce89;
+    color: white;
+  }
+  
+  .badge-olumsuz {
+    background-color: #f5365c;
+    color: white;
+  }
+  
+  .badge-bekliyor {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .badge-aranmadi {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  /* Görünüm değiştirme butonları */
+  .view-toggle .btn {
+    width: 42px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  
+  .view-toggle .btn i {
+    font-size: 18px;
+  }
+  
+  .view-toggle .btn.active {
+    background-color: var(--koc-red);
+    color: white;
+    border-color: var(--koc-red);
+  }
+  
+  /* Boş liste mesajı */
+  .empty-list {
+    padding: 60px 0;
+    text-align: center;
+  }
+  
+  .empty-list i {
+    font-size: 5rem;
+    color: #f0f0f0;
+    margin-bottom: 20px;
+  }
+  
+  .empty-list h4 {
+    font-weight: 600;
+    color: #8898aa;
+    margin-bottom: 15px;
+  }
+  
+  .empty-list p {
+    color: #adb5bd;
+    max-width: 600px;
+    margin: 0 auto 20px;
+  }
+  
+  /* Hızlı arama kutusu */
+  .quick-search-box {
+    background-color: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  }
+  
+  .quick-search-box .input-group {
+    box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+    border-radius: 50rem;
+    overflow: hidden;
+  }
+  
+  .quick-search-box input {
+    border-right: 0;
+    padding-left: 1.5rem;
+    height: 3rem;
+  }
+  
+  .quick-search-box .input-group-append button {
+    border-top-right-radius: 50rem;
+    border-bottom-right-radius: 50rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<!-- Doğru CSRF token yerleştirme -->
+<form id="csrf-holder" style="display: none;">
+  {% csrf_token %}
+</form>
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">FSBO Yönetimi</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'fsbo_list' %}">FSBO</a></li>
+              <li class="breadcrumb-item active" aria-current="page">FSBO Aramaları</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'fsbo_create' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-plus mr-1"></i> Yeni FSBO Ekle
+          </a>
+          <a href="{% url 'fsbo_reminders_today' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-bell mr-1"></i> Bugünkü Hatırlatıcılar
+          </a>
+        </div>
+      </div>
+      
+      <!-- İstatistik Kartları -->
+      <div class="row">
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Toplam FSBO</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ total_count }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-koc-red text-white rounded-circle shadow">
+                    <i class="ni ni-badge"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-nowrap">Kayıtlı aramalar</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Olumlu</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ positive_count }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-success text-white rounded-circle shadow">
+                    <i class="ni ni-check-bold"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-success mr-2">{{ positive_percent }}%</span>
+                <span class="text-nowrap">Başarı oranı</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Bekleyen</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ waiting_count }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-warning text-white rounded-circle shadow">
+                    <i class="ni ni-time-alarm"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-warning mr-2">{{ waiting_percent }}%</span>
+                <span class="text-nowrap">Yanıt bekliyor</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Olumsuz/Aranmadı</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ negative_count }}/{{ not_called_count }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-danger text-white rounded-circle shadow">
+                    <i class="ni ni-fat-remove"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-sm">
+                <span class="text-danger mr-2">{{ negative_percent }}%</span>
+                <span class="text-nowrap">Olumsuz oranı</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <!-- Hızlı Arama Kutusu -->
+  <div class="row">
+    <div class="col-12">
+      <div class="quick-search-box">
+        <h6 class="mb-3">FSBO Numarası Hızlı Sorgulama</h6>
+        <div class="input-group">
+          <input type="text" id="quick-search-phone" class="form-control" placeholder="Telefon numarası girin (5xxxxxxxxx)">
+          <div class="input-group-append">
+            <button class="btn btn-koc-red" type="button" id="quick-search-btn">
+              <i class="fas fa-search mr-1"></i> SORGULA
+            </button>
+          </div>
+        </div>
+        <div id="quick-search-results" class="mt-3" style="display: none;">
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+              <thead class="thead-light">
+                <tr>
+                  <th>Ad Soyad</th>
+                  <th>Telefon</th>
+                  <th>Sonuç</th>
+                  <th>Tarih</th>
+                  <th>İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="results-tbody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtreleme ve Görünüm Seçenekleri -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-header bg-white pb-0">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h6 class="mb-0">FSBO Aramaları <span class="text-muted text-sm">({{ total_count }} kayıt)</span></h6>
+            </div>
+            <div class="col-md-6 text-md-right">
+              <button id="toggleFilters" class="btn btn-sm btn-outline-secondary mr-2">
+                <i class="fas fa-filter mr-1"></i> Filtreler
+              </button>
+              <div class="btn-group view-toggle">
+                <button type="button" class="btn btn-sm btn-outline-primary active" data-view="grid">
+                  <i class="fas fa-th-large"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-view="list">
+                  <i class="fas fa-list"></i>
+                </button>
+              </div>
+              <a href="{% url 'fsbo_create' %}" class="btn btn-sm btn-koc-red ml-2">
+                <i class="fas fa-plus mr-1"></i> Yeni FSBO
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Filtreler -->
+          <div id="filters" class="mb-4">
+            <form method="GET" action="{% url 'fsbo_list' %}">
+              {% csrf_token %}
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="phone">Telefon Numarası</label>
+                    {{ form.phone }}
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="start_date">Başlangıç Tarihi</label>
+                    {{ form.start_date }}
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="end_date">Bitiş Tarihi</label>
+                    {{ form.end_date }}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="result">Sonuç</label>
+                    {{ form.result }}
+                  </div>
+                </div>
+                {% if user_role == 'admin' or user_role == 'manager' %}
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="consultant">Danışman</label>
+                    {{ form.consultant }}
+                  </div>
+                </div>
+                {% endif %}
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <button type="submit" class="btn btn-primary w-100">
+                      <i class="fas fa-search mr-1"></i> Ara
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          
+          <!-- FSBO Kart Görünümü -->
+          <div id="gridView">
+            <div class="row">
+              {% for record in fsbo_records %}
+              <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card fsbo-card h-100">
+                  <div class="card-body">
+                    <div class="text-center mb-3">
+                      <div class="avatar mx-auto">
+                        {{ record.full_name|slice:":1" }}
+                      </div>
+                      <h5 class="mt-3 mb-0">{{ record.full_name }}</h5>
+                      <p class="text-muted mb-0">FSBO #{{ record.id }}</p>
+                    </div>
+                    
+                    <div class="fsbo-info">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-sm text-muted"><i class="ni ni-mobile-button mr-2"></i> Telefon:</span>
+                        <span class="text-sm font-weight-bold">{{ record.phone }}</span>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-sm text-muted"><i class="ni ni-calendar-grid-58 mr-2"></i> Kayıt:</span>
+                        <span class="text-sm font-weight-bold">{{ record.created_at|date:"d.m.Y H:i" }}</span>
+                      </div>
+                      {% if record.consultant %}
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-sm text-muted"><i class="ni ni-single-02 mr-2"></i> Danışman:</span>
+                        <span class="text-sm font-weight-bold">{{ record.consultant.get_full_name }}</span>
+                      </div>
+                      {% endif %}
+                    </div>
+                    
+                    <div class="fsbo-status">
+                      <div>
+                        {% if record.result == 'olumlu' %}
+                        <span class="badge badge-status badge-olumlu">Olumlu</span>
+                        {% elif record.result == 'olumsuz' %}
+                        <span class="badge badge-status badge-olumsuz">Olumsuz</span>
+                        {% elif record.result == 'bekliyor' %}
+                        <span class="badge badge-status badge-bekliyor">Bekliyor</span>
+                        {% else %}
+                        <span class="badge badge-status badge-aranmadi">Aranmadı</span>
+                        {% endif %}
+                      </div>
+                      <div>
+                        <a href="{% url 'fsbo_detail' record.id %}" class="btn btn-sm btn-outline-koc-red">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'fsbo_edit' record.id %}" class="btn btn-sm btn-outline-primary">
+                          <i class="fas fa-edit"></i>
+                        </a>
+                        {% if user_role == 'admin' or user_role == 'manager' %}
+                        <form action="{% url 'fsbo_delete' record.id %}" method="POST" style="display:inline;">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bu FSBO kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz!');">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </form>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <div class="col-12">
+                <div class="empty-list">
+                  <i class="ni ni-support-16"></i>
+                  <h4>Henüz FSBO kaydı yok</h4>
+                  <p>Hiç FSBO kaydı bulunmuyor veya seçilen filtrelere uyan kayıt yok.</p>
+                  <a href="{% url 'fsbo_create' %}" class="btn btn-koc-red">
+                    <i class="fas fa-plus mr-2"></i> Yeni FSBO Ekle
+                  </a>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          
+          <!-- FSBO Tablo Görünümü -->
+          <div id="listView" class="d-none">
+            <div class="table-responsive">
+              <table class="table align-items-center table-flush table-hover">
+                <thead class="thead-light">
+                  <tr>
+                    <th scope="col">FSBO No</th>
+                    <th scope="col">Ad Soyad</th>
+                    <th scope="col">Telefon</th>
+                    <th scope="col">Sonuç</th>
+                    <th scope="col">Kayıt Tarihi</th>
+                    <th scope="col">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for record in fsbo_records %}
+                  <tr>
+                    <td>{{ record.id }}</td>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm mr-3 bg-koc-red">
+                          {{ record.full_name|slice:":1" }}
+                        </div>
+                        <div>
+                          <span class="name mb-0 text-sm">{{ record.full_name }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>{{ record.phone }}</td>
+                    <td>
+                      {% if record.result == 'olumlu' %}
+                      <span class="badge badge-status badge-olumlu">Olumlu</span>
+                      {% elif record.result == 'olumsuz' %}
+                      <span class="badge badge-status badge-olumsuz">Olumsuz</span>
+                      {% elif record.result == 'bekliyor' %}
+                      <span class="badge badge-status badge-bekliyor">Bekliyor</span>
+                      {% else %}
+                      <span class="badge badge-status badge-aranmadi">Aranmadı</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ record.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                      <a href="{% url 'fsbo_detail' record.id %}" class="btn btn-sm btn-outline-koc-red">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                      <a href="{% url 'fsbo_edit' record.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      {% if user_role == 'admin' or user_role == 'manager' %}
+                      <form action="{% url 'fsbo_delete' record.id %}" method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bu FSBO kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz!');">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </form>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="6" class="text-center py-5">
+                      <i class="ni ni-support-16" style="font-size: 2rem; color: #f0f0f0;"></i>
+                      <h4 class="mt-3">Henüz FSBO kaydı yok</h4>
+                      <p class="text-muted">Hiç FSBO kaydı bulunmuyor veya seçilen filtrelere uyan kayıt yok.</p>
+                      <a href="{% url 'fsbo_create' %}" class="btn btn-sm btn-koc-red">
+                        <i class="fas fa-plus mr-2"></i> Yeni FSBO Ekle
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include "includes/footer.html" %}
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  $(document).ready(function() {
+    console.log("Document ready");
+    
+    // URL parametresi kontrolü - sayfayı temiz yükle
+    if (window.location.href.indexOf('refresh=') > -1) {
+      console.log("Sayfa yenilenecek ve cache temizlenecek");
+      // Cache'i temizle ve sayfayı yenile
+      setTimeout(function() {
+        window.location.href = "/fsbo/";
+      }, 100);
+    }
+    
+    // CSRF Token kontrolü
+    var csrf = $("#csrf-holder input[name=csrfmiddlewaretoken]").val();
+    console.log("CSRF Token mevcut:", csrf ? "Evet" : "Hayır");
+    
+    // DataTable
+    $('table').DataTable({
+      "language": {
+        "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Turkish.json"
+      },
+      "order": [[ 4, "desc" ]],
+      "pageLength": 25,
+      "responsive": true
+    });
+    
+    // Silme butonlarını kontrol et
+    console.log("Silme butonları sayısı:", $('.delete-btn').length);
+    
+    // Silme işlemi - Tamamen basitleştirilmiş
+    $('.delete-btn').on('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("Silme butonu tıklandı");
+      
+      var id = $(this).data('id');
+      console.log("Silinecek ID:", id);
+      
+      // Temel silme işlemi
+      if (confirm("Bu FSBO kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) {
+        console.log("Onay verildi, form gönderiliyor...");
+        
+        // Form oluşturup submit et
+        var form = $('<form></form>');
+        form.attr('method', 'POST');
+        form.attr('action', '/fsbo/delete/' + id + '/');
+        
+        // CSRF token ekle
+        var token = $("#csrf-holder input[name=csrfmiddlewaretoken]").val();
+        console.log("Kullanılacak CSRF token:", token ? "Var" : "Yok");
+        
+        if (token) {
+          form.append('<input type="hidden" name="csrfmiddlewaretoken" value="' + token + '">');
+          $('body').append(form);
+          
+          console.log("Form gönderiliyor...");
+          form.submit();
+        } else {
+          console.error("CSRF token bulunamadı, işlem iptal ediliyor!");
+          alert("Güvenlik hatası: CSRF token bulunamadı!");
+        }
+      }
+    });
+    
+    // AJAX Hızlı Arama
+    $('#quick-search-btn').on('click', function() {
+      var phone = $('#quick-search-phone').val();
+      if(phone.length < 3) {
+        toastr.warning('Lütfen en az 3 karakter girin.');
+        return;
+      }
+      
+      $.ajax({
+        url: '{% url "fsbo_search" %}',
+        data: {
+          'phone': phone
+        },
+        dataType: 'json',
+        success: function(data) {
+          var results = data.results;
+          var tbody = $('#results-tbody');
+          tbody.empty();
+          
+          if(results.length === 0) {
+            tbody.append('<tr><td colspan="5" class="text-center">Sonuç bulunamadı</td></tr>');
+          } else {
+            for(var i = 0; i < results.length; i++) {
+              var row = '<tr>' +
+                '<td>' + results[i].full_name + '</td>' +
+                '<td>' + results[i].phone + '</td>' +
+                '<td>' + results[i].result + '</td>' +
+                '<td>' + results[i].created_at + '</td>' +
+                '<td>' +
+                '<a href="/fsbo/detail/' + results[i].id + '/" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a> ' +
+                '<a href="/fsbo/edit/' + results[i].id + '/" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a>' +
+                '</td>' +
+                '</tr>';
+              tbody.append(row);
+            }
+          }
+          
+          $('#quick-search-results').show();
+        },
+        error: function(xhr, errmsg, err) {
+          console.log(xhr.status + ": " + xhr.responseText);
+          toastr.error('Arama sırasında bir hata oluştu.');
+        }
+      });
+    });
+    
+    // Enter tuşuyla arama
+    $('#quick-search-phone').keypress(function(e) {
+      if(e.which == 13) {
+        $('#quick-search-btn').click();
+        return false;
+      }
+    });
+    
+    // Görünüm değiştirme
+    $('.view-toggle .btn').on('click', function() {
+      $('.view-toggle .btn').removeClass('active');
+      $(this).addClass('active');
+      
+      var view = $(this).data('view');
+      if (view === 'grid') {
+        $('#gridView').removeClass('d-none');
+        $('#listView').addClass('d-none');
+      } else if (view === 'list') {
+        $('#gridView').addClass('d-none');
+        $('#listView').removeClass('d-none');
+      }
+    });
+    
+    // Filtreleri göster/gizle
+    $('#toggleFilters').click(function() {
+      $('#filters').slideToggle();
+    });
+  });
+</script>
+{% endblock javascripts %} 

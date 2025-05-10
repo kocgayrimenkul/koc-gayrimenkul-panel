@@ -14,6 +14,23 @@ class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
         fields = ['full_name', 'phone', 'neighborhood', 'source', 
+                 'meeting_result', 'notes']
+        widgets = {
+            'full_name': forms.TextInput(attrs={"class": "form-control", "placeholder": "Adı Soyadı"}),
+            'phone': forms.TextInput(attrs={"class": "form-control", "placeholder": "Telefon"}),
+            'neighborhood': forms.Select(attrs={"class": "form-control"}),
+            'source': forms.Select(attrs={"class": "form-control"}),
+            'meeting_result': forms.Textarea(attrs={"class": "form-control", "placeholder": "Görüşme Sonucu", "rows": 4}),
+            'notes': forms.Textarea(attrs={"class": "form-control", "placeholder": "Müşteri ile ilgili notlar", "rows": 4}),
+        }
+
+
+class CustomerEditForm(forms.ModelForm):
+    """Müşteri düzenleme formu - Tüm alanları içerir"""
+    
+    class Meta:
+        model = Customer
+        fields = ['full_name', 'phone', 'neighborhood', 'source', 
                  'meeting_status', 'meeting_result', 'response_date', 'notes']
         widgets = {
             'full_name': forms.TextInput(attrs={"class": "form-control", "placeholder": "Adı Soyadı"}),

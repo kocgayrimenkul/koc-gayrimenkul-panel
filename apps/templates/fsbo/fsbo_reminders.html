@@ -1,0 +1,358 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} FSBO Hatırlatıcılar {% endblock %}
+
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Kartlar */
+  .card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  /* Hatırlatıcı kart stilleri */
+  .reminder-card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .reminder-card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    transform: translateY(-5px);
+  }
+  
+  .reminder-card-header {
+    background-color: var(--koc-red);
+    color: white;
+    padding: 15px;
+    border-bottom: none;
+  }
+  
+  .reminder-time {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: white;
+    display: block;
+  }
+  
+  .reminder-card-body {
+    padding: 20px;
+    background-color: white;
+  }
+  
+  .reminder-info {
+    margin-bottom: 15px;
+  }
+  
+  .reminder-info-label {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+    display: block;
+    font-size: 0.9rem;
+  }
+  
+  .reminder-notes {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 0.5rem;
+    font-style: italic;
+    color: #666;
+    margin-top: 15px;
+    border-left: 3px solid var(--koc-red);
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+  }
+  
+  .empty-state i {
+    font-size: 5rem;
+    color: #ddd;
+    margin-bottom: 20px;
+  }
+  
+  .empty-state h4 {
+    color: #555;
+    margin-bottom: 10px;
+  }
+  
+  .empty-state p {
+    color: #888;
+  }
+  
+  .badge-result {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-radius: 30px;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">FSBO Hatırlatıcılar</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'fsbo_list' %}">FSBO Aramaları</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Bugünkü Hatırlatıcılar ({{ today|date:"d.m.Y" }})</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'fsbo_create' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-plus mr-1"></i> Yeni FSBO Ekle
+          </a>
+          <a href="{% url 'fsbo_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-list mr-1"></i> FSBO Listesi
+          </a>
+        </div>
+      </div>
+      
+      <!-- İstatistik Kartları -->
+      <div class="row">
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats mb-4 mb-xl-0">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Bugünkü Hatırlatıcılar</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ reminders|length }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
+                    <i class="fas fa-bell"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats mb-4 mb-xl-0">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Bekleyen</h5>
+                  <span class="h2 font-weight-bold mb-0">
+                    {{ waiting_count }}
+                  </span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-yellow text-white rounded-circle shadow">
+                    <i class="fas fa-clock"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats mb-4 mb-xl-0">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Olumlu</h5>
+                  <span class="h2 font-weight-bold mb-0">
+                    {{ positive_count }}
+                  </span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-success text-white rounded-circle shadow">
+                    <i class="fas fa-check"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats mb-4 mb-xl-0">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Olumsuz</h5>
+                  <span class="h2 font-weight-bold mb-0">
+                    {{ negative_count }}
+                  </span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
+                    <i class="fas fa-times"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Bugünkü Hatırlatıcılar</h3>
+              <p class="text-sm text-muted mb-0">{{ today|date:"d.m.Y" }} tarihli hatırlatıcılar</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          {% if reminders %}
+          <div class="row">
+            {% for reminder in reminders %}
+            <div class="col-lg-6">
+              <div class="reminder-card">
+                <div class="reminder-card-header d-flex justify-content-between align-items-center">
+                  <div>
+                    <span class="reminder-time">{{ reminder.reminder_time|time:"H:i" }}</span>
+                    <strong>{{ reminder.full_name }}</strong>
+                  </div>
+                  <div>
+                    {% if reminder.result == 'olumlu' %}
+                    <span class="badge badge-success badge-result">Olumlu</span>
+                    {% elif reminder.result == 'olumsuz' %}
+                    <span class="badge badge-danger badge-result">Olumsuz</span>
+                    {% elif reminder.result == 'bekliyor' %}
+                    <span class="badge badge-warning badge-result">Bekliyor</span>
+                    {% else %}
+                    <span class="badge badge-secondary badge-result">Aranmadı</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="reminder-card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="reminder-info">
+                        <div class="reminder-info-label">Telefon</div>
+                        <div><a href="tel:{{ reminder.phone }}" class="text-primary">{{ reminder.phone }}</a></div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="reminder-info">
+                        <div class="reminder-info-label">İşlemler</div>
+                        <div>
+                          <a href="{% url 'fsbo_detail' reminder.id %}" class="btn btn-sm btn-info mr-1">
+                            <i class="fas fa-eye"></i> Detay
+                          </a>
+                          <a href="{% url 'fsbo_edit' reminder.id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i> Düzenle
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {% if reminder.link1 or reminder.link2 %}
+                  <div class="row mb-3">
+                    <div class="col-md-12">
+                      <div class="reminder-info-label">Linkler</div>
+                      <div>
+                        {% if reminder.link1 %}
+                        <a href="{{ reminder.link1 }}" target="_blank" class="btn btn-sm btn-warning mr-1">
+                          <i class="fas fa-external-link-alt"></i> Link 1
+                        </a>
+                        {% endif %}
+                        
+                        {% if reminder.link2 %}
+                        <a href="{{ reminder.link2 }}" target="_blank" class="btn btn-sm btn-danger">
+                          <i class="fas fa-external-link-alt"></i> Link 2
+                        </a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                  {% endif %}
+                  
+                  {% if reminder.notes %}
+                  <div class="reminder-notes">
+                    {{ reminder.notes|linebreaks }}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-bell-slash"></i>
+            <h4>Bugün için hatırlatıcı bulunmuyor</h4>
+            <p class="text-muted">{{ today|date:"d.m.Y" }} tarihine ayarlanmış aktif hatırlatıcı yok.</p>
+            <a href="{% url 'fsbo_create' %}" class="btn btn-koc-red mt-3">
+              <i class="fas fa-plus mr-1"></i> Yeni FSBO Ekle
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include "includes/footer.html" %}
+</div>
+
+{% endblock content %} 

@@ -45,8 +45,10 @@ class Presentation(models.Model):
     other_property3 = models.ForeignKey(Property, on_delete=models.SET_NULL, null=True, blank=True, 
                                       related_name="shown_in_presentation3", verbose_name="Diğer Gezdirilen Daire 3")
     
-    # Gezdirilen daireler için açıklama
-    other_properties_notes = models.TextField(verbose_name="Gezdirilen Daireler Notları", blank=True, null=True)
+    # Her daire için ayrı not alanları
+    property_notes1 = models.TextField(verbose_name="Daire 1 Notları", blank=True, null=True)
+    property_notes2 = models.TextField(verbose_name="Daire 2 Notları", blank=True, null=True)
+    property_notes3 = models.TextField(verbose_name="Daire 3 Notları", blank=True, null=True)
     
     notes = models.TextField(verbose_name="Notlar", blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='bekliyor', verbose_name="Durum")

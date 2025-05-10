@@ -11,23 +11,39 @@ from django.urls import reverse
 from django.db.models import Q
 from django.contrib import messages
 from .models import Customer, Neighborhood
-from apps.portfolio.models import Property  # Property modelini ekledik
+from apps.portfolio.models import Property
 from django.utils import timezone
 from datetime import datetime, timedelta, date
 from django.db.models import Count
 from django.contrib.auth.models import Group
 from apps.authentication.models import CustomUser
+from apps.employees.models import EmployeeProfile
+
+def get_user_role(user):
+    """Kullanıcının rolünü döndürür"""
+    # Superuser ise admin rolünü döndür
+    if user.is_superuser:
+        return 'admin'
+    
+    try:
+        return user.employee_profile.role
+    except EmployeeProfile.DoesNotExist:
+        return None
 
 @login_required(login_url="/login/")
 def customer_list(request):
-    """Danışmanın kendi müşterilerini listelemesi"""
+    """Müşteri listesi görünümü"""
     
-    # Eğer kullanıcı süper kullanıcı ise tüm müşterileri göster
-    if request.user.is_superuser:
+    role = get_user_role(request.user)
+    
+    # Role göre müşterileri getir
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
+        # Yönetici, Müdür ve Santral tüm müşterileri görebilir
         customers = Customer.objects.all()
     else:
-        # Sadece danışmanın kendi müşterilerini göster
-        customers = Customer.objects.filter(consultant=request.user)
+        # Danışman sadece kendi mahallelerindeki müşterileri görebilir
+        consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+        customers = Customer.objects.filter(neighborhood__in=consultant_neighborhoods)
     
     # Filtreleme işlemleri
     filter_status = request.GET.get('status', '')
@@ -49,33 +65,35 @@ def customer_list(request):
     filter_response = request.GET.get('response', '')
     today = timezone.now().date()
     if filter_response == 'yes':
-        # Geri dönüş yapılmış
         customers = customers.filter(response_date__isnull=False)
     elif filter_response == 'no':
-        # Geri dönüş yapılmamış
         customers = customers.filter(response_date__isnull=True)
     elif filter_response == 'today':
-        # Bugün geri dönüş yapılmış
         customers = customers.filter(response_date=today)
     elif filter_response == 'week':
-        # Son 7 gün içinde geri dönüş yapılmış
         week_ago = today - timedelta(days=7)
         customers = customers.filter(response_date__gte=week_ago, response_date__lte=today)
-        
+    
     # Mahalle filtresi
+    if role in ['admin', 'manager', 'secretary']:
+        neighborhoods = Neighborhood.objects.all()
+    else:
+        neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+    
     filter_neighborhood = request.GET.get('neighborhood', '')
     if filter_neighborhood:
-        customers = customers.filter(neighborhood_id=filter_neighborhood)
+        if role == 'consultant':
+            if neighborhoods.filter(id=filter_neighborhood).exists():
+                customers = customers.filter(neighborhood_id=filter_neighborhood)
+        else:
+            customers = customers.filter(neighborhood_id=filter_neighborhood)
     
     # Kaynak filtresi
     filter_source = request.GET.get('source', '')
     if filter_source:
         customers = customers.filter(source=filter_source)
     
-    # Mahalleleri çek (filtre için)
-    neighborhoods = Neighborhood.objects.all().order_by('name')
-    
-    # İstatistikler için sayıları hesapla
+    # İstatistikler
     all_customers = customers
     olumlu_musteri_sayisi = all_customers.filter(meeting_status='olumlu').count()
     olumsuz_musteri_sayisi = all_customers.filter(meeting_status='olumsuz').count()
@@ -97,6 +115,7 @@ def customer_list(request):
         'olumsuz_musteri_sayisi': olumsuz_musteri_sayisi,
         'bekleyen_musteri_sayisi': bekleyen_musteri_sayisi,
         'kaynak_istatistikleri': kaynak_istatistikleri,
+        'user_role': role,
     }
     
     html_template = loader.get_template('customers/customer_list.html')
@@ -106,25 +125,28 @@ def customer_list(request):
 def customer_detail(request, customer_id):
     """Müşteri detay sayfası"""
     
-    # Müşteri kaydını çek
     customer = get_object_or_404(Customer, id=customer_id)
+    role = get_user_role(request.user)
     
-    # Süper kullanıcı değilse ve müşteri danışmanın değilse erişimi engelle
-    if not request.user.is_superuser and customer.consultant != request.user:
-        messages.error(request, "Bu müşteri kaydını görüntüleme yetkiniz yok.")
-        return redirect('customer_list')
+    # Yetki kontrolü
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'secretary']:
+        if not Neighborhood.objects.filter(consultant=request.user, id=customer.neighborhood.id).exists():
+            messages.error(request, "Bu müşteri kaydını görüntüleme yetkiniz yok.")
+            return redirect('customer_list')
     
-    # Eğer POST isteği ise görüşme sonucunu güncelle
+    # Görüşme sonucu güncelleme
     if request.method == 'POST':
+        if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
+            messages.error(request, "Müşteri bilgilerini güncelleme yetkiniz yok.")
+            return redirect('customer_list')
+            
         meeting_result = request.POST.get('meeting_result', '')
         meeting_status = request.POST.get('meeting_status', 'bekliyor')
         response_date_str = request.POST.get('response_date', '')
         
-        # Görüşme sonucunu güncelle
         customer.meeting_result = meeting_result
         customer.meeting_status = meeting_status
         
-        # Geri dönüş tarihini işle
         if response_date_str:
             try:
                 response_date = timezone.datetime.strptime(response_date_str, '%Y-%m-%d').date()
@@ -135,13 +157,13 @@ def customer_detail(request, customer_id):
             customer.response_date = None
             
         customer.save()
-        
         messages.success(request, "Görüşme sonucu başarıyla kaydedildi.")
         return redirect('customer_list')
     
     context = {
         'segment': 'musteri',
         'customer': customer,
+        'user_role': role,
     }
     
     html_template = loader.get_template('customers/customer_detail.html')
@@ -151,17 +173,21 @@ def customer_detail(request, customer_id):
 def customer_edit(request, customer_id):
     """Müşteri düzenleme sayfası"""
     
-    # Müşteri kaydını çek
     customer = get_object_or_404(Customer, id=customer_id)
+    role = get_user_role(request.user)
     
-    # Süper kullanıcı değilse ve müşteri danışmanın değilse erişimi engelle
-    if not request.user.is_superuser and customer.consultant != request.user:
-        messages.error(request, "Bu müşteri kaydını düzenleme yetkiniz yok.")
-        return redirect('customer_list')
+    # Yetki kontrolü
+    if not request.user.is_superuser and role not in ['admin', 'manager']:
+        if not Neighborhood.objects.filter(consultant=request.user, id=customer.neighborhood.id).exists():
+            messages.error(request, "Bu müşteri kaydını düzenleme yetkiniz yok.")
+            return redirect('customer_list')
     
-    neighborhoods = Neighborhood.objects.all().order_by('name')
+    # Erişilebilir mahalleler
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        neighborhoods = Neighborhood.objects.all().order_by('name')
+    else:
+        neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
     
-    # Eğer POST isteği ise müşteri bilgilerini güncelle
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '')
         phone = request.POST.get('phone', '')
@@ -177,10 +203,17 @@ def customer_edit(request, customer_id):
             return render(request, 'customers/customer_edit.html', {
                 'segment': 'musteri',
                 'customer': customer,
-                'neighborhoods': neighborhoods
+                'neighborhoods': neighborhoods,
+                'user_role': role,
             })
         
         try:
+            # Danışman sadece kendi mahallelerindeki müşterileri düzenleyebilir
+            if role == 'consultant':
+                if not neighborhoods.filter(id=neighborhood_id).exists():
+                    messages.error(request, "Bu mahalleye müşteri atama yetkiniz yok.")
+                    return redirect('customer_list')
+            
             neighborhood = Neighborhood.objects.get(id=neighborhood_id)
             
             # Müşteriyi güncelle
@@ -191,7 +224,6 @@ def customer_edit(request, customer_id):
             customer.notes = notes
             customer.meeting_status = meeting_status
             
-            # Geri dönüş tarihini işle
             if response_date_str:
                 try:
                     response_date = timezone.datetime.strptime(response_date_str, '%Y-%m-%d').date()
@@ -213,6 +245,7 @@ def customer_edit(request, customer_id):
         'segment': 'musteri',
         'customer': customer,
         'neighborhoods': neighborhoods,
+        'user_role': role,
     }
     
     html_template = loader.get_template('customers/customer_edit.html')
@@ -222,14 +255,15 @@ def customer_edit(request, customer_id):
 def customer_register(request):
     """Santral tarafından müşteri kayıt ekranı"""
     
-    # Sadece süper kullanıcı veya santral rolü olan kişiler erişebilir
-    if not request.user.is_superuser and not request.user.groups.filter(name='Santral').exists():
+    role = get_user_role(request.user)
+    
+    # Sadece Yönetici, Müdür ve Santral erişebilir
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'secretary']:
         messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
         return redirect('home')
     
     neighborhoods = Neighborhood.objects.all().order_by('name')
     
-    # Eğer POST isteği ise yeni müşteri kaydı oluştur
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '')
         phone = request.POST.get('phone', '')
@@ -243,6 +277,7 @@ def customer_register(request):
                 'segment': 'musteri_kayit',
                 'neighborhoods': neighborhoods,
                 'form_data': request.POST,
+                'user_role': role,
             })
         
         try:
@@ -254,7 +289,6 @@ def customer_register(request):
                 phone=phone,
                 neighborhood=neighborhood,
                 source=source,
-                # Danışman otomatik olarak model save metodunda atanacak
             )
             customer.save()
             
@@ -267,6 +301,7 @@ def customer_register(request):
     context = {
         'segment': 'musteri_kayit',
         'neighborhoods': neighborhoods,
+        'user_role': role,
     }
     
     html_template = loader.get_template('customers/customer_register.html')
@@ -276,26 +311,29 @@ def customer_register(request):
 def customer_create(request):
     """Danışmanların yeni müşteri oluşturma ekranı"""
     
-    # Danışman veya süper kullanıcı olmayanlar erişemez
-    if not request.user.is_superuser and not request.user.groups.filter(name='Danışman').exists():
+    role = get_user_role(request.user)
+    
+    # Sadece Yönetici, Müdür ve Danışman erişebilir
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
         messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
         return redirect('home')
     
-    neighborhoods = Neighborhood.objects.all().order_by('name')
+    # Erişilebilir mahalleler
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        neighborhoods = Neighborhood.objects.all().order_by('name')
+    else:
+        neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
     
     # Daire tipi portföyleri getir
     properties = Property.objects.filter(property_type='daire', is_active=True).order_by('-created_at')
     
-    # Eğer POST isteği ise yeni müşteri kaydı oluştur
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '')
         phone = request.POST.get('phone', '')
-        property_id = request.POST.get('property_id', '')  # Seçilen daire ID'si
+        property_id = request.POST.get('property_id', '')
         neighborhood_id = request.POST.get('neighborhood', '')
         source = request.POST.get('source', '')
         notes = request.POST.get('notes', '')
-        meeting_status = request.POST.get('meeting_status', 'bekliyor')
-        response_date_str = request.POST.get('response_date', '')
         
         # Validation
         if not full_name or not phone or not neighborhood_id or not source:
@@ -305,29 +343,27 @@ def customer_create(request):
                 'neighborhoods': neighborhoods,
                 'properties': properties,
                 'form_data': request.POST,
+                'user_role': role,
             })
         
         try:
-            neighborhood = Neighborhood.objects.get(id=neighborhood_id)
+            # Danışman sadece kendi mahallelerindeki müşterileri ekleyebilir
+            if role == 'consultant':
+                if not neighborhoods.filter(id=neighborhood_id).exists():
+                    messages.error(request, "Bu mahalleye müşteri ekleme yetkiniz yok.")
+                    return redirect('customer_list')
             
-            # Geri dönüş tarihini işle
-            response_date = None
-            if response_date_str:
-                try:
-                    response_date = timezone.datetime.strptime(response_date_str, '%Y-%m-%d').date()
-                except ValueError:
-                    messages.warning(request, "Geri dönüş tarihi geçerli bir format değil. Tarih bilgisi kaydedilmedi.")
+            neighborhood = Neighborhood.objects.get(id=neighborhood_id)
             
             # Yeni müşteri oluştur
             customer = Customer(
                 full_name=full_name,
                 phone=phone,
                 neighborhood=neighborhood,
-                consultant=request.user,  # Müşteriyi oluşturan danışmana doğrudan ata
+                consultant=neighborhood.consultant,
                 source=source,
                 notes=notes,
-                meeting_status=meeting_status,
-                response_date=response_date
+                meeting_status='bekliyor',
             )
             customer.save()
             
@@ -341,36 +377,20 @@ def customer_create(request):
         'segment': 'musteri_ekle',
         'neighborhoods': neighborhoods,
         'properties': properties,
+        'user_role': role,
     }
     
     html_template = loader.get_template('customers/customer_create.html')
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
-def update_meeting_status(request, customer_id):
-    """AJAX ile görüşme durumunu güncelleme"""
-    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        customer = get_object_or_404(Customer, id=customer_id)
-        
-        # Süper kullanıcı değilse ve müşteri danışmanın değilse erişimi engelle
-        if not request.user.is_superuser and customer.consultant != request.user:
-            return JsonResponse({'status': 'error', 'message': 'Yetkiniz yok'}, status=403)
-        
-        meeting_result = request.POST.get('meeting_result', '')
-        meeting_status = request.POST.get('meeting_status', 'bekliyor')
-        
-        customer.meeting_result = meeting_result
-        customer.meeting_status = meeting_status
-        customer.save()
-        
-        return JsonResponse({'status': 'success'})
-    
-    return JsonResponse({'status': 'error', 'message': 'Geçersiz istek'}, status=400)
-
-@login_required(login_url="/login/")
 def neighborhood_list(request):
-    """Mahalle listesi görüntüleme (sadece admin için)"""
-    if not request.user.is_superuser:
+    """Mahalle listesi görüntüleme"""
+    
+    role = get_user_role(request.user)
+    
+    # Sadece Yönetici ve Müdür erişebilir
+    if role not in ['admin', 'manager']:
         messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
         return redirect('home')
     
@@ -379,6 +399,7 @@ def neighborhood_list(request):
     context = {
         'segment': 'mahalleler',
         'neighborhoods': neighborhoods,
+        'user_role': role,
     }
     
     html_template = loader.get_template('customers/neighborhood_list.html')
@@ -386,8 +407,12 @@ def neighborhood_list(request):
 
 @login_required(login_url="/login/")
 def neighborhood_edit(request, neighborhood_id=None):
-    """Mahalle ekleme/düzenleme (sadece admin için)"""
-    if not request.user.is_superuser:
+    """Mahalle ekleme/düzenleme"""
+    
+    role = get_user_role(request.user)
+    
+    # Sadece Yönetici ve Müdür erişebilir
+    if role not in ['admin', 'manager']:
         messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
         return redirect('home')
     
@@ -427,21 +452,42 @@ def neighborhood_edit(request, neighborhood_id=None):
         
         return redirect('neighborhood_list')
     
-    # Danışmanları çek
-    consultant_group = Group.objects.filter(name='Danışman').first()
-    if consultant_group:
-        consultants = CustomUser.objects.filter(groups=consultant_group)
-    else:
-        consultants = CustomUser.objects.filter(is_staff=True)
+    # Danışmanları getir
+    consultants = CustomUser.objects.filter(
+        employee_profile__role='consultant',
+        is_active=True
+    ).distinct()
     
     context = {
         'segment': 'mahalleler',
         'neighborhood': neighborhood,
         'consultants': consultants,
+        'user_role': role,
     }
     
     html_template = loader.get_template('customers/neighborhood_edit.html')
     return HttpResponse(html_template.render(context, request))
+
+@login_required(login_url="/login/")
+def update_meeting_status(request, customer_id):
+    """AJAX ile görüşme durumunu güncelleme"""
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        customer = get_object_or_404(Customer, id=customer_id)
+        
+        # Süper kullanıcı değilse ve müşteri danışmanın değilse erişimi engelle
+        if not request.user.is_superuser and customer.consultant != request.user:
+            return JsonResponse({'status': 'error', 'message': 'Yetkiniz yok'}, status=403)
+        
+        meeting_result = request.POST.get('meeting_result', '')
+        meeting_status = request.POST.get('meeting_status', 'bekliyor')
+        
+        customer.meeting_result = meeting_result
+        customer.meeting_status = meeting_status
+        customer.save()
+        
+        return JsonResponse({'status': 'success'})
+    
+    return JsonResponse({'status': 'error', 'message': 'Geçersiz istek'}, status=400)
 
 @login_required(login_url="/login/")
 def consultants_by_neighborhood(request, neighborhood_id):
