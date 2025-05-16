@@ -577,6 +577,7 @@
                   <p class="text-muted mb-0">{{ customer.neighborhood.name }}</p>
                 </div>
                 
+                <!-- Müşteri Kart Bilgileri -->
                 <div class="customer-info">
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-sm text-muted"><i class="ni ni-mobile-button mr-2"></i> Telefon:</span>
@@ -590,6 +591,12 @@
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-sm text-muted"><i class="ni ni-time-alarm mr-2"></i> Geri Dönüş:</span>
                     <span class="text-sm font-weight-bold badge badge-info">{{ customer.response_date|date:"d.m.Y" }}</span>
+                  </div>
+                  {% endif %}
+                  {% if customer.reminder_date %}
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-sm text-muted"><i class="ni ni-bell-55 mr-2"></i> Hatırlatma:</span>
+                    <span class="text-sm font-weight-bold badge badge-danger">{{ customer.reminder_date|date:"d.m.Y" }}</span>
                   </div>
                   {% endif %}
                 </div>
@@ -642,7 +649,7 @@
                   <th scope="col">Telefon</th>
                   <th scope="col">Mahalle</th>
                 <th scope="col">Kayıt Tarihi</th>
-                <th scope="col">Geri Dönüş</th>
+                <th scope="col">Hatırlatma</th>
                 <th scope="col">Durum</th>
                   <th scope="col" class="text-right">İşlemler</th>
               </tr>
@@ -664,8 +671,8 @@
                 <td>{{ customer.neighborhood.name }}</td>
                   <td>{{ customer.created_at|date:"d.m.Y" }}</td>
                   <td>
-                    {% if customer.response_date %}
-                      <span class="badge badge-pill badge-info">{{ customer.response_date|date:"d.m.Y" }}</span>
+                    {% if customer.reminder_date %}
+                      <span class="badge badge-pill badge-danger">{{ customer.reminder_date|date:"d.m.Y" }}</span>
                     {% else %}
                       <span class="text-muted">-</span>
                     {% endif %}

@@ -3,10 +3,157 @@
 {% block title %} Gösterge Paneli {% endblock title %}
 
 <!-- Specific CSS goes HERE -->
-{% block stylesheets %}{% endblock stylesheets %}
+{% block stylesheets %}
+<style>
+    .stat-card {
+        transition: all 0.3s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,.1);
+    }
+    .custom-card {
+        border-radius: 0.375rem;
+        box-shadow: 0 4px 6px rgba(50,50,93,.11), 0 1px 3px rgba(0,0,0,.08);
+    }
+    .task-item {
+        border-left: 3px solid #5e72e4;
+        padding-left: 1rem;
+        margin-bottom: 0.75rem;
+        background-color: #f8f9fe;
+        padding: 1rem;
+        border-radius: 0.25rem;
+    }
+    .task-item.high-priority {
+        border-left-color: #f5365c;
+    }
+    .task-item.medium-priority {
+        border-left-color: #fb6340;
+    }
+    .task-item.low-priority {
+        border-left-color: #11cdef;
+    }
+    .consultant-card {
+        transition: all 0.3s;
+    }
+    .consultant-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,.1);
+    }
+    .consultant-selector {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .consultant-selector select {
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+    .dashboard-tabs {
+        margin-bottom: 1.5rem;
+    }
+    .dashboard-tabs .nav-link {
+        color: rgba(255, 255, 255, 0.8);
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+    }
+    .dashboard-tabs .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: #fff;
+    }
+    .performance-score {
+        position: relative;
+        display: inline-block;
+        width: 100px;
+        height: 100px;
+        line-height: 100px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        color: #fff;
+        border-radius: 50%;
+    }
+    .score-excellent {
+        background: linear-gradient(45deg, #2dce89, #2dcecc);
+    }
+    .score-good {
+        background: linear-gradient(45deg, #5e72e4, #825ee4);
+    }
+    .score-average {
+        background: linear-gradient(45deg, #fb6340, #fbb140);
+    }
+    .score-poor {
+        background: linear-gradient(45deg, #f5365c, #f56036);
+    }
+    .highlight-section {
+        background-color: #f6f9fc;
+        border-radius: 0.375rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .filter-bar {
+        background-color: rgba(255, 255, 255, 0.2);
+        padding: 0.8rem 1.5rem;
+        border-radius: 0.375rem;
+        margin-bottom: 1.5rem;
+    }
+    .filter-bar .btn-filter {
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: none;
+        padding: 0.5rem 1rem;
+        margin-right: 0.5rem;
+        border-radius: 0.25rem;
+    }
+    .filter-bar .btn-filter.active {
+        background-color: rgba(255, 255, 255, 0.3);
+        color: #fff;
+    }
+    .leaderboard-item {
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+        background-color: #f8f9fe;
+        border-left: 3px solid #5e72e4;
+    }
+    .rank-1 {
+        border-left-color: #ffd700;
+        background-color: #fffdf5;
+    }
+    .rank-2 {
+        border-left-color: #c0c0c0;
+        background-color: #f9f9f9;
+    }
+    .rank-3 {
+        border-left-color: #cd7f32;
+        background-color: #faf7f5;
+    }
+    .progress-thin {
+        height: 4px;
+    }
+    .table-hover-custom tbody tr:hover {
+        background-color: #f6f9fc;
+    }
+    .neighborhood-card {
+        transition: all 0.3s;
+    }
+    .neighborhood-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,.07);
+    }
+    .badge-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+</style>
+{% endblock stylesheets %}
 
 {% block content %}
-
     <!-- Header -->
     <div class="header bg-primary pb-6">
       <div class="container-fluid">
@@ -23,86 +170,245 @@
               </nav>
             </div>
             <div class="col-lg-6 col-5 text-right">
-              <a href="#" class="btn btn-sm btn-neutral">Yeni</a>
-              <a href="#" class="btn btn-sm btn-neutral">Filtreler</a>
+              {% if role == 'consultant' %}
+              <a href="{% url 'customer_list' %}" class="btn btn-sm btn-neutral">Müşterilerim</a>
+              <a href="{% url 'calendar' %}" class="btn btn-sm btn-neutral">Ajanda</a>
+              {% elif role == 'admin' or role == 'manager' or user.is_superuser %}
+              <a href="{% url 'property_list' %}" class="btn btn-sm btn-neutral">Gayrimenkuller</a>
+              <a href="{% url 'presentation_list' %}" class="btn btn-sm btn-neutral">Sunumlar</a>
+              <a href="{% url 'customer_list' %}" class="btn btn-sm btn-neutral">Müşteriler</a>
+              {% endif %}
             </div>
           </div>
+          
+          {% if role == 'admin' or role == 'manager' or user.is_superuser %}
+          <!-- Tarih Filtresi -->
+          <div class="filter-bar">
+            <form method="get" class="mb-0">
+              <div class="row align-items-center">
+                <div class="col-md-4">
+                  <h6 class="text-white mb-0">Zaman Aralığı</h6>
+                  <p class="text-sm text-white opacity-8 mb-0">Verileri filtrelemek için bir zaman aralığı seçin</p>
+                </div>
+                <div class="col-md-8 text-right">
+                  <input type="hidden" name="consultant_id" value="{{ request.GET.consultant_id }}">
+                  <button type="submit" name="date_filter" value="week" class="btn-filter {% if date_filter == 'week' %}active{% endif %}">Son 7 Gün</button>
+                  <button type="submit" name="date_filter" value="month" class="btn-filter {% if date_filter == 'month' %}active{% endif %}">Son 30 Gün</button>
+                  <button type="submit" name="date_filter" value="quarter" class="btn-filter {% if date_filter == 'quarter' %}active{% endif %}">Son 3 Ay</button>
+                  <button type="submit" name="date_filter" value="year" class="btn-filter {% if date_filter == 'year' %}active{% endif %}">Son 1 Yıl</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Danışman Seçici -->
+          <div class="consultant-selector">
+            <form method="get" class="mb-0">
+              <div class="row align-items-center">
+                <div class="col-md-6">
+                  <h6 class="text-white mb-0">Danışman Seçimi</h6>
+                  <p class="text-sm text-white opacity-8 mb-0">Detaylı performans bilgisi için danışman seçiniz</p>
+                </div>
+                <div class="col-md-4">
+                  <select name="consultant_id" class="form-control" id="consultant-select">
+                    <option value="">Tüm Danışmanlar</option>
+                    {% for consultant in consultants %}
+                      <option value="{{ consultant.id }}" {% if selected_consultant and selected_consultant.id == consultant.user.id %}selected{% endif %}>{{ consultant.user.get_full_name }}</option>
+                    {% endfor %}
+                  </select>
+                  <input type="hidden" name="date_filter" value="{{ date_filter }}">
+                </div>
+                <div class="col-md-2">
+                  <button type="submit" class="btn btn-block btn-sm btn-white">Görüntüle</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Yönetici Dashboard Sekmeleri -->
+          <ul class="nav dashboard-tabs">
+            <li class="nav-item">
+              <a class="nav-link active" href="#genel-bakis" data-toggle="tab">
+                <i class="ni ni-chart-bar-32 mr-2"></i>Genel Bakış
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#danismanlar" data-toggle="tab">
+                <i class="ni ni-circle-08 mr-2"></i>Danışman Performansı
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#analizler" data-toggle="tab">
+                <i class="ni ni-chart-pie-35 mr-2"></i>Mahalle Analizi
+              </a>
+            </li>
+            {% if selected_consultant %}
+            <li class="nav-item">
+              <a class="nav-link" href="#danismana-ozel" data-toggle="tab">
+                <i class="ni ni-single-02 mr-2"></i>{{ selected_consultant.get_full_name }}
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+          {% endif %}
+          
           <!-- Card stats -->
           <div class="row">
+            {% if role == 'consultant' %}
+            <!-- Danışman İstatistik Kartları -->
             <div class="col-xl-3 col-md-6">
-              <div class="card card-stats">
-                <!-- Card body -->
+              <div class="card card-stats stat-card">
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Ziyaretçi Sayısı</h5>
-                      <span class="h2 font-weight-bold mb-0">350,897</span>
+                      <h5 class="card-title text-uppercase text-muted mb-0">Müşterilerim</h5>
+                      <span class="h2 font-weight-bold mb-0">{{ my_customer_count }}</span>
                     </div>
                     <div class="col-auto">
                       <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow">
-                        <i class="ni ni-active-40"></i>
+                        <i class="ni ni-satisfied"></i>
                       </div>
                     </div>
                   </div>
                   <p class="mt-3 mb-0 text-sm">
-                    <span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 3.48%</span>
-                    <span class="text-nowrap">Geçen aya göre</span>
+                    <a href="{% url 'customer_list' %}" class="text-nowrap">Tümünü görüntüle</a>
                   </p>
                 </div>
               </div>
             </div>
             <div class="col-xl-3 col-md-6">
-              <div class="card card-stats">
-                <!-- Card body -->
+              <div class="card card-stats stat-card">
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Yeni Kullanıcılar</h5>
-                      <span class="h2 font-weight-bold mb-0">2,356</span>
+                      <h5 class="card-title text-uppercase text-muted mb-0">Dairelerim</h5>
+                      <span class="h2 font-weight-bold mb-0">{{ my_property_count }}</span>
                     </div>
                     <div class="col-auto">
                       <div class="icon icon-shape bg-gradient-orange text-white rounded-circle shadow">
-                        <i class="ni ni-chart-pie-35"></i>
+                        <i class="ni ni-building"></i>
                       </div>
                     </div>
                   </div>
                   <p class="mt-3 mb-0 text-sm">
-                    <span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 3.48%</span>
-                    <span class="text-nowrap">Geçen aya göre</span>
+                    <a href="{% url 'property_list' %}" class="text-nowrap">Tümünü görüntüle</a>
                   </p>
                 </div>
               </div>
             </div>
             <div class="col-xl-3 col-md-6">
-              <div class="card card-stats">
-                <!-- Card body -->
+              <div class="card card-stats stat-card">
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Satışlar</h5>
-                      <span class="h2 font-weight-bold mb-0">924</span>
+                      <h5 class="card-title text-uppercase text-muted mb-0">Sunumlarım</h5>
+                      <span class="h2 font-weight-bold mb-0">{{ completed_presentations }}</span>
                     </div>
                     <div class="col-auto">
                       <div class="icon icon-shape bg-gradient-green text-white rounded-circle shadow">
-                        <i class="ni ni-money-coins"></i>
+                        <i class="ni ni-books"></i>
                       </div>
                     </div>
                   </div>
                   <p class="mt-3 mb-0 text-sm">
-                    <span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 3.48%</span>
-                    <span class="text-nowrap">Geçen aya göre</span>
+                    <span class="text-success mr-2">Tamamlanan</span>
+                    <span class="text-nowrap">Son 30 günde</span>
                   </p>
                 </div>
               </div>
             </div>
             <div class="col-xl-3 col-md-6">
-              <div class="card card-stats">
-                <!-- Card body -->
+              <div class="card card-stats stat-card">
                 <div class="card-body">
                   <div class="row">
                     <div class="col">
-                      <h5 class="card-title text-uppercase text-muted mb-0">Performans</h5>
-                      <span class="h2 font-weight-bold mb-0">49,65%</span>
+                      <h5 class="card-title text-uppercase text-muted mb-0">Görev Tamamlama</h5>
+                      <span class="h2 font-weight-bold mb-0">{{ todo_completion_rate }}%</span>
+                    </div>
+                    <div class="col-auto">
+                      <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow">
+                        <i class="ni ni-check-bold"></i>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="mt-3 mb-0 text-sm">
+                    <span class="text-nowrap">Tamamlanma Oranı</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {% elif role == 'admin' or role == 'manager' or user.is_superuser %}
+            <!-- Yönetici İstatistik Kartları -->
+            <div class="col-xl-3 col-md-6">
+              <div class="card card-stats stat-card">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col">
+                      <h5 class="card-title text-uppercase text-muted mb-0">Toplam Gayrimenkul</h5>
+                      <span class="h2 font-weight-bold mb-0">{{ total_properties }}</span>
+                    </div>
+                    <div class="col-auto">
+                      <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow">
+                        <i class="ni ni-building"></i>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="mt-3 mb-0 text-sm">
+                    <a href="{% url 'property_list' %}" class="text-nowrap">Tümünü görüntüle</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+              <div class="card card-stats stat-card">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col">
+                      <h5 class="card-title text-uppercase text-muted mb-0">Toplam Müşteriler</h5>
+                      <span class="h2 font-weight-bold mb-0">{{ total_customers }}</span>
+                    </div>
+                    <div class="col-auto">
+                      <div class="icon icon-shape bg-gradient-orange text-white rounded-circle shadow">
+                        <i class="ni ni-satisfied"></i>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="mt-3 mb-0 text-sm">
+                    <a href="{% url 'customer_list' %}" class="text-nowrap">Tümünü görüntüle</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+              <div class="card card-stats stat-card">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col">
+                      <h5 class="card-title text-uppercase text-muted mb-0">Bugünkü Sunumlar</h5>
+                      <span class="h2 font-weight-bold mb-0">
+                        {{ upcoming_presentations|length }}
+                      </span>
+                    </div>
+                    <div class="col-auto">
+                      <div class="icon icon-shape bg-gradient-green text-white rounded-circle shadow">
+                        <i class="ni ni-calendar-grid-58"></i>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="mt-3 mb-0 text-sm">
+                    <a href="{% url 'presentation_list' %}" class="text-nowrap">Tümünü görüntüle</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+              <div class="card card-stats stat-card">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col">
+                      <h5 class="card-title text-uppercase text-muted mb-0">Ortalama Başarı</h5>
+                      <span class="h2 font-weight-bold mb-0">{{ general_success_rate }}%</span>
                     </div>
                     <div class="col-auto">
                       <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow">
@@ -111,304 +417,1129 @@
                     </div>
                   </div>
                   <p class="mt-3 mb-0 text-sm">
-                    <span class="text-success mr-2"><i class="fas fa-arrow-up"></i> 12%</span>
-                    <span class="text-nowrap">Geçen aya göre</span>
+                    <span class="text-nowrap">Sunum Başarı Oranı</span>
                   </p>
                 </div>
               </div>
             </div>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Page content -->
+    <!-- Ana İçerik -->
     <div class="container-fluid mt--6">
+      {% if role == 'consultant' %}
+      <!-- DANIŞMAN PANELİ -->
       <div class="row">
+        <!-- Sol Sütun - Görevler ve Müşteriler -->
         <div class="col-xl-8">
-          <div class="card bg-default">
+          <!-- Yaklaşan Görevler -->
+          <div class="card custom-card mb-4">
             <div class="card-header bg-transparent">
               <div class="row align-items-center">
                 <div class="col">
-                  <h6 class="text-light text-uppercase ls-1 mb-1">Genel Bakış</h6>
-                  <h5 class="h3 text-white mb-0">Satış Değeri</h5>
+                  <h6 class="text-uppercase text-muted ls-1 mb-1">Yapılacaklar</h6>
+                  <h5 class="h3 mb-0">Yaklaşan Görevlerim</h5>
                 </div>
+                <div class="col text-right">
+                  <a href="{% url 'calendar' %}" class="btn btn-sm btn-primary">Ajandaya Git</a>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              {% if my_todos %}
+                <div class="list-group">
+                  {% for todo in my_todos %}
+                    <div class="task-item {% if todo.priority == 'yuksek' %}high-priority{% elif todo.priority == 'orta' %}medium-priority{% else %}low-priority{% endif %}">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-1">{{ todo.title }}</h5>
+                        <small>
+                          {% if todo.due_date %}
+                            {% if todo.due_date == today %}
+                              <span class="badge badge-danger">Bugün</span>
+                            {% else %}
+                              {{ todo.due_date }}
+                            {% endif %}
+                          {% endif %}
+                          <span class="badge badge-pill badge-{% if todo.priority == 'yuksek' %}danger{% elif todo.priority == 'orta' %}warning{% else %}info{% endif %}">
+                            {{ todo.get_priority_display }}
+                          </span>
+                        </small>
+                      </div>
+                      {% if todo.description %}
+                        <p class="mb-1 text-sm text-muted">{{ todo.description }}</p>
+                      {% endif %}
+                      {% if todo.customer %}
+                        <small>Müşteri: {{ todo.customer.full_name }}</small>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="text-center py-4">
+                  <p class="mb-0">Yaklaşan göreviniz bulunmamaktadır.</p>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Bugünkü Etkinlikler -->
+          <div class="card custom-card">
+            <div class="card-header bg-transparent">
+              <div class="row align-items-center">
                 <div class="col">
-                  <ul class="nav nav-pills justify-content-end">
-                    <li class="nav-item mr-2 mr-md-0" data-toggle="chart" data-target="#chart-sales-dark" data-update='{"data":{"datasets":[{"data":[0, 20, 10, 30, 15, 40, 20, 60, 60]}]}}' data-prefix="₺" data-suffix="bin">
-                      <a href="#" class="nav-link py-2 px-3 active" data-toggle="tab">
-                        <span class="d-none d-md-block">Ay</span>
-                        <span class="d-md-none">A</span>
+                  <h6 class="text-uppercase text-muted ls-1 mb-1">Ajanda</h6>
+                  <h5 class="h3 mb-0">Bugünkü Etkinliklerim</h5>
+                </div>
+                <div class="col text-right">
+                  <a href="{% url 'calendar' %}" class="btn btn-sm btn-primary">Tüm Etkinlikler</a>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              {% if today_events %}
+                <div class="table-responsive">
+                  <table class="table align-items-center table-flush">
+                    <thead class="thead-light">
+                      <tr>
+                        <th>Saat</th>
+                        <th>Başlık</th>
+                        <th>Tip</th>
+                        <th>Konum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for event in today_events %}
+                        <tr>
+                          <td>{{ event.start_time|date:"H:i" }}</td>
+                          <td>{{ event.title }}</td>
+                          <td>{{ event.get_event_type_display }}</td>
+                          <td>{{ event.location }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="text-center py-4">
+                  <p class="mb-0">Bugün için planlanmış etkinliğiniz bulunmamaktadır.</p>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Sağ Sütun - Sunumlar ve Daireler -->
+        <div class="col-xl-4">
+          <!-- Performans Özeti -->
+          <div class="card custom-card mb-4">
+            <div class="card-header bg-transparent">
+              <h6 class="text-uppercase text-muted ls-1 mb-1">Performans</h6>
+              <h5 class="h3 mb-0">Genel Durum</h5>
+            </div>
+            <div class="card-body">
+              <div class="row text-center">
+                <div class="col-6 mb-4">
+                  <div class="performance-score 
+                    {% if customer_conversion_rate >= 70 %}score-excellent
+                    {% elif customer_conversion_rate >= 50 %}score-good
+                    {% elif customer_conversion_rate >= 30 %}score-average
+                    {% else %}score-poor{% endif %}">
+                    {{ customer_conversion_rate }}%
+                  </div>
+                  <h6 class="mt-3 mb-0">Müşteri<br>Dönüştürme</h6>
+                </div>
+                <div class="col-6 mb-4">
+                  <div class="performance-score 
+                    {% if todo_completion_rate >= 70 %}score-excellent
+                    {% elif todo_completion_rate >= 50 %}score-good
+                    {% elif todo_completion_rate >= 30 %}score-average
+                    {% else %}score-poor{% endif %}">
+                    {{ todo_completion_rate }}%
+                  </div>
+                  <h6 class="mt-3 mb-0">Görev<br>Tamamlama</h6>
+                </div>
+                <div class="col-6">
+                  <!-- Sunumlar -->
+                  <div class="card card-stats mb-2">
+                    <div class="card-body p-3">
+                      <div class="row">
+                        <div class="col">
+                          <h5 class="card-title text-uppercase text-muted mb-0 text-sm">Sunumlar</h5>
+                          <span class="h4 font-weight-bold mb-0">{{ completed_presentations }}/{{ completed_presentations|add:pending_presentations|add:cancelled_presentations }}</span>
+                        </div>
+                        <div class="col-auto">
+                          <div class="icon icon-shape bg-gradient-primary text-white rounded-circle shadow" style="width: 35px; height: 35px; line-height: 35px;">
+                            <i class="ni ni-paper-diploma" style="font-size: 14px;"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <!-- FSBO -->
+                  <div class="card card-stats mb-2">
+                    <div class="card-body p-3">
+                      <div class="row">
+                        <div class="col">
+                          <h5 class="card-title text-uppercase text-muted mb-0 text-sm">FSBO</h5>
+                          <span class="h4 font-weight-bold mb-0">{{ my_fsbos|length }}</span>
+                        </div>
+                        <div class="col-auto">
+                          <div class="icon icon-shape bg-gradient-warning text-white rounded-circle shadow" style="width: 35px; height: 35px; line-height: 35px;">
+                            <i class="ni ni-chat-round" style="font-size: 14px;"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Yaklaşan Sunumlar -->
+          <div class="card custom-card mb-4">
+            <div class="card-header bg-transparent">
+              <h6 class="text-uppercase text-muted ls-1 mb-1">Sunumlar</h6>
+              <h5 class="h3 mb-0">Yaklaşan Sunumlarım</h5>
+            </div>
+            <div class="card-body">
+              {% if my_presentations %}
+                <div class="list-group list-group-flush">
+                  {% for presentation in my_presentations %}
+                    <a href="#" class="list-group-item list-group-item-action">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <h6 class="mb-1">{{ presentation.title }}</h6>
+                          <p class="text-sm text-muted mb-0">
+                            {{ presentation.customer_name }} - {{ presentation.presentation_date|date:"d.m.Y H:i" }}
+                          </p>
+                        </div>
+                        <span class="badge badge-pill badge-{% if presentation.status == 'bekliyor' %}warning{% elif presentation.status == 'tamamlandi' %}success{% else %}danger{% endif %}">
+                          {{ presentation.get_status_display }}
+                        </span>
+                      </div>
+                    </a>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="text-center py-4">
+                  <p class="mb-0">Yaklaşan sunum bulunmamaktadır.</p>
+                </div>
+              {% endif %}
+            </div>
+            <div class="card-footer">
+              <div class="row">
+                <div class="col-4 text-center">
+                  <span class="h4 font-weight-bold mb-0">{{ completed_presentations }}</span>
+                  <span class="text-muted d-block text-sm">Tamamlanan</span>
+                </div>
+                <div class="col-4 text-center">
+                  <span class="h4 font-weight-bold mb-0">{{ pending_presentations }}</span>
+                  <span class="text-muted d-block text-sm">Bekleyen</span>
+                </div>
+                <div class="col-4 text-center">
+                  <span class="h4 font-weight-bold mb-0">{{ cancelled_presentations }}</span>
+                  <span class="text-muted d-block text-sm">İptal</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- FSBO Aramaları -->
+          <div class="card custom-card">
+            <div class="card-header bg-transparent">
+              <h6 class="text-uppercase text-muted ls-1 mb-1">FSBO</h6>
+              <h5 class="h3 mb-0">Son FSBO Aramaları</h5>
+            </div>
+            <div class="card-body">
+              {% if my_fsbos %}
+                <div class="list-group list-group-flush">
+                  {% for fsbo in my_fsbos %}
+                    <div class="list-group-item">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <h6 class="mb-1">{{ fsbo.full_name }}</h6>
+                          <p class="text-sm text-muted mb-0">{{ fsbo.phone }}</p>
+                        </div>
+                        <span class="badge badge-pill badge-{% if fsbo.result == 'olumlu' %}success{% elif fsbo.result == 'olumsuz' %}danger{% elif fsbo.result == 'bekliyor' %}warning{% else %}secondary{% endif %}">
+                          {{ fsbo.get_result_display }}
+                        </span>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="text-center py-4">
+                  <p class="mb-0">FSBO araması bulunmamaktadır.</p>
+                </div>
+              {% endif %}
+            </div>
+            <div class="card-footer text-center">
+              <a href="{% url 'fsbo_list' %}" class="btn btn-sm btn-primary">Tüm FSBO Aramalarını Gör</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {% elif role == 'admin' or role == 'manager' or user.is_superuser %}
+      <!-- YÖNETİCİ PANELİ -->
+      <div class="tab-content">
+        <!-- GENEL BAKIŞ SEKME İÇERİĞİ -->
+        <div class="tab-pane fade show active" id="genel-bakis">
+          <!-- Performans Özeti -->
+          <div class="row">
+            <div class="col-xl-8 mb-4">
+              <div class="card highlight-section">
+                <div class="card-body">
+                  <h5>Ekip Performans Özeti</h5>
+                  <div class="row align-items-center">
+                    <div class="col-md-3 text-center">
+                      <div class="performance-score 
+                        {% if avg_performance_score >= 70 %}score-excellent
+                        {% elif avg_performance_score >= 50 %}score-good
+                        {% elif avg_performance_score >= 30 %}score-average
+                        {% else %}score-poor{% endif %}">
+                        {{ avg_performance_score }}
+                      </div>
+                      <h6 class="mt-3 mb-0">Ortalama<br>Performans</h6>
+                    </div>
+                    <div class="col-md-9">
+                      <div class="row">
+                        <div class="col-md-4">
+                          <div class="card card-stats mb-2">
+                            <div class="card-body p-3">
+                              <div class="row">
+                                <div class="col">
+                                  <h5 class="card-title text-uppercase text-muted mb-0 text-sm">Başarı Oranı</h5>
+                                  <span class="h4 font-weight-bold mb-0">{{ avg_success_rate }}%</span>
+                                </div>
+                                <div class="col-auto">
+                                  <div class="icon icon-shape bg-gradient-success text-white rounded-circle shadow" style="width: 35px; height: 35px; line-height: 35px;">
+                                    <i class="ni ni-check-bold" style="font-size: 14px;"></i>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="card card-stats mb-2">
+                            <div class="card-body p-3">
+                              <div class="row">
+                                <div class="col">
+                                  <h5 class="card-title text-uppercase text-muted mb-0 text-sm">Dönüşüm</h5>
+                                  <span class="h4 font-weight-bold mb-0">{{ avg_conversion_rate }}%</span>
+                                </div>
+                                <div class="col-auto">
+                                  <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow" style="width: 35px; height: 35px; line-height: 35px;">
+                                    <i class="ni ni-curved-next" style="font-size: 14px;"></i>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="card card-stats mb-2">
+                            <div class="card-body p-3">
+                              <div class="row">
+                                <div class="col">
+                                  <h5 class="card-title text-uppercase text-muted mb-0 text-sm">Portföy/Kişi</h5>
+                                  <span class="h4 font-weight-bold mb-0">{{ avg_properties_per_consultant }}</span>
+                                </div>
+                                <div class="col-auto">
+                                  <div class="icon icon-shape bg-gradient-primary text-white rounded-circle shadow" style="width: 35px; height: 35px; line-height: 35px;">
+                                    <i class="ni ni-building" style="font-size: 14px;"></i>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="card card-stats mb-2">
+                            <div class="card-body p-3">
+                              <div class="row">
+                                <div class="col">
+                                  <h5 class="card-title text-uppercase text-muted mb-0 text-sm">Toplam Sunum</h5>
+                                  <span class="h4 font-weight-bold mb-0">{{ total_presentations }}</span>
+                                </div>
+                                <div class="col-auto">
+                                  <div class="icon icon-shape bg-gradient-warning text-white rounded-circle shadow" style="width: 35px; height: 35px; line-height: 35px;">
+                                    <i class="ni ni-paper-diploma" style="font-size: 14px;"></i>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="card card-stats mb-2">
+                            <div class="card-body p-3">
+                              <div class="row">
+                                <div class="col">
+                                  <h5 class="card-title text-uppercase text-muted mb-0 text-sm">Tamamlanan</h5>
+                                  <span class="h4 font-weight-bold mb-0">{{ total_completed_presentations }}</span>
+                                </div>
+                                <div class="col-auto">
+                                  <div class="icon icon-shape bg-gradient-success text-white rounded-circle shadow" style="width: 35px; height: 35px; line-height: 35px;">
+                                    <i class="ni ni-trophy" style="font-size: 14px;"></i>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="card card-stats mb-2">
+                            <div class="card-body p-3">
+                              <div class="row">
+                                <div class="col">
+                                  <h5 class="card-title text-uppercase text-muted mb-0 text-sm">Bekleyen</h5>
+                                  <span class="h4 font-weight-bold mb-0">{{ total_pending_presentations }}</span>
+                                </div>
+                                <div class="col-auto">
+                                  <div class="icon icon-shape bg-gradient-orange text-white rounded-circle shadow" style="width: 35px; height: 35px; line-height: 35px;">
+                                    <i class="ni ni-time-alarm" style="font-size: 14px;"></i>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-xl-4 mb-4">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="h3 mb-0">Performans Liderleri</h5>
+                </div>
+                <div class="card-body p-0">
+                  <div class="list-group list-group-flush">
+                    {% for leader in performance_leaders %}
+                    <div class="list-group-item leaderboard-item rank-{{ forloop.counter }}">
+                      <div class="row align-items-center">
+                        <div class="col-auto">
+                          <span class="h3 mb-0 text-muted">#{{ forloop.counter }}</span>
+                        </div>
+                        <div class="col">
+                          <h5 class="mb-0">{{ leader.consultant.get_full_name }}</h5>
+                          <div class="progress progress-thin mt-2">
+                            <div class="progress-bar bg-{% if leader.performance_score >= 70 %}success{% elif leader.performance_score >= 50 %}primary{% elif leader.performance_score >= 30 %}warning{% else %}danger{% endif %}" role="progressbar" style="width: {{ leader.performance_score }}%"></div>
+                          </div>
+                        </div>
+                        <div class="col-auto">
+                          <span class="h4 font-weight-bold mb-0">{{ leader.performance_score }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Yaklaşan Sunumlar -->
+          <div class="row">
+            <div class="col-12">
+              <div class="card custom-card">
+                <div class="card-header border-0">
+                  <div class="row align-items-center">
+                    <div class="col">
+                      <h3 class="mb-0">Yaklaşan Sunumlar</h3>
+                    </div>
+                    <div class="col text-right">
+                      <a href="{% url 'presentation_list' %}" class="btn btn-sm btn-primary">Tümünü Gör</a>
+                    </div>
+                  </div>
+                </div>
+                <div class="table-responsive">
+                  <!-- Sunumlar tablosu -->
+                  <table class="table align-items-center table-flush table-hover-custom">
+                    <thead class="thead-light">
+                      <tr>
+                        <th scope="col">Başlık</th>
+                        <th scope="col">Danışman</th>
+                        <th scope="col">Müşteri</th>
+                        <th scope="col">Tarih</th>
+                        <th scope="col">Durum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for presentation in upcoming_presentations %}
+                        <tr>
+                          <th scope="row">
+                            {{ presentation.title }}
+                          </th>
+                          <td>
+                            {{ presentation.presenter.get_full_name }}
+                          </td>
+                          <td>
+                            {{ presentation.customer_name }}
+                          </td>
+                          <td>
+                            {{ presentation.presentation_date|date:"d.m.Y H:i" }}
+                          </td>
+                          <td>
+                            <span class="badge badge-dot mr-4">
+                              <i class="bg-{% if presentation.status == 'bekliyor' %}warning{% elif presentation.status == 'tamamlandi' %}success{% else %}danger{% endif %}"></i>
+                              <span>{{ presentation.get_status_display }}</span>
+                            </span>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- DANIŞMAN PERFORMANSI SEKME İÇERİĞİ -->
+        <div class="tab-pane fade" id="danismanlar">
+          <!-- Danışman Performans Kartları -->
+          <div class="row">
+            {% for consultant_info in consultant_data %}
+              <div class="col-xl-4 col-md-6">
+                <div class="card consultant-card mb-4">
+                  <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                      <div class="mr-4">
+                        <div class="performance-score 
+                          {% if consultant_info.performance_score >= 70 %}score-excellent
+                          {% elif consultant_info.performance_score >= 50 %}score-good
+                          {% elif consultant_info.performance_score >= 30 %}score-average
+                          {% else %}score-poor{% endif %}"
+                          style="width: 60px; height: 60px; line-height: 60px; font-size: 20px;">
+                          {{ consultant_info.performance_score }}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 class="mb-0">{{ consultant_info.consultant.get_full_name }}</h4>
+                        <p class="text-muted mb-0">{{ consultant_info.profile.position.name|default:"Danışman" }}</p>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-6">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span class="text-sm">Sunum Başarısı</span>
+                          <span class="text-sm font-weight-bold">{{ consultant_info.success_rate }}%</span>
+                        </div>
+                        <div class="progress progress-thin">
+                          <div class="progress-bar bg-success" style="width: {{ consultant_info.success_rate }}%"></div>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span class="text-sm">Müşteri Dönüşüm</span>
+                          <span class="text-sm font-weight-bold">{{ consultant_info.conversion_rate }}%</span>
+                        </div>
+                        <div class="progress progress-thin">
+                          <div class="progress-bar bg-info" style="width: {{ consultant_info.conversion_rate }}%"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row mb-4">
+                      <div class="col-6">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span class="text-sm">Görev Tamamlama</span>
+                          <span class="text-sm font-weight-bold">{{ consultant_info.todo_completion_rate }}%</span>
+                        </div>
+                        <div class="progress progress-thin">
+                          <div class="progress-bar bg-primary" style="width: {{ consultant_info.todo_completion_rate }}%"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                      <div class="col-4">
+                        <div class="h4 mb-0">{{ consultant_info.total_presentations }}</div>
+                        <small class="text-muted">Sunumlar</small>
+                      </div>
+                      <div class="col-4">
+                        <div class="h4 mb-0">{{ consultant_info.customers_count }}</div>
+                        <small class="text-muted">Müşteriler</small>
+                      </div>
+                      <div class="col-4">
+                        <div class="h4 mb-0">{{ consultant_info.properties_count }}</div>
+                        <small class="text-muted">Portföy</small>
+                      </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                      <a href="?consultant_id={{ consultant_info.profile.id }}&date_filter={{ date_filter }}" class="btn btn-sm btn-primary">Detaylı Görüntüle</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          
+          <!-- Performans Karşılaştırma Tablosu -->
+          <div class="card">
+            <div class="card-header border-0">
+              <h3 class="mb-0">Danışman Performans Karşılaştırması</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="table align-items-center table-flush table-hover-custom">
+                <thead class="thead-light">
+                  <tr>
+                    <th scope="col">Danışman</th>
+                    <th scope="col">Performans</th>
+                    <th scope="col" class="text-center">Sunumlar</th>
+                    <th scope="col" class="text-center">Başarı Oranı</th>
+                    <th scope="col" class="text-center">Müşteriler</th>
+                    <th scope="col" class="text-center">Dönüşüm Oranı</th>
+                    <th scope="col" class="text-center">Portföy</th>
+                    <th scope="col" class="text-center">Etkinlikler</th>
+                    <th scope="col" class="text-center">Görevler</th>
+                    <th scope="col" class="text-center">FSBO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for consultant_info in consultant_data %}
+                    <tr>
+                      <th scope="row">
+                        <a href="?consultant_id={{ consultant_info.profile.id }}&date_filter={{ date_filter }}">
+                          {{ consultant_info.consultant.get_full_name }}
+                        </a>
+                      </th>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <span class="mr-2">{{ consultant_info.performance_score }}</span>
+                          <div>
+                            <div class="progress" style="width: 100px; height: 5px;">
+                              <div class="progress-bar bg-{% if consultant_info.performance_score >= 70 %}success{% elif consultant_info.performance_score >= 50 %}primary{% elif consultant_info.performance_score >= 30 %}warning{% else %}danger{% endif %}" role="progressbar" style="width: {{ consultant_info.performance_score }}%"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="text-center">{{ consultant_info.total_presentations }}</td>
+                      <td class="text-center">
+                        <span class="text-{% if consultant_info.success_rate >= 70 %}success{% elif consultant_info.success_rate >= 50 %}primary{% elif consultant_info.success_rate >= 30 %}warning{% else %}danger{% endif %}">
+                          {{ consultant_info.success_rate }}%
+                        </span>
+                      </td>
+                      <td class="text-center">{{ consultant_info.customers_count }}</td>
+                      <td class="text-center">
+                        <span class="text-{% if consultant_info.conversion_rate >= 70 %}success{% elif consultant_info.conversion_rate >= 50 %}primary{% elif consultant_info.conversion_rate >= 30 %}warning{% else %}danger{% endif %}">
+                          {{ consultant_info.conversion_rate }}%
+                        </span>
+                      </td>
+                      <td class="text-center">{{ consultant_info.properties_count }}</td>
+                      <td class="text-center">{{ consultant_info.events_count }}</td>
+                      <td class="text-center">{{ consultant_info.completed_todos }}/{{ consultant_info.todos_count }}</td>
+                      <td class="text-center">{{ consultant_info.fsbo_calls }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- DETAYLI ANALİZLER SEKME İÇERİĞİ -->
+        <div class="tab-pane fade" id="analizler">
+          <!-- Mahalle Bazlı Performans -->
+          <div class="row">
+            <div class="col-12 mb-4">
+              <div class="card">
+                <div class="card-header border-0">
+                  <h3 class="mb-0">Mahalle Performans Analizi</h3>
+                </div>
+                <div class="table-responsive">
+                  <table class="table align-items-center table-flush table-hover-custom">
+                    <thead class="thead-light">
+                      <tr>
+                        <th scope="col">Mahalle</th>
+                        <th scope="col">Danışman</th>
+                        <th scope="col" class="text-center">Portföy</th>
+                        <th scope="col" class="text-center">Müşteriler</th>
+                        <th scope="col" class="text-center">Sunumlar</th>
+                        <th scope="col" class="text-center">Ortalama Fiyat</th>
+                        <th scope="col" class="text-center">Ortalama Süre</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for data in neighborhood_data %}
+                        <tr>
+                          <th scope="row">{{ data.neighborhood.name }}</th>
+                          <td>{{ data.neighborhood.consultant.get_full_name|default:"Atanmamış" }}</td>
+                          <td class="text-center">{{ data.properties_count }}</td>
+                          <td class="text-center">{{ data.customers_count }}</td>
+                          <td class="text-center">{{ data.presentations_count }}</td>
+                          <td class="text-center">{{ data.avg_price|floatformat:0 }} ₺</td>
+                          <td class="text-center">{{ data.avg_days_on_market }} gün</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Mahalle Kartları -->
+          <div class="row">
+            {% for data in neighborhood_data|slice:":6" %}
+              <div class="col-xl-4 col-md-6">
+                <div class="card mb-4 neighborhood-card">
+                  <div class="card-body">
+                    <div class="row mb-3">
+                      <div class="col">
+                        <h4 class="mb-0">{{ data.neighborhood.name }}</h4>
+                        <p class="text-muted mb-0">{{ data.neighborhood.district }}</p>
+                      </div>
+                      <div class="col-auto">
+                        <span class="badge badge-lg badge-success">{{ data.properties_count }} Portföy</span>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-6">
+                        <span class="text-muted d-block text-sm">Ortalama Fiyat</span>
+                        <span class="h5 font-weight-bold mb-0">{{ data.avg_price|floatformat:0 }} ₺</span>
+                      </div>
+                      <div class="col-6">
+                        <span class="text-muted d-block text-sm">Müşteri Sayısı</span>
+                        <span class="h5 font-weight-bold mb-0">{{ data.customers_count }}</span>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-6">
+                        <span class="text-muted d-block text-sm">Sunum Sayısı</span>
+                        <span class="h5 font-weight-bold mb-0">{{ data.presentations_count }}</span>
+                      </div>
+                      <div class="col-6">
+                        <span class="text-muted d-block text-sm">Ortalama Süre</span>
+                        <span class="h5 font-weight-bold mb-0">{{ data.avg_days_on_market }} gün</span>
+                      </div>
+                    </div>
+                    <div class="mt-3">
+                      <div class="d-flex justify-content-between mb-1">
+                        <span class="text-sm">Portföy Dağılımı</span>
+                        <span class="font-weight-bold text-sm">{{ data.properties_count }} adet</span>
+                      </div>
+                      <div class="progress progress-sm mb-3">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 100%"></div>
+                      </div>
+                      <div class="d-flex">
+                        <div class="mr-4">
+                          <span class="badge-indicator bg-success"></span>
+                          <span class="text-sm">Danışman: {{ data.neighborhood.consultant.get_full_name|default:"Atanmamış" }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% if selected_consultant %}
+        <!-- DANIŞMANA ÖZEL SEKME İÇERİĞİ -->
+        <div class="tab-pane fade" id="danismana-ozel">
+          <!-- Danışman Profil ve Performans Özeti -->
+          <div class="row">
+            <div class="col-xl-4 mb-4">
+              <div class="card">
+                <div class="card-body">
+                  <div class="text-center mb-4">
+                    <h3 class="mb-0">{{ selected_consultant.get_full_name }}</h3>
+                    <p class="text-muted">Emlak Danışmanı</p>
+                    <div class="mt-3">
+                      <div class="performance-score 
+                        {% if consultant_todo_completion_rate >= 70 %}score-excellent
+                        {% elif consultant_todo_completion_rate >= 50 %}score-good
+                        {% elif consultant_todo_completion_rate >= 30 %}score-average
+                        {% else %}score-poor{% endif %}">
+                        {{ consultant_todo_completion_rate }}%
+                      </div>
+                      <h6 class="mt-3 mb-0">Performans Puanı</h6>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row text-center">
+                    <div class="col-4">
+                      <span class="h4 font-weight-bold mb-0">{{ consultant_customer_count }}</span>
+                      <span class="d-block text-sm text-muted">Müşteri</span>
+                    </div>
+                    <div class="col-4">
+                      <span class="h4 font-weight-bold mb-0">{{ consultant_property_count }}</span>
+                      <span class="d-block text-sm text-muted">Portföy</span>
+                    </div>
+                    <div class="col-4">
+                      <span class="h4 font-weight-bold mb-0">{{ consultant_completed_presentations }}</span>
+                      <span class="d-block text-sm text-muted">Tamamlanan</span>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <span>Sunum Başarı Oranı</span>
+                      <span class="font-weight-bold">{{ consultant_conversion_rate }}%</span>
+                    </div>
+                    <div class="progress progress-thin">
+                      <div class="progress-bar bg-success" role="progressbar" style="width: {{ consultant_conversion_rate }}%"></div>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <span>Müşteri Dönüşüm Oranı</span>
+                      <span class="font-weight-bold">{{ consultant_conversion_rate }}%</span>
+                    </div>
+                    <div class="progress progress-thin">
+                      <div class="progress-bar bg-info" role="progressbar" style="width: {{ consultant_conversion_rate }}%"></div>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <span>Görev Tamamlama Oranı</span>
+                      <span class="font-weight-bold">{{ consultant_todo_completion_rate }}%</span>
+                    </div>
+                    <div class="progress progress-thin">
+                      <div class="progress-bar bg-primary" role="progressbar" style="width: {{ consultant_todo_completion_rate }}%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-8 mb-4">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h5 class="h3 mb-0">Danışman Aktiviteleri</h5>
+                </div>
+                <div class="card-body">
+                  <!-- Bugünkü Etkinlikler -->
+                  <h6>Bugünkü Etkinlikler</h6>
+                  {% if consultant_events %}
+                    <div class="table-responsive">
+                      <table class="table align-items-center table-flush">
+                        <thead class="thead-light">
+                          <tr>
+                            <th>Saat</th>
+                            <th>Başlık</th>
+                            <th>Tip</th>
+                            <th>Konum</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for event in consultant_events %}
+                            <tr>
+                              <td>{{ event.start_time|date:"H:i" }}</td>
+                              <td>{{ event.title }}</td>
+                              <td>{{ event.get_event_type_display }}</td>
+                              <td>{{ event.location }}</td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  {% else %}
+                    <p class="text-muted mb-4">Bugün için planlanmış etkinliği bulunmamaktadır.</p>
+                  {% endif %}
+                  
+                  <!-- Danışmanın Sunumları -->
+                  <h6 class="mt-4">Yaklaşan Sunumlar</h6>
+                  {% if consultant_presentations %}
+                    <div class="list-group list-group-flush">
+                      {% for presentation in consultant_presentations %}
+                        <div class="list-group-item">
+                          <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                              <h6 class="mb-1">{{ presentation.title }}</h6>
+                              <p class="text-sm text-muted mb-0">
+                                {{ presentation.customer_name }} - {{ presentation.presentation_date|date:"d.m.Y H:i" }}
+                              </p>
+                            </div>
+                            <span class="badge badge-pill badge-{% if presentation.status == 'bekliyor' %}warning{% elif presentation.status == 'tamamlandi' %}success{% else %}danger{% endif %}">
+                              {{ presentation.get_status_display }}
+                            </span>
+                          </div>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <p class="text-muted">Yaklaşan sunum bulunmamaktadır.</p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Aktivite ve Müşteri Detayları -->
+          <div class="row">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="h3 mb-0">Müşteriler ve Portföyler</h5>
+                </div>
+                <div class="card-body">
+                  <!-- Sekme Başlıkları -->
+                  <ul class="nav nav-tabs" id="consultant-detail-tabs" role="tablist">
+                    <li class="nav-item">
+                      <a class="nav-link active" id="tab-customers" data-toggle="tab" href="#customers" role="tab">
+                        Müşteriler
                       </a>
                     </li>
-                    <li class="nav-item" data-toggle="chart" data-target="#chart-sales-dark" data-update='{"data":{"datasets":[{"data":[0, 20, 5, 25, 10, 30, 15, 40, 40]}]}}' data-prefix="₺" data-suffix="bin">
-                      <a href="#" class="nav-link py-2 px-3" data-toggle="tab">
-                        <span class="d-none d-md-block">Hafta</span>
-                        <span class="d-md-none">H</span>
+                    <li class="nav-item">
+                      <a class="nav-link" id="tab-properties" data-toggle="tab" href="#properties" role="tab">
+                        Portföyler
                       </a>
                     </li>
                   </ul>
+                  
+                  <!-- Sekme İçerikleri -->
+                  <div class="tab-content mt-4">
+                    <!-- Müşteriler Sekmesi -->
+                    <div class="tab-pane fade show active" id="customers" role="tabpanel">
+                      {% if consultant_customers %}
+                        <div class="table-responsive">
+                          <table class="table align-items-center table-flush">
+                            <thead class="thead-light">
+                              <tr>
+                                <th>Müşteri</th>
+                                <th>Telefon</th>
+                                <th>Mahalle</th>
+                                <th>Durum</th>
+                                <th>Kayıt Tarihi</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for customer in consultant_customers %}
+                                <tr>
+                                  <td>{{ customer.full_name }}</td>
+                                  <td>{{ customer.phone }}</td>
+                                  <td>{{ customer.neighborhood.name }}</td>
+                                  <td>
+                                    <span class="badge badge-pill badge-{% if customer.meeting_status == 'olumlu' %}success{% elif customer.meeting_status == 'olumsuz' %}danger{% else %}warning{% endif %}">
+                                      {{ customer.get_meeting_status_display }}
+                                    </span>
+                                  </td>
+                                  <td>{{ customer.created_at|date:"d.m.Y" }}</td>
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      {% else %}
+                        <p class="text-muted">Henüz müşteri kaydı bulunmamaktadır.</p>
+                      {% endif %}
+                    </div>
+                    
+                    <!-- Portföyler Sekmesi -->
+                    <div class="tab-pane fade" id="properties" role="tabpanel">
+                      {% if consultant_properties %}
+                        <div class="table-responsive">
+                          <table class="table align-items-center table-flush">
+                            <thead class="thead-light">
+                              <tr>
+                                <th>Gayrimenkul</th>
+                                <th>Fiyat</th>
+                                <th>Durum</th>
+                                <th>Mahalle</th>
+                                <th>Kayıt Tarihi</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for property in consultant_properties %}
+                                <tr>
+                                  <td>{{ property.apartment_name }}</td>
+                                  <td>{{ property.price }} ₺</td>
+                                  <td>{{ property.get_status_display }}</td>
+                                  <td>{{ property.neighborhood.name }}</td>
+                                  <td>{{ property.created_at|date:"d.m.Y" }}</td>
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      {% else %}
+                        <p class="text-muted">Henüz portföy kaydı bulunmamaktadır.</p>
+                      {% endif %}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div class="card-body">
-              <!-- Chart -->
-              <div class="chart">
-                <!-- Chart wrapper -->
-                <canvas id="chart-sales-dark" class="chart-canvas"></canvas>
               </div>
             </div>
           </div>
         </div>
-        <div class="col-xl-4">
-          <div class="card">
+        {% endif %}
+      </div>
+      {% elif role == 'secretary' %}
+      <!-- SEKRETER PANELİ -->
+      <div class="row">
+        <!-- Danışman Seçici -->
+        <div class="col-12 mb-4">
+          <div class="card custom-card">
+            <div class="card-header bg-transparent">
+              <h6 class="text-uppercase text-muted ls-1 mb-1">Danışman Seçimi</h6>
+              <h5 class="h3 mb-0">Danışman Filtreleme</h5>
+            </div>
+            <div class="card-body">
+              <form method="get" class="mb-0">
+                <div class="row align-items-center">
+                  <div class="col-md-8">
+                    <select name="consultant_id" class="form-control" id="consultant-select">
+                      <option value="">Tüm Danışmanlar</option>
+                      {% for consultant in all_consultants %}
+                        <option value="{{ consultant.id }}" {% if selected_consultant and selected_consultant.id == consultant.user.id %}selected{% endif %}>{{ consultant.user.get_full_name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <button type="submit" class="btn btn-block btn-primary">Görüntüle</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Bugünkü Etkinlikler -->
+        <div class="col-xl-12 mb-4">
+          <div class="card custom-card">
             <div class="card-header bg-transparent">
               <div class="row align-items-center">
                 <div class="col">
-                  <h6 class="text-uppercase text-muted ls-1 mb-1">Performans</h6>
-                  <h5 class="h3 mb-0">Toplam Siparişler</h5>
+                  <h6 class="text-uppercase text-muted ls-1 mb-1">Ajanda</h6>
+                  <h5 class="h3 mb-0">Bugünkü Etkinlikler</h5>
+                </div>
+                <div class="col text-right">
+                  <a href="{% url 'calendar' %}" class="btn btn-sm btn-primary">Ajandaya Git</a>
                 </div>
               </div>
             </div>
             <div class="card-body">
-              <!-- Chart -->
-              <div class="chart">
-                <canvas id="chart-bars" class="chart-canvas"></canvas>
+              {% if today_events %}
+                <div class="table-responsive">
+                  <table class="table align-items-center table-flush">
+                    <thead class="thead-light">
+                      <tr>
+                        <th>Saat</th>
+                        <th>Başlık</th>
+                        <th>Danışman</th>
+                        <th>Tip</th>
+                        <th>Konum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for event in today_events %}
+                        <tr>
+                          <td>{{ event.start_time|date:"H:i" }}</td>
+                          <td>{{ event.title }}</td>
+                          <td>{{ event.consultant.get_full_name }}</td>
+                          <td>{{ event.get_event_type_display }}</td>
+                          <td>{{ event.location }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="text-center py-4">
+                  <p class="mb-0">Bugün için planlanmış etkinlik bulunmamaktadır.</p>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Yaklaşan Sunumlar -->
+        <div class="col-xl-12">
+          <div class="card custom-card">
+            <div class="card-header bg-transparent">
+              <h6 class="text-uppercase text-muted ls-1 mb-1">Sunumlar</h6>
+              <h5 class="h3 mb-0">Yaklaşan Sunumlar</h5>
+            </div>
+            <div class="card-body">
+              {% if upcoming_presentations %}
+                <div class="list-group list-group-flush">
+                  {% for presentation in upcoming_presentations|slice:":5" %}
+                    <div class="list-group-item">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <h6 class="mb-1">{{ presentation.title }}</h6>
+                          <p class="text-sm text-muted mb-0">
+                            {{ presentation.customer_name }} - {{ presentation.presentation_date|date:"d.m.Y H:i" }}
+                          </p>
+                          <small class="text-muted">{{ presentation.presenter.get_full_name }}</small>
+                        </div>
+                        <span class="badge badge-pill badge-{% if presentation.status == 'bekliyor' %}warning{% elif presentation.status == 'tamamlandi' %}success{% else %}danger{% endif %}">
+                          {{ presentation.get_status_display }}
+                        </span>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+                {% if upcoming_presentations|length > 5 %}
+                  <div class="text-center mt-3">
+                    <a href="{% url 'presentation_list' %}" class="btn btn-sm btn-primary">Tümünü Gör ({{ upcoming_presentations|length }})</a>
+                  </div>
+                {% endif %}
+              {% else %}
+                <div class="text-center py-4">
+                  <p class="mb-0">Yaklaşan sunum bulunmamaktadır.</p>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Danışman İletişim Bilgileri -->
+        <div class="col-xl-12 mt-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="h3 mb-0">Danışman İletişim Bilgileri</h5>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table align-items-center table-flush">
+                  <thead class="thead-light">
+                    <tr>
+                      <th>İsim</th>
+                      <th>Telefon</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for consultant in consultant_phones %}
+                      <tr>
+                        <td>{{ consultant.user__first_name }} {{ consultant.user__last_name }}</td>
+                        <td>{{ consultant.phone }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="row">
-        <div class="col-xl-8">
-          <div class="card">
-            <div class="card-header border-0">
-              <div class="row align-items-center">
-                <div class="col">
-                  <h3 class="mb-0">Sayfa Ziyaretleri</h3>
-                </div>
-                <div class="col text-right">
-                  <a href="#!" class="btn btn-sm btn-primary">Tümünü Gör</a>
-                </div>
-              </div>
-            </div>
-            <div class="table-responsive">
-              <!-- Projects table -->
-              <table class="table align-items-center table-flush">
-                <thead class="thead-light">
-                  <tr>
-                    <th scope="col">Sayfa Adı</th>
-                    <th scope="col">Ziyaretçiler</th>
-                    <th scope="col">Tekil Kullanıcılar</th>
-                    <th scope="col">Hemen Çıkma Oranı</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">
-                      /koc-gayrimenkul/
-                    </th>
-                    <td>
-                      4,569
-                    </td>
-                    <td>
-                      340
-                    </td>
-                    <td>
-                      <i class="fas fa-arrow-up text-success mr-3"></i> 46,53%
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">
-                      /koc-gayrimenkul/index.html
-                    </th>
-                    <td>
-                      3,985
-                    </td>
-                    <td>
-                      319
-                    </td>
-                    <td>
-                      <i class="fas fa-arrow-down text-warning mr-3"></i> 46,53%
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">
-                      /koc-gayrimenkul/grafikler.html
-                    </th>
-                    <td>
-                      3,513
-                    </td>
-                    <td>
-                      294
-                    </td>
-                    <td>
-                      <i class="fas fa-arrow-down text-warning mr-3"></i> 36,49%
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">
-                      /koc-gayrimenkul/tablolar.html
-                    </th>
-                    <td>
-                      2,050
-                    </td>
-                    <td>
-                      147
-                    </td>
-                    <td>
-                      <i class="fas fa-arrow-up text-success mr-3"></i> 50,87%
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">
-                      /koc-gayrimenkul/profil.html
-                    </th>
-                    <td>
-                      1,795
-                    </td>
-                    <td>
-                      190
-                    </td>
-                    <td>
-                      <i class="fas fa-arrow-down text-danger mr-3"></i> 46,53%
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+      {% endif %}
+      
+      <!-- Footer -->
+      <footer class="footer pt-0">
+        <div class="row align-items-center justify-content-lg-between">
+          <div class="col-lg-6">
+            <div class="copyright text-center text-lg-left text-muted">
+              &copy; 2023 <a href="https://www.kocgayrimenkul.com" class="font-weight-bold ml-1" target="_blank">Koç Gayrimenkul</a>
             </div>
           </div>
         </div>
-        <div class="col-xl-4">
-          <div class="card">
-            <div class="card-header border-0">
-              <div class="row align-items-center">
-                <div class="col">
-                  <h3 class="mb-0">Sosyal Medya Trafiği</h3>
-                </div>
-                <div class="col text-right">
-                  <a href="#!" class="btn btn-sm btn-primary">Tümünü Gör</a>
-                </div>
-              </div>
-            </div>
-            <div class="table-responsive">
-              <!-- Projects table -->
-              <table class="table align-items-center table-flush">
-                <thead class="thead-light">
-                  <tr>
-                    <th scope="col">Kaynak</th>
-                    <th scope="col">Ziyaretçiler</th>
-                    <th scope="col"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">
-                      Facebook
-                    </th>
-                    <td>
-                      1,480
-                    </td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <span class="mr-2">60%</span>
-                        <div>
-                          <div class="progress">
-                            <div class="progress-bar bg-gradient-danger" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 60%;"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">
-                      Facebook
-                    </th>
-                    <td>
-                      5,480
-                    </td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <span class="mr-2">70%</span>
-                        <div>
-                          <div class="progress">
-                            <div class="progress-bar bg-gradient-success" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style="width: 70%;"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">
-                      Google
-                    </th>
-                    <td>
-                      4,807
-                    </td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <span class="mr-2">80%</span>
-                        <div>
-                          <div class="progress">
-                            <div class="progress-bar bg-gradient-primary" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100" style="width: 80%;"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">
-                      Instagram
-                    </th>
-                    <td>
-                      3,678
-                    </td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <span class="mr-2">75%</span>
-                        <div>
-                          <div class="progress">
-                            <div class="progress-bar bg-gradient-info" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 75%;"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">
-                      Twitter
-                    </th>
-                    <td>
-                      2,645
-                    </td>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <span class="mr-2">30%</span>
-                        <div>
-                          <div class="progress">
-                            <div class="progress-bar bg-gradient-warning" role="progressbar" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100" style="width: 30%;"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {% include "includes/footer.html" %}
-
+      </footer>
     </div>
-
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
 {% block javascripts %}
-
-  <script src="/static/assets/vendor/chart.js/dist/Chart.min.js"></script>
-  <script src="/static/assets/vendor/chart.js/dist/Chart.extension.js"></script>
-
 {% endblock javascripts %}

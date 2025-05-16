@@ -22,6 +22,9 @@ urlpatterns = [
     # Müşteri kayıt (Santral için)
     path('musteri-kayit/', views.customer_register, name='customer_register'),
     
+    # Müşteri hatırlatmaları sayfası
+    path('musteri/hatirlatmalar/', views.customer_reminders, name='customer_reminders'),
+    
     # AJAX ile müşteri durumu güncelleme
     path('musteri/durum/<int:customer_id>/', views.update_meeting_status, name='update_meeting_status'),
     

@@ -287,14 +287,22 @@
               <div class="row">
                 <div class="col-lg-12">
                   <div class="form-group">
-                    <label class="form-control-label" for="notes">Notlar</label>
+                    <label class="form-control-label" for="id_notes">Notlar</label>
                     <div class="input-group input-group-merge">
                       <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-sticky-note"></i></span>
                       </div>
-                      <textarea id="notes" name="notes" rows="3" class="form-control" 
-                        placeholder="Müşteri ile ilgili özel notlar...">{{ form_data.notes|default:'' }}</textarea>
+                      <textarea id="id_notes" name="notes" cols="40" rows="4" class="form-control" placeholder="Müşteri ile ilgili notlar" required>{{ form_data.notes|default:'' }}</textarea>
                     </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-12">
+                  <div class="form-group">
+                    <label class="form-control-label" for="id_reminder_date">Hatırlatma Tarihi</label>
+                    <input type="date" name="reminder_date" class="form-control" id="id_reminder_date" value="{{ form_data.reminder_date|default:'' }}" />
+                    <small class="form-text text-muted">Bu tarihte sistem otomatik olarak hatırlatma bildirecek</small>
                   </div>
                 </div>
               </div>

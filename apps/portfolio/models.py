@@ -30,6 +30,7 @@ class Property(models.Model):
         ('merkezi', 'Merkezi Sistem'),
         ('klima', 'Klima'),
         ('soba', 'Soba'),
+        ('yerden', 'Yerden Isıtma'),
         ('yok', 'Isıtma Yok'),
     ]
     

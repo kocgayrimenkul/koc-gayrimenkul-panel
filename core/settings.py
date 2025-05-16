@@ -97,6 +97,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'apps.customers.views.customer_reminders_processor',  # Müşteri hatırlatmaları
             ],
         },
     },
@@ -181,6 +182,17 @@ MESSAGE_TAGS = {
 
 # Koç Gayrimenkul Özel Ayarlar
 SITE_TITLE = "Koç Gayrimenkul Panel"
+
+
+# Dosya Yükleme Limitleri
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 MB
+
+# CSRF Ayarları ve Güvenli Cookie
+CSRF_TRUSTED_ORIGINS = ['https://panelkocgayrimenkul.com', 'http://panelkocgayrimenkul.com']
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 #############################################################
 #############################################################

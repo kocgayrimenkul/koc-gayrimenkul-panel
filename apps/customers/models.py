@@ -54,6 +54,8 @@ class Customer(models.Model):
                                      default='bekliyor', verbose_name="Görüşme Durumu")
     response_date = models.DateField(verbose_name="Geri Dönüş Tarihi", null=True, blank=True, 
                                     help_text="Danışmanın müşteriye geri dönüş yaptığı tarih")
+    reminder_date = models.DateField(verbose_name="Hatırlatma Tarihi", null=True, blank=True, 
+                                    help_text="Bu tarihte sistem otomatik olarak hatırlatma bildirecek")
     notes = models.TextField(verbose_name="Notlar", blank=True, null=True)
     
     def save(self, *args, **kwargs):
@@ -70,3 +72,22 @@ class Customer(models.Model):
         verbose_name = "Müşteri"
         verbose_name_plural = "Müşteriler"
         ordering = ['-created_at']
+
+# Bildirim modeli ekleyelim
+class CustomerReminder(models.Model):
+    """Müşteri hatırlatma bildirimleri"""
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="reminders", 
+                                verbose_name="Müşteri")
+    reminder_date = models.DateField(verbose_name="Hatırlatma Tarihi")
+    message = models.TextField(verbose_name="Hatırlatma Mesajı")
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False, verbose_name="Okundu mu?")
+    is_sent = models.BooleanField(default=False, verbose_name="Gönderildi mi?")
+    
+    def __str__(self):
+        return f"{self.customer.full_name} - {self.reminder_date}"
+    
+    class Meta:
+        verbose_name = "Müşteri Hatırlatma"
+        verbose_name_plural = "Müşteri Hatırlatmaları"
+        ordering = ['-reminder_date']

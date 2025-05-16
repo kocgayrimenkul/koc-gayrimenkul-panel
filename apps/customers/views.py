@@ -10,7 +10,7 @@ from django.template import loader
 from django.urls import reverse
 from django.db.models import Q
 from django.contrib import messages
-from .models import Customer, Neighborhood
+from .models import Customer, Neighborhood, CustomerReminder
 from apps.portfolio.models import Property
 from django.utils import timezone
 from datetime import datetime, timedelta, date
@@ -29,6 +29,37 @@ def get_user_role(user):
         return user.employee_profile.role
     except EmployeeProfile.DoesNotExist:
         return None
+
+# Context Processor - Müşteri hatırlatmalarını tüm şablonlarda kullanılabilir hale getirir
+def customer_reminders_processor(request):
+    """Giriş yapmış kullanıcının müşteri hatırlatmalarını context'e ekler"""
+    if hasattr(request, 'user') and request.user.is_authenticated:
+        today = timezone.now().date()
+        
+        # Kullanıcının rolünü al
+        role = get_user_role(request.user)
+        
+        # Bugün ve gelecekteki hatırlatmaları getir
+        if request.user.is_superuser or role in ['admin', 'manager']:
+            # Yöneticiler ve müdürler tüm hatırlatmaları görebilir
+            reminders = CustomerReminder.objects.filter(
+                reminder_date__gte=today,
+                is_sent=False
+            ).order_by('reminder_date')[:10]  # Sadece ilk 10 hatırlatma
+        else:
+            # Danışmanlar sadece kendi müşterilerine ait hatırlatmaları görebilir
+            reminders = CustomerReminder.objects.filter(
+                reminder_date__gte=today,
+                is_sent=False,
+                customer__consultant=request.user
+            ).order_by('reminder_date')[:10]  # Sadece ilk 10 hatırlatma
+        
+        return {
+            'customer_reminders': reminders
+        }
+    return {
+        'customer_reminders': []
+    }
 
 @login_required(login_url="/login/")
 def customer_list(request):
@@ -74,6 +105,11 @@ def customer_list(request):
         week_ago = today - timedelta(days=7)
         customers = customers.filter(response_date__gte=week_ago, response_date__lte=today)
     
+    # Hatırlatma tarihi filtreleme
+    has_reminder = request.GET.get('has_reminder', '') == 'true'
+    if has_reminder:
+        customers = customers.filter(reminder_date__isnull=False)
+    
     # Mahalle filtresi
     if role in ['admin', 'manager', 'secretary']:
         neighborhoods = Neighborhood.objects.all()
@@ -111,6 +147,7 @@ def customer_list(request):
         'filter_response': filter_response,
         'filter_neighborhood': filter_neighborhood,
         'filter_source': filter_source,
+        'has_reminder': has_reminder,
         'olumlu_musteri_sayisi': olumlu_musteri_sayisi,
         'olumsuz_musteri_sayisi': olumsuz_musteri_sayisi,
         'bekleyen_musteri_sayisi': bekleyen_musteri_sayisi,
@@ -521,3 +558,44 @@ def consultants_by_neighborhood(request, neighborhood_id):
             return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'Geçersiz istek'}, status=400)
+
+@login_required(login_url="/login/")
+def customer_reminders(request):
+    """Müşteri hatırlatmaları görünümü"""
+    
+    role = get_user_role(request.user)
+    today = timezone.now().date()
+    
+    # Role göre hatırlatmaları getir
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
+        # Yönetici, Müdür ve Santral tüm hatırlatmaları görebilir
+        reminders = CustomerReminder.objects.all().order_by('reminder_date')
+    else:
+        # Danışman sadece kendi müşterilerine ait hatırlatmaları görebilir
+        reminders = CustomerReminder.objects.filter(
+            customer__consultant=request.user
+        ).order_by('reminder_date')
+    
+    # Duruma göre filtreleme
+    status = request.GET.get('status', '')
+    if status == 'today':
+        reminders = reminders.filter(reminder_date=today)
+    elif status == 'upcoming':
+        reminders = reminders.filter(reminder_date__gt=today)
+    elif status == 'past':
+        reminders = reminders.filter(reminder_date__lt=today)
+    elif status == 'sent':
+        reminders = reminders.filter(is_sent=True)
+    elif status == 'unsent':
+        reminders = reminders.filter(is_sent=False)
+    
+    context = {
+        'segment': 'musteri_hatirlatmalari',
+        'reminders': reminders,
+        'filter_status': status,
+        'today': today,
+        'user_role': role,
+    }
+    
+    html_template = loader.get_template('customers/customer_reminders.html')
+    return HttpResponse(html_template.render(context, request))

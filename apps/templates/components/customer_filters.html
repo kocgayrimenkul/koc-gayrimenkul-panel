@@ -71,6 +71,22 @@
           </div>
         </div>
         
+        <!-- Hatırlatma Tarihi -->
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#reminderCollapse" aria-expanded="true">
+            <div><i class="ni ni-bell-55"></i> Hatırlatma Tarihi</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse show" id="reminderCollapse">
+            <div class="pt-2">
+              <div class="custom-control custom-checkbox mb-3">
+                <input type="checkbox" class="custom-control-input" id="has_reminder" name="has_reminder" value="true" {% if has_reminder %}checked{% endif %}>
+                <label class="custom-control-label" for="has_reminder">Hatırlatma Tarihi Olanlar</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <!-- Tarih Aralığı -->
         <div class="filter-section mb-3">
           <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#dateCollapse" aria-expanded="true">

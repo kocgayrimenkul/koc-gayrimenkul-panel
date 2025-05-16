@@ -14,7 +14,7 @@ class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
         fields = ['full_name', 'phone', 'neighborhood', 'source', 
-                 'meeting_result', 'notes']
+                 'meeting_result', 'notes', 'reminder_date']
         widgets = {
             'full_name': forms.TextInput(attrs={"class": "form-control", "placeholder": "Adı Soyadı"}),
             'phone': forms.TextInput(attrs={"class": "form-control", "placeholder": "Telefon"}),
@@ -22,6 +22,7 @@ class CustomerForm(forms.ModelForm):
             'source': forms.Select(attrs={"class": "form-control"}),
             'meeting_result': forms.Textarea(attrs={"class": "form-control", "placeholder": "Görüşme Sonucu", "rows": 4}),
             'notes': forms.Textarea(attrs={"class": "form-control", "placeholder": "Müşteri ile ilgili notlar", "rows": 4}),
+            'reminder_date': forms.DateInput(attrs={"class": "form-control", "type": "date", "placeholder": "Hatırlatma Tarihi"}),
         }
 
 
@@ -31,7 +32,7 @@ class CustomerEditForm(forms.ModelForm):
     class Meta:
         model = Customer
         fields = ['full_name', 'phone', 'neighborhood', 'source', 
-                 'meeting_status', 'meeting_result', 'response_date', 'notes']
+                 'meeting_status', 'meeting_result', 'response_date', 'reminder_date', 'notes']
         widgets = {
             'full_name': forms.TextInput(attrs={"class": "form-control", "placeholder": "Adı Soyadı"}),
             'phone': forms.TextInput(attrs={"class": "form-control", "placeholder": "Telefon"}),
@@ -40,6 +41,7 @@ class CustomerEditForm(forms.ModelForm):
             'meeting_status': forms.Select(attrs={"class": "form-control"}),
             'meeting_result': forms.Textarea(attrs={"class": "form-control", "placeholder": "Görüşme Sonucu", "rows": 4}),
             'response_date': forms.DateInput(attrs={"class": "form-control", "type": "date", "placeholder": "Geri Dönüş Tarihi"}),
+            'reminder_date': forms.DateInput(attrs={"class": "form-control", "type": "date", "placeholder": "Hatırlatma Tarihi"}),
             'notes': forms.Textarea(attrs={"class": "form-control", "placeholder": "Müşteri ile ilgili notlar", "rows": 4}),
         }
 

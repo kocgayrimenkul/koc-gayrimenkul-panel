@@ -310,6 +310,14 @@
             <p class="mb-0">{{ customer.notes|linebreaks }}</p>
           </div>
           {% endif %}
+
+          <!-- Hatırlatma Tarihi Ekleniyor -->
+          {% if customer.reminder_date %}
+          <div class="detail-item">
+            <span class="icon"><i class="fas fa-bell"></i></span>
+            <strong>Hatırlatma Tarihi:</strong> {{ customer.reminder_date|date:"d.m.Y" }}
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
