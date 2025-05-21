@@ -106,7 +106,7 @@ class Property(models.Model):
     dues = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Aidat", null=True, blank=True)
     
     # Yeni detay bilgileri
-    floor_count = models.PositiveSmallIntegerField(verbose_name="Kat Sayısı", null=True, blank=True)
+    floor_count = models.CharField(max_length=20, verbose_name="Kat Sayısı", null=True, blank=True)
     bathroom_count = models.PositiveSmallIntegerField(verbose_name="Banyo Sayısı", null=True, blank=True)
     usage_status = models.CharField(max_length=20, choices=USAGE_STATUS_CHOICES, verbose_name="Kullanım Durumu", blank=True)
     is_furnished = models.BooleanField(default=False, verbose_name="Eşyalı")

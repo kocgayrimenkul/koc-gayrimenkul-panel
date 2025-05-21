@@ -184,6 +184,8 @@ def property_create(request):
         print(f"has_photos: {request.POST.get('has_photos', 'Boş')}")
         print(f"key_holder: {request.POST.get('key_holder', 'Boş')}")
         print(f"listing_date: {request.POST.get('listing_date', 'Boş')}")
+        print(f"floor_count: {request.POST.get('floor_count', 'Boş')}")
+        print(f"usage_status: {request.POST.get('usage_status', 'Boş')}")
         
         # Resim sayısı
         if request.FILES:
@@ -203,6 +205,7 @@ def property_create(request):
         room_count = request.POST.get('room_count', '')
         usage_status = request.POST.get('usage_status', '')
         floor_count = request.POST.get('floor_count', '')
+        floor = request.POST.get('floor', '')
         
         # Branda/Fotoğraf durumu
         has_banner = request.POST.get('has_banner', '')
@@ -237,7 +240,7 @@ def property_create(request):
                 room_count=room_count,
                 usage_status=usage_status,
                 floor_count=floor_count,
-                floor=request.POST.get('floor', ''),
+                floor=floor,
                 consultant=request.user,
                 banner_status=banner_status,
                 photo_status=photo_status,
@@ -291,6 +294,7 @@ def property_create(request):
             print(f"Net Alan: {property_obj.net_area}")
             print(f"Oda Sayısı: {property_obj.room_count}")
             print(f"Kat Sayısı: {property_obj.floor_count}")
+            print(f"Bulunduğu Kat: {property_obj.floor}")
             print(f"Isıtma: {property_obj.heating}")
             print(f"Balkon: {'var' if property_obj.has_balcony else 'yok'}")
             print(f"Aidat: {property_obj.dues}")
@@ -467,6 +471,9 @@ def property_update(request, property_id):
         print(f"has_photos: {request.POST.get('has_photos', 'Boş')}")
         print(f"key_holder: {request.POST.get('key_holder', 'Boş')}")
         print(f"listing_date: {request.POST.get('listing_date', 'Boş')}")
+        print(f"floor_count: {request.POST.get('floor_count', 'Boş')}")
+        print(f"floor: {request.POST.get('floor', 'Boş')}")
+        print(f"usage_status: {request.POST.get('usage_status', 'Boş')}")
         
         # Çevre bilgileri
         place_names = request.POST.getlist('place_name')
@@ -494,6 +501,8 @@ def property_update(request, property_id):
         property_obj.room_count = request.POST.get('room_count', '')
         property_obj.usage_status = request.POST.get('usage_status', '')
         property_obj.floor_count = request.POST.get('floor_count', '')
+        property_obj.floor = request.POST.get('floor', '')
+        property_obj.map_coordinates = request.POST.get('map_coordinates', '')
         
         # Branda/Fotoğraf durumu
         has_banner = request.POST.get('has_banner', '')
@@ -509,7 +518,7 @@ def property_update(request, property_id):
             property_obj.photo_status = 'cekilmedi'
         
         # Detay bilgileri güncelle
-        if property_obj.property_type == 'daire':
+        if property_obj.property_type in ['daire', 'mustakil', 'dublex']:
             property_obj.gross_area = request.POST.get('gross_area', None) or None
             property_obj.net_area = request.POST.get('net_area', None) or None
             property_obj.heating = request.POST.get('heating', '')
@@ -523,6 +532,9 @@ def property_update(request, property_id):
         property_obj.deed_status = request.POST.get('deed_status', '')
         property_obj.is_suitable_for_credit = 'is_suitable_for_credit' in request.POST
         property_obj.is_bargainable = 'is_bargainable' in request.POST
+        property_obj.is_furnished = 'is_furnished' in request.POST
+        property_obj.is_in_site = 'is_in_site' in request.POST
+        property_obj.is_exchangeable = 'is_exchangeable' in request.POST
         
         # Portföy sahibi bilgilerini güncelle
         property_obj.owner_name = request.POST.get('owner_name', '')
