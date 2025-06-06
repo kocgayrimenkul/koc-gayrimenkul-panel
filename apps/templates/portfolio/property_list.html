@@ -1137,7 +1137,7 @@
     
     // Filtre başlık tıklamaları stil düzenlemesi
     $('.filter-title').click(function() {
-      $(this).find('i.fas.fa-chevron-down').toggleClass('fa-chevron-down fa-chevron-up');
+      $(this).find('i.fas.fa-chevron-down, i.fas.fa-chevron-up').toggleClass('fa-chevron-down fa-chevron-up');
     });
     
     // Tüm filtreleri aç/kapat
@@ -1174,6 +1174,51 @@
       if(!$('#type_daire').is(':checked') && !$('#type_arsa').is(':checked') && !$('#type_isyeri').is(':checked')) {
         $('#type_all').prop('checked', true);
       }
+    });
+    
+    // Formu göndermeden önce form alanlarını düzenle
+    $('#filterForm').submit(function() {
+      // Eğer "Tümü" seçiliyse type parametresini temizle
+      if($('#type_all').is(':checked')) {
+        $('input[name="type"]').remove();
+      }
+      
+      // Boş değerleri temizle
+      $(this).find('input, select').each(function() {
+        if($(this).val() === '' || $(this).val() === null) {
+          $(this).prop('disabled', true);
+        }
+      });
+      
+      // Checkbox'lar için kontrol
+      if(!$('#feature_credit').is(':checked')) {
+        $('#feature_credit').prop('disabled', true);
+      }
+      
+      if(!$('#feature_bargain').is(':checked')) {
+        $('#feature_bargain').prop('disabled', true);
+      }
+      
+      if(!$('#feature_furnished').is(':checked')) {
+        $('#feature_furnished').prop('disabled', true);
+      }
+      
+      if(!$('#feature_in_site').is(':checked')) {
+        $('#feature_in_site').prop('disabled', true);
+      }
+      
+      return true;
+    });
+    
+    // Arama formu gönderilmeden önce mevcut filtreleri koru
+    $('#searchForm').submit(function() {
+      // Boş değerleri temizle
+      $(this).find('input[name="search"]').each(function() {
+        if($(this).val() === '') {
+          $(this).prop('disabled', true);
+        }
+      });
+      return true;
     });
     
     // Danışman değiştirme

@@ -7,14 +7,28 @@
     </div>
     <div class="d-flex align-items-center">
       {% if show_search|default:True %}
-      <div class="input-group input-group-sm mr-3" style="width: 250px;">
-        <input type="text" class="form-control" placeholder="{{ search_placeholder|default:'İlan başlığında ara...' }}">
-        <div class="input-group-append">
-          <button class="btn btn-outline-koc-red" type="button">
-            <i class="fas fa-search"></i>
-          </button>
+      <form id="searchForm" method="get" class="mr-3" style="width: 250px;">
+        <!-- Mevcut filtreleri gizli alanlar olarak koru -->
+        {% if request.GET.type %}<input type="hidden" name="type" value="{{ request.GET.type }}">{% endif %}
+        {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
+        {% if request.GET.neighborhood %}<input type="hidden" name="neighborhood" value="{{ request.GET.neighborhood }}">{% endif %}
+        {% if request.GET.min_price %}<input type="hidden" name="min_price" value="{{ request.GET.min_price }}">{% endif %}
+        {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
+        {% if request.GET.consultant %}<input type="hidden" name="consultant" value="{{ request.GET.consultant }}">{% endif %}
+        {% if request.GET.is_suitable_for_credit %}<input type="hidden" name="is_suitable_for_credit" value="{{ request.GET.is_suitable_for_credit }}">{% endif %}
+        {% if request.GET.is_bargainable %}<input type="hidden" name="is_bargainable" value="{{ request.GET.is_bargainable }}">{% endif %}
+        {% if request.GET.photo_status %}<input type="hidden" name="photo_status" value="{{ request.GET.photo_status }}">{% endif %}
+        {% if request.GET.page %}<input type="hidden" name="page" value="1">{% endif %}
+        
+        <div class="input-group input-group-sm">
+          <input type="text" class="form-control" name="search" placeholder="{{ search_placeholder|default:'İlan başlığında ara...' }}" value="{{ request.GET.search|default:'' }}">
+          <div class="input-group-append">
+            <button class="btn btn-outline-koc-red" type="submit">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
         </div>
-      </div>
+      </form>
       {% endif %}
       {% if show_view_toggle|default:True %}
       <div class="btn-group view-toggle" role="group">

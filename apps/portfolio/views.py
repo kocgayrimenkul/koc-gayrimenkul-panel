@@ -23,6 +23,7 @@ def property_list(request):
     """Gayrimenkul listesi görünümü"""
     
     # Filtreleme
+    search = request.GET.get('search', '')
     property_type = request.GET.get('type', '')
     status = request.GET.get('status', '')
     neighborhood_id = request.GET.get('neighborhood', '')
@@ -36,9 +37,24 @@ def property_list(request):
     usage_status = request.GET.get('usage_status', '')
     is_furnished = request.GET.get('is_furnished', '')
     is_in_site = request.GET.get('is_in_site', '')
+    photo_status = request.GET.get('photo_status', '')
+    is_suitable_for_credit = request.GET.get('is_suitable_for_credit', '')
+    is_bargainable = request.GET.get('is_bargainable', '')
     
     # Başlangıç sorgusu
     properties_list = Property.objects.filter(is_active=True)
+    
+    # Arama sorgusu
+    if search:
+        properties_list = properties_list.filter(
+            Q(apartment_name__icontains=search) | 
+            Q(description__icontains=search) | 
+            Q(address__icontains=search) | 
+            Q(owner_name__icontains=search) | 
+            Q(owner_listing_number__icontains=search) |
+            Q(website_listing_number__icontains=search) |
+            Q(emlakjet_listing_number__icontains=search)
+        )
     
     # Filtreleri uygula
     if property_type:
@@ -77,6 +93,12 @@ def property_list(request):
         properties_list = properties_list.filter(is_in_site=True)
     elif is_in_site == 'false':
         properties_list = properties_list.filter(is_in_site=False)
+    if photo_status:
+        properties_list = properties_list.filter(photo_status=photo_status)
+    if is_suitable_for_credit == 'true':
+        properties_list = properties_list.filter(is_suitable_for_credit=True)
+    if is_bargainable == 'true':
+        properties_list = properties_list.filter(is_bargainable=True)
     
     # Sıralama
     properties_list = properties_list.order_by('-created_at')
@@ -106,6 +128,7 @@ def property_list(request):
         'neighborhoods': neighborhoods,
         'consultants': consultants,
         'filters': {
+            'search': search,
             'property_type': property_type,
             'status': status,
             'neighborhood_id': neighborhood_id,
@@ -119,6 +142,9 @@ def property_list(request):
             'usage_status': usage_status,
             'is_furnished': is_furnished,
             'is_in_site': is_in_site,
+            'photo_status': photo_status,
+            'is_suitable_for_credit': is_suitable_for_credit,
+            'is_bargainable': is_bargainable,
         }
     }
     
