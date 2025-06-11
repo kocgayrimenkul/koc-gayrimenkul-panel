@@ -24,7 +24,7 @@ class PropertyForm(forms.ModelForm):
             'branda_number', 'key_holder', 'photo_status', 'listing_date',
             'floor_count', 'bathroom_count', 'usage_status', 'is_furnished',
             'is_in_site', 'is_exchangeable', 'category', 'listing_type',
-            'banner_status', 'consultant'
+            'banner_status', 'consultant', 'is_featured'
         ]
         widgets = {
             'apartment_name': forms.TextInput(attrs={"class": "form-control", "placeholder": "Daire Adı"}),
@@ -66,6 +66,7 @@ class PropertyForm(forms.ModelForm):
             'listing_type': forms.Select(attrs={"class": "form-control"}),
             'banner_status': forms.Select(attrs={"class": "form-control"}),
             'consultant': forms.Select(attrs={"class": "form-control"}),
+            'is_featured': forms.CheckboxInput(attrs={"class": "custom-control-input"}),
         }
 
 

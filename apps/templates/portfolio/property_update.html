@@ -799,7 +799,41 @@
               </div>
             </div>
             
-            <!-- BÖLÜM 5: FOTOĞRAF VE ANALİZ -->
+            <!-- BÖLÜM 5: EK ÖZELLİKLER -->
+            <div class="section-header">
+              <h4 class="section-title">
+                <i class="ni ni-settings-gear-65 mr-2"></i>Ek Özellikler
+              </h4>
+            </div>
+
+            <div class="form-card">
+              <div class="pl-lg-4">
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="is_featured" name="is_featured" {% if property.is_featured %}checked{% endif %}>
+                      <label class="custom-control-label" for="is_featured">
+                        <i class="fas fa-star text-warning mr-2"></i>
+                        Öne Çıkan Gayrimenkul
+                      </label>
+                      <div class="field-help">Bu gayrimenkul ana sayfada ve öne çıkan listelerinde görüntülenecektir.</div>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" {% if property.is_active %}checked{% endif %}>
+                      <label class="custom-control-label" for="is_active">
+                        <i class="fas fa-check-circle text-success mr-2"></i>
+                        Aktif Gayrimenkul
+                      </label>
+                      <div class="field-help">Bu gayrimenkul sitede görüntülenecektir.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- BÖLÜM 6: FOTOĞRAF VE ANALİZ -->
             <div class="section-header">
               <h4 class="section-title">
                 <i class="ni ni-image mr-2"></i>Fotoğraf ve Analiz

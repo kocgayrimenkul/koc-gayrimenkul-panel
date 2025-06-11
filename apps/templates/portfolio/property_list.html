@@ -512,7 +512,12 @@
                 <th scope="row">
                   <div class="media align-items-center">
                     <div class="media-body">
-                      <span class="name mb-0 text-sm font-weight-bold">{{ property.apartment_name }}</span>
+                      <span class="name mb-0 text-sm font-weight-bold">
+                        {% if property.is_featured %}
+                          <i class="fas fa-star text-warning mr-2" data-toggle="tooltip" title="Öne Çıkan Gayrimenkul"></i>
+                        {% endif %}
+                        {{ property.apartment_name }}
+                      </span>
                       <small class="d-block text-muted">{{ property.address|truncatechars:40 }}</small>
                       {% if property.sahibinden_link %}
                       <small class="d-block">
@@ -805,7 +810,12 @@
                 <i class="ni ni-building text-muted" style="font-size: 3rem;"></i>
               </div>
               <div class="card-body">
-                <h5 class="card-title text-truncate">{{ property.apartment_name }}</h5>
+                <h5 class="card-title text-truncate">
+                  {% if property.is_featured %}
+                    <i class="fas fa-star text-warning mr-2" data-toggle="tooltip" title="Öne Çıkan Gayrimenkul"></i>
+                  {% endif %}
+                  {{ property.apartment_name }}
+                </h5>
                 <p class="text-muted small mb-2 text-truncate">{{ property.address }}</p>
                 <div class="mb-2">
                   <strong class="d-block">{{ property.owner_name|default:"Bilinmiyor" }}</strong>

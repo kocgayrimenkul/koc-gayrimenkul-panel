@@ -10,6 +10,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),                      # Django admin
+    path('api/', include('apps.api.urls')),               # REST API
     path("", include("apps.authentication.urls")),        # Auth - giriş / kayıt
     path("", include("apps.customers.urls")),             # Müşteri yönetimi
     path("", include("apps.portfolio.urls")),             # Portföy yönetimi

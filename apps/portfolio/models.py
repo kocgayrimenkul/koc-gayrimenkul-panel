@@ -141,6 +141,7 @@ class Property(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True, verbose_name="Aktif")
+    is_featured = models.BooleanField(default=False, verbose_name="Öne Çıkan")
     
     def __str__(self):
         return self.apartment_name if self.apartment_name else "İsimsiz Gayrimenkul"
