@@ -15,7 +15,7 @@ class PropertyForm(forms.ModelForm):
     class Meta:
         model = Property
         fields = [
-            'apartment_name', 'description', 'property_type', 'status', 'price',
+            'apartment_name', 'web_title', 'description', 'property_type', 'status', 'price',
             'neighborhood', 'address', 'map_coordinates', 'gross_area', 'net_area',
             'room_count', 'floor', 'building_age', 'heating', 'has_balcony',
             'dues', 'deed_status', 'is_suitable_for_credit', 'is_bargainable',
@@ -28,6 +28,7 @@ class PropertyForm(forms.ModelForm):
         ]
         widgets = {
             'apartment_name': forms.TextInput(attrs={"class": "form-control", "placeholder": "Daire Adı"}),
+            'web_title': forms.TextInput(attrs={"class": "form-control", "placeholder": "Web Başlığı"}),
             'description': forms.Textarea(attrs={"class": "form-control", "placeholder": "Detay", "rows": 4}),
             'property_type': forms.Select(attrs={"class": "form-control"}),
             'status': forms.Select(attrs={"class": "form-control"}),

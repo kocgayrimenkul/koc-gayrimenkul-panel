@@ -85,6 +85,8 @@ class Property(models.Model):
     
     # Temel Bilgiler
     apartment_name = models.CharField(max_length=200, verbose_name="Daire Adı", null=True)
+    web_title = models.CharField(max_length=250, verbose_name="Web Sitesi İlan Başlığı", blank=True, 
+                                help_text="Web sitesinde görünecek ilan başlığı (boş bırakılırsa daire adı kullanılır)")
     description = models.TextField(verbose_name="Detay", blank=True)
     property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, verbose_name="Emlak Tipi")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, verbose_name="Durum")

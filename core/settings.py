@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'apps.employees',        # Çalışan yönetimi
     'apps.presentation',     # Daire sunumu
     'apps.fsbo',             # FSBO yönetimi
+    'apps.careers',          # Kariyer yönetimi
 ]
 
 # Django 3.2+ için modellerdeki otomatik primary key tipi ayarı

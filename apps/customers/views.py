@@ -225,6 +225,9 @@ def customer_edit(request, customer_id):
     else:
         neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
     
+    # Daire tipi portföyleri getir
+    properties = Property.objects.filter(property_type='daire', is_active=True).order_by('-created_at')
+    
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '')
         phone = request.POST.get('phone', '')
@@ -241,6 +244,7 @@ def customer_edit(request, customer_id):
                 'segment': 'musteri',
                 'customer': customer,
                 'neighborhoods': neighborhoods,
+                'properties': properties,
                 'user_role': role,
             })
         
@@ -282,6 +286,7 @@ def customer_edit(request, customer_id):
         'segment': 'musteri',
         'customer': customer,
         'neighborhoods': neighborhoods,
+        'properties': properties,
         'user_role': role,
     }
     

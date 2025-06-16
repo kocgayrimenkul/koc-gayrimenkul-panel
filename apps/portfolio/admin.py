@@ -20,15 +20,15 @@ class PropertyEnvironmentInline(admin.TabularInline):
 # Ana modeller
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ['apartment_name', 'property_type', 'status', 'price', 'neighborhood', 'created_at', 'is_active']
+    list_display = ['apartment_name', 'web_title', 'property_type', 'status', 'price', 'neighborhood', 'created_at', 'is_active']
     list_filter = ['status', 'property_type', 'is_active', 'neighborhood', 'consultant']
-    search_fields = ['apartment_name', 'address', 'owner_name', 'owner_phone']
+    search_fields = ['apartment_name', 'web_title', 'address', 'owner_name', 'owner_phone']
     readonly_fields = ['created_at', 'updated_at']
     inlines = [PropertyImageInline, PropertyEnvironmentInline]
     fieldsets = [
         ('Temel Bilgiler', {
             'fields': [
-                'apartment_name', 'description', 'property_type', 'status', 'price', 'category', 'listing_type',
+                'apartment_name', 'web_title', 'description', 'property_type', 'status', 'price', 'category', 'listing_type',
                 'is_active'
             ]
         }),

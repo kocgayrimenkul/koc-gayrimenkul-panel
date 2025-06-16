@@ -93,6 +93,44 @@
     font-size: 18px;
   }
 </style>
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+  /* Select2 özel stilleri */
+  .select2-container--default .select2-selection--single {
+    height: calc(2.75rem + 2px);
+    padding: 0.625rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.375rem;
+    border: 1px solid #cad1d7;
+  }
+  
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.5;
+    padding-left: 0;
+    color: #8898aa;
+  }
+  
+  .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: calc(2.75rem + 2px);
+  }
+  
+  .input-group .select2-container {
+    width: auto !important;
+    flex: 1 1 auto;
+  }
+  
+  .select2-dropdown {
+    border-color: #cad1d7;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px rgba(50, 50, 93, 0.15), 0 1px 0 rgba(0, 0, 0, 0.02);
+  }
+  
+  .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--koc-red);
+  }
+</style>
 {% endblock stylesheets %}
 
 {% block content %}
@@ -230,6 +268,24 @@
               <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
+                    <label class="form-control-label" for="property_id">Portföydeki Daire</label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-home"></i></span>
+                      </div>
+                      <select id="property_id" name="property_id" class="form-control select2-property">
+                        <option value="">Daire Seçiniz (Opsiyonel)</option>
+                        {% for property in properties %}
+                          <option value="{{ property.id }}">
+                            {{ property.web_title|default:property.apartment_name }} - {{ property.neighborhood.name }} ({{ property.price|floatformat:0 }} ₺)
+                          </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
                     <label class="form-control-label" for="response_date">Geri Dönüş Tarihi</label>
                     <div class="input-group input-group-merge">
                       <div class="input-group-prepend">
@@ -241,6 +297,8 @@
                     <small class="form-text text-muted">Danışmanın müşteriye geri dönüş yaptığı tarih</small>
                   </div>
                 </div>
+              </div>
+              <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
                     <label class="form-control-label" for="meeting_status">Görüşme Durumu</label>
@@ -358,8 +416,29 @@
 
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
   $(document).ready(function() {
+    // Select2 - Portföydeki Daire
+    $('.select2-property').select2({
+      placeholder: "Daire Seçiniz (Opsiyonel)",
+      allowClear: true,
+      width: '100%',
+      language: {
+        noResults: function() {
+          return "Sonuç bulunamadı";
+        },
+        searching: function() {
+          return "Aranıyor...";
+        }
+      }
+    });
+    
+    // Input group ile uyumlu hale getir
+    $('.select2-property').on('select2:open', function() {
+      document.querySelector('.select2-search__field').focus();
+    });
+    
     // Telefon için maske
     $('#phone').on('input', function() {
       var value = $(this).val().replace(/\D/g, '');

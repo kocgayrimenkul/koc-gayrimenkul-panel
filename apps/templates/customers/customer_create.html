@@ -276,7 +276,7 @@
                         <option value="">Daire Seçiniz (Opsiyonel)</option>
                         {% for property in properties %}
                           <option value="{{ property.id }}" {% if form_data.property_id == property.id|stringformat:"i" %}selected{% endif %}>
-                            {{ property.title }} - {{ property.address|truncatechars:20 }}
+                            {{ property.web_title|default:property.apartment_name }} - {{ property.neighborhood.name }} ({{ property.price|floatformat:0 }} ₺)
                           </option>
                         {% endfor %}
                       </select>

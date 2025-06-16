@@ -7,6 +7,7 @@ from rest_framework import serializers
 from apps.portfolio.models import Property, PropertyImage, PropertyEnvironment
 from apps.fsbo.models import FSBO
 from apps.customers.models import Neighborhood
+from apps.careers.models import JobApplication, JobPosting
 from django.utils import timezone
 from datetime import datetime
 
@@ -356,4 +357,58 @@ class FSBOSerializer(serializers.ModelSerializer):
             'id', 'full_name', 'phone', 'result', 'consultant', 'consultant_name',
             'created_by_name', 'link1', 'link2', 'reminder_status', 
             'reminder_date', 'reminder_time', 'notes', 'created_at'
+        ]
+
+
+# Careers Serializers
+class JobApplicationSerializer(serializers.ModelSerializer):
+    """İş Başvurusu Serializer"""
+    cv_filename = serializers.CharField(read_only=True)
+    position_display = serializers.CharField(source='get_position_display', read_only=True)
+    experience_display = serializers.CharField(source='get_experience_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = JobApplication
+        fields = [
+            'id', 'first_name', 'last_name', 'email', 'phone',
+            'position', 'position_display', 'experience', 'experience_display',
+            'cover_letter', 'cv_file', 'cv_filename', 'status', 'status_display',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'status', 'created_at', 'updated_at']
+    
+    def validate_cv_file(self, value):
+        """CV dosya formatı kontrolü"""
+        if value:
+            valid_extensions = ['pdf', 'doc', 'docx']
+            file_extension = value.name.split('.')[-1].lower()
+            if file_extension not in valid_extensions:
+                raise serializers.ValidationError(
+                    "CV dosyası PDF, DOC veya DOCX formatında olmalıdır."
+                )
+            
+            # Dosya boyutu kontrolü (max 5MB)
+            if value.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError(
+                    "CV dosyası 5MB'dan büyük olamaz."
+                )
+        
+        return value
+
+
+class JobPostingSerializer(serializers.ModelSerializer):
+    """İş İlanı Serializer"""
+    department_display = serializers.CharField(source='get_department_display', read_only=True)
+    employment_type_display = serializers.CharField(source='get_employment_type_display', read_only=True)
+    is_deadline_passed = serializers.BooleanField(read_only=True)
+    
+    class Meta:
+        model = JobPosting
+        fields = [
+            'id', 'title', 'department', 'department_display',
+            'employment_type', 'employment_type_display', 'location',
+            'description', 'requirements', 'qualifications', 'benefits',
+            'salary_range', 'experience_required', 'deadline',
+            'is_deadline_passed', 'created_at'
         ] 
