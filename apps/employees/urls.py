@@ -12,6 +12,7 @@ urlpatterns = [
     path('calisan/ekle/', views.employee_create, name='employee_create'),
     path('calisan/<int:employee_id>/', views.employee_edit, name='employee_edit'),
     path('calisan/<int:employee_id>/sil/', views.employee_delete, name='employee_delete'),
+    path('calisan/<int:employee_id>/durum-degistir/', views.employee_status_toggle, name='employee_status_toggle'),
     
     # Şifre yönetimi
     path('calisan/<int:employee_id>/sifre-degistir/', views.reset_password, name='reset_password'),

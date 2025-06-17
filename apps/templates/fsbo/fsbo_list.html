@@ -453,12 +453,30 @@
                 </div>
               </div>
               <div class="row">
-                <div class="col-md-4">
+                <div class="col-lg-6">
                   <div class="form-group">
-                    <label for="result">Sonuç</label>
-                    {{ form.result }}
+                    <label class="form-control-label" for="id_result">İlan Sonucu</label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                      </div>
+                      {{ form.result }}
+                    </div>
                   </div>
                 </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="id_contact_type">İletişim Türü</label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                      </div>
+                      {{ form.contact_type }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
                 {% if user_role == 'admin' or user_role == 'manager' %}
                 <div class="col-md-4">
                   <div class="form-group">

@@ -439,12 +439,19 @@
                         <option value="">Seçiniz</option>
                         <option value="1+0" {% if property.room_count == '1+0' %}selected{% endif %}>1+0</option>
                         <option value="1+1" {% if property.room_count == '1+1' %}selected{% endif %}>1+1</option>
+                        <option value="1.5+1" {% if property.room_count == '1.5+1' %}selected{% endif %}>1.5+1</option>
                         <option value="2+1" {% if property.room_count == '2+1' %}selected{% endif %}>2+1</option>
+                        <option value="2.5+1" {% if property.room_count == '2.5+1' %}selected{% endif %}>2.5+1</option>
                         <option value="3+1" {% if property.room_count == '3+1' %}selected{% endif %}>3+1</option>
+                        <option value="3.5+1" {% if property.room_count == '3.5+1' %}selected{% endif %}>3.5+1</option>
                         <option value="4+1" {% if property.room_count == '4+1' %}selected{% endif %}>4+1</option>
+                        <option value="4.5+1" {% if property.room_count == '4.5+1' %}selected{% endif %}>4.5+1</option>
                         <option value="4+2" {% if property.room_count == '4+2' %}selected{% endif %}>4+2</option>
+                        <option value="4.5+2" {% if property.room_count == '4.5+2' %}selected{% endif %}>4.5+2</option>
                         <option value="5+1" {% if property.room_count == '5+1' %}selected{% endif %}>5+1</option>
+                        <option value="5.5+1" {% if property.room_count == '5.5+1' %}selected{% endif %}>5.5+1</option>
                         <option value="5+2" {% if property.room_count == '5+2' %}selected{% endif %}>5+2</option>
+                        <option value="5.5+2" {% if property.room_count == '5.5+2' %}selected{% endif %}>5.5+2</option>
                       </select>
                     </div>
                   </div>
@@ -925,12 +932,25 @@
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js" integrity="sha512-efAcjYoYT0sXxQRtxGY37CKYmqsFVOIwMApaEbrxJr4RwqVVGw8o+Lfh/+59TU07+suZn1BWq4fDl5fdgyCNkw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<!-- Google Maps API - API key'inizi buraya ekleyin -->
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap&libraries=places"></script>
+<!-- Google Maps API -->
 <script>
   var map, marker, geocoder, autocomplete;
   
-  function initMap() {
+  // Haritayı başlatma fonksiyonu
+  function propertyInitMap() {
+    // Google Maps API'nin yüklenip yüklenmediğini kontrol et
+    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+      console.log('Google Maps API henüz yüklenmedi');
+      return;
+    }
+    
+    // Eğer harita container'ı yoksa, işlemi durdur
+    var mapContainer = document.getElementById('location-map');
+    if (!mapContainer) {
+      console.log('Harita container bulunamadı');
+      return;
+    }
+    
     // Gaziantep'in koordinatları (varsayılan)
     var defaultLocation = { lat: 37.066667, lng: 37.383333 };
     
@@ -946,7 +966,7 @@
     }
     
     // Haritayı başlat
-    map = new google.maps.Map(document.getElementById('location-map'), {
+    map = new google.maps.Map(mapContainer, {
       center: defaultLocation,
       zoom: 12,
       mapTypeId: google.maps.MapTypeId.ROADMAP,
@@ -980,20 +1000,37 @@
     
     // AutoComplete için konum arama
     var searchInput = document.getElementById('location-search');
-    autocomplete = new google.maps.places.Autocomplete(searchInput, {
-      componentRestrictions: { country: 'tr' }, // Sadece Türkiye
-      fields: ['place_id', 'geometry', 'name']
-    });
-    
-    autocomplete.addListener('place_changed', function() {
-      var place = autocomplete.getPlace();
-      if (place.geometry) {
-        var location = place.geometry.location;
-        map.setCenter(location);
-        map.setZoom(15);
-        marker.setPosition(location);
-        updateCoordinates(location.lat(), location.lng());
-      }
+    if (searchInput) {
+      autocomplete = new google.maps.places.Autocomplete(searchInput, {
+        componentRestrictions: { country: 'tr' }, // Sadece Türkiye
+        fields: ['place_id', 'geometry', 'name']
+      });
+      
+      autocomplete.addListener('place_changed', function() {
+        var place = autocomplete.getPlace();
+        if (place.geometry) {
+          var location = place.geometry.location;
+          map.setCenter(location);
+          map.setZoom(15);
+          marker.setPosition(location);
+          updateCoordinates(location.lat(), location.lng());
+        }
+      });
+    }
+  }
+  
+  // Google Maps API yükleme fonksiyonu
+  function loadGoogleMaps() {
+    var script = document.createElement('script');
+    script.src = "https://maps.googleapis.com/maps/api/js?key={{ settings.GOOGLE_MAPS_API_KEY }}&libraries=places&loading=async&callback=propertyMapLoaded";
+    script.async = true;
+    document.head.appendChild(script);
+  }
+  
+  // Google Maps yüklendikten sonra çağrılan fonksiyon
+  function propertyMapLoaded() {
+    $(document).ready(function() {
+      setTimeout(propertyInitMap, 500);
     });
   }
   
@@ -1072,6 +1109,9 @@
   }
 
   $(document).ready(function() {
+    // Google Maps API'sini yükle
+    loadGoogleMaps();
+    
     // Koordinat giriş değişikliğini izle
     $('#map_coordinates').on('change', function() {
       var coords = $(this).val().split(',');

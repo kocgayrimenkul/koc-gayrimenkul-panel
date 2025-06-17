@@ -4,9 +4,6 @@
 
 {% block stylesheets %}
 {{ block.super }}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-   crossorigin=""/>
 <style>
   #map-container {
     height: 600px;
@@ -17,6 +14,7 @@
   .property-popup {
     max-width: 320px;
     font-family: 'Open Sans', sans-serif;
+    padding: 10px;
   }
   
   .property-popup img {
@@ -59,13 +57,34 @@
     margin-bottom: 5px;
     padding: 4px 8px;
     font-size: 11px;
+    border-radius: 3px;
+  }
+  
+  .property-popup .badge-success {
+    background-color: #2dce89;
+    color: white;
+  }
+  
+  .property-popup .badge-primary {
+    background-color: #5e72e4;
+    color: white;
+  }
+  
+  .property-popup .badge-secondary {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  .property-popup .badge-info {
+    background-color: #11cdef;
+    color: white;
   }
   
   .property-popup .btn-details {
     width: 100%;
     margin-top: 10px;
     background-color: #5e72e4;
-    border-color: #5e72e4;
+    border: 1px solid #5e72e4;
     color: white;
     font-weight: 600;
     font-size: 13px;
@@ -75,39 +94,26 @@
     display: inline-block;
     text-align: center;
     transition: all 0.3s ease;
+    cursor: pointer;
   }
   
   .property-popup .btn-details:hover {
     background-color: #324cdd;
     border-color: #324cdd;
     box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
-    transform: translateY(-1px);
-  }
-  
-  .leaflet-popup-content-wrapper {
-    border-radius: 6px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  }
-  
-  .leaflet-popup-content {
-    margin: 12px 16px;
-  }
-  
-  .leaflet-container a.leaflet-popup-close-button {
-    color: #adb5bd;
   }
   
   .map-controls {
     margin-bottom: 15px;
   }
   
-  /* Marker renkleri */
-  .marker-satilik {
-    filter: hue-rotate(120deg); /* Yeşil tonu */
+  /* Google Maps InfoWindow özelleştirmeleri */
+  .gm-style-iw {
+    border-radius: 6px;
   }
   
-  .marker-kiralik {
-    filter: hue-rotate(220deg); /* Mavi tonu */
+  .gm-style-iw-d {
+    overflow: hidden !important;
   }
 </style>
 {% endblock stylesheets %}
@@ -196,117 +202,187 @@
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
 {{ block.super }}
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-   crossorigin=""></script>
 
 <script>
-$(document).ready(function() {
-  // Harita başlat
-  var map = L.map('map-container').setView([41.0082, 28.9784], 10); // İstanbul merkezi
-  
-  // OpenStreetMap katmanı ekle
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map);
-  
-  // Marker grupları
-  var markers = L.layerGroup().addTo(map);
-  var properties = [];
-  
-  // AJAX ile gayrimenkul verilerini çek
-  function loadProperties() {
-    $.ajax({
-      url: "{% url 'api_properties' %}",
-      type: "GET",
-      dataType: "json",
-      success: function(data) {
-        properties = data;
-        renderMarkers();
-      },
-      error: function(error) {
-        console.error("Gayrimenkul verileri yüklenirken hata:", error);
-        $('#map-container').after(`
-          <div class="alert alert-danger mt-3">
-            <i class="fas fa-exclamation-triangle mr-2"></i> Gayrimenkul verileri yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.
-          </div>
-        `);
-      }
-    });
+var map;
+var markers = [];
+var properties = [];
+var infoWindow;
+
+// Google Maps haritasını başlat
+function mapInitMap() {
+  // Google Maps API'nin yüklenip yüklenmediğini kontrol et
+  if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+    console.log('Google Maps API henüz yüklenmedi');
+    return;
   }
   
-  // Marker'ları haritaya ekle
-  function renderMarkers() {
-    // Mevcut marker'ları temizle
-    markers.clearLayers();
-    $('.alert').remove();
-    
-    // Filtreler
-    var propertyTypeFilter = $('#filter-property-type').val();
-    var statusFilter = $('#filter-status').val();
-    
-    // Filtrelenmiş gayrimenkulleri işle
-    var filteredProperties = properties.filter(function(property) {
-      var matchesType = !propertyTypeFilter || property.property_type === propertyTypeFilter;
-      var matchesStatus = !statusFilter || property.status === statusFilter;
-      return matchesType && matchesStatus;
-    });
-    
-    // Her gayrimenkul için marker ekle
-    filteredProperties.forEach(function(property) {
-      // Koordinatları kontrol et
-      if (property.map_coordinates) {
-        var coords = property.map_coordinates.split(',');
-        var lat = parseFloat(coords[0]);
-        var lng = parseFloat(coords[1]);
-        
-        if (!isNaN(lat) && !isNaN(lng)) {
-          // Duruma göre marker sınıfı belirle
-          var statusClass = property.status === 'satilik' ? 'marker-satilik' : 'marker-kiralik';
-          
-          // Popup içeriği oluştur
-          var popupContent = `
-            <div class="property-popup">
-              ${property.image_url ? `<img src="${property.image_url}" alt="${property.apartment_name}">` : ''}
-              <h5>${property.apartment_name}</h5>
-              <p><i class="fas fa-map-marker-alt mr-1"></i> ${property.address}</p>
-              <div class="price">${property.price_formatted}</div>
-              <div class="badges">
-                <span class="badge badge-${property.status === 'satilik' ? 'success' : 'primary'}">${property.status === 'satilik' ? 'Satılık' : 'Kiralık'}</span>
-                <span class="badge badge-secondary">${property.property_type_display}</span>
-                ${property.is_bargainable ? '<span class="badge badge-info">Pazarlıklı</span>' : ''}
-              </div>
-              <a href="/gayrimenkul/${property.id}/" class="btn-details">
-                <i class="fas fa-external-link-alt mr-1"></i> Detayları Görüntüle
-              </a>
-            </div>
-          `;
-          
-          // Marker oluştur ve haritaya ekle
-          var marker = L.marker([lat, lng])
-            .bindPopup(popupContent, {
-              maxWidth: 320,
-              minWidth: 280
-            });
-          
-          markers.addLayer(marker);
-        }
-      }
-    });
-    
-    // Eğer marker yoksa uyarı göster
-    if (markers.getLayers().length === 0) {
+  // Eğer harita container'ı yoksa, işlemi durdur
+  var mapContainer = document.getElementById('map-container');
+  if (!mapContainer) {
+    console.log('Harita container bulunamadı');
+    return;
+  }
+  
+  // Gaziantep merkezi koordinatları (varsayılan)
+  var defaultLocation = { lat: 37.066667, lng: 37.383333 };
+  
+  // Haritayı başlat
+  map = new google.maps.Map(mapContainer, {
+    center: defaultLocation,
+    zoom: 12,
+    mapTypeId: google.maps.MapTypeId.ROADMAP,
+    streetViewControl: false,
+    mapTypeControl: true,
+    fullscreenControl: true
+  });
+  
+  // InfoWindow oluştur
+  infoWindow = new google.maps.InfoWindow();
+  
+  // Gayrimenkul verilerini yükle
+  loadProperties();
+}
+
+// Google Maps API yükleme fonksiyonu
+function loadGoogleMaps() {
+  var script = document.createElement('script');
+  script.src = "https://maps.googleapis.com/maps/api/js?key={{ settings.GOOGLE_MAPS_API_KEY }}&libraries=places&loading=async&callback=mapLoaded";
+  script.async = true;
+  document.head.appendChild(script);
+}
+
+// Google Maps yüklendikten sonra çağrılan fonksiyon
+function mapLoaded() {
+  $(document).ready(function() {
+    setTimeout(mapInitMap, 500);
+  });
+}
+
+// AJAX ile gayrimenkul verilerini çek
+function loadProperties() {
+  $.ajax({
+    url: "{% url 'api_properties' %}",
+    type: "GET",
+    dataType: "json",
+    success: function(data) {
+      properties = data;
+      renderMarkers();
+    },
+    error: function(error) {
+      console.error("Gayrimenkul verileri yüklenirken hata:", error);
       $('#map-container').after(`
-        <div class="alert alert-warning mt-3">
-          <i class="fas fa-info-circle mr-2"></i> Filtrelere uygun gayrimenkul bulunamadı veya gayrimenkullerin konum bilgisi yok.
+        <div class="alert alert-danger mt-3">
+          <i class="fas fa-exclamation-triangle mr-2"></i> Gayrimenkul verileri yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.
         </div>
       `);
-    } else {
-      // Tüm marker'ların görüneceği şekilde haritayı ayarla
-      var markerGroup = L.featureGroup(markers.getLayers());
-      map.fitBounds(markerGroup.getBounds(), {padding: [50, 50]});
+    }
+  });
+}
+
+// Marker'ları haritaya ekle
+function renderMarkers() {
+  // Mevcut marker'ları temizle
+  clearMarkers();
+  $('.alert').remove();
+  
+  // Filtreler
+  var propertyTypeFilter = $('#filter-property-type').val();
+  var statusFilter = $('#filter-status').val();
+  
+  // Filtrelenmiş gayrimenkulleri işle
+  var filteredProperties = properties.filter(function(property) {
+    var matchesType = !propertyTypeFilter || property.property_type === propertyTypeFilter;
+    var matchesStatus = !statusFilter || property.status === statusFilter;
+    return matchesType && matchesStatus;
+  });
+  
+  var bounds = new google.maps.LatLngBounds();
+  var hasValidMarkers = false;
+  
+  // Her gayrimenkul için marker ekle
+  filteredProperties.forEach(function(property) {
+    // Koordinatları kontrol et
+    if (property.map_coordinates) {
+      var coords = property.map_coordinates.split(',');
+      var lat = parseFloat(coords[0]);
+      var lng = parseFloat(coords[1]);
+      
+      if (!isNaN(lat) && !isNaN(lng)) {
+        var position = new google.maps.LatLng(lat, lng);
+        
+        // Duruma göre marker ikonu belirle
+        var iconColor = property.status === 'satilik' ? 'green' : 'blue';
+        var markerIcon = `http://maps.google.com/mapfiles/ms/icons/${iconColor}-dot.png`;
+        
+        // Popup içeriği oluştur
+        var popupContent = `
+          <div class="property-popup">
+            ${property.image_url ? `<img src="${property.image_url}" alt="${property.apartment_name}">` : ''}
+            <h5>${property.apartment_name}</h5>
+            <p><i class="fas fa-map-marker-alt mr-1"></i> ${property.address}</p>
+            <div class="price">${property.price_formatted}</div>
+            <div class="badges">
+              <span class="badge badge-${property.status === 'satilik' ? 'success' : 'primary'}">${property.status === 'satilik' ? 'Satılık' : 'Kiralık'}</span>
+              <span class="badge badge-secondary">${property.property_type_display}</span>
+              ${property.is_bargainable ? '<span class="badge badge-info">Pazarlıklı</span>' : ''}
+            </div>
+            <a href="/gayrimenkul/${property.id}/" class="btn-details" target="_blank">
+              <i class="fas fa-external-link-alt mr-1"></i> Detayları Görüntüle
+            </a>
+          </div>
+        `;
+        
+        // Marker oluştur
+        var marker = new google.maps.Marker({
+          position: position,
+          map: map,
+          title: property.apartment_name,
+          icon: markerIcon
+        });
+        
+        // Marker'a tıklandığında popup göster
+        marker.addListener('click', function() {
+          infoWindow.setContent(popupContent);
+          infoWindow.open(map, marker);
+        });
+        
+        markers.push(marker);
+        bounds.extend(position);
+        hasValidMarkers = true;
+      }
+    }
+  });
+  
+  // Eğer marker yoksa uyarı göster
+  if (!hasValidMarkers) {
+    $('#map-container').after(`
+      <div class="alert alert-warning mt-3">
+        <i class="fas fa-info-circle mr-2"></i> Filtrelere uygun gayrimenkul bulunamadı veya gayrimenkullerin konum bilgisi yok.
+      </div>
+    `);
+  } else {
+    // Tüm marker'ların görüneceği şekilde haritayı ayarla
+    if (markers.length > 1) {
+      map.fitBounds(bounds);
+    } else if (markers.length === 1) {
+      map.setCenter(bounds.getCenter());
+      map.setZoom(15);
     }
   }
+}
+
+// Mevcut marker'ları temizle
+function clearMarkers() {
+  markers.forEach(function(marker) {
+    marker.setMap(null);
+  });
+  markers = [];
+}
+
+$(document).ready(function() {
+  // Google Maps API'sini yükle
+  loadGoogleMaps();
   
   // Filtreleme olayları
   $('#filter-property-type, #filter-status').change(function() {
@@ -318,9 +394,6 @@ $(document).ready(function() {
     $('#filter-property-type, #filter-status').val('');
     renderMarkers();
   });
-  
-  // Sayfayı yüklediğimizde
-  loadProperties();
 });
 </script>
 {% endblock javascripts %}

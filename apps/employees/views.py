@@ -13,6 +13,8 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 from .models import (
     Position, EmployeeProfile, 
@@ -884,5 +886,39 @@ def employee_permissions_reset(request, employee_id):
         
         messages.success(request, f"{employee.user.get_full_name()} için izinler varsayılan değerlere sıfırlandı.")
         return redirect('manage_permissions', employee_id=employee_id)
+    
+    return JsonResponse({'success': False, 'message': 'Geçersiz istek'})
+
+@login_required(login_url="/login/")
+@user_passes_test(is_admin_or_manager, login_url='/')
+def employee_status_toggle(request, employee_id):
+    """Çalışanın durumunu değiştirme"""
+    
+    employee = get_object_or_404(EmployeeProfile, id=employee_id)
+    
+    if request.method == 'POST':
+        old_status = employee.is_active
+        employee.is_active = not employee.is_active
+        
+        # Eğer deaktif ediyorsak, kullanıcıyı da deaktif et
+        if not employee.is_active:
+            employee.user.is_active = False
+        else:
+            employee.user.is_active = True
+        
+        employee.save()
+        employee.user.save()
+        
+        # Aktivite logu oluştur
+        status_text = "aktif" if employee.is_active else "pasif"
+        ActivityLog.objects.create(
+            user=request.user,
+            action=f"{employee.user.get_full_name()} durumu {status_text} olarak değiştirildi",
+            details=f"Önceki durum: {'aktif' if old_status else 'pasif'}"
+        )
+        
+        status_msg = "aktif edildi" if employee.is_active else "deaktif edildi"
+        messages.success(request, f"{employee.user.get_full_name()} başarıyla {status_msg}.")
+        return redirect('employee_list')
     
     return JsonResponse({'success': False, 'message': 'Geçersiz istek'})

@@ -98,6 +98,11 @@ def fsbo_list(request):
         consultant = form.cleaned_data.get('consultant')
         if consultant and (request.user.is_superuser or role in ['admin', 'manager']):
             fsbo_records = fsbo_records.filter(consultant=consultant)
+        
+        # İletişim türü filtreleme
+        contact_type = form.cleaned_data.get('contact_type')
+        if contact_type:
+            fsbo_records = fsbo_records.filter(contact_type=contact_type)
     
     # İstatistikler
     total_count = fsbo_records.count()

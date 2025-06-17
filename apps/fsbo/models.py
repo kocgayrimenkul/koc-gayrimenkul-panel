@@ -24,6 +24,12 @@ class FSBO(models.Model):
         ('acik', 'Açık'),
     ]
     
+    CONTACT_TYPE_CHOICES = [
+        ('bilgi_alma', 'Bilgi Alma'),
+        ('daire_sunumu', 'Daire Sunumu'),
+        ('sikayet', 'Şikayet'),
+    ]
+    
     # Temel bilgiler
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Kayıt Tarihi")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, 
@@ -38,6 +44,10 @@ class FSBO(models.Model):
     consultant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, 
                                  null=True, blank=True, related_name="assigned_fsbos", 
                                  verbose_name="Danışman")
+    
+    # İletişim türü
+    contact_type = models.CharField(max_length=50, choices=CONTACT_TYPE_CHOICES, 
+                                   default='bilgi_alma', verbose_name="İletişim Türü")
     
     # Linkler
     link1 = models.URLField(blank=True, null=True, verbose_name="Link 1")

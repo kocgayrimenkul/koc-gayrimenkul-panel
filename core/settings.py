@@ -22,6 +22,7 @@ env = environ.Env(
     DB_PASSWORD=(str, ''),
     DB_HOST=(str, 'localhost'),
     DB_PORT=(str, '3306'),
+    GOOGLE_MAPS_API_KEY=(str, ''),
 )
 
 # .env dosyasının yolu
@@ -107,6 +108,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'apps.customers.views.customer_reminders_processor',  # Müşteri hatırlatmaları
+                'apps.home.context_processors.settings_context',  # Settings değişkenlerine erişim
             ],
         },
     },
@@ -192,6 +194,8 @@ MESSAGE_TAGS = {
 # Koç Gayrimenkul Özel Ayarlar
 SITE_TITLE = "Koç Gayrimenkul Panel"
 
+# Google Maps API Anahtarı
+GOOGLE_MAPS_API_KEY = env('GOOGLE_MAPS_API_KEY')
 
 # Dosya Yükleme Limitleri
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 MB

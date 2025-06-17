@@ -270,6 +270,29 @@
     font-weight: 700;
     font-size: 1.25rem;
   }
+  
+  /* Toggle status butonu */
+  .toggle-status-btn {
+    border: none;
+    background: transparent;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .toggle-status-btn:hover {
+    background-color: rgba(0,0,0,0.05);
+    transform: scale(1.1);
+  }
+  
+  .toggle-status-btn:focus {
+    outline: none;
+    box-shadow: none;
+  }
+  
+  .toggle-status-btn i {
+    font-size: 1.2rem;
+  }
 </style>
 {% endblock stylesheets %}
 
@@ -452,9 +475,17 @@
                     {% endif %}
                   </td>
                   <td>
-                    <div class="d-flex align-items-center">
-                      <span class="status-indicator bg-{% if employee.is_active %}success{% else %}danger{% endif %}"></span>
-                      <span>{% if employee.is_active %}Aktif{% else %}Pasif{% endif %}</span>
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center">
+                        <span class="status-indicator bg-{% if employee.is_active %}success{% else %}danger{% endif %}"></span>
+                        <span>{% if employee.is_active %}Aktif{% else %}Pasif{% endif %}</span>
+                      </div>
+                      <button class="btn btn-sm toggle-status-btn" 
+                              data-employee-id="{{ employee.id }}" 
+                              data-current-status="{{ employee.is_active|yesno:'true,false' }}"
+                              title="{% if employee.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}">
+                        <i class="fas fa-{% if employee.is_active %}toggle-on text-success{% else %}toggle-off text-muted{% endif %}"></i>
+                      </button>
                     </div>
                   </td>
                   <td class="text-right">
@@ -657,6 +688,43 @@
     
     // Tooltip aktivasyonu
     $('[data-toggle="tooltip"]').tooltip();
+    
+    // Durum değiştirme butonu işlevi
+    $('.toggle-status-btn').click(function() {
+      var button = $(this);
+      var employeeId = button.data('employee-id');
+      var currentStatus = button.data('current-status') === 'true';
+      var row = button.closest('tr');
+      var employeeName = row.find('.employee-info h5').text();
+      
+      var actionText = currentStatus ? 'deaktif' : 'aktif';
+      var confirmText = employeeName + ' çalışanı ' + actionText + ' edilecek. Devam etmek istiyor musunuz?';
+      
+      if (confirm(confirmText)) {
+        // Loading durumu
+        button.prop('disabled', true);
+        button.html('<i class="fas fa-spinner fa-spin"></i>');
+        
+        // AJAX isteği
+        $.post({
+          url: '/employees/calisan/' + employeeId + '/durum-degistir/',
+          data: {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+          },
+          success: function(response) {
+            // Sayfayı yenile
+            location.reload();
+          },
+          error: function() {
+            alert('Durum değiştirilemedi. Lütfen tekrar deneyin.');
+            // Button'u eski haline getir
+            var icon = currentStatus ? 'toggle-on text-success' : 'toggle-off text-muted';
+            button.html('<i class="fas fa-' + icon + '"></i>');
+            button.prop('disabled', false);
+          }
+        });
+      }
+    });
     
     // Tümünü seç checkbox işlevi
     $('#select-all').change(function() {

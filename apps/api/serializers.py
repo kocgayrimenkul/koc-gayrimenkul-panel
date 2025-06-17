@@ -61,6 +61,11 @@ class PropertyListSerializer(serializers.ModelSerializer):
     badges = serializers.SerializerMethodField()
     features = serializers.SerializerMethodField()
     date_display = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()  # Web title varsa onu, yoksa apartment_name'i döndür
+    
+    def get_title(self, obj):
+        """Web title varsa onu döndür, yoksa apartment_name'i kullan"""
+        return obj.web_title if obj.web_title else obj.apartment_name
     
     def get_main_image(self, obj):
         main_image = obj.images.order_by('order').first()
@@ -163,11 +168,12 @@ class PropertyListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Property
         fields = [
-            'id', 'apartment_name', 'property_type', 'status', 'price',
+            'id', 'title', 'apartment_name', 'web_title', 'property_type', 'status', 'price',
             'neighborhood', 'gross_area', 'net_area', 'room_count', 
             'floor', 'building_age', 'bathrooms', 'main_image', 'consultant_name',
             'listing_date', 'created_at', 'category', 'listing_type', 'is_featured',
-            'badges', 'features', 'date_display'
+            'badges', 'features', 'date_display', 'description', 'address',
+            'has_balcony', 'heating', 'dues', 'floor_count', 'deed_status'
         ]
 
 
@@ -189,6 +195,11 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
     date_display = serializers.SerializerMethodField()
     video_url = serializers.SerializerMethodField()
     map_url = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()  # Web title varsa onu, yoksa apartment_name'i döndür
+    
+    def get_title(self, obj):
+        """Web title varsa onu döndür, yoksa apartment_name'i kullan"""
+        return obj.web_title if obj.web_title else obj.apartment_name
     
     def get_consultant_phone(self, obj):
         """Danışman telefonu - mevcut değilse owner_phone kullan"""
@@ -331,7 +342,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Property
         fields = [
-            'id', 'apartment_name', 'description', 'property_type', 'status', 'price',
+            'id', 'title', 'apartment_name', 'web_title', 'description', 'property_type', 'status', 'price',
             'neighborhood', 'address', 'map_coordinates',
             'gross_area', 'net_area', 'room_count', 'floor', 'floor_count',
             'building_age', 'heating', 'has_balcony', 'dues', 'bathroom_count', 'bathrooms',
@@ -342,7 +353,10 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
             'consultant_phone', 'consultant_email', 'consultant_photo',
             'created_at', 'updated_at', 'is_active', 'is_featured',
             'images', 'environments', 'main_image', 'badges', 'features', 
-            'date_display', 'video_url', 'map_url'
+            'date_display', 'video_url', 'map_url',
+            # Modelde bulunan eksik alanlar
+            'owner_listing_number', 'emlakjet_listing_number', 'hepsiemlak_listing_number',
+            'website_listing_number', 'branda_number'
         ]
 
 

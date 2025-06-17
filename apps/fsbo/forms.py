@@ -15,13 +15,14 @@ class FSBOForm(forms.ModelForm):
     
     class Meta:
         model = FSBO
-        fields = ['full_name', 'phone', 'result', 
+        fields = ['full_name', 'phone', 'result', 'contact_type',
                  'link1', 'link2', 'reminder_status', 'reminder_date', 
                  'reminder_time', 'notes']
         widgets = {
             'full_name': forms.TextInput(attrs={"class": "form-control", "placeholder": "Adı Soyadı"}),
             'phone': forms.TextInput(attrs={"class": "form-control", "placeholder": "Telefon"}),
             'result': forms.Select(attrs={"class": "form-control"}),
+            'contact_type': forms.Select(attrs={"class": "form-control"}),
             'link1': forms.URLInput(attrs={"class": "form-control", "placeholder": "https://"}),
             'link2': forms.URLInput(attrs={"class": "form-control", "placeholder": "https://"}),
             'reminder_status': forms.Select(attrs={"class": "form-control"}),
@@ -56,4 +57,11 @@ class FSBOSearchForm(forms.Form):
         required=False,
         widget=forms.Select(attrs={"class": "form-control"}),
         label="Danışman"
+    )
+    
+    contact_type = forms.ChoiceField(
+        choices=[('', 'Tümü')] + FSBO.CONTACT_TYPE_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+        label="İletişim Türü"
     ) 
