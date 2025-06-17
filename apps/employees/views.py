@@ -50,6 +50,7 @@ def employee_list(request):
         'employees': employees,
         'activities': recent_activities,
         'role_counts': role_counts,
+        'roles': EmployeeProfile.ROLE_CHOICES,
     }
     
     html_template = loader.get_template('employees/employee_list.html')
@@ -131,6 +132,32 @@ def employee_edit(request, employee_id):
     
     employee = get_object_or_404(EmployeeProfile, id=employee_id)
     
+    # Durum değiştirme (toggle) işlemi
+    if request.GET.get('toggle_status') == 'true':
+        old_status = employee.is_active
+        employee.is_active = not employee.is_active
+        
+        # Eğer deaktif ediyorsak, kullanıcıyı da deaktif et
+        if not employee.is_active:
+            employee.user.is_active = False
+        else:
+            employee.user.is_active = True
+        
+        employee.save()
+        employee.user.save()
+        
+        # Aktivite logu oluştur
+        status_text = "aktif" if employee.is_active else "pasif"
+        ActivityLog.objects.create(
+            user=request.user,
+            action=f"{employee.user.get_full_name()} durumu {status_text} olarak değiştirildi",
+            details=f"Önceki durum: {'aktif' if old_status else 'pasif'}"
+        )
+        
+        status_msg = "aktif edildi" if employee.is_active else "deaktif edildi"
+        messages.success(request, f"{employee.user.get_full_name()} başarıyla {status_msg}.")
+        return redirect('employee_list')
+    
     if request.method == 'POST':
         # Form verilerini al
         first_name = request.POST.get('first_name')
@@ -151,30 +178,38 @@ def employee_edit(request, employee_id):
             user.first_name = first_name
             user.last_name = last_name
             user.email = email
+            
+            # Eğer çalışan deaktif ediliyorsa, kullanıcıyı da deaktif et
+            if not is_active:
+                user.is_active = False
+            else:
+                user.is_active = True
+            
             user.save()
             
             # Çalışan profilini güncelle
             old_role = employee.role
+            old_active_status = employee.is_active
+            
             employee.phone = phone
             employee.role = role
             employee.is_active = is_active
             
-            # İşten ayrılma tarihi kontrolü kaldırıldı - Bu alan modelde bulunmuyor
-            
             employee.save()
             
-            # Rol değiştiyse log oluştur
+            # Aktivite logları oluştur
+            changes = []
             if old_role != role:
-                ActivityLog.objects.create(
-                    user=request.user,
-                    action=f"{user.get_full_name()} rolü değiştirildi",
-                    details=f"{employee.get_role_display()} olarak güncellendi"
-                )
-            else:
+                changes.append(f"Rol değiştirildi: {dict(EmployeeProfile.ROLE_CHOICES)[old_role]} → {dict(EmployeeProfile.ROLE_CHOICES)[role]}")
+                
+            if old_active_status != is_active:
+                changes.append(f"Durum değiştirildi: {'aktif' if old_active_status else 'pasif'} → {'aktif' if is_active else 'pasif'}")
+            
+            if changes:
                 ActivityLog.objects.create(
                     user=request.user,
                     action=f"{user.get_full_name()} bilgileri güncellendi",
-                    details=""
+                    details=", ".join(changes)
                 )
             
             messages.success(request, "Çalışan bilgileri başarıyla güncellendi.")
@@ -203,30 +238,59 @@ def manage_permissions(request, employee_id):
         # İzin nesnesi oluştur veya al
         permission, created = Permission.objects.get_or_create(employee=employee)
         
-        # İzinleri güncelle
+        # Müşteri Yönetimi İzinleri
         permission.can_view_customers = 'can_view_customers' in request.POST
         permission.can_add_customers = 'can_add_customers' in request.POST
         permission.can_edit_customers = 'can_edit_customers' in request.POST
         permission.can_delete_customers = 'can_delete_customers' in request.POST
         
-        permission.can_view_properties = 'can_view_properties' in request.POST
-        permission.can_add_properties = 'can_add_properties' in request.POST
-        permission.can_edit_properties = 'can_edit_properties' in request.POST
+        # Portföy Yönetimi İzinleri
+        permission.can_view_portfolio = 'can_view_portfolio' in request.POST
+        permission.can_add_portfolio = 'can_add_portfolio' in request.POST
+        permission.can_edit_portfolio = 'can_edit_portfolio' in request.POST
+        permission.can_delete_portfolio = 'can_delete_portfolio' in request.POST
         
+        # Takvim İzinleri
         permission.can_view_calendar = 'can_view_calendar' in request.POST
-        permission.can_create_events = 'can_create_events' in request.POST
-        permission.can_edit_events = 'can_edit_events' in request.POST
+        permission.can_add_calendar = 'can_add_calendar' in request.POST
+        permission.can_edit_calendar = 'can_edit_calendar' in request.POST
+        permission.can_delete_calendar = 'can_delete_calendar' in request.POST
         
+        # FSBO İzinleri
+        permission.can_view_fsbo = 'can_view_fsbo' in request.POST
+        permission.can_add_fsbo = 'can_add_fsbo' in request.POST
+        permission.can_edit_fsbo = 'can_edit_fsbo' in request.POST
+        permission.can_delete_fsbo = 'can_delete_fsbo' in request.POST
+        
+        # Prezentasyon İzinleri
+        permission.can_view_presentation = 'can_view_presentation' in request.POST
+        permission.can_add_presentation = 'can_add_presentation' in request.POST
+        permission.can_edit_presentation = 'can_edit_presentation' in request.POST
+        permission.can_delete_presentation = 'can_delete_presentation' in request.POST
+        
+        # Kariyer İzinleri
+        permission.can_view_careers = 'can_view_careers' in request.POST
+        permission.can_add_careers = 'can_add_careers' in request.POST
+        permission.can_edit_careers = 'can_edit_careers' in request.POST
+        permission.can_delete_careers = 'can_delete_careers' in request.POST
+        
+        # Çalışan Yönetimi İzinleri
+        permission.can_view_employees = 'can_view_employees' in request.POST
+        permission.can_add_employees = 'can_add_employees' in request.POST
+        permission.can_edit_employees = 'can_edit_employees' in request.POST
+        permission.can_delete_employees = 'can_delete_employees' in request.POST
+        
+        # Sistem İzinleri
         permission.can_view_reports = 'can_view_reports' in request.POST
-        permission.can_manage_employees = 'can_manage_employees' in request.POST
         permission.can_manage_settings = 'can_manage_settings' in request.POST
+        permission.can_access_api = 'can_access_api' in request.POST
         
         permission.save()
         
         ActivityLog.objects.create(
             user=request.user,
             action=f"{employee.user.get_full_name()} için izinler güncellendi",
-            details=""
+            details=permission.permissions_summary
         )
         
         messages.success(request, "İzinler başarıyla güncellendi.")
@@ -402,3 +466,423 @@ def activity_log(request):
     
     html_template = loader.get_template('employees/activity_log.html')
     return HttpResponse(html_template.render(context, request))
+
+@login_required(login_url="/login/")
+@user_passes_test(is_admin_or_manager, login_url='/')
+def employee_delete(request, employee_id):
+    """Çalışan silme (Sadece süper admin)"""
+    
+    if not request.user.is_superuser:
+        messages.error(request, "Bu işlem için yetkiniz bulunmuyor.")
+        return redirect('employee_list')
+    
+    employee = get_object_or_404(EmployeeProfile, id=employee_id)
+    
+    if request.method == 'POST':
+        user_name = employee.user.get_full_name()
+        user = employee.user
+        
+        # Önce profili sil, sonra kullanıcıyı
+        employee.delete()
+        user.delete()
+        
+        ActivityLog.objects.create(
+            user=request.user,
+            action=f"Çalışan silindi: {user_name}",
+            details="Kullanıcı tamamen sistemden kaldırıldı"
+        )
+        
+        messages.success(request, f"{user_name} sistemden tamamen kaldırıldı.")
+        return redirect('employee_list')
+    
+    context = {
+        'segment': 'employee',
+        'employee': employee,
+    }
+    
+    html_template = loader.get_template('employees/employee_delete.html')
+    return HttpResponse(html_template.render(context, request))
+
+@login_required(login_url="/login/")
+@user_passes_test(is_admin_or_manager, login_url='/')
+def revoke_all_permissions(request, employee_id):
+    """Çalışanın tüm özel yetkilerini kaldır"""
+    
+    employee = get_object_or_404(EmployeeProfile, id=employee_id)
+    
+    if request.method == 'POST':
+        # Özel izinleri sıfırla
+        permission, created = Permission.objects.get_or_create(employee=employee)
+        
+        # Tüm izinleri False yap
+        permission.can_view_customers = False
+        permission.can_add_customers = False
+        permission.can_edit_customers = False
+        permission.can_delete_customers = False
+        permission.can_view_portfolio = False
+        permission.can_add_portfolio = False
+        permission.can_edit_portfolio = False
+        permission.can_delete_portfolio = False
+        permission.can_view_calendar = False
+        permission.can_add_calendar = False
+        permission.can_edit_calendar = False
+        permission.can_delete_calendar = False
+        permission.can_view_fsbo = False
+        permission.can_add_fsbo = False
+        permission.can_edit_fsbo = False
+        permission.can_delete_fsbo = False
+        permission.can_view_presentation = False
+        permission.can_add_presentation = False
+        permission.can_edit_presentation = False
+        permission.can_delete_presentation = False
+        permission.can_view_careers = False
+        permission.can_add_careers = False
+        permission.can_edit_careers = False
+        permission.can_delete_careers = False
+        permission.can_view_employees = False
+        permission.can_add_employees = False
+        permission.can_edit_employees = False
+        permission.can_delete_employees = False
+        permission.can_view_reports = False
+        permission.can_manage_settings = False
+        permission.can_access_api = False
+        
+        permission.save()
+        
+        # Kullanıcıyı tüm gruplardan çıkar
+        employee.user.groups.clear()
+        
+        # Rolü en alt seviyeye indir
+        employee.role = 'employee'
+        employee.save()
+        
+        ActivityLog.objects.create(
+            user=request.user,
+            action=f"{employee.user.get_full_name()} tüm yetkileri kaldırıldı",
+            details="Özel izinler sıfırlandı, gruplardan çıkarıldı, rol 'çalışan' olarak ayarlandı"
+        )
+        
+        messages.success(request, f"{employee.user.get_full_name()} adlı çalışanın tüm yetkileri kaldırıldı.")
+        return redirect('employee_list')
+    
+    context = {
+        'segment': 'employee',
+        'employee': employee,
+    }
+    
+    return JsonResponse({'success': True, 'message': 'Yetkiler kaldırıldı'})
+
+@login_required(login_url="/login/")
+@user_passes_test(is_admin_or_manager, login_url='/')
+def bulk_employee_actions(request):
+    """Toplu çalışan işlemleri"""
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        employee_ids = request.POST.getlist('employee_ids')
+        
+        if not employee_ids:
+            return JsonResponse({'success': False, 'message': 'Hiç çalışan seçilmedi'})
+        
+        employees = EmployeeProfile.objects.filter(id__in=employee_ids)
+        
+        if action == 'activate':
+            # Toplu aktifleştirme
+            for employee in employees:
+                employee.is_active = True
+                employee.user.is_active = True
+                employee.save()
+                employee.user.save()
+            
+            ActivityLog.objects.create(
+                user=request.user,
+                action=f"{len(employees)} çalışan toplu olarak aktifleştirildi",
+                details=f"Aktifleştirilen çalışanlar: {', '.join([emp.user.get_full_name() for emp in employees])}"
+            )
+            
+            messages.success(request, f"{len(employees)} çalışan başarıyla aktifleştirildi.")
+            
+        elif action == 'deactivate':
+            # Toplu deaktifleştirme
+            for employee in employees:
+                employee.is_active = False
+                employee.user.is_active = False
+                employee.save()
+                employee.user.save()
+            
+            ActivityLog.objects.create(
+                user=request.user,
+                action=f"{len(employees)} çalışan toplu olarak deaktifleştirildi",
+                details=f"Deaktifleştirilen çalışanlar: {', '.join([emp.user.get_full_name() for emp in employees])}"
+            )
+            
+            messages.success(request, f"{len(employees)} çalışan başarıyla deaktifleştirildi.")
+            
+        elif action == 'revoke_permissions':
+            # Toplu yetki kaldırma
+            for employee in employees:
+                permission, created = Permission.objects.get_or_create(employee=employee)
+                
+                # Tüm izinleri False yap
+                permission.can_view_customers = False
+                permission.can_add_customers = False
+                permission.can_edit_customers = False
+                permission.can_delete_customers = False
+                permission.can_view_portfolio = False
+                permission.can_add_portfolio = False
+                permission.can_edit_portfolio = False
+                permission.can_delete_portfolio = False
+                permission.can_view_calendar = False
+                permission.can_add_calendar = False
+                permission.can_edit_calendar = False
+                permission.can_delete_calendar = False
+                permission.can_view_fsbo = False
+                permission.can_add_fsbo = False
+                permission.can_edit_fsbo = False
+                permission.can_delete_fsbo = False
+                permission.can_view_presentation = False
+                permission.can_add_presentation = False
+                permission.can_edit_presentation = False
+                permission.can_delete_presentation = False
+                permission.can_view_careers = False
+                permission.can_add_careers = False
+                permission.can_edit_careers = False
+                permission.can_delete_careers = False
+                permission.can_view_employees = False
+                permission.can_add_employees = False
+                permission.can_edit_employees = False
+                permission.can_delete_employees = False
+                permission.can_view_reports = False
+                permission.can_manage_settings = False
+                permission.can_access_api = False
+                
+                permission.save()
+                
+                # Kullanıcıyı tüm gruplardan çıkar
+                employee.user.groups.clear()
+            
+            ActivityLog.objects.create(
+                user=request.user,
+                action=f"{len(employees)} çalışanın yetkileri toplu olarak kaldırıldı",
+                details=f"Yetkileri kaldırılan çalışanlar: {', '.join([emp.user.get_full_name() for emp in employees])}"
+            )
+            
+            messages.success(request, f"{len(employees)} çalışanın yetkileri başarıyla kaldırıldı.")
+            
+        elif action == 'change_role':
+            # Toplu rol değişikliği
+            new_role = request.POST.get('new_role')
+            if new_role in dict(EmployeeProfile.ROLE_CHOICES):
+                for employee in employees:
+                    old_role = employee.role
+                    employee.role = new_role
+                    employee.save()
+                
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"{len(employees)} çalışanın rolü toplu olarak değiştirildi",
+                    details=f"Yeni rol: {dict(EmployeeProfile.ROLE_CHOICES)[new_role]}, Çalışanlar: {', '.join([emp.user.get_full_name() for emp in employees])}"
+                )
+                
+                messages.success(request, f"{len(employees)} çalışanın rolü '{dict(EmployeeProfile.ROLE_CHOICES)[new_role]}' olarak değiştirildi.")
+            else:
+                messages.error(request, "Geçersiz rol seçimi.")
+                
+        return redirect('employee_list')
+    
+    return JsonResponse({'success': False, 'message': 'Geçersiz istek'})
+
+@login_required(login_url="/login/")
+@user_passes_test(is_admin_or_manager, login_url='/')
+def employee_permissions_reset(request, employee_id):
+    """Çalışan izinlerini varsayılana sıfırla"""
+    
+    employee = get_object_or_404(EmployeeProfile, id=employee_id)
+    
+    if request.method == 'POST':
+        # İzin nesnesini al veya oluştur
+        permission, created = Permission.objects.get_or_create(employee=employee)
+        
+        # Varsayılan izinleri role göre ayarla
+        if employee.role == 'admin':
+            # Yönetici - Tüm izinler
+            permission.can_view_customers = True
+            permission.can_add_customers = True
+            permission.can_edit_customers = True
+            permission.can_delete_customers = True
+            permission.can_view_portfolio = True
+            permission.can_add_portfolio = True
+            permission.can_edit_portfolio = True
+            permission.can_delete_portfolio = True
+            permission.can_view_calendar = True
+            permission.can_add_calendar = True
+            permission.can_edit_calendar = True
+            permission.can_delete_calendar = True
+            permission.can_view_fsbo = True
+            permission.can_add_fsbo = True
+            permission.can_edit_fsbo = True
+            permission.can_delete_fsbo = True
+            permission.can_view_presentation = True
+            permission.can_add_presentation = True
+            permission.can_edit_presentation = True
+            permission.can_delete_presentation = True
+            permission.can_view_careers = True
+            permission.can_add_careers = True
+            permission.can_edit_careers = True
+            permission.can_delete_careers = True
+            permission.can_view_employees = True
+            permission.can_add_employees = True
+            permission.can_edit_employees = True
+            permission.can_delete_employees = True
+            permission.can_view_reports = True
+            permission.can_manage_settings = True
+            permission.can_access_api = True
+            
+        elif employee.role == 'manager':
+            # Müdür - Kısıtlı yönetici izinleri
+            permission.can_view_customers = True
+            permission.can_add_customers = True
+            permission.can_edit_customers = True
+            permission.can_delete_customers = False
+            permission.can_view_portfolio = True
+            permission.can_add_portfolio = True
+            permission.can_edit_portfolio = True
+            permission.can_delete_portfolio = False
+            permission.can_view_calendar = True
+            permission.can_add_calendar = True
+            permission.can_edit_calendar = True
+            permission.can_delete_calendar = True
+            permission.can_view_fsbo = True
+            permission.can_add_fsbo = True
+            permission.can_edit_fsbo = True
+            permission.can_delete_fsbo = False
+            permission.can_view_presentation = True
+            permission.can_add_presentation = True
+            permission.can_edit_presentation = True
+            permission.can_delete_presentation = False
+            permission.can_view_careers = True
+            permission.can_add_careers = True
+            permission.can_edit_careers = True
+            permission.can_delete_careers = False
+            permission.can_view_employees = True
+            permission.can_add_employees = False
+            permission.can_edit_employees = False
+            permission.can_delete_employees = False
+            permission.can_view_reports = True
+            permission.can_manage_settings = False
+            permission.can_access_api = False
+            
+        elif employee.role == 'consultant':
+            # Danışman - Müşteri ve portföy odaklı
+            permission.can_view_customers = True
+            permission.can_add_customers = True
+            permission.can_edit_customers = True
+            permission.can_delete_customers = False
+            permission.can_view_portfolio = True
+            permission.can_add_portfolio = True
+            permission.can_edit_portfolio = False
+            permission.can_delete_portfolio = False
+            permission.can_view_calendar = True
+            permission.can_add_calendar = True
+            permission.can_edit_calendar = False
+            permission.can_delete_calendar = False
+            permission.can_view_fsbo = True
+            permission.can_add_fsbo = True
+            permission.can_edit_fsbo = False
+            permission.can_delete_fsbo = False
+            permission.can_view_presentation = True
+            permission.can_add_presentation = False
+            permission.can_edit_presentation = False
+            permission.can_delete_presentation = False
+            permission.can_view_careers = True
+            permission.can_add_careers = False
+            permission.can_edit_careers = False
+            permission.can_delete_careers = False
+            permission.can_view_employees = False
+            permission.can_add_employees = False
+            permission.can_edit_employees = False
+            permission.can_delete_employees = False
+            permission.can_view_reports = False
+            permission.can_manage_settings = False
+            permission.can_access_api = False
+            
+        elif employee.role == 'secretary':
+            # Santral - Müşteri kayıt ve ajanda
+            permission.can_view_customers = True
+            permission.can_add_customers = True
+            permission.can_edit_customers = False
+            permission.can_delete_customers = False
+            permission.can_view_portfolio = True
+            permission.can_add_portfolio = False
+            permission.can_edit_portfolio = False
+            permission.can_delete_portfolio = False
+            permission.can_view_calendar = True
+            permission.can_add_calendar = True
+            permission.can_edit_calendar = True
+            permission.can_delete_calendar = False
+            permission.can_view_fsbo = True
+            permission.can_add_fsbo = False
+            permission.can_edit_fsbo = False
+            permission.can_delete_fsbo = False
+            permission.can_view_presentation = True
+            permission.can_add_presentation = False
+            permission.can_edit_presentation = False
+            permission.can_delete_presentation = False
+            permission.can_view_careers = True
+            permission.can_add_careers = False
+            permission.can_edit_careers = False
+            permission.can_delete_careers = False
+            permission.can_view_employees = False
+            permission.can_add_employees = False
+            permission.can_edit_employees = False
+            permission.can_delete_employees = False
+            permission.can_view_reports = False
+            permission.can_manage_settings = False
+            permission.can_access_api = False
+            
+        else:  # employee
+            # Çalışan - Temel izinler
+            permission.can_view_customers = True
+            permission.can_add_customers = False
+            permission.can_edit_customers = False
+            permission.can_delete_customers = False
+            permission.can_view_portfolio = True
+            permission.can_add_portfolio = False
+            permission.can_edit_portfolio = False
+            permission.can_delete_portfolio = False
+            permission.can_view_calendar = True
+            permission.can_add_calendar = False
+            permission.can_edit_calendar = False
+            permission.can_delete_calendar = False
+            permission.can_view_fsbo = True
+            permission.can_add_fsbo = False
+            permission.can_edit_fsbo = False
+            permission.can_delete_fsbo = False
+            permission.can_view_presentation = True
+            permission.can_add_presentation = False
+            permission.can_edit_presentation = False
+            permission.can_delete_presentation = False
+            permission.can_view_careers = True
+            permission.can_add_careers = False
+            permission.can_edit_careers = False
+            permission.can_delete_careers = False
+            permission.can_view_employees = False
+            permission.can_add_employees = False
+            permission.can_edit_employees = False
+            permission.can_delete_employees = False
+            permission.can_view_reports = False
+            permission.can_manage_settings = False
+            permission.can_access_api = False
+        
+        permission.save()
+        
+        ActivityLog.objects.create(
+            user=request.user,
+            action=f"{employee.user.get_full_name()} izinleri varsayılana sıfırlandı",
+            details=f"Rol: {employee.get_role_display()}, Yeni izinler: {permission.permissions_summary}"
+        )
+        
+        messages.success(request, f"{employee.user.get_full_name()} için izinler varsayılan değerlere sıfırlandı.")
+        return redirect('manage_permissions', employee_id=employee_id)
+    
+    return JsonResponse({'success': False, 'message': 'Geçersiz istek'})

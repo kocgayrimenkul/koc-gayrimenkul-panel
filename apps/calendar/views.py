@@ -19,6 +19,13 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from apps.employees.models import EmployeeProfile
+from apps.employees.decorators import (
+    can_view_calendar,
+    can_add_calendar,
+    can_edit_calendar,
+    can_delete_calendar,
+    require_calendar_permission
+)
 
 def get_user_role(user):
     """Kullanıcının rolünü döndürür"""
@@ -32,6 +39,7 @@ def get_user_role(user):
         return None
 
 @login_required(login_url="/login/")
+@can_view_calendar
 def calendar_view(request):
     """Takvim görünümü"""
     
@@ -146,6 +154,7 @@ def calendar_view(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_view_calendar
 def event_list(request):
     """Etkinlik listesi görünümü"""
     
@@ -204,8 +213,9 @@ def event_list(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_add_calendar
 def event_create_form(request):
-    """Etkinlik oluşturma formu görünümü"""
+    """Etkinlik oluşturma formu"""
     
     # Müşteriler ve gayrimenkul listesi
     if request.user.is_superuser:
@@ -226,6 +236,7 @@ def event_create_form(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_add_calendar
 def event_create(request):
     """Etkinlik oluşturma"""
     role = get_user_role(request.user)
@@ -298,6 +309,7 @@ def event_create(request):
     return redirect('event_create_form')
 
 @login_required(login_url="/login/")
+@can_view_calendar
 def event_detail(request, event_id):
     """Etkinlik detay görünümü"""
     event = get_object_or_404(Event, id=event_id)
@@ -333,6 +345,7 @@ def event_detail(request, event_id):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_delete_calendar
 def event_delete(request, event_id):
     """Etkinlik silme"""
     event = get_object_or_404(Event, id=event_id)
@@ -511,6 +524,7 @@ def event_reopen(request, event_id):
     return redirect('event_detail', event_id=event.id)
 
 @login_required(login_url="/login/")
+@can_edit_calendar
 def event_update(request, event_id):
     """Etkinlik güncelleme"""
     event = get_object_or_404(Event, id=event_id)

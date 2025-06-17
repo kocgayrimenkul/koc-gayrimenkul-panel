@@ -39,6 +39,12 @@ class Customer(models.Model):
         ('diger', 'Diğer'),
     ]
     
+    CONTACT_TYPE_CHOICES = [
+        ('bilgi_alma', 'Bilgi Alma'),
+        ('daire_sunumu', 'Daire Sunumu'),
+        ('sikayet', 'Şikayet'),
+    ]
+    
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Kayıt Tarihi")
     full_name = models.CharField(max_length=100, verbose_name="Adı Soyadı")
     phone = models.CharField(max_length=20, verbose_name="Telefon")
@@ -48,6 +54,7 @@ class Customer(models.Model):
     
     # Eklenen yeni alanlar
     source = models.CharField(max_length=50, choices=SOURCE_CHOICES, blank=True, null=True, verbose_name="Müşteri Kaynağı")
+    contact_type = models.CharField(max_length=50, choices=CONTACT_TYPE_CHOICES, default='bilgi_alma', verbose_name="İletişim Türü")
     
     meeting_result = models.TextField(verbose_name="Görüşme Sonucu", blank=True)
     meeting_status = models.CharField(max_length=20, choices=MEETING_STATUS_CHOICES, 

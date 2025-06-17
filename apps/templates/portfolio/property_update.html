@@ -4,7 +4,6 @@
 
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
   :root {
@@ -926,193 +925,180 @@
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js" integrity="sha512-efAcjYoYT0sXxQRtxGY37CKYmqsFVOIwMApaEbrxJr4RwqVVGw8o+Lfh/+59TU07+suZn1BWq4fDl5fdgyCNkw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-   crossorigin=""></script>
+<!-- Google Maps API - API key'inizi buraya ekleyin -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap&libraries=places"></script>
 <script>
-  $(document).ready(function() {
-    // OpenStreetMap haritasını başlat
-    var map, marker;
+  var map, marker, geocoder, autocomplete;
+  
+  function initMap() {
+    // Gaziantep'in koordinatları (varsayılan)
+    var defaultLocation = { lat: 37.066667, lng: 37.383333 };
     
-    function initMap() {
-      // Gaziantep'in koordinatları (varsayılan)
-      var defaultLat = 37.066667;
-      var defaultLng = 37.383333;
-      
-      // Eğer form doldurulurken koordinat girilmişse, onu kullan
-      var coordinates = $('#map_coordinates').val();
-      if (coordinates) {
-        var coords = coordinates.split(',');
-        if (coords.length === 2) {
-          var lat = parseFloat(coords[0].trim());
-          var lng = parseFloat(coords[1].trim());
-          if (!isNaN(lat) && !isNaN(lng)) {
-            defaultLat = lat;
-            defaultLng = lng;
-          }
-        }
+    // Eğer form doldurulurken koordinat girilmişse, onu kullan
+    var coordinates = $('#map_coordinates').val();
+    if (coordinates && coordinates.includes(',')) {
+      var coords = coordinates.split(',');
+      var lat = parseFloat(coords[0].trim());
+      var lng = parseFloat(coords[1].trim());
+      if (!isNaN(lat) && !isNaN(lng)) {
+        defaultLocation = { lat: lat, lng: lng };
       }
-      
-      // Haritayı başlat
-      map = L.map('location-map').setView([defaultLat, defaultLng], 12);
-      
-      // Gaziantep sınırları (yaklaşık)
-      var gaziantepBounds = [
-        [36.8, 37.0], // Güneybatı köşesi (lat, lng)
-        [37.3, 37.8]  // Kuzeydoğu köşesi (lat, lng)
-      ];
-      
-      // Haritayı Gaziantep ile sınırla
-      map.setMaxBounds(gaziantepBounds);
-      map.on('drag', function() {
-        map.panInsideBounds(gaziantepBounds, { animate: false });
-      });
-      
-      // Harita katmanı ekle (OpenStreetMap)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-      }).addTo(map);
-      
-      // Marker ekle
-      marker = L.marker([defaultLat, defaultLng], {
-        draggable: true
-      }).addTo(map);
-      
-      // Haritaya tıklandığında marker'ı güncelle
-      map.on('click', function(e) {
-        marker.setLatLng(e.latlng);
-        updateCoordinates(e.latlng);
-      });
-      
-      // Marker sürüklendiğinde koordinatları güncelle
-      marker.on('dragend', function() {
-        var position = marker.getLatLng();
-        updateCoordinates(position);
-      });
-      
-      // Koordinat giriş değişikliğini izle
-      $('#map_coordinates').on('change', function() {
-        var coords = $(this).val().split(',');
-        if (coords.length === 2) {
-          var lat = parseFloat(coords[0].trim());
-          var lng = parseFloat(coords[1].trim());
-          if (!isNaN(lat) && !isNaN(lng)) {
-            var newLatLng = L.latLng(lat, lng);
-            marker.setLatLng(newLatLng);
-            map.setView(newLatLng, 12);
-          }
-        }
-      });
-      
-      // Mevcut konumu al
-      $('#get-current-location').on('click', function() {
-        if ("geolocation" in navigator) {
-          $(this).html('<i class="fa fa-spinner fa-spin"></i> Konum Alınıyor...');
-          
-          navigator.geolocation.getCurrentPosition(function(position) {
-            var lat = position.coords.latitude;
-            var lng = position.coords.longitude;
-            var userLocation = L.latLng(lat, lng);
-            
-            // Markeri ve haritayı güncelle
-            marker.setLatLng(userLocation);
-            map.setView(userLocation, 15);
-            updateCoordinates(userLocation);
-            
-            // Butonu normale döndür
-            $('#get-current-location').html('<i class="fa fa-map-marker-alt"></i> Konumumu Kullan');
-          }, function(error) {
-            // Hata durumunda
-            var errorMessage = "";
-            switch(error.code) {
-              case error.PERMISSION_DENIED:
-                errorMessage = "Konum izni reddedildi.";
-                break;
-              case error.POSITION_UNAVAILABLE:
-                errorMessage = "Konum bilgisi alınamadı.";
-                break;
-              case error.TIMEOUT:
-                errorMessage = "Konum talebi zaman aşımına uğradı.";
-                break;
-              case error.UNKNOWN_ERROR:
-                errorMessage = "Bilinmeyen bir hata oluştu.";
-                break;
-            }
-            alert("Konum alınamadı: " + errorMessage);
-            $('#get-current-location').html('<i class="fa fa-map-marker-alt"></i> Konumumu Kullan');
-          }, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          });
-      } else {
-          alert("Tarayıcınız konum servislerini desteklemiyor.");
-        }
-      });
-      
-      // Konum arama işlevi
-      $('#search-location-btn').on('click', searchLocation);
-      $('#location-search').on('keypress', function(e) {
-        if (e.which === 13) {
-          searchLocation();
-          e.preventDefault();
-        }
-      });
-      
-      function searchLocation() {
-        var searchQuery = $('#location-search').val().trim();
-        if (!searchQuery) return;
-        
-        $('#search-location-btn').html('<i class="fa fa-spinner fa-spin"></i>');
-        
-        // OpenStreetMap Nominatim API kullanarak arama yap
-        $.ajax({
-          url: 'https://nominatim.openstreetmap.org/search',
-          type: 'get',
-          data: {
-            q: searchQuery,
-            format: 'json',
-            addressdetails: 1,
-            limit: 1
-          },
-          dataType: 'json',
-          success: function(data) {
-            if (data && data.length > 0) {
-              var result = data[0];
-              var lat = parseFloat(result.lat);
-              var lng = parseFloat(result.lon);
-              var location = L.latLng(lat, lng);
-              
-              // Markeri ve haritayı güncelle
-              marker.setLatLng(location);
-              map.setView(location, 15);
-              updateCoordinates(location);
-        } else {
-              alert("Aradığınız konum bulunamadı.");
-            }
-            $('#search-location-btn').html('<i class="fa fa-search"></i> Ara');
-          },
-          error: function() {
-            alert("Konum araması sırasında bir hata oluştu.");
-            $('#search-location-btn').html('<i class="fa fa-search"></i> Ara');
-          }
-        });
-      }
-    }
-    
-    // Koordinat alanını güncelle
-    function updateCoordinates(latlng) {
-      $('#map_coordinates').val(latlng.lat.toFixed(6) + ', ' + latlng.lng.toFixed(6));
     }
     
     // Haritayı başlat
-    initMap();
+    map = new google.maps.Map(document.getElementById('location-map'), {
+      center: defaultLocation,
+      zoom: 12,
+      mapTypeId: google.maps.MapTypeId.ROADMAP,
+      streetViewControl: false,
+      mapTypeControl: true,
+      fullscreenControl: true
+    });
     
-    // Harita görünüm sorununu çöz (bazen harita tam görünmez)
-    setTimeout(function() {
-      map.invalidateSize();
-    }, 500);
+    // Geocoder servisi
+    geocoder = new google.maps.Geocoder();
+    
+    // Marker ekle
+    marker = new google.maps.Marker({
+      position: defaultLocation,
+      map: map,
+      draggable: true,
+      title: 'Gayrimenkul Konumu'
+    });
+    
+    // Marker sürüklendiğinde koordinatları güncelle
+    marker.addListener('dragend', function() {
+      var position = marker.getPosition();
+      updateCoordinates(position.lat(), position.lng());
+    });
+    
+    // Haritaya tıklandığında marker'ı güncelle
+    map.addListener('click', function(event) {
+      marker.setPosition(event.latLng);
+      updateCoordinates(event.latLng.lat(), event.latLng.lng());
+    });
+    
+    // AutoComplete için konum arama
+    var searchInput = document.getElementById('location-search');
+    autocomplete = new google.maps.places.Autocomplete(searchInput, {
+      componentRestrictions: { country: 'tr' }, // Sadece Türkiye
+      fields: ['place_id', 'geometry', 'name']
+    });
+    
+    autocomplete.addListener('place_changed', function() {
+      var place = autocomplete.getPlace();
+      if (place.geometry) {
+        var location = place.geometry.location;
+        map.setCenter(location);
+        map.setZoom(15);
+        marker.setPosition(location);
+        updateCoordinates(location.lat(), location.lng());
+      }
+    });
+  }
+  
+  // Koordinat alanını güncelle
+  function updateCoordinates(lat, lng) {
+    $('#map_coordinates').val(lat.toFixed(6) + ', ' + lng.toFixed(6));
+  }
+  
+  // Manuel konum arama
+  function searchLocation() {
+    var searchQuery = $('#location-search').val().trim();
+    if (!searchQuery) return;
+    
+    $('#search-location-btn').html('<i class="fa fa-spinner fa-spin"></i>');
+    
+    geocoder.geocode({ 
+      address: searchQuery,
+      componentRestrictions: { country: 'TR' }
+    }, function(results, status) {
+      if (status === 'OK' && results[0]) {
+        var location = results[0].geometry.location;
+        map.setCenter(location);
+        map.setZoom(15);
+        marker.setPosition(location);
+        updateCoordinates(location.lat(), location.lng());
+      } else {
+        alert('Aradığınız konum bulunamadı: ' + status);
+      }
+      $('#search-location-btn').html('<i class="fa fa-search"></i> Ara');
+    });
+  }
+  
+  // Mevcut konumu al
+  function getCurrentLocation() {
+    if ("geolocation" in navigator) {
+      $('#get-current-location').html('<i class="fa fa-spinner fa-spin"></i> Konum Alınıyor...');
+      
+      navigator.geolocation.getCurrentPosition(function(position) {
+        var userLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        
+        map.setCenter(userLocation);
+        map.setZoom(15);
+        marker.setPosition(userLocation);
+        updateCoordinates(userLocation.lat, userLocation.lng);
+        
+        $('#get-current-location').html('<i class="fa fa-map-marker-alt"></i> Konumumu Kullan');
+      }, function(error) {
+        var errorMessage = "";
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Konum izni reddedildi.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Konum bilgisi alınamadı.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Konum talebi zaman aşımına uğradı.";
+            break;
+          default:
+            errorMessage = "Bilinmeyen bir hata oluştu.";
+            break;
+        }
+        alert("Konum alınamadı: " + errorMessage);
+        $('#get-current-location').html('<i class="fa fa-map-marker-alt"></i> Konumumu Kullan');
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      });
+    } else {
+      alert("Tarayıcınız konum servislerini desteklemiyor.");
+    }
+  }
+
+  $(document).ready(function() {
+    // Koordinat giriş değişikliğini izle
+    $('#map_coordinates').on('change', function() {
+      var coords = $(this).val().split(',');
+      if (coords.length === 2) {
+        var lat = parseFloat(coords[0].trim());
+        var lng = parseFloat(coords[1].trim());
+        if (!isNaN(lat) && !isNaN(lng)) {
+          var newLocation = { lat: lat, lng: lng };
+          if (map && marker) {
+            map.setCenter(newLocation);
+            map.setZoom(12);
+            marker.setPosition(newLocation);
+          }
+        }
+      }
+    });
+    
+    // Konum arama butonları
+    $('#search-location-btn').on('click', searchLocation);
+    $('#location-search').on('keypress', function(e) {
+      if (e.which === 13) {
+        searchLocation();
+        e.preventDefault();
+      }
+    });
+    
+    $('#get-current-location').on('click', getCurrentLocation);
     
     // Rastgele Doldur Butonu
     $('#fill-random-data').click(function(e) {
@@ -1120,11 +1106,132 @@
       
       // Harita koordinatlarını güncelle (Gaziantep)
       $('#map_coordinates').val("37.066667, 37.383333");
-      var newLatLng = L.latLng(37.066667, 37.383333);
-      if (marker && map) {
-        marker.setLatLng(newLatLng);
-        map.setView(newLatLng, 12);
+      if (map && marker) {
+        var newLocation = { lat: 37.066667, lng: 37.383333 };
+        map.setCenter(newLocation);
+        map.setZoom(12);
+        marker.setPosition(newLocation);
       }
+    });
+    
+    // Çevre bilgisi ekleme/çıkarma
+    $('#add-environment').on('click', function() {
+      var newRow = '<div class="row environment-row">' +
+        '<div class="col-lg-5">' +
+        '<div class="form-group">' +
+        '<label class="form-control-label">Yer Adı</label>' +
+        '<input type="text" name="place_name" class="form-control" placeholder="Örn: Okul, Market, Park">' +
+        '</div>' +
+        '</div>' +
+        '<div class="col-lg-5">' +
+        '<div class="form-group">' +
+        '<label class="form-control-label">Mesafe (metre)</label>' +
+        '<input type="number" name="distance" class="form-control" placeholder="Metre cinsinden uzaklık">' +
+        '</div>' +
+        '</div>' +
+        '<div class="col-lg-2">' +
+        '<div class="form-group">' +
+        '<label class="form-control-label">&nbsp;</label>' +
+        '<button type="button" class="btn btn-danger btn-block remove-environment">Kaldır</button>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+      
+      $('#environments-container').append(newRow);
+      updateRemoveButtons();
+    });
+    
+    // Çevre bilgisi silme
+    $(document).on('click', '.remove-environment', function() {
+      $(this).closest('.environment-row').remove();
+      updateRemoveButtons();
+    });
+    
+    function updateRemoveButtons() {
+      var rows = $('.environment-row');
+      if (rows.length === 1) {
+        rows.find('.remove-environment').hide();
+      } else {
+        rows.find('.remove-environment').show();
+      }
+    }
+    
+    // Sayfa yüklendiğinde çalıştır
+    updateRemoveButtons();
+    
+    // Fotoğraf silme işlemi
+    $(document).on('click', '.delete-image', function() {
+      var imageId = $(this).data('id');
+      var imageCard = $(this).closest('.image-card');
+      
+      if (confirm('Bu fotoğrafı silmek istediğinizden emin misiniz?')) {
+        $.ajax({
+          url: '/portfolio/image-delete/',
+          type: 'POST',
+          data: {
+            'image_id': imageId,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+          },
+          success: function(response) {
+            if (response.success) {
+              imageCard.fadeOut(300, function() {
+                $(this).remove();
+              });
+            } else {
+              alert('Fotoğraf silinirken bir hata oluştu: ' + response.error);
+            }
+          },
+          error: function() {
+            alert('Fotoğraf silinirken bir hata oluştu.');
+          }
+        });
+      }
+    });
+    
+    // Fotoğraf önizleme
+    $('#photo-upload, #camera-input').on('change', function() {
+      const files = this.files;
+      if (!files || files.length === 0) return;
+      
+      // Her dosya için önizleme oluştur
+      Array.from(files).forEach(function(file, index) {
+        // Dosya boyutu kontrolü
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Dosya boyutu 5MB\'dan büyük olamaz: ' + file.name);
+          return;
+        }
+        
+        // Dosya tipi kontrolü
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+          alert('Sadece JPG ve PNG formatları kabul edilmektedir: ' + file.name);
+          return;
+        }
+        
+        // Dosyayı önizleme için göster
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          // Önizleme elemanı oluştur
+          const previewElement = $('<div class="photo-preview">' +
+            '<img src="' + e.target.result + '" alt="Property Image">' +
+            '<button type="button" class="delete-btn"><i class="fas fa-times"></i></button>' +
+            '</div>');
+          
+          // Silme düğmesi işlevselliği
+          previewElement.find('.delete-btn').on('click', function() {
+            previewElement.remove();
+          });
+          
+          // Önizleme alanına ekle
+          $('#photo-preview-container').append(previewElement);
+        };
+        
+        reader.readAsDataURL(file);
+      });
+    });
+    
+    // Kamera ile fotoğraf çekme
+    $('#take-photo-btn').on('click', function() {
+      $('#camera-input').click();
     });
   });
 </script>

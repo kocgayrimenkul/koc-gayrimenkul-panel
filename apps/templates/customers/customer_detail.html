@@ -256,6 +256,18 @@
             </div>
           </div>
           
+          <div class="detail-item">
+            <div class="d-flex justify-content-between">
+              <span><i class="fas fa-envelope icon"></i> İletişim Türü</span>
+              <strong>
+                {% if customer.contact_type == 'bilgi_alma' %}Bilgi Alma
+                {% elif customer.contact_type == 'daire_sunumu' %}Daire Sunumu
+                {% elif customer.contact_type == 'sikayet' %}Şikayet
+                {% else %}{{ customer.contact_type|title }}{% endif %}
+              </strong>
+            </div>
+          </div>
+          
           <h6 class="heading-small text-muted mb-3 mt-4">Görüşme Bilgileri</h6>
           
           {% if customer.source %}

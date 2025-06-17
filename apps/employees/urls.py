@@ -11,12 +11,18 @@ urlpatterns = [
     path('calisan/', views.employee_list, name='employee_list'),
     path('calisan/ekle/', views.employee_create, name='employee_create'),
     path('calisan/<int:employee_id>/', views.employee_edit, name='employee_edit'),
+    path('calisan/<int:employee_id>/sil/', views.employee_delete, name='employee_delete'),
     
     # Şifre yönetimi
     path('calisan/<int:employee_id>/sifre-degistir/', views.reset_password, name='reset_password'),
     
     # İzin yönetimi
     path('calisan/<int:employee_id>/izinler/', views.manage_permissions, name='manage_permissions'),
+    path('calisan/<int:employee_id>/izinler-sifirla/', views.employee_permissions_reset, name='employee_permissions_reset'),
+    path('calisan/<int:employee_id>/yetkileri-kaldir/', views.revoke_all_permissions, name='revoke_all_permissions'),
+    
+    # Toplu işlemler
+    path('calisan/toplu-islemler/', views.bulk_employee_actions, name='bulk_employee_actions'),
     
     # Pozisyon yönetimi
     path('pozisyon/', views.position_list, name='position_list'),

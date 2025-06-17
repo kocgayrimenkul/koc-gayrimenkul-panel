@@ -326,11 +326,64 @@
         <!-- Card header -->
         <div class="card-header border-0">
           <div class="row align-items-center">
-            <div class="col-md-5">
-              <h3 class="mb-0 font-weight-bold">Çalışanlar</h3>
-              <p class="text-muted mb-0 small">Toplam {{ employees|length }} çalışan bulunmaktadır</p>
+            <div class="col">
+              <h3 class="mb-0 font-weight-bold text-koc-red">Çalışan Yönetimi</h3>
+              <p class="text-sm text-muted mb-0">{{ employees|length }} çalışan</p>
             </div>
-            <div class="col-md-7">
+            <div class="col-auto">
+              <div class="btn-group" role="group">
+                <!-- Toplu İşlemler Dropdown -->
+                <div class="btn-group" role="group">
+                  <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="bulk-actions-btn" disabled>
+                    <i class="fas fa-cogs mr-1"></i> Toplu İşlemler
+                  </button>
+                  <div class="dropdown-menu">
+                    <button class="dropdown-item" onclick="performBulkAction('activate')">
+                      <i class="fas fa-user-check text-success mr-2"></i>Seçilenleri Aktif Et
+                    </button>
+                    <button class="dropdown-item" onclick="performBulkAction('deactivate')">
+                      <i class="fas fa-user-slash text-danger mr-2"></i>Seçilenleri Deaktif Et
+                    </button>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" onclick="performBulkAction('revoke_permissions')">
+                      <i class="fas fa-ban text-warning mr-2"></i>Yetkileri Kaldır
+                    </button>
+                    <div class="dropdown-divider"></div>
+                    <h6 class="dropdown-header">Rol Değiştir</h6>
+                    {% for role_code, role_name in roles %}
+                    <button class="dropdown-item" onclick="changeBulkRole('{{ role_code }}')">
+                      <i class="fas fa-user-tag mr-2"></i>{{ role_name }}
+                    </button>
+                    {% endfor %}
+                  </div>
+                </div>
+                
+                <a href="{% url 'employee_create' %}" class="btn btn-koc-red">
+                  <i class="fas fa-user-plus mr-1"></i> Yeni Çalışan
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Arama ve Filtreler -->
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <div class="filter-btn-group">
+                <a href="{% url 'employee_list' %}" class="btn btn-sm {% if not role_filter %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
+                  <i class="fas fa-users mr-1"></i> Tümü
+                </a>
+                <a href="{% url 'employee_list' %}?role=admin" class="btn btn-sm {% if role_filter == 'admin' %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
+                  <i class="fas fa-user-shield mr-1"></i> Yöneticiler
+                </a>
+                <a href="{% url 'employee_list' %}?role=consultant" class="btn btn-sm {% if role_filter == 'consultant' %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
+                  <i class="fas fa-user-tie mr-1"></i> Danışmanlar
+                </a>
+                <a href="{% url 'employee_list' %}?role=secretary" class="btn btn-sm {% if role_filter == 'secretary' %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
+                  <i class="fas fa-headset mr-1"></i> Santral
+                </a>
+              </div>
+            </div>
+            <div class="col-md-6">
               <form action="{% url 'employee_list' %}" method="get" class="search-form ml-auto">
                 <i class="fas fa-search search-icon"></i>
                 <input type="text" name="search" class="form-control form-control-sm" placeholder="Çalışan ara..." value="{{ search_query }}">
@@ -339,117 +392,129 @@
           </div>
         </div>
         
-        <!-- Filtreler -->
-        <div class="card-header pb-0 pt-0">
-          <div class="filter-btn-group mt-3">
-            <a href="{% url 'employee_list' %}" class="btn btn-sm {% if not role_filter %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
-              <i class="fas fa-users mr-1"></i> Tümü
-            </a>
-            <a href="{% url 'employee_list' %}?role=admin" class="btn btn-sm {% if role_filter == 'admin' %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
-              <i class="fas fa-user-shield mr-1"></i> Yöneticiler
-            </a>
-            <a href="{% url 'employee_list' %}?role=consultant" class="btn btn-sm {% if role_filter == 'consultant' %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
-              <i class="fas fa-user-tie mr-1"></i> Danışmanlar
-            </a>
-            <a href="{% url 'employee_list' %}?role=secretary" class="btn btn-sm {% if role_filter == 'secretary' %}btn-koc-red{% else %}btn-outline-secondary{% endif %}">
-              <i class="fas fa-headset mr-1"></i> Santral
-            </a>
-          </div>
-        </div>
-        
         <!-- Çalışan tablosu -->
         <div class="table-responsive">
-          <table class="table align-items-center">
-            <thead>
-              <tr>
-                <th scope="col">Çalışan</th>
-                <th scope="col">Rol</th>
-                <th scope="col">İletişim</th>
-                <th scope="col">Durum</th>
-                <th scope="col" class="text-right">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for employee in employees %}
-              <tr>
-                <td>
-                  <div class="d-flex align-items-center">
-                    <div class="avatar bg-{{ employee.role }}">
-                      {{ employee.user.first_name|slice:":1" }}{{ employee.user.last_name|slice:":1" }}
+          <form id="bulk-form" method="post" action="{% url 'bulk_employee_actions' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" id="bulk-action">
+            <input type="hidden" name="new_role" id="bulk-new-role">
+            
+            <table class="table align-items-center table-flush">
+              <thead class="thead-light">
+                <tr>
+                  <th width="30">
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="select-all">
+                      <label class="custom-control-label" for="select-all"></label>
                     </div>
-                    <div class="ml-3 employee-info">
-                      <h5 class="mb-0">{{ employee.user.get_full_name }}</h5>
-                      <small>{{ employee.user.email }}</small>
+                  </th>
+                  <th scope="col">Çalışan</th>
+                  <th scope="col">Rol</th>
+                  <th scope="col">Telefon</th>
+                  <th scope="col">Durum</th>
+                  <th scope="col" class="text-right">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for employee in employees %}
+                <tr>
+                  <td>
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input employee-checkbox" id="emp-{{ employee.id }}" name="employee_ids" value="{{ employee.id }}">
+                      <label class="custom-control-label" for="emp-{{ employee.id }}"></label>
                     </div>
-                  </div>
-                </td>
-                <td>
-                  <span class="badge badge-pill badge-{{ employee.role }}">
-                    <i class="fas fa-user{% if employee.role == 'admin' %}-shield{% elif employee.role == 'manager' %}-tie{% endif %} mr-1"></i>
-                    {{ employee.get_role_display }}
-                  </span>
-                </td>
-                <td>
-                  {% if employee.phone %}
-                  <div class="d-flex align-items-center">
-                    <i class="fas fa-phone text-muted mr-2"></i>
-                    <span>{{ employee.phone }}</span>
-                  </div>
-                  {% else %}
-                  <span class="text-muted">-</span>
-                  {% endif %}
-                </td>
-                <td>
-                  <div class="d-flex align-items-center">
-                    <span class="status-indicator bg-{% if employee.is_active %}success{% else %}danger{% endif %}"></span>
-                    <span>{% if employee.is_active %}Aktif{% else %}Pasif{% endif %}</span>
-                  </div>
-                </td>
-                <td class="text-right">
-                  <div class="dropdown action-dropdown">
-                    <button class="btn btn-sm btn-icon btn-outline-koc-red" type="button" data-toggle="dropdown">
-                      <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right shadow-sm">
-                      <a class="dropdown-item" href="{% url 'employee_edit' employee.id %}">
-                        <i class="fas fa-edit text-koc-red"></i> Düzenle
-                      </a>
-                      <a class="dropdown-item" href="{% url 'manage_permissions' employee.id %}">
-                        <i class="fas fa-key text-koc-red"></i> Yetki Düzenle
-                      </a>
-                      <a class="dropdown-item" href="{% url 'reset_password' employee.id %}">
-                        <i class="fas fa-lock text-koc-red"></i> Şifre Sıfırla
-                      </a>
-                      <div class="dropdown-divider"></div>
-                      <a class="dropdown-item text-{% if employee.is_active %}danger{% else %}success{% endif %}" 
-                         href="{% url 'employee_edit' employee.id %}?toggle_status=true">
-                        <i class="fas fa-{% if employee.is_active %}user-slash{% else %}user-check{% endif %}"></i>
-                        {% if employee.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}
-                      </a>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="avatar bg-{{ employee.role }}">
+                        {{ employee.user.first_name|slice:":1" }}{{ employee.user.last_name|slice:":1" }}
+                      </div>
+                      <div class="ml-3 employee-info">
+                        <h5 class="mb-0">{{ employee.user.get_full_name }}</h5>
+                        <small>{{ employee.user.email }}</small>
+                      </div>
                     </div>
-                  </div>
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="5" class="text-center py-5">
-                  <img src="https://cdn.iconscout.com/icon/free/png-256/free-data-not-found-1965034-1662569.png" width="80" class="mb-3 opacity-5">
-                  <h5 class="text-muted font-weight-bold">Gösterilecek çalışan bulunamadı</h5>
-                  {% if search_query or role_filter %}
-                  <p class="mb-3 text-muted small">Filtreleri temizleyip tekrar deneyin.</p>
-                  <a href="{% url 'employee_list' %}" class="btn btn-sm btn-outline-koc-red">
-                    <i class="fas fa-sync-alt mr-1"></i> Filtreleri Temizle
-                  </a>
-                  {% else %}
-                  <a href="{% url 'employee_create' %}" class="btn btn-sm btn-koc-red mt-2">
-                    <i class="fas fa-user-plus mr-1"></i> Yeni Çalışan Ekle
-                  </a>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+                  </td>
+                  <td>
+                    <span class="badge badge-pill badge-{{ employee.role }}">
+                      <i class="fas fa-user{% if employee.role == 'admin' %}-shield{% elif employee.role == 'manager' %}-tie{% endif %} mr-1"></i>
+                      {{ employee.get_role_display }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if employee.phone %}
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-phone text-muted mr-2"></i>
+                      <span>{{ employee.phone }}</span>
+                    </div>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="status-indicator bg-{% if employee.is_active %}success{% else %}danger{% endif %}"></span>
+                      <span>{% if employee.is_active %}Aktif{% else %}Pasif{% endif %}</span>
+                    </div>
+                  </td>
+                  <td class="text-right">
+                    <div class="dropdown action-dropdown">
+                      <button class="btn btn-sm btn-icon btn-outline-koc-red" type="button" data-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <div class="dropdown-menu dropdown-menu-right shadow-sm">
+                        <a class="dropdown-item" href="{% url 'employee_edit' employee.id %}">
+                          <i class="fas fa-edit text-koc-red"></i> Düzenle
+                        </a>
+                        <a class="dropdown-item" href="{% url 'manage_permissions' employee.id %}">
+                          <i class="fas fa-key text-koc-red"></i> Yetki Düzenle
+                        </a>
+                        <a class="dropdown-item" href="{% url 'reset_password' employee.id %}">
+                          <i class="fas fa-lock text-koc-red"></i> Şifre Sıfırla
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-{% if employee.is_active %}danger{% else %}success{% endif %}" 
+                           href="{% url 'employee_edit' employee.id %}?toggle_status=true">
+                          <i class="fas fa-{% if employee.is_active %}user-slash{% else %}user-check{% endif %}"></i>
+                          {% if employee.is_active %}Deaktif Et{% else %}Aktif Et{% endif %}
+                        </a>
+                        <form method="post" action="{% url 'revoke_all_permissions' employee.id %}" style="display: inline;">
+                          {% csrf_token %}
+                          <button type="submit" class="dropdown-item text-warning" onclick="return confirm('Bu çalışanın TÜM yetkileri kaldırılacak ve rolü \'Çalışan\' olarak ayarlanacak. Emin misiniz?')">
+                            <i class="fas fa-ban"></i> Tüm Yetkileri Kaldır
+                          </button>
+                        </form>
+                        {% if request.user.is_superuser %}
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="{% url 'employee_delete' employee.id %}" onclick="return confirm('Bu çalışan tamamen silinecek. Bu işlem geri alınamaz. Emin misiniz?')">
+                          <i class="fas fa-trash"></i> Sil
+                        </a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-5">
+                    <img src="https://cdn.iconscout.com/icon/free/png-256/free-data-not-found-1965034-1662569.png" width="80" class="mb-3 opacity-5">
+                    <h5 class="text-muted font-weight-bold">Gösterilecek çalışan bulunamadı</h5>
+                    {% if search_query or role_filter %}
+                    <p class="mb-3 text-muted small">Filtreleri temizleyip tekrar deneyin.</p>
+                    <a href="{% url 'employee_list' %}" class="btn btn-sm btn-outline-koc-red">
+                      <i class="fas fa-sync-alt mr-1"></i> Filtreleri Temizle
+                    </a>
+                    {% else %}
+                    <a href="{% url 'employee_create' %}" class="btn btn-sm btn-koc-red mt-2">
+                      <i class="fas fa-user-plus mr-1"></i> Yeni Çalışan Ekle
+                    </a>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </form>
         </div>
         
         <!-- Boş alan varsa yükseklik ekle -->
@@ -592,6 +657,121 @@
     
     // Tooltip aktivasyonu
     $('[data-toggle="tooltip"]').tooltip();
+    
+    // Tümünü seç checkbox işlevi
+    $('#select-all').change(function() {
+      $('.employee-checkbox').prop('checked', $(this).prop('checked'));
+      updateBulkActionsButton();
+    });
+    
+    // Bireysel checkbox değişimlerini izle
+    $('.employee-checkbox').change(function() {
+      updateBulkActionsButton();
+      
+      // Eğer tüm checkboxlar seçiliyse, "Tümünü seç" checkbox'ını da işaretle
+      var totalCheckboxes = $('.employee-checkbox').length;
+      var checkedCheckboxes = $('.employee-checkbox:checked').length;
+      
+      $('#select-all').prop('checked', totalCheckboxes === checkedCheckboxes);
+    });
+    
+    // Sayfa yüklendiğinde bulk actions butonunu kontrol et
+    updateBulkActionsButton();
+  });
+  
+  // Bulk actions butonunu güncelle
+  function updateBulkActionsButton() {
+    var checkedCount = $('.employee-checkbox:checked').length;
+    var bulkButton = $('#bulk-actions-btn');
+    
+    if (checkedCount > 0) {
+      bulkButton.prop('disabled', false);
+      bulkButton.text('Toplu İşlemler (' + checkedCount + ')');
+      bulkButton.prepend('<i class="fas fa-cogs mr-1"></i> ');
+    } else {
+      bulkButton.prop('disabled', true);
+      bulkButton.html('<i class="fas fa-cogs mr-1"></i> Toplu İşlemler');
+    }
+  }
+  
+  // Toplu işlem gerçekleştir
+  function performBulkAction(action) {
+    var checkedCount = $('.employee-checkbox:checked').length;
+    
+    if (checkedCount === 0) {
+      alert('Lütfen işlem yapmak istediğiniz çalışanları seçin.');
+      return;
+    }
+    
+    var actionText = '';
+    var confirmText = '';
+    
+    switch(action) {
+      case 'activate':
+        actionText = 'aktifleştirme';
+        confirmText = checkedCount + ' çalışan aktifleştirilecek. Devam etmek istiyor musunuz?';
+        break;
+      case 'deactivate':
+        actionText = 'deaktifleştirme';
+        confirmText = checkedCount + ' çalışan deaktifleştirilecek. Devam etmek istiyor musunuz?';
+        break;
+      case 'revoke_permissions':
+        actionText = 'yetki kaldırma';
+        confirmText = checkedCount + ' çalışanın TÜM yetkileri kaldırılacak ve gruplardan çıkarılacak. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?';
+        break;
+    }
+    
+    if (confirm(confirmText)) {
+      $('#bulk-action').val(action);
+      $('#bulk-form').submit();
+    }
+  }
+  
+  // Toplu rol değiştirme
+  function changeBulkRole(newRole) {
+    var checkedCount = $('.employee-checkbox:checked').length;
+    
+    if (checkedCount === 0) {
+      alert('Lütfen rol değiştirmek istediğiniz çalışanları seçin.');
+      return;
+    }
+    
+    // Rol adını bul
+    var roleNames = {
+      'admin': 'Yönetici',
+      'manager': 'Müdür', 
+      'consultant': 'Danışman',
+      'secretary': 'Santral/Sekreter',
+      'employee': 'Çalışan'
+    };
+    
+    var roleName = roleNames[newRole] || newRole;
+    var confirmText = checkedCount + ' çalışanın rolü "' + roleName + '" olarak değiştirilecek. Devam etmek istiyor musunuz?';
+    
+    if (confirm(confirmText)) {
+      $('#bulk-action').val('change_role');
+      $('#bulk-new-role').val(newRole);
+      $('#bulk-form').submit();
+    }
+  }
+  
+  // Tüm yetkileri kaldır onay
+  function confirmRevokeAllPermissions(employeeName) {
+    return confirm('UYARI: ' + employeeName + ' adlı çalışanın TÜM yetkileri kaldırılacak ve rolü "Çalışan" olarak ayarlanacak.\n\nBu işlem:\n• Tüm özel izinleri sıfırlar\n• Kullanıcıyı tüm gruplardan çıkarır\n• Rolünü en alt seviyeye indirir\n\nBu işlem geri alınamaz. Devam etmek istiyor musunuz?');
+  }
+  
+  // Çalışan silme onay
+  function confirmEmployeeDelete(employeeName) {
+    return confirm('UYARI: ' + employeeName + ' adlı çalışan tamamen silinecek.\n\nBu işlem:\n• Kullanıcı hesabını tamamen siler\n• Tüm verilerini kalıcı olarak kaldırır\n• GERİ ALINAMAZ\n\nBu tehlikeli işlemi gerçekleştirmek istediğinizden emin misiniz?\n\nDevam etmek için "Tamam"a basın.');
+  }
+  
+  // Arama formu otomatik gönderme (opsiyonel)
+  $('.search-form input').on('keyup', function() {
+    clearTimeout(window.searchTimeout);
+    window.searchTimeout = setTimeout(function() {
+      // 500ms gecikme ile arama yap (opsiyonel)
+      // $('.search-form').submit();
+    }, 500);
   });
 </script>
 {% endblock javascripts %} 

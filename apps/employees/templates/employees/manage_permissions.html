@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Çalışan İzinleri - {{ employee.user.get_full_name }} {% endblock %}
+{% block title %} Çalışan İzinleri {% endblock %}
 
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}
@@ -33,115 +33,104 @@
     border-color: var(--koc-red-light);
   }
   
-  /* Özel izin kartı stilleri */
-  .permission-card {
+  .permission-module {
+    background-color: #f8f9fe;
     border-radius: 10px;
-    border-top: 3px solid var(--koc-red);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    margin-bottom: 1.5rem;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--koc-red);
   }
   
-  .permission-card .card-header {
-    background-color: transparent;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    padding: 1rem 1.5rem;
+  .permission-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
   }
   
-  .permission-card .card-header h5 {
-    margin-bottom: 0;
+  .permission-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .permission-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+  }
+  
+  .permission-checkbox {
+    transform: scale(1.2);
+    margin-right: 8px;
+  }
+  
+  .permission-label {
     font-weight: 600;
+    color: #333;
   }
   
-  .permission-card .card-body {
-    padding: 1.5rem;
+  .permission-desc {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 5px;
   }
   
-  /* Özel switch stilleri */
-  .custom-switch .custom-control-label::before {
-    width: 2.5rem;
-    height: 1.25rem;
-    border-radius: 1rem;
-    background-color: #e9ecef;
+  .module-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
   }
   
-  .custom-switch .custom-control-input:checked ~ .custom-control-label::before {
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .custom-switch .custom-control-label::after {
-    top: calc(0.25rem + 2px);
-    left: calc(-2.5rem + 2px);
-    width: calc(1.25rem - 4px);
-    height: calc(1.25rem - 4px);
-    background-color: #fff;
-    border-radius: 0.625rem;
-  }
-  
-  .custom-switch .custom-control-input:checked ~ .custom-control-label::after {
-    transform: translateX(1.25rem);
-  }
-  
-  .custom-switch .custom-control-label {
-    padding-left: 0.5rem;
-    line-height: 1.75;
-  }
-  
-  .badge-role {
-    font-size: 0.875rem;
-    padding: 0.5rem 1rem;
-    border-radius: 50rem;
-  }
-  
-  .badge-admin {
-    background-color: var(--koc-red-light);
+  .module-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--koc-red);
     color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
   }
   
-  .badge-manager {
-    background-color: #5e72e4;
-    color: white;
+  .role-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   
-  .badge-consultant {
-    background-color: #11cdef;
-    color: white;
-  }
-  
-  .badge-secretary {
-    background-color: #fb6340;
-    color: white;
-  }
-  
-  .badge-employee {
-    background-color: #2dce89;
-    color: white;
-  }
+  .role-admin { background-color: #dc3545; color: white; }
+  .role-manager { background-color: #6f42c1; color: white; }
+  .role-consultant { background-color: #20c997; color: white; }
+  .role-secretary { background-color: #fd7e14; color: white; }
+  .role-employee { background-color: #6c757d; color: white; }
 </style>
 {% endblock stylesheets %}
 
 {% block content %}
-
 <div class="header bg-gradient-koc-red pb-6">
   <div class="container-fluid">
     <div class="header-body">
       <div class="row align-items-center py-4">
         <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">İzin Yönetimi</h6>
+          <h6 class="h2 text-white d-inline-block mb-0">Çalışan İzinleri</h6>
           <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
             <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
               <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="{% url 'employee_list' %}">Çalışan Yönetimi</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'employee_list' %}">Çalışanlar</a></li>
               <li class="breadcrumb-item active" aria-current="page">İzin Yönetimi</li>
             </ol>
           </nav>
         </div>
         <div class="col-lg-6 col-5 text-right">
           <a href="{% url 'employee_list' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-arrow-left mr-1"></i> Çalışanlara Dön
-          </a>
-          <a href="{% url 'employee_edit' employee.id %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-user-edit mr-1"></i> Çalışanı Düzenle
+            <i class="fas fa-arrow-left mr-1"></i> Geri Dön
           </a>
         </div>
       </div>
@@ -151,377 +140,288 @@
 
 <!-- Page content -->
 <div class="container-fluid mt--6">
-  
-  <!-- Hata mesajları -->
-  {% if messages %}
   <div class="row">
-    <div class="col-12">
-      {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
-        <span class="alert-text">{{ message }}</span>
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-  
-  <div class="row">
-    <!-- Çalışan bilgisi -->
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-body">
-          <div class="text-center">
-            <div class="avatar mx-auto mb-3" style="width: 80px; height: 80px; background-color: 
-              {% if employee.role == 'admin' %}var(--koc-red)
-              {% elif employee.role == 'manager' %}#5e72e4
-              {% elif employee.role == 'consultant' %}#11cdef
-              {% elif employee.role == 'secretary' %}#fb6340
-              {% else %}#2dce89{% endif %}">
-              <span style="font-size: 2rem;">{{ employee.user.first_name|slice:":1" }}{{ employee.user.last_name|slice:":1" }}</span>
-            </div>
-            <h3 class="mb-0">{{ employee.user.get_full_name }}</h3>
-            <p class="text-muted mb-3">{{ employee.user.email }}</p>
-            
-            <div class="badge badge-role badge-{{ employee.role }} mb-4">
-              <i class="fas fa-user{% if employee.role == 'admin' %}-shield{% elif employee.role == 'manager' %}-tie{% endif %} mr-1"></i>
-              {{ employee.get_role_display }}
-            </div>
-            
-            <hr class="my-4">
-            
-            <div class="text-left">
-              <p class="text-sm mb-1">
-                <i class="fas fa-phone text-primary mr-2"></i> {{ employee.phone|default:"Telefon bilgisi yok" }}
-              </p>
-              <p class="text-sm mb-1">
-                <i class="fas fa-calendar-alt text-info mr-2"></i> İşe Başlama: {{ employee.start_date|date:"d.m.Y" }}
-              </p>
-              <p class="text-sm mb-1">
-                <i class="fas fa-circle text-{% if employee.is_active %}success{% else %}danger{% endif %} mr-2"></i>
+    <div class="col-xl-12">
+      <div class="card shadow">
+        <div class="card-header">
+          <div class="row align-items-center">
+            <div class="col-8">
+              <h3 class="mb-0">{{ employee.user.get_full_name }} - İzin Yönetimi</h3>
+              <p class="text-sm text-muted">
+                Rol: <span class="role-badge role-{{ employee.role }}">{{ employee.get_role_display }}</span>
+                <i class="fas fa-circle text-{% if employee.is_active %}success{% else %}danger{% endif %} ml-2 mr-2"></i>
                 Durum: {% if employee.is_active %}Aktif{% else %}Pasif{% endif %}
               </p>
             </div>
+            <div class="col-4 text-right">
+              <form method="post" action="{% url 'employee_permissions_reset' employee.id %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-warning btn-sm" onclick="return confirm('Bu çalışanın izinleri rolüne uygun varsayılan değerlere sıfırlanacak. Devam etmek istiyor musunuz?')">
+                  <i class="fas fa-undo mr-1"></i> Varsayılana Sıfırla
+                </button>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div class="card mt-4">
-        <div class="card-header">
-          <h5 class="mb-0">İzin Şablonları</h5>
-        </div>
+        
         <div class="card-body">
-          <p class="text-sm text-muted mb-4">
-            Aşağıdaki hazır şablonları kullanarak çalışana hızlıca izin atayabilirsiniz.
-          </p>
-          
-          <div class="custom-control custom-radio mb-3">
-            <input type="radio" id="template_admin" name="permission_template" class="custom-control-input" value="admin">
-            <label class="custom-control-label" for="template_admin">
-              <strong>Yönetici</strong> - Tüm İzinler
-            </label>
-          </div>
-          
-          <div class="custom-control custom-radio mb-3">
-            <input type="radio" id="template_manager" name="permission_template" class="custom-control-input" value="manager">
-            <label class="custom-control-label" for="template_manager">
-              <strong>Müdür</strong> - Kısıtlı Yönetici İzinleri
-            </label>
-          </div>
-          
-          <div class="custom-control custom-radio mb-3">
-            <input type="radio" id="template_consultant" name="permission_template" class="custom-control-input" value="consultant">
-            <label class="custom-control-label" for="template_consultant">
-              <strong>Danışman</strong> - Müşteri ve Portföy Yönetimi
-            </label>
-          </div>
-          
-          <div class="custom-control custom-radio mb-3">
-            <input type="radio" id="template_secretary" name="permission_template" class="custom-control-input" value="secretary">
-            <label class="custom-control-label" for="template_secretary">
-              <strong>Santral</strong> - Müşteri Kayıt ve Ajanda
-            </label>
-          </div>
-          
-          <div class="custom-control custom-radio mb-3">
-            <input type="radio" id="template_employee" name="permission_template" class="custom-control-input" value="employee">
-            <label class="custom-control-label" for="template_employee">
-              <strong>Çalışan</strong> - Temel İzinler
-            </label>
-          </div>
-          
-          <button type="button" id="apply_template" class="btn btn-block btn-outline-primary mt-4">Şablonu Uygula</button>
+          <form method="post">
+            {% csrf_token %}
+            
+            <!-- Müşteri Yönetimi İzinleri -->
+            <div class="permission-module">
+              <div class="module-header">
+                <div class="module-icon">
+                  <i class="fas fa-users"></i>
+                </div>
+                <div>
+                  <h4 class="mb-0 text-koc-red">Müşteri Yönetimi</h4>
+                  <p class="text-muted mb-0">Müşteri kayıtları ve iletişim yönetimi</p>
+                </div>
+              </div>
+              <div class="permission-group">
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_view_customers" name="can_view_customers" {% if permissions.can_view_customers %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_view_customers">Görüntüleme</label>
+                  </div>
+                  <div class="permission-desc">Müşteri listesini ve detaylarını görüntüleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_add_customers" name="can_add_customers" {% if permissions.can_add_customers %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_add_customers">Ekleme</label>
+                  </div>
+                  <div class="permission-desc">Yeni müşteri kaydı oluşturabilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_edit_customers" name="can_edit_customers" {% if permissions.can_edit_customers %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_edit_customers">Düzenleme</label>
+                  </div>
+                  <div class="permission-desc">Müşteri bilgilerini güncelleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_delete_customers" name="can_delete_customers" {% if permissions.can_delete_customers %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_delete_customers">Silme</label>
+                  </div>
+                  <div class="permission-desc">Müşteri kayıtlarını silebilir</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Portföy Yönetimi İzinleri -->
+            <div class="permission-module">
+              <div class="module-header">
+                <div class="module-icon">
+                  <i class="fas fa-building"></i>
+                </div>
+                <div>
+                  <h4 class="mb-0 text-koc-red">Portföy Yönetimi</h4>
+                  <p class="text-muted mb-0">Gayrimenkul portföyü ve emlak ilanları</p>
+                </div>
+              </div>
+              <div class="permission-group">
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_view_portfolio" name="can_view_portfolio" {% if permissions.can_view_portfolio %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_view_portfolio">Görüntüleme</label>
+                  </div>
+                  <div class="permission-desc">Portföy listesini ve gayrimenkul detaylarını görüntüleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_add_portfolio" name="can_add_portfolio" {% if permissions.can_add_portfolio %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_add_portfolio">Ekleme</label>
+                  </div>
+                  <div class="permission-desc">Yeni gayrimenkul ekleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_edit_portfolio" name="can_edit_portfolio" {% if permissions.can_edit_portfolio %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_edit_portfolio">Düzenleme</label>
+                  </div>
+                  <div class="permission-desc">Gayrimenkul bilgilerini güncelleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_delete_portfolio" name="can_delete_portfolio" {% if permissions.can_delete_portfolio %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_delete_portfolio">Silme</label>
+                  </div>
+                  <div class="permission-desc">Portföyden gayrimenkul silebilir</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Takvim İzinleri -->
+            <div class="permission-module">
+              <div class="module-header">
+                <div class="module-icon">
+                  <i class="fas fa-calendar"></i>
+                </div>
+                <div>
+                  <h4 class="mb-0 text-koc-red">Takvim ve Etkinlikler</h4>
+                  <p class="text-muted mb-0">Randevu ve etkinlik yönetimi</p>
+                </div>
+              </div>
+              <div class="permission-group">
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_view_calendar" name="can_view_calendar" {% if permissions.can_view_calendar %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_view_calendar">Görüntüleme</label>
+                  </div>
+                  <div class="permission-desc">Takvim ve etkinlikleri görüntüleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_add_calendar" name="can_add_calendar" {% if permissions.can_add_calendar %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_add_calendar">Ekleme</label>
+                  </div>
+                  <div class="permission-desc">Yeni etkinlik ve randevu oluşturabilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_edit_calendar" name="can_edit_calendar" {% if permissions.can_edit_calendar %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_edit_calendar">Düzenleme</label>
+                  </div>
+                  <div class="permission-desc">Etkinlik ve randevu detaylarını güncelleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_delete_calendar" name="can_delete_calendar" {% if permissions.can_delete_calendar %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_delete_calendar">Silme</label>
+                  </div>
+                  <div class="permission-desc">Etkinlik ve randevuları iptal edebilir</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FSBO İzinleri -->
+            <div class="permission-module">
+              <div class="module-header">
+                <div class="module-icon">
+                  <i class="fas fa-home"></i>
+                </div>
+                <div>
+                  <h4 class="mb-0 text-koc-red">FSBO Yönetimi</h4>
+                  <p class="text-muted mb-0">Satış ilanları ve FSBO başvuruları</p>
+                </div>
+              </div>
+              <div class="permission-group">
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_view_fsbo" name="can_view_fsbo" {% if permissions.can_view_fsbo %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_view_fsbo">Görüntüleme</label>
+                  </div>
+                  <div class="permission-desc">FSBO başvurularını görüntüleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_add_fsbo" name="can_add_fsbo" {% if permissions.can_add_fsbo %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_add_fsbo">Ekleme</label>
+                  </div>
+                  <div class="permission-desc">Yeni FSBO başvurusu oluşturabilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_edit_fsbo" name="can_edit_fsbo" {% if permissions.can_edit_fsbo %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_edit_fsbo">Düzenleme</label>
+                  </div>
+                  <div class="permission-desc">FSBO başvuru detaylarını güncelleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_delete_fsbo" name="can_delete_fsbo" {% if permissions.can_delete_fsbo %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_delete_fsbo">Silme</label>
+                  </div>
+                  <div class="permission-desc">FSBO başvurularını silebilir</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sistem İzinleri -->
+            <div class="permission-module">
+              <div class="module-header">
+                <div class="module-icon">
+                  <i class="fas fa-cogs"></i>
+                </div>
+                <div>
+                  <h4 class="mb-0 text-koc-red">Sistem ve Yönetim</h4>
+                  <p class="text-muted mb-0">Çalışan yönetimi ve sistem ayarları</p>
+                </div>
+              </div>
+              <div class="permission-group">
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_view_employees" name="can_view_employees" {% if permissions.can_view_employees %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_view_employees">Çalışan Görüntüleme</label>
+                  </div>
+                  <div class="permission-desc">Çalışan listesini görüntüleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_view_reports" name="can_view_reports" {% if permissions.can_view_reports %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_view_reports">Rapor Görüntüleme</label>
+                  </div>
+                  <div class="permission-desc">Sistem raporlarını görüntüleyebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_manage_settings" name="can_manage_settings" {% if permissions.can_manage_settings %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_manage_settings">Sistem Ayarları</label>
+                  </div>
+                  <div class="permission-desc">Sistem ayarlarını yönetebilir</div>
+                </div>
+                <div class="permission-item">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input permission-checkbox" id="can_access_api" name="can_access_api" {% if permissions.can_access_api %}checked{% endif %}>
+                    <label class="custom-control-label permission-label" for="can_access_api">API Erişimi</label>
+                  </div>
+                  <div class="permission-desc">API'ye erişim sağlayabilir</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Kaydet Butonu -->
+            <div class="text-center mt-4">
+              <button type="submit" class="btn btn-koc-red btn-lg px-5">
+                <i class="fas fa-save mr-2"></i> İzinleri Kaydet
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    </div>
-    
-    <!-- İzin ayarları -->
-    <div class="col-md-8">
-      <form method="post" action="{% url 'manage_permissions' employee.id %}">
-        {% csrf_token %}
-        
-        <!-- Müşteri Yönetimi İzinleri -->
-        <div class="permission-card">
-          <div class="card-header">
-            <h5>
-              <i class="fas fa-users text-primary mr-2"></i>
-              Müşteri Yönetimi İzinleri
-            </h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_view_customers" name="can_view_customers" 
-                    {% if not permissions or permissions.can_view_customers %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_view_customers">
-                    <strong>Müşteri Görüntüleme</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Müşteri listesi ve detaylarını görüntüleyebilir.</p>
-                  </label>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_add_customers" name="can_add_customers"
-                    {% if permissions and permissions.can_add_customers %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_add_customers">
-                    <strong>Müşteri Ekleme</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Yeni müşteri kaydı oluşturabilir.</p>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_edit_customers" name="can_edit_customers"
-                    {% if permissions and permissions.can_edit_customers %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_edit_customers">
-                    <strong>Müşteri Düzenleme</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Mevcut müşterilerin bilgilerini düzenleyebilir.</p>
-                  </label>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_delete_customers" name="can_delete_customers"
-                    {% if permissions and permissions.can_delete_customers %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_delete_customers">
-                    <strong>Müşteri Silme</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Müşteri kayıtlarını silebilir.</p>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Gayrimenkul Yönetimi İzinleri -->
-        <div class="permission-card">
-          <div class="card-header">
-            <h5>
-              <i class="fas fa-building text-warning mr-2"></i>
-              Gayrimenkul Yönetimi İzinleri
-            </h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_view_properties" name="can_view_properties"
-                    {% if not permissions or permissions.can_view_properties %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_view_properties">
-                    <strong>Gayrimenkul Görüntüleme</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Portföydeki gayrimenkulleri görüntüleyebilir.</p>
-                  </label>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_add_properties" name="can_add_properties"
-                    {% if permissions and permissions.can_add_properties %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_add_properties">
-                    <strong>Gayrimenkul Ekleme</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Portföye yeni gayrimenkul ekleyebilir.</p>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_edit_properties" name="can_edit_properties"
-                    {% if permissions and permissions.can_edit_properties %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_edit_properties">
-                    <strong>Gayrimenkul Düzenleme</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Mevcut gayrimenkulleri düzenleyebilir.</p>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Takvim ve Etkinlik İzinleri -->
-        <div class="permission-card">
-          <div class="card-header">
-            <h5>
-              <i class="fas fa-calendar-alt text-info mr-2"></i>
-              Takvim ve Etkinlik İzinleri
-            </h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_view_calendar" name="can_view_calendar"
-                    {% if not permissions or permissions.can_view_calendar %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_view_calendar">
-                    <strong>Takvim Görüntüleme</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Etkinlik takvimini görüntüleyebilir.</p>
-                  </label>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_create_events" name="can_create_events"
-                    {% if not permissions or permissions.can_create_events %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_create_events">
-                    <strong>Etkinlik Oluşturma</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Yeni etkinlik ve toplantı oluşturabilir.</p>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_edit_events" name="can_edit_events"
-                    {% if permissions and permissions.can_edit_events %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_edit_events">
-                    <strong>Etkinlik Düzenleme</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Tüm etkinlikleri düzenleyebilir.</p>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Sistem Yönetimi İzinleri -->
-        <div class="permission-card">
-          <div class="card-header">
-            <h5>
-              <i class="fas fa-cogs text-danger mr-2"></i>
-              Sistem Yönetimi İzinleri
-            </h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_view_reports" name="can_view_reports"
-                    {% if permissions and permissions.can_view_reports %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_view_reports">
-                    <strong>Raporları Görüntüleme</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Satış ve performans raporlarını görüntüleyebilir.</p>
-                  </label>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_manage_employees" name="can_manage_employees"
-                    {% if permissions and permissions.can_manage_employees %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_manage_employees">
-                    <strong>Çalışan Yönetimi</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Çalışan ekleyebilir, düzenleyebilir ve silebilir.</p>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="custom-control custom-switch mb-4">
-                  <input type="checkbox" class="custom-control-input" id="can_manage_settings" name="can_manage_settings"
-                    {% if permissions and permissions.can_manage_settings %}checked{% endif %}>
-                  <label class="custom-control-label" for="can_manage_settings">
-                    <strong>Sistem Ayarları</strong>
-                    <p class="text-muted mt-1 mb-0 text-sm">Sistem ayarlarını değiştirebilir.</p>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="text-right mt-4 mb-5">
-          <a href="{% url 'employee_list' %}" class="btn btn-secondary">İptal</a>
-          <button type="submit" class="btn btn-koc-red">İzinleri Kaydet</button>
-        </div>
-      </form>
     </div>
   </div>
   
   {% include "includes/footer.html" %}
 </div>
-
 {% endblock content %}
 
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
 <script>
   $(document).ready(function() {
-    // İzin şablonlarını uygulama
-    $('#apply_template').on('click', function() {
-      var selectedTemplate = $('input[name="permission_template"]:checked').val();
-      
-      if (!selectedTemplate) {
-        alert('Lütfen bir şablon seçin.');
-        return;
-      }
-      
-      // Tüm izinleri önce kapat
-      $('input[type="checkbox"]').prop('checked', false);
-      
-      // Şablona göre izinleri ayarla
-      switch(selectedTemplate) {
-        case 'admin':
-          // Yönetici - tüm izinler açık
-          $('input[type="checkbox"]').prop('checked', true);
-          break;
-          
-        case 'manager':
-          // Müdür
-          $('#can_view_customers, #can_add_customers, #can_edit_customers').prop('checked', true);
-          $('#can_view_properties, #can_add_properties, #can_edit_properties').prop('checked', true);
-          $('#can_view_calendar, #can_create_events, #can_edit_events').prop('checked', true);
-          $('#can_view_reports, #can_manage_employees').prop('checked', true);
-          break;
-          
-        case 'consultant':
-          // Danışman
-          $('#can_view_customers, #can_add_customers, #can_edit_customers').prop('checked', true);
-          $('#can_view_properties').prop('checked', true);
-          $('#can_view_calendar, #can_create_events').prop('checked', true);
-          break;
-          
-        case 'secretary':
-          // Santral
-          $('#can_view_customers, #can_add_customers').prop('checked', true);
-          $('#can_view_properties').prop('checked', true);
-          $('#can_view_calendar, #can_create_events, #can_edit_events').prop('checked', true);
-          break;
-          
-        case 'employee':
-          // Çalışan - temel izinler
-          $('#can_view_customers').prop('checked', true);
-          $('#can_view_properties').prop('checked', true);
-          $('#can_view_calendar').prop('checked', true);
-          break;
-      }
+    // Modül seviyesinde "tümünü seç" işlevi
+    $('.module-header').each(function() {
+      $(this).dblclick(function() {
+        var module = $(this).closest('.permission-module');
+        var checkboxes = module.find('input[type="checkbox"]');
+        var allChecked = checkboxes.length === checkboxes.filter(':checked').length;
+        checkboxes.prop('checked', !allChecked);
+      });
+    });
+    
+    // Hover efektleri
+    $('.permission-item').hover(
+      function() { $(this).css('transform', 'translateY(-2px)'); },
+      function() { $(this).css('transform', 'translateY(0)'); }
+    );
+    
+    // Form gönderilmeden önce onay
+    $('form').submit(function(e) {
+      return confirm('İzin değişiklikleri kaydedilecek. Devam etmek istiyor musunuz?');
     });
   });
 </script>

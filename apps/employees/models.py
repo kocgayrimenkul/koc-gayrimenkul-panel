@@ -75,32 +75,90 @@ class EmployeeProfile(models.Model):
         ordering = ['-is_active', 'user__last_name', 'user__first_name']
 
 class Permission(models.Model):
-    """Özel izin ayarları"""
+    """Çalışan özel izin ayarları - Modül bazlı"""
     employee = models.OneToOneField(EmployeeProfile, on_delete=models.CASCADE, 
                                   related_name='custom_permissions', verbose_name="Çalışan")
-    # Müşteri yönetimi izinleri
+    
+    # Müşteri Yönetimi İzinleri
     can_view_customers = models.BooleanField(default=True, verbose_name="Müşteri Görüntüleme")
     can_add_customers = models.BooleanField(default=False, verbose_name="Müşteri Ekleme")
     can_edit_customers = models.BooleanField(default=False, verbose_name="Müşteri Düzenleme")
     can_delete_customers = models.BooleanField(default=False, verbose_name="Müşteri Silme")
     
-    # Gayrimenkul yönetimi izinleri
-    can_view_properties = models.BooleanField(default=True, verbose_name="Gayrimenkul Görüntüleme")
-    can_add_properties = models.BooleanField(default=False, verbose_name="Gayrimenkul Ekleme")
-    can_edit_properties = models.BooleanField(default=False, verbose_name="Gayrimenkul Düzenleme")
+    # Gayrimenkul Portföy İzinleri
+    can_view_portfolio = models.BooleanField(default=True, verbose_name="Portföy Görüntüleme")
+    can_add_portfolio = models.BooleanField(default=False, verbose_name="Portföy Ekleme")
+    can_edit_portfolio = models.BooleanField(default=False, verbose_name="Portföy Düzenleme")
+    can_delete_portfolio = models.BooleanField(default=False, verbose_name="Portföy Silme")
     
-    # Takvim ve etkinlik izinleri
+    # Takvim ve Etkinlik İzinleri
     can_view_calendar = models.BooleanField(default=True, verbose_name="Takvim Görüntüleme")
-    can_create_events = models.BooleanField(default=True, verbose_name="Etkinlik Oluşturma")
-    can_edit_events = models.BooleanField(default=False, verbose_name="Etkinlik Düzenleme")
+    can_add_calendar = models.BooleanField(default=False, verbose_name="Takvim Etkinlik Ekleme")
+    can_edit_calendar = models.BooleanField(default=False, verbose_name="Takvim Etkinlik Düzenleme")
+    can_delete_calendar = models.BooleanField(default=False, verbose_name="Takvim Etkinlik Silme")
     
-    # Sistem yönetimi izinleri
-    can_view_reports = models.BooleanField(default=False, verbose_name="Raporları Görüntüleme")
-    can_manage_employees = models.BooleanField(default=False, verbose_name="Çalışan Yönetimi")
+    # FSBO (Satış İlanları) İzinleri
+    can_view_fsbo = models.BooleanField(default=True, verbose_name="FSBO Görüntüleme")
+    can_add_fsbo = models.BooleanField(default=False, verbose_name="FSBO Ekleme")
+    can_edit_fsbo = models.BooleanField(default=False, verbose_name="FSBO Düzenleme")
+    can_delete_fsbo = models.BooleanField(default=False, verbose_name="FSBO Silme")
+    
+    # Prezentasyon İzinleri
+    can_view_presentation = models.BooleanField(default=True, verbose_name="Prezentasyon Görüntüleme")
+    can_add_presentation = models.BooleanField(default=False, verbose_name="Prezentasyon Ekleme")
+    can_edit_presentation = models.BooleanField(default=False, verbose_name="Prezentasyon Düzenleme")
+    can_delete_presentation = models.BooleanField(default=False, verbose_name="Prezentasyon Silme")
+    
+    # Kariyer İzinleri
+    can_view_careers = models.BooleanField(default=True, verbose_name="Kariyer Başvuru Görüntüleme")
+    can_add_careers = models.BooleanField(default=False, verbose_name="Kariyer İlanı Ekleme")
+    can_edit_careers = models.BooleanField(default=False, verbose_name="Kariyer İlanı Düzenleme")
+    can_delete_careers = models.BooleanField(default=False, verbose_name="Kariyer İlanı Silme")
+    
+    # Çalışan Yönetimi İzinleri
+    can_view_employees = models.BooleanField(default=False, verbose_name="Çalışan Görüntüleme")
+    can_add_employees = models.BooleanField(default=False, verbose_name="Çalışan Ekleme")
+    can_edit_employees = models.BooleanField(default=False, verbose_name="Çalışan Düzenleme")
+    can_delete_employees = models.BooleanField(default=False, verbose_name="Çalışan Silme")
+    
+    # Raporlama ve Sistem İzinleri
+    can_view_reports = models.BooleanField(default=False, verbose_name="Rapor Görüntüleme")
     can_manage_settings = models.BooleanField(default=False, verbose_name="Sistem Ayarları")
+    can_access_api = models.BooleanField(default=False, verbose_name="API Erişimi")
     
     def __str__(self):
         return f"{self.employee.user.get_full_name()} İzinleri"
+    
+    @property
+    def permissions_summary(self):
+        """İzin özetini döndür"""
+        permissions = []
+        
+        # Müşteri izinleri
+        customer_perms = []
+        if self.can_view_customers: customer_perms.append("Görüntüleme")
+        if self.can_add_customers: customer_perms.append("Ekleme")
+        if self.can_edit_customers: customer_perms.append("Düzenleme")
+        if self.can_delete_customers: customer_perms.append("Silme")
+        if customer_perms: permissions.append(f"Müşteri: {', '.join(customer_perms)}")
+        
+        # Portföy izinleri
+        portfolio_perms = []
+        if self.can_view_portfolio: portfolio_perms.append("Görüntüleme")
+        if self.can_add_portfolio: portfolio_perms.append("Ekleme")
+        if self.can_edit_portfolio: portfolio_perms.append("Düzenleme")
+        if self.can_delete_portfolio: portfolio_perms.append("Silme")
+        if portfolio_perms: permissions.append(f"Portföy: {', '.join(portfolio_perms)}")
+        
+        # Takvim izinleri
+        calendar_perms = []
+        if self.can_view_calendar: calendar_perms.append("Görüntüleme")
+        if self.can_add_calendar: calendar_perms.append("Ekleme")
+        if self.can_edit_calendar: calendar_perms.append("Düzenleme")
+        if self.can_delete_calendar: calendar_perms.append("Silme")
+        if calendar_perms: permissions.append(f"Takvim: {', '.join(calendar_perms)}")
+        
+        return "; ".join(permissions) if permissions else "İzin yok"
     
     class Meta:
         verbose_name = "Özel İzin"

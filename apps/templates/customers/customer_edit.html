@@ -264,6 +264,21 @@
                     </div>
                   </div>
                 </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="contact_type">İletişim Türü <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-merge">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                      </div>
+                      <select id="contact_type" name="contact_type" class="form-control" required>
+                        <option value="bilgi_alma" {% if customer.contact_type == 'bilgi_alma' %}selected{% endif %}>Bilgi Alma</option>
+                        <option value="daire_sunumu" {% if customer.contact_type == 'daire_sunumu' %}selected{% endif %}>Daire Sunumu</option>
+                        <option value="sikayet" {% if customer.contact_type == 'sikayet' %}selected{% endif %}>Şikayet</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="row">
                 <div class="col-lg-6">

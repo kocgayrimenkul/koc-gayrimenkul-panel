@@ -5,9 +5,6 @@
 {% block stylesheets %}
 {{ block.super }}
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-   crossorigin=""/>
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
   :root {
@@ -612,10 +609,71 @@
 {% block javascripts %}
 {{ block.super }}
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-   crossorigin=""></script>
+<!-- Google Maps API - API key'inizi buraya ekleyin -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap"></script>
 <script>
+  function initMap() {
+    // Gayrimenkul koordinatları varsa haritada göster
+    var coordinates = "{{ property.map_coordinates }}";
+    var defaultLocation = { lat: 37.066667, lng: 37.383333 }; // Gaziantep varsayılan
+    
+    if (coordinates && coordinates.includes(',')) {
+      var latLng = coordinates.split(',');
+      var lat = parseFloat(latLng[0].trim());
+      var lng = parseFloat(latLng[1].trim());
+      
+      if (!isNaN(lat) && !isNaN(lng)) {
+        defaultLocation = { lat: lat, lng: lng };
+      }
+    }
+    
+    // Haritayı başlat
+    var map = new google.maps.Map(document.getElementById('property-map'), {
+      center: defaultLocation,
+      zoom: 15,
+      mapTypeId: google.maps.MapTypeId.ROADMAP,
+      streetViewControl: false,
+      mapTypeControl: true,
+      fullscreenControl: true
+    });
+    
+    // Marker ekle
+    var marker = new google.maps.Marker({
+      position: defaultLocation,
+      map: map,
+      title: "{{ property.apartment_name }}",
+      icon: {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+            <path fill="#9d2235" d="M16 0C7.2 0 0 7.2 0 16c0 16 16 24 16 24s16-8 16-24c0-8.8-7.2-16-16-16z"/>
+            <circle fill="white" cx="16" cy="16" r="6"/>
+          </svg>
+        `),
+        scaledSize: new google.maps.Size(32, 40),
+        anchor: new google.maps.Point(16, 40)
+      }
+    });
+    
+    // InfoWindow ekle
+    var infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="padding: 10px; max-width: 250px;">
+          <h6 style="margin: 0 0 5px 0; color: #9d2235;">{{ property.apartment_name }}</h6>
+          <p style="margin: 0; font-size: 14px; color: #666;">{{ property.address }}</p>
+          <p style="margin: 5px 0 0 0; font-weight: bold; color: #9d2235;">{{ property.price|floatformat:0 }} TL</p>
+        </div>
+      `
+    });
+    
+    // Marker'a tıklandığında InfoWindow göster
+    marker.addListener('click', function() {
+      infoWindow.open(map, marker);
+    });
+    
+    // Başlangıçta InfoWindow'u göster
+    infoWindow.open(map, marker);
+  }
+
   $(document).ready(function() {
     // Swiper başlat
     var swiper = new Swiper('.swiper-container', {
@@ -631,37 +689,6 @@
         prevEl: '.swiper-button-prev',
       },
     });
-    
-    // Harita başlat
-    var map = L.map('property-map');
-    
-    // OpenStreetMap katmanı ekle
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-    
-    // Gayrimenkul koordinatları varsa haritada göster
-    var coordinates = "{{ property.map_coordinates }}";
-    if (coordinates && coordinates.includes(',')) {
-      var latLng = coordinates.split(',');
-      var lat = parseFloat(latLng[0].trim());
-      var lng = parseFloat(latLng[1].trim());
-      
-      if (!isNaN(lat) && !isNaN(lng)) {
-        // Marker ekle
-        var marker = L.marker([lat, lng]).addTo(map);
-        marker.bindPopup("{{ property.apartment_name }}").openPopup();
-        
-        // Görünüm ayarla
-        map.setView([lat, lng], 15);
-      } else {
-        // Koordinat yoksa İstanbul merkezini göster
-        map.setView([41.0082, 28.9784], 10);
-      }
-    } else {
-      // Koordinat yoksa İstanbul merkezini göster
-      map.setView([41.0082, 28.9784], 10);
-    }
   });
 </script>
 {% endblock javascripts %} 

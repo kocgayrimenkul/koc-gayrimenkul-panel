@@ -1,0 +1,235 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Çalışan Sil {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .warning-card {
+    border-left: 4px solid #dc3545;
+    background-color: #fff5f5;
+  }
+  
+  .danger-zone {
+    border: 2px dashed #dc3545;
+    border-radius: 10px;
+    background-color: #fff1f1;
+    padding: 30px;
+    text-align: center;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Çalışan Sil</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'employee_list' %}">Çalışanlar</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Çalışan Sil</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'employee_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> Geri Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <div class="row justify-content-center">
+    <div class="col-xl-8 col-lg-10">
+      <div class="card shadow">
+        <div class="card-header">
+          <div class="row align-items-center">
+            <div class="col-8">
+              <h3 class="mb-0 text-danger">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                Tehlikeli İşlem
+              </h3>
+              <p class="text-sm text-muted">Bu işlem geri alınamaz</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          
+          <!-- Uyarı Kartı -->
+          <div class="card warning-card mb-4">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                </div>
+                <div class="col">
+                  <h4 class="text-danger mb-2">Dikkat!</h4>
+                  <p class="mb-0">Bu işlem <strong>{{ employee.user.get_full_name }}</strong> adlı çalışanı sistemden tamamen kaldıracaktır.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Çalışan Bilgileri -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0">Silinecek Çalışan</h5>
+                </div>
+                <div class="card-body">
+                  <div class="d-flex align-items-center mb-3">
+                    <div class="avatar bg-danger mr-3">
+                      {{ employee.user.first_name|slice:":1" }}{{ employee.user.last_name|slice:":1" }}
+                    </div>
+                    <div>
+                      <h6 class="mb-0">{{ employee.user.get_full_name }}</h6>
+                      <small class="text-muted">{{ employee.user.email }}</small>
+                    </div>
+                  </div>
+                  
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-muted">Rol:</small>
+                      <p class="mb-2">{{ employee.get_role_display }}</p>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Durum:</small>
+                      <p class="mb-2">
+                        <i class="fas fa-circle text-{% if employee.is_active %}success{% else %}danger{% endif %} mr-2"></i>
+                        {% if employee.is_active %}Aktif{% else %}Pasif{% endif %}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {% if employee.phone %}
+                  <div class="row">
+                    <div class="col-12">
+                      <small class="text-muted">Telefon:</small>
+                      <p class="mb-0">{{ employee.phone }}</p>
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0 text-danger">Bu İşlem Neler Yapar?</h5>
+                </div>
+                <div class="card-body">
+                  <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                      <i class="fas fa-times text-danger mr-2"></i>
+                      Kullanıcı hesabını tamamen siler
+                    </li>
+                    <li class="mb-2">
+                      <i class="fas fa-times text-danger mr-2"></i>
+                      Çalışan profilini kaldırır
+                    </li>
+                    <li class="mb-2">
+                      <i class="fas fa-times text-danger mr-2"></i>
+                      Tüm izin ve rol bilgilerini siler
+                    </li>
+                    <li class="mb-2">
+                      <i class="fas fa-times text-danger mr-2"></i>
+                      Aktivite kayıtları silinmez (referans amacıyla korunur)
+                    </li>
+                    <li class="mb-0">
+                      <i class="fas fa-exclamation-triangle text-warning mr-2"></i>
+                      <strong>Bu işlem GERİ ALINAMAZ!</strong>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tehlikeli Bölge -->
+          <div class="danger-zone">
+            <i class="fas fa-skull-crossbones fa-3x text-danger mb-3"></i>
+            <h4 class="text-danger mb-3">Tehlikeli Bölge</h4>
+            <p class="text-muted mb-4">
+              Aşağıdaki butona tıklayarak <strong>{{ employee.user.get_full_name }}</strong> adlı çalışanı 
+              sistemden kalıcı olarak sildiğinizi onaylıyorsunuz.
+            </p>
+            
+            <form method="post" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-lg mr-3" 
+                      onclick="return confirm('SON UYARI: {{ employee.user.get_full_name }} adlı çalışan tamamen silinecek. Bu işlem GERİ ALINAMAZ!\n\nDevam etmek istediğinizden emin misiniz?')">
+                <i class="fas fa-trash mr-2"></i>
+                Evet, Kalıcı Olarak Sil
+              </button>
+            </form>
+            
+            <a href="{% url 'employee_list' %}" class="btn btn-secondary btn-lg">
+              <i class="fas fa-times mr-2"></i>
+              Vazgeç
+            </a>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include "includes/footer.html" %}
+  
+</div>
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+<script>
+  $(document).ready(function() {
+    // Sayfa yüklendiğinde uyarı mesajı göster
+    setTimeout(function() {
+      if (confirm('Bu sayfa tehlikeli bir işlem içermektedir. Çalışan silme işlemi geri alınamaz.\n\nDevam etmek istiyor musunuz?')) {
+        // Kullanıcı onayladı, sayfada kalabilir
+      } else {
+        // Kullanıcı vazgeçti, geri dön
+        window.location.href = "{% url 'employee_list' %}";
+      }
+    }, 500);
+  });
+</script>
+{% endblock javascripts %} 

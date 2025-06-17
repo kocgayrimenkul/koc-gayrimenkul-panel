@@ -137,6 +137,34 @@
           </div>
         </div>
         
+        <!-- İletişim Türü -->
+        <div class="filter-section mb-3">
+          <div class="filter-title d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#contactTypeCollapse" aria-expanded="true">
+            <div><i class="ni ni-email-83"></i> İletişim Türü</div>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="collapse show" id="contactTypeCollapse">
+            <div class="pt-2">
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="contact_type_all" name="contact_type" value="" {% if not filter_contact_type %}checked{% endif %}>
+                <label class="custom-control-label" for="contact_type_all">Tümü</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="contact_type_bilgi_alma" name="contact_type" value="bilgi_alma" {% if filter_contact_type == 'bilgi_alma' %}checked{% endif %}>
+                <label class="custom-control-label" for="contact_type_bilgi_alma">Bilgi Alma</label>
+              </div>
+              <div class="custom-control custom-radio mb-2">
+                <input type="radio" class="custom-control-input" id="contact_type_daire_sunumu" name="contact_type" value="daire_sunumu" {% if filter_contact_type == 'daire_sunumu' %}checked{% endif %}>
+                <label class="custom-control-label" for="contact_type_daire_sunumu">Daire Sunumu</label>
+              </div>
+              <div class="custom-control custom-radio mb-3">
+                <input type="radio" class="custom-control-input" id="contact_type_sikayet" name="contact_type" value="sikayet" {% if filter_contact_type == 'sikayet' %}checked{% endif %}>
+                <label class="custom-control-label" for="contact_type_sikayet">Şikayet</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <!-- Butonlar -->
         <div class="text-center">
           <button type="submit" class="btn btn-koc-red btn-sm">

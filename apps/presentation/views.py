@@ -17,6 +17,13 @@ from django.utils import timezone
 from datetime import datetime, timedelta, date
 from django.db.models import Count, Avg, Q
 from apps.employees.models import EmployeeProfile
+from apps.employees.decorators import (
+    can_view_presentation,
+    can_add_presentation,
+    can_edit_presentation,
+    can_delete_presentation,
+    require_presentation_permission
+)
 
 def get_user_role(user):
     """Kullanıcının rolünü döndürür"""
@@ -30,6 +37,7 @@ def get_user_role(user):
         return None
 
 @login_required(login_url="/login/")
+@can_view_presentation
 def presentation_list(request):
     """Sunum listesi görüntüleme"""
     
@@ -81,6 +89,7 @@ def presentation_list(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_view_presentation
 def presentation_detail(request, presentation_id):
     """Sunum detay sayfası"""
     
@@ -124,6 +133,7 @@ def presentation_detail(request, presentation_id):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_add_presentation
 def presentation_create(request):
     """Yeni sunum oluşturma"""
     
@@ -180,6 +190,7 @@ def presentation_create(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_edit_presentation
 def presentation_edit(request, presentation_id):
     """Sunum düzenleme"""
     
@@ -237,6 +248,7 @@ def presentation_edit(request, presentation_id):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_delete_presentation
 def presentation_delete(request, presentation_id):
     """Sunum silme"""
     

@@ -17,10 +17,31 @@ from django.utils import timezone
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 import json
+from apps.employees.decorators import (
+    can_view_portfolio,
+    can_add_portfolio,
+    can_edit_portfolio,
+    can_delete_portfolio,
+    require_portfolio_permission
+)
+
+def get_user_role(user):
+    """Kullanıcının rolünü döndürür"""
+    # Superuser ise admin rolünü döndür
+    if user.is_superuser:
+        return 'admin'
+    
+    try:
+        return user.employee_profile.role
+    except EmployeeProfile.DoesNotExist:
+        return None
 
 @login_required(login_url="/login/")
+@can_view_portfolio
 def property_list(request):
     """Gayrimenkul listesi görünümü"""
+    
+    role = get_user_role(request.user)
     
     # Filtreleme
     search = request.GET.get('search', '')
@@ -41,8 +62,24 @@ def property_list(request):
     is_suitable_for_credit = request.GET.get('is_suitable_for_credit', '')
     is_bargainable = request.GET.get('is_bargainable', '')
     
-    # Başlangıç sorgusu
-    properties_list = Property.objects.filter(is_active=True)
+    # Başlangıç sorgusu - yetki kontrolü ile
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        # Yönetici ve Müdür tüm gayrimenkulleri görebilir
+        properties_list = Property.objects.filter(is_active=True)
+    elif role == 'secretary':
+        # Santral tüm aktif gayrimenkulleri görebilir (okuma yetkisi)
+        properties_list = Property.objects.filter(is_active=True)
+    elif role == 'consultant':
+        # Danışman sadece kendi mahallelerindeki gayrimenkulleri görebilir
+        consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+        properties_list = Property.objects.filter(
+            is_active=True,
+            neighborhood__in=consultant_neighborhoods
+        )
+    else:
+        # Diğer roller için sınırlı erişim
+        properties_list = Property.objects.none()
+        messages.warning(request, "Gayrimenkul listesini görüntüleme yetkiniz sınırlıdır.")
     
     # Arama sorgusu
     if search:
@@ -62,7 +99,13 @@ def property_list(request):
     if status:
         properties_list = properties_list.filter(status=status)
     if neighborhood_id:
-        properties_list = properties_list.filter(neighborhood_id=neighborhood_id)
+        # Danışman sadece kendi mahallelerini filtreleyebilir
+        if role == 'consultant':
+            consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+            if consultant_neighborhoods.filter(id=neighborhood_id).exists():
+                properties_list = properties_list.filter(neighborhood_id=neighborhood_id)
+        else:
+            properties_list = properties_list.filter(neighborhood_id=neighborhood_id)
     if min_price:
         try:
             properties_list = properties_list.filter(price__gte=float(min_price))
@@ -74,7 +117,9 @@ def property_list(request):
         except ValueError:
             pass
     if consultant_id:
-        properties_list = properties_list.filter(consultant_id=consultant_id)
+        # Sadece yönetici ve müdür başka danışmanları filtreleyebilir
+        if request.user.is_superuser or role in ['admin', 'manager']:
+            properties_list = properties_list.filter(consultant_id=consultant_id)
     if category:
         properties_list = properties_list.filter(category=category)
     if listing_type:
@@ -116,17 +161,26 @@ def property_list(request):
         # Eğer sayfa sayısı mevcut sayfa aralığını aşıyorsa, son sayfayı göster
         properties = paginator.page(paginator.num_pages)
     
-    # İlgili mahalleler
-    neighborhoods = Neighborhood.objects.all().order_by('name')
+    # İlgili mahalleler - yetki kontrolü ile
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
+        neighborhoods = Neighborhood.objects.all().order_by('name')
+    elif role == 'consultant':
+        neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
+    else:
+        neighborhoods = Neighborhood.objects.none()
     
-    # Danışman listesi
-    consultants = EmployeeProfile.objects.filter(role='consultant', is_active=True).select_related('user')
+    # Danışman listesi - yetki kontrolü ile
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        consultants = EmployeeProfile.objects.filter(role='consultant', is_active=True).select_related('user')
+    else:
+        consultants = EmployeeProfile.objects.none()
     
     context = {
         'segment': 'gayrimenkul',
         'properties': properties,
         'neighborhoods': neighborhoods,
         'consultants': consultants,
+        'user_role': role,
         'filters': {
             'search': search,
             'property_type': property_type,
@@ -155,6 +209,19 @@ def property_list(request):
 def property_detail(request, property_id):
     """Gayrimenkul detay görünümü"""
     property_obj = get_object_or_404(Property, id=property_id)
+    role = get_user_role(request.user)
+    
+    # Yetki kontrolü
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'secretary']:
+        if role == 'consultant':
+            # Danışman sadece kendi mahallelerindeki gayrimenkulleri görebilir
+            consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+            if property_obj.neighborhood not in consultant_neighborhoods:
+                messages.error(request, "Bu gayrimenkul detaylarını görüntüleme yetkiniz yok.")
+                return redirect('property_list')
+        else:
+            messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
+            return redirect('property_list')
     
     # Çevre bilgileri
     environments = property_obj.environments.all()
@@ -167,15 +234,30 @@ def property_detail(request, property_id):
         'property': property_obj,
         'environments': environments,
         'images': images,
+        'user_role': role,
     }
     
     html_template = loader.get_template('portfolio/property_detail.html')
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_add_portfolio
 def property_create(request):
     """Yeni gayrimenkul ekleme"""
-    neighborhoods = Neighborhood.objects.all().order_by('name')
+    role = get_user_role(request.user)
+    
+    # Yetki kontrolü - Sadece Yönetici, Müdür ve Danışman ekleme yapabilir
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
+        messages.error(request, "Gayrimenkul ekleme yetkiniz bulunmamaktadır.")
+        return redirect('property_list')
+    
+    # Mahalleler - yetki kontrolü ile
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        neighborhoods = Neighborhood.objects.all().order_by('name')
+    elif role == 'consultant':
+        neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
+    else:
+        neighborhoods = Neighborhood.objects.none()
     
     if request.method == 'POST':
         # POST verilerini detaylı yazdır
@@ -252,6 +334,12 @@ def property_create(request):
         try:
             price = float(price.replace(',', '.'))
             neighborhood = Neighborhood.objects.get(id=neighborhood_id)
+            
+            # Mahalle yetki kontrolü
+            if role == 'consultant':
+                if not neighborhoods.filter(id=neighborhood_id).exists():
+                    messages.error(request, "Bu mahalleye gayrimenkul ekleme yetkiniz yok.")
+                    return redirect('property_create')
             
             # Yeni portföy oluştur
             property_obj = Property(
@@ -399,10 +487,31 @@ def property_create(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_edit_portfolio
 def property_update(request, property_id):
     """Gayrimenkul güncelleme"""
     property_obj = get_object_or_404(Property, id=property_id)
-    neighborhoods = Neighborhood.objects.all().order_by('name')
+    role = get_user_role(request.user)
+    
+    # Yetki kontrolü
+    if not request.user.is_superuser and role not in ['admin', 'manager']:
+        if role == 'consultant':
+            # Danışman sadece kendi mahallelerindeki gayrimenkulleri güncelleyebilir
+            consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+            if property_obj.neighborhood not in consultant_neighborhoods:
+                messages.error(request, "Bu gayrimenkulü güncelleme yetkiniz yok.")
+                return redirect('property_list')
+        else:
+            messages.error(request, "Gayrimenkul güncelleme yetkiniz bulunmamaktadır.")
+            return redirect('property_list')
+    
+    # Mahalleler - yetki kontrolü ile
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        neighborhoods = Neighborhood.objects.all().order_by('name')
+    elif role == 'consultant':
+        neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
+    else:
+        neighborhoods = Neighborhood.objects.none()
     
     # Debug için property değerlerini yazdır
     print("============= GAYRİMENKUL GÜNCELLEME SAYFASI AÇILDI =============")
@@ -458,11 +567,6 @@ def property_update(request, property_id):
             print(f"  - {env.place_name}: {env.distance}")
     
     print("=================================================================")
-    
-    # Sadece süper kullanıcı veya portföyün danışmanı güncelleyebilir
-    if not request.user.is_superuser and property_obj.consultant != request.user:
-        messages.error(request, "Bu gayrimenkulü düzenleme yetkiniz yok.")
-        return redirect('property_list')
     
     if request.method == 'POST':
         # POST verilerini detaylı yazdır
@@ -774,6 +878,7 @@ def property_image_delete(request):
     return JsonResponse({'success': False, 'error': 'Geçersiz istek'}, status=400)
 
 @login_required(login_url="/login/")
+@can_edit_portfolio
 @csrf_exempt
 def property_update_field(request):
     """AJAX ile gayrimenkul alanlarını güncelleme"""
@@ -791,9 +896,16 @@ def property_update_field(request):
             except Property.DoesNotExist:
                 return JsonResponse({'success': False, 'error': 'Gayrimenkul bulunamadı'})
             
-            # Güvenlik kontrolü
-            if not request.user.is_superuser and property_obj.consultant != request.user:
-                return JsonResponse({'success': False, 'error': 'Bu gayrimenkulü düzenleme yetkiniz yok'})
+            # Yetki kontrolü
+            role = get_user_role(request.user)
+            if not request.user.is_superuser and role not in ['admin', 'manager']:
+                if role == 'consultant':
+                    # Danışman sadece kendi mahallelerindeki gayrimenkulleri güncelleyebilir
+                    consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+                    if property_obj.neighborhood not in consultant_neighborhoods:
+                        return JsonResponse({'success': False, 'error': 'Bu gayrimenkulü düzenleme yetkiniz yok'})
+                else:
+                    return JsonResponse({'success': False, 'error': 'Bu gayrimenkulü düzenleme yetkiniz yok'})
             
             # Alan türüne göre değer dönüşümü
             if field == 'consultant':
@@ -849,9 +961,10 @@ def property_update_field(request):
     return JsonResponse({'success': False, 'error': 'Geçersiz istek'}, status=400)
 
 @login_required(login_url="/login/")
+@can_delete_portfolio
 @csrf_exempt
 def property_delete(request, property_id):
-    """AJAX ile gayrimenkul silme"""
+    """Gayrimenkul silme"""
     if request.method == 'POST':
         try:
             try:
@@ -859,9 +972,10 @@ def property_delete(request, property_id):
             except Property.DoesNotExist:
                 return JsonResponse({'success': False, 'error': 'Gayrimenkul bulunamadı'})
             
-            # Güvenlik kontrolü
-            if not request.user.is_superuser and property_obj.consultant != request.user:
-                return JsonResponse({'success': False, 'error': 'Bu gayrimenkulü silme yetkiniz yok'})
+            # Yetki kontrolü - Sadece Yönetici ve Müdür silebilir
+            role = get_user_role(request.user)
+            if not request.user.is_superuser and role not in ['admin', 'manager']:
+                return JsonResponse({'success': False, 'error': 'Gayrimenkul silme yetkiniz bulunmamaktadır'})
             
             # Gayrimenkulün başlığını sakla
             property_title = property_obj.apartment_name

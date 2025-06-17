@@ -13,17 +13,9 @@ User = get_user_model()
 class FSBOForm(forms.ModelForm):
     """FSBO kayıt/düzenleme formu"""
     
-    # Danışmanları rolüne göre filtreleme
-    consultant = forms.ModelChoiceField(
-        queryset=User.objects.filter(employee_profile__role='consultant', is_active=True),
-        required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
-        label="Danışmana Gönder"
-    )
-    
     class Meta:
         model = FSBO
-        fields = ['full_name', 'phone', 'result', 'consultant', 
+        fields = ['full_name', 'phone', 'result', 
                  'link1', 'link2', 'reminder_status', 'reminder_date', 
                  'reminder_time', 'notes']
         widgets = {

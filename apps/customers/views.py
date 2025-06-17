@@ -18,6 +18,13 @@ from django.db.models import Count
 from django.contrib.auth.models import Group
 from apps.authentication.models import CustomUser
 from apps.employees.models import EmployeeProfile
+from apps.employees.decorators import (
+    can_view_customers,
+    can_add_customers,
+    can_edit_customers,
+    can_delete_customers,
+    require_customer_permission
+)
 
 def get_user_role(user):
     """Kullanıcının rolünü döndürür"""
@@ -62,6 +69,7 @@ def customer_reminders_processor(request):
     }
 
 @login_required(login_url="/login/")
+@can_view_customers
 def customer_list(request):
     """Müşteri listesi görünümü"""
     
@@ -129,6 +137,11 @@ def customer_list(request):
     if filter_source:
         customers = customers.filter(source=filter_source)
     
+    # İletişim türü filtresi
+    filter_contact_type = request.GET.get('contact_type', '')
+    if filter_contact_type:
+        customers = customers.filter(contact_type=filter_contact_type)
+    
     # İstatistikler
     all_customers = customers
     olumlu_musteri_sayisi = all_customers.filter(meeting_status='olumlu').count()
@@ -147,6 +160,7 @@ def customer_list(request):
         'filter_response': filter_response,
         'filter_neighborhood': filter_neighborhood,
         'filter_source': filter_source,
+        'filter_contact_type': filter_contact_type,
         'has_reminder': has_reminder,
         'olumlu_musteri_sayisi': olumlu_musteri_sayisi,
         'olumsuz_musteri_sayisi': olumsuz_musteri_sayisi,
@@ -159,6 +173,7 @@ def customer_list(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_view_customers
 def customer_detail(request, customer_id):
     """Müşteri detay sayfası"""
     
@@ -207,8 +222,9 @@ def customer_detail(request, customer_id):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_edit_customers
 def customer_edit(request, customer_id):
-    """Müşteri düzenleme sayfası"""
+    """Müşteri düzenleme görünümü"""
     
     customer = get_object_or_404(Customer, id=customer_id)
     role = get_user_role(request.user)
@@ -294,8 +310,9 @@ def customer_edit(request, customer_id):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_add_customers
 def customer_register(request):
-    """Santral tarafından müşteri kayıt ekranı"""
+    """Müşteri kayıt sayfası (Genel site üzerinden)"""
     
     role = get_user_role(request.user)
     
@@ -350,8 +367,9 @@ def customer_register(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_add_customers
 def customer_create(request):
-    """Danışmanların yeni müşteri oluşturma ekranı"""
+    """Müşteri oluşturma görünümü"""
     
     role = get_user_role(request.user)
     
@@ -375,6 +393,7 @@ def customer_create(request):
         property_id = request.POST.get('property_id', '')
         neighborhood_id = request.POST.get('neighborhood', '')
         source = request.POST.get('source', '')
+        contact_type = request.POST.get('contact_type', 'bilgi_alma')
         notes = request.POST.get('notes', '')
         
         # Validation
@@ -404,6 +423,7 @@ def customer_create(request):
                 neighborhood=neighborhood,
                 consultant=neighborhood.consultant,
                 source=source,
+                contact_type=contact_type,
                 notes=notes,
                 meeting_status='bekliyor',
             )

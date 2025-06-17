@@ -16,6 +16,13 @@ from .models import FSBO, FSBOLog
 from .forms import FSBOForm, FSBOSearchForm
 from apps.employees.models import EmployeeProfile
 from django.db import connection
+from apps.employees.decorators import (
+    can_view_fsbo,
+    can_add_fsbo,
+    can_edit_fsbo,
+    can_delete_fsbo,
+    require_fsbo_permission
+)
 
 def get_user_role(user):
     """Kullanıcının rolünü döndürür"""
@@ -29,6 +36,7 @@ def get_user_role(user):
         return None
 
 @login_required(login_url="/login/")
+@can_view_fsbo
 def fsbo_list(request):
     """FSBO listesi görünümü"""
     
@@ -127,6 +135,7 @@ def fsbo_list(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_add_fsbo
 def fsbo_create(request):
     """Yeni FSBO kaydı oluşturma"""
     
@@ -167,6 +176,7 @@ def fsbo_create(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_edit_fsbo
 def fsbo_edit(request, fsbo_id):
     """FSBO kaydı düzenleme"""
     
@@ -228,6 +238,7 @@ def fsbo_edit(request, fsbo_id):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_view_fsbo
 def fsbo_detail(request, fsbo_id):
     """FSBO kaydı detay görünümü"""
     
@@ -255,6 +266,7 @@ def fsbo_detail(request, fsbo_id):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
+@can_delete_fsbo
 def fsbo_delete(request, fsbo_id):
     """FSBO kaydı silme"""
     
