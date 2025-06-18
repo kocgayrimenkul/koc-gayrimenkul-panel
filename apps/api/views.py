@@ -16,15 +16,14 @@ from django.conf import settings
 from apps.portfolio.models import Property, PropertyImage
 from apps.fsbo.models import FSBO
 from apps.customers.models import Neighborhood
-from apps.careers.models import JobApplication, JobPosting
+from apps.careers.models import JobApplication
 
 from .serializers import (
     PropertyListSerializer, 
     PropertyDetailSerializer,
     NeighborhoodSerializer,
     FSBOSerializer,
-    JobApplicationSerializer,
-    JobPostingSerializer
+    JobApplicationSerializer
 )
 
 
@@ -220,28 +219,6 @@ def property_search_api(request):
     }
     
     return Response(data, status=status.HTTP_200_OK)
-
-
-# Careers API Views
-class JobPostingListAPIView(generics.ListAPIView):
-    """Aktif İş İlanları Listesi (Herkese Açık)"""
-    queryset = JobPosting.objects.filter(is_active=True)
-    serializer_class = JobPostingSerializer
-    permission_classes = [AllowAny]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    
-    filterset_fields = ['department', 'employment_type', 'location']
-    search_fields = ['title', 'description', 'requirements']
-    ordering_fields = ['created_at', 'deadline']
-    ordering = ['-created_at']
-
-
-class JobPostingDetailAPIView(generics.RetrieveAPIView):
-    """İş İlanı Detayı (Herkese Açık)"""
-    queryset = JobPosting.objects.filter(is_active=True)
-    serializer_class = JobPostingSerializer
-    permission_classes = [AllowAny]
-    lookup_field = 'id'
 
 
 class JobApplicationCreateAPIView(generics.CreateAPIView):

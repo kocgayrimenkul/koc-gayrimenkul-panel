@@ -1,0 +1,465 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} İletişim Detay {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Kartlar */
+  .card {
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  /* Durum rozeti stilleri */
+  .badge-status {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-radius: 30px;
+  }
+  
+  .badge-pending {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .badge-contacted {
+    background-color: #17a2b8;
+    color: white;
+  }
+  
+  .badge-completed {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .badge-inquiry {
+    background-color: #17a2b8;
+    color: white;
+  }
+  
+  .badge-complaint {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .badge-suggestion {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .badge-other {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  .badge-low {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  .badge-medium {
+    background-color: #17a2b8;
+    color: white;
+  }
+  
+  .badge-high {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .badge-urgent {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  /* İletişim profil kartı */
+  .contact-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 0;
+  }
+  
+  .contact-avatar {
+    width: 100px;
+    height: 100px;
+    background-color: var(--koc-red);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .detail-item {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: #f8f9fe;
+    margin-bottom: 1rem;
+  }
+  
+  .detail-item .icon {
+    color: var(--koc-red);
+    margin-right: 0.5rem;
+  }
+  
+  .timeline {
+    position: relative;
+    padding: 0;
+    list-style: none;
+    margin-bottom: 0;
+  }
+  
+  .timeline:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 16px;
+    height: 100%;
+    width: 2px;
+    background-color: #e9ecef;
+  }
+  
+  .timeline-item {
+    position: relative;
+    padding-left: 40px;
+    padding-bottom: 1.5rem;
+  }
+  
+  .timeline-item:last-child {
+    padding-bottom: 0;
+  }
+  
+  .timeline-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 34px;
+    color: white;
+  }
+  
+  .message-box {
+    background-color: #f8f9fe;
+    border-left: 4px solid var(--koc-red);
+    padding: 1.5rem;
+    margin: 1rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+  }
+  
+  .response-box {
+    background-color: #e8f5e8;
+    border-left: 4px solid #28a745;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">İletişim Detay</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'contact-views:contact_list' %}">İletişim</a></li>
+              <li class="breadcrumb-item active" aria-current="page">{{ contact.name }}</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'contact-views:contact_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-1"></i> İletişim Listesine Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <div class="row">
+    <!-- Sol Panel - İletişim Profili -->
+    <div class="col-xl-4 order-xl-2 mb-5 mb-xl-0">
+      <div class="card">
+        <div class="card-header">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">İletişim Bilgileri</h3>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="contact-profile">
+            <div class="contact-avatar">
+              {{ contact.name|first|upper }}
+            </div>
+            <h3 class="text-center mb-3">{{ contact.name }}</h3>
+            <div class="text-center mb-3">
+              {% if contact.status == 'yeni' %}
+                <span class="badge badge-status badge-warning">Yeni</span>
+              {% elif contact.status == 'okundu' %}
+                <span class="badge badge-status badge-info">Okundu</span>
+              {% elif contact.status == 'tamamlandi' %}
+                <span class="badge badge-status badge-success">Tamamlandı</span>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="detail-item">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-envelope icon"></i>
+              <div class="ml-2">
+                <h6 class="mb-0">E-posta</h6>
+                <p class="text-sm mb-0">{{ contact.email }}</p>
+              </div>
+            </div>
+          </div>
+          
+          {% if contact.phone %}
+          <div class="detail-item">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-phone icon"></i>
+              <div class="ml-2">
+                <h6 class="mb-0">Telefon</h6>
+                <p class="text-sm mb-0">{{ contact.phone }}</p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if contact.company %}
+          <div class="detail-item">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-building icon"></i>
+              <div class="ml-2">
+                <h6 class="mb-0">Şirket</h6>
+                <p class="text-sm mb-0">{{ contact.company }}</p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-control-label">Gayrimenkul Tercihi</label>
+                <div>
+                  {% if contact.property_type == 'satilik' %}
+                    <span class="badge badge-info">Satılık</span>
+                  {% elif contact.property_type == 'kiralik' %}
+                    <span class="badge badge-success">Kiralık</span>
+                  {% elif contact.property_type == 'proje' %}
+                    <span class="badge badge-warning">Proje</span>
+                  {% elif contact.property_type == 'diger' %}
+                    <span class="badge badge-secondary">Diğer</span>
+                  {% else %}
+                    <span class="badge badge-light">Belirtilmemiş</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-control-label">Kayıt Tarihi</label>
+                <p class="form-control-static">{{ contact.created_at|date:"d.m.Y H:i" }}</p>
+              </div>
+            </div>
+          </div>
+          
+          {% if contact.assigned_to %}
+          <div class="detail-item">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-user-tie icon"></i>
+              <div class="ml-2">
+                <h6 class="mb-0">Atanan Kişi</h6>
+                <p class="text-sm mb-0">{{ contact.assigned_to.get_full_name }}</p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Hızlı Eylemler -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Hızlı Eylemler</h3>
+        </div>
+        <div class="card-body">
+          <div class="btn-group-vertical btn-group-toggle w-100" data-toggle="buttons">
+            {% if contact.email %}
+            <a href="mailto:{{ contact.email }}" class="btn btn-outline-primary mb-2">
+              <i class="fas fa-envelope mr-2"></i> E-posta Gönder
+            </a>
+            {% endif %}
+            
+            {% if contact.phone %}
+            <a href="tel:{{ contact.phone }}" class="btn btn-outline-success mb-2">
+              <i class="fas fa-phone mr-2"></i> Telefon Et
+            </a>
+            {% endif %}
+            
+            <span class="btn btn-outline-secondary mb-2 disabled">
+              <i class="fas fa-info-circle mr-2"></i> Düzenleme API üzerinden
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sağ Panel - İletişim Detayları -->
+    <div class="col-xl-8 order-xl-1">
+      <!-- Genel Bilgiler -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">
+            <i class="fas fa-info-circle text-koc-red mr-2"></i>
+            İletişim Detayları
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-12">
+              <div class="form-group">
+                <label class="form-control-label">Mesaj</label>
+                <div class="message-box">
+                  <p class="mb-0">{{ contact.message|linebreaks }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- İletişim Geçmişi -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">
+            <i class="fas fa-history text-koc-red mr-2"></i>
+            İletişim Geçmişi
+          </h3>
+        </div>
+        <div class="card-body">
+          <ul class="timeline">
+            <li class="timeline-item">
+              <div class="timeline-icon bg-success">
+                <i class="fas fa-plus"></i>
+              </div>
+              <div class="timeline-content">
+                <h6 class="mb-1">İletişim Kaydı Oluşturuldu</h6>
+                <p class="text-sm text-muted mb-0">{{ contact.created_at|date:"d.m.Y H:i" }}</p>
+              </div>
+            </li>
+            
+            {% if contact.status == 'okundu' %}
+            <li class="timeline-item">
+              <div class="timeline-icon bg-info">
+                <i class="fas fa-eye"></i>
+              </div>
+              <div class="timeline-content">
+                <h6 class="mb-1">Mesaj Okundu</h6>
+                <p class="text-sm text-muted mb-0">API üzerinden güncellendi</p>
+              </div>
+            </li>
+            {% endif %}
+            
+            {% if contact.status == 'tamamlandi' %}
+            <li class="timeline-item">
+              <div class="timeline-icon bg-success">
+                <i class="fas fa-check"></i>
+              </div>
+              <div class="timeline-content">
+                <h6 class="mb-1">Tamamlandı</h6>
+                <p class="text-sm text-muted mb-0">API üzerinden güncellendi</p>
+              </div>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<!-- API üzerinden yönetildiği için JavaScript kaldırıldı -->
+{% endblock javascripts %} 

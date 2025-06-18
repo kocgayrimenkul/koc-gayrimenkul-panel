@@ -707,7 +707,7 @@
         
         // AJAX isteği
         $.post({
-          url: '/employees/calisan/' + employeeId + '/durum-degistir/',
+          url: "{% url 'employee_status_toggle' 0 %}".replace('0', employeeId),
           data: {
             'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
           },

@@ -7,7 +7,7 @@ from rest_framework import serializers
 from apps.portfolio.models import Property, PropertyImage, PropertyEnvironment
 from apps.fsbo.models import FSBO
 from apps.customers.models import Neighborhood
-from apps.careers.models import JobApplication, JobPosting
+from apps.careers.models import JobApplication
 from django.utils import timezone
 from datetime import datetime
 
@@ -408,21 +408,4 @@ class JobApplicationSerializer(serializers.ModelSerializer):
                     "CV dosyası 5MB'dan büyük olamaz."
                 )
         
-        return value
-
-
-class JobPostingSerializer(serializers.ModelSerializer):
-    """İş İlanı Serializer"""
-    department_display = serializers.CharField(source='get_department_display', read_only=True)
-    employment_type_display = serializers.CharField(source='get_employment_type_display', read_only=True)
-    is_deadline_passed = serializers.BooleanField(read_only=True)
-    
-    class Meta:
-        model = JobPosting
-        fields = [
-            'id', 'title', 'department', 'department_display',
-            'employment_type', 'employment_type_display', 'location',
-            'description', 'requirements', 'qualifications', 'benefits',
-            'salary_range', 'experience_required', 'deadline',
-            'is_deadline_passed', 'created_at'
-        ] 
+        return value 

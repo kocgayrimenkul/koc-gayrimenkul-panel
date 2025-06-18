@@ -9,10 +9,6 @@ from . import views
 app_name = 'careers'
 
 urlpatterns = [
-    # İş İlanları
-    path('jobs/', views.JobPostingListAPIView.as_view(), name='job-list'),
-    path('jobs/<int:id>/', views.JobPostingDetailAPIView.as_view(), name='job-detail'),
-    
     # İş Başvuruları
     path('applications/', views.JobApplicationCreateAPIView.as_view(), name='application-create'),
     path('applications/choices/', views.job_application_choices, name='application-choices'),

@@ -4,7 +4,7 @@ Koç Gayrimenkul Panel - Kariyer Serializers
 """
 
 from rest_framework import serializers
-from .models import JobApplication, JobPosting
+from .models import JobApplication
 from django.core.validators import FileExtensionValidator
 
 
@@ -70,36 +70,4 @@ class JobApplicationListSerializer(serializers.ModelSerializer):
             'id', 'full_name', 'email', 'phone',
             'position_display', 'experience_display', 'status_display',
             'cv_filename', 'created_at'
-        ]
-
-
-class JobPostingSerializer(serializers.ModelSerializer):
-    """İş İlanı Serializer"""
-    department_display = serializers.CharField(source='get_department_display', read_only=True)
-    employment_type_display = serializers.CharField(source='get_employment_type_display', read_only=True)
-    is_deadline_passed = serializers.BooleanField(read_only=True)
-    
-    class Meta:
-        model = JobPosting
-        fields = [
-            'id', 'title', 'department', 'department_display',
-            'employment_type', 'employment_type_display', 'location',
-            'description', 'requirements', 'qualifications', 'benefits',
-            'salary_range', 'experience_required', 'deadline',
-            'is_deadline_passed', 'created_at'
-        ]
-
-
-class JobPostingListSerializer(serializers.ModelSerializer):
-    """İş İlanı Liste Serializer"""
-    department_display = serializers.CharField(source='get_department_display', read_only=True)
-    employment_type_display = serializers.CharField(source='get_employment_type_display', read_only=True)
-    is_deadline_passed = serializers.BooleanField(read_only=True)
-    
-    class Meta:
-        model = JobPosting
-        fields = [
-            'id', 'title', 'department_display', 'employment_type_display',
-            'location', 'salary_range', 'experience_required', 'deadline',
-            'is_deadline_passed', 'created_at'
         ] 

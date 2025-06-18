@@ -8,8 +8,8 @@ from apps.home import views
 
 urlpatterns = [
 
-    # The home page
-    path('', views.index, name='home'),
+    # Genel bakış sayfası (artık /genel-bakis/ altında)
+    path('', views.index, name='dashboard'),
 
     # Matches any html file
     re_path(r'^.*\.*', views.pages, name='pages'),

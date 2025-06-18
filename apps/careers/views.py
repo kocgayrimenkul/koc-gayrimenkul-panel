@@ -12,34 +12,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 from django.conf import settings
 
-from .models import JobApplication, JobPosting
+from .models import JobApplication
 from .serializers import (
     JobApplicationSerializer, 
-    JobApplicationListSerializer,
-    JobPostingSerializer,
-    JobPostingListSerializer
+    JobApplicationListSerializer
 )
-
-
-class JobPostingListAPIView(generics.ListAPIView):
-    """Aktif İş İlanları Listesi (Herkese Açık)"""
-    queryset = JobPosting.objects.filter(is_active=True)
-    serializer_class = JobPostingListSerializer
-    permission_classes = [AllowAny]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    
-    filterset_fields = ['department', 'employment_type', 'location']
-    search_fields = ['title', 'description', 'requirements']
-    ordering_fields = ['created_at', 'deadline']
-    ordering = ['-created_at']
-
-
-class JobPostingDetailAPIView(generics.RetrieveAPIView):
-    """İş İlanı Detayı (Herkese Açık)"""
-    queryset = JobPosting.objects.filter(is_active=True)
-    serializer_class = JobPostingSerializer
-    permission_classes = [AllowAny]
-    lookup_field = 'id'
 
 
 class JobApplicationCreateAPIView(generics.CreateAPIView):
