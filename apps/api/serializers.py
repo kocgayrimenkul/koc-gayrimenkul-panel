@@ -4,12 +4,26 @@ Koç Gayrimenkul Panel - API Serializers
 """
 
 from rest_framework import serializers
+from django.conf import settings
 from apps.portfolio.models import Property, PropertyImage, PropertyEnvironment
 from apps.fsbo.models import FSBO
 from apps.customers.models import Neighborhood
 from apps.careers.models import JobApplication
 from django.utils import timezone
 from datetime import datetime
+
+
+def get_full_image_url(image_url):
+    """Image URL'ini tam URL'e çevirir"""
+    if not image_url:
+        return None
+    
+    if image_url.startswith('http'):
+        return image_url
+    
+    # Production domain'i kullan
+    base_url = 'https://panelkocgayrimenkul.com'
+    return base_url + image_url
 
 
 class NeighborhoodSerializer(serializers.ModelSerializer):
@@ -29,10 +43,7 @@ class PropertyImageSerializer(serializers.ModelSerializer):
     
     def get_image_url(self, obj):
         if obj.image:
-            request = self.context.get('request')
-            if request is not None:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
+            return get_full_image_url(obj.image.url)
         return None
     
     def get_image(self, obj):
@@ -69,11 +80,8 @@ class PropertyListSerializer(serializers.ModelSerializer):
     
     def get_main_image(self, obj):
         main_image = obj.images.order_by('order').first()
-        if main_image:
-            request = self.context.get('request')
-            if request is not None:
-                return request.build_absolute_uri(main_image.image.url)
-            return main_image.image.url
+        if main_image and main_image.image:
+            return get_full_image_url(main_image.image.url)
         return None
     
     def get_badges(self, obj):
@@ -220,11 +228,8 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
     def get_main_image(self, obj):
         """Ana resim - ilk sıradaki resim"""
         main_image = obj.images.order_by('order').first()
-        if main_image:
-            request = self.context.get('request')
-            if request is not None:
-                return request.build_absolute_uri(main_image.image.url)
-            return main_image.image.url
+        if main_image and main_image.image:
+            return get_full_image_url(main_image.image.url)
         return None
     
     def get_badges(self, obj):
