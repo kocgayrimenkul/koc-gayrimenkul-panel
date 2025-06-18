@@ -29,6 +29,7 @@ urlpatterns = [
     path("genel-bakis/", include("apps.home.urls")),      # Genel bakış sayfası
     path("contact/", include(('apps.contact.urls', 'contact'), namespace='contact-views')),       # İletişim yönetimi (template views)
     path("careers/", include(('apps.careers.urls', 'careers'), namespace='careers-views')),       # Kariyer yönetimi (template views)
+    path("team/", include(('apps.team.urls', 'team'), namespace='team')),       # Ekip yönetimi
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

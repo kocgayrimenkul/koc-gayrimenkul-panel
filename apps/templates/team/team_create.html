@@ -1,0 +1,323 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Yeni Ekip Üyesi Ekle {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+    --koc-gray: #f5f5f5;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: none;
+  }
+  
+  .form-section {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+  
+  .form-section h5 {
+    color: var(--koc-red);
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .image-preview {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 0.5rem;
+    object-fit: cover;
+    border: 2px solid var(--koc-red);
+    margin-top: 1rem;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Yeni Ekip Üyesi Ekle</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'team:team_list' %}">Ekip Yönetimi</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Yeni Üye Ekle</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'team:team_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-2"></i>Listeye Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <div class="row">
+    <div class="col-xl-8 order-xl-1">
+      <div class="card">
+        <div class="card-header">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Ekip Üyesi Bilgileri</h3>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Temel Bilgiler -->
+            <div class="form-section">
+              <h5><i class="fas fa-user mr-2"></i>Temel Bilgiler</h5>
+              
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="id_name">Ad Soyad <span class="text-danger">*</span></label>
+                    <input type="text" id="id_name" name="name" class="form-control" 
+                           value="{{ form_data.name|default:'' }}" 
+                           placeholder="Örn: Ahmet Yılmaz" required>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="id_position">Pozisyon <span class="text-danger">*</span></label>
+                    <select id="id_position" name="position" class="form-control" required>
+                      <option value="">Pozisyon Seçin</option>
+                      {% for key, value in position_choices %}
+                      <option value="{{ key }}" {% if form_data.position == key %}selected{% endif %}>
+                        {{ value }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-lg-12">
+                  <div class="form-group">
+                    <label class="form-control-label" for="id_custom_position">Özel Pozisyon</label>
+                    <input type="text" id="id_custom_position" name="custom_position" class="form-control" 
+                           value="{{ form_data.custom_position|default:'' }}" 
+                           placeholder="Listede olmayan özel pozisyon">
+                    <small class="form-text text-muted">Yukarıdaki listede olmayan özel bir pozisyon girebilirsiniz.</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Fotoğraf -->
+            <div class="form-section">
+              <h5><i class="fas fa-camera mr-2"></i>Fotoğraf</h5>
+              
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="id_image">Fotoğraf Yükle</label>
+                    <input type="file" id="id_image" name="image" class="form-control-file" accept="image/*">
+                    <small class="form-text text-muted">Önerilen boyut: 250x250px, Max: 5MB</small>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="id_image_url">Veya Harici URL</label>
+                    <input type="url" id="id_image_url" name="image_url" class="form-control" 
+                           value="{{ form_data.image_url|default:'' }}" 
+                           placeholder="https://example.com/photo.jpg">
+                    <small class="form-text text-muted">Dosya yüklenmemişse bu URL kullanılır.</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Görünüm Ayarları -->
+            <div class="form-section">
+              <h5><i class="fas fa-cogs mr-2"></i>Görünüm Ayarları</h5>
+              
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="id_is_active" name="is_active" 
+                           {% if form_data.is_active or not form_data %}checked{% endif %}>
+                    <label class="custom-control-label" for="id_is_active">
+                      <span class="text-sm">Aktif</span>
+                      <br><small class="text-muted">Web sitesinde gösterilsin</small>
+                    </label>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="id_display_order">Sıralama</label>
+                    <input type="number" id="id_display_order" name="display_order" class="form-control" 
+                           value="{{ form_data.display_order|default:'0' }}" 
+                           placeholder="0" min="0">
+                    <small class="form-text text-muted">Küçük sayı önce görünür</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Butonlar -->
+            <div class="text-center">
+              <button type="submit" class="btn btn-koc-red btn-lg">
+                <i class="fas fa-save mr-2"></i>Ekip Üyesini Kaydet
+              </button>
+              <a href="{% url 'team:team_list' %}" class="btn btn-secondary btn-lg ml-3">
+                <i class="fas fa-times mr-2"></i>İptal
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Yardım -->
+    <div class="col-xl-4 order-xl-2">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">
+            <i class="fas fa-info-circle mr-2"></i>Yardım
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <h6 class="text-koc-red">Zorunlu Alanlar</h6>
+            <ul class="list-unstyled text-sm">
+              <li><i class="fas fa-check text-success mr-2"></i>Ad Soyad</li>
+              <li><i class="fas fa-check text-success mr-2"></i>Pozisyon</li>
+            </ul>
+          </div>
+          
+          <div class="mb-3">
+            <h6 class="text-koc-red">Fotoğraf Önerileri</h6>
+            <ul class="list-unstyled text-sm">
+              <li><i class="fas fa-info text-info mr-2"></i>Boyut: 250x250px</li>
+              <li><i class="fas fa-info text-info mr-2"></i>Format: JPG, PNG</li>
+              <li><i class="fas fa-info text-info mr-2"></i>Max: 5MB</li>
+              <li><i class="fas fa-info text-info mr-2"></i>Kare format tercih edilir</li>
+            </ul>
+          </div>
+          
+          <div class="mb-3">
+            <h6 class="text-koc-red">Sıralama</h6>
+            <p class="text-sm text-muted">
+              Küçük sayılar önce görünür. Aynı sıralama numarası varsa isim sırasına göre dizilir.
+            </p>
+          </div>
+          
+          <div class="alert alert-info">
+            <small>
+              <strong>Not:</strong> Eklenen ekip üyesi web sitesinin "Uzman Ekibimiz" bölümünde görünecektir.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+$(document).ready(function() {
+  // Fotoğraf önizleme
+  $('#id_image').change(function() {
+    var input = this;
+    if (input.files && input.files[0]) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var preview = '<img src="' + e.target.result + '" class="image-preview">';
+        $('#id_image').closest('.form-group').append(preview);
+      }
+      reader.readAsDataURL(input.files[0]);
+    }
+  });
+  
+  // Form validasyonu
+  $('form').submit(function(e) {
+    var name = $('#id_name').val().trim();
+    var position = $('#id_position').val();
+    
+    if (!name) {
+      alert('Ad Soyad alanı zorunludur.');
+      e.preventDefault();
+      return false;
+    }
+    
+    if (!position) {
+      alert('Pozisyon seçimi zorunludur.');
+      e.preventDefault();
+      return false;
+    }
+    
+    return true;
+  });
+});
+</script>
+{% endblock javascripts %} 

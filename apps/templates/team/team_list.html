@@ -1,0 +1,558 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Ekip Yönetimi {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+    --koc-gray: #f5f5f5;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: none;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .filter-header {
+    background: linear-gradient(45deg, var(--koc-red-dark), var(--koc-red));
+    border-bottom: none;
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .table thead th {
+    border-top: none;
+    border-bottom: 2px solid var(--koc-red);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(var(--koc-red-rgb), 0.04);
+  }
+  
+  .team-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--koc-red);
+  }
+  
+  .team-avatar-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, var(--koc-red), var(--koc-red-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+  }
+  
+  .order-input {
+    width: 60px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  
+  .empty-state i {
+    font-size: 4rem;
+    color: #ccc;
+    margin-bottom: 1rem;
+  }
+  
+  .empty-state h3 {
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+  
+  .empty-state p {
+    color: #8898aa;
+    margin-bottom: 2rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Ekip Yönetimi</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item active" aria-current="page">Ekip Yönetimi</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'team:team_create' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-plus mr-2"></i>Yeni Ekip Üyesi
+          </a>
+        </div>
+      </div>
+      
+      <!-- Header cards -->
+      <div class="row">
+        <div class="col-xl-4 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Toplam Üye</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ stats.total }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow">
+                    <i class="fas fa-users"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-4 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Aktif Üyeler</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ stats.active }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-green text-white rounded-circle shadow">
+                    <i class="fas fa-user-check"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-4 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Pasif Üyeler</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ stats.inactive }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow">
+                    <i class="fas fa-user-times"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- Filtreleme kartı -->
+  <div class="row">
+    <div class="col">
+      <div class="card mb-4">
+        <div class="card-header filter-header">
+          <h3 class="text-white mb-0">
+            <i class="fas fa-filter mr-2"></i>
+            Filtreleme ve Arama
+          </h3>
+        </div>
+        <div class="card-body">
+          <form method="GET" action="{% url 'team:team_list' %}">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label class="form-control-label">Arama</label>
+                  <input type="text" name="search" class="form-control" 
+                         value="{{ search_query }}" 
+                         placeholder="Ad, pozisyon ara...">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label class="form-control-label">Pozisyon</label>
+                  <select name="position" class="form-control">
+                    <option value="">Tüm Pozisyonlar</option>
+                    {% for key, value in position_choices %}
+                    <option value="{{ key }}" {% if position_filter == key %}selected{% endif %}>
+                      {{ value }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label class="form-control-label">Durum</label>
+                  <select name="status" class="form-control">
+                    <option value="">Tümü</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Aktif</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Pasif</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label class="form-control-label">&nbsp;</label>
+                  <div class="d-flex">
+                    <button type="submit" class="btn btn-koc-red btn-block">
+                      <i class="fas fa-search mr-1"></i> Ara
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Ekip üyeleri listesi -->
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Ekip Üyeleri</h3>
+            </div>
+            <div class="col text-right">
+              <span class="badge badge-primary badge-lg">{{ team_members.paginator.count }} üye</span>
+            </div>
+          </div>
+        </div>
+        
+        {% if team_members %}
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">Fotoğraf</th>
+                <th scope="col">Ad Soyad</th>
+                <th scope="col">Pozisyon</th>
+                <th scope="col">Sıra</th>
+                <th scope="col">Durum</th>
+                <th scope="col">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for member in team_members %}
+              <tr>
+                <td>
+                  {% if member.get_image_url %}
+                    <img src="{{ member.get_image_url }}" alt="{{ member.name }}" class="team-avatar">
+                  {% else %}
+                    <div class="team-avatar-placeholder">
+                      {{ member.name|first|upper }}
+                    </div>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="media align-items-center">
+                    <div class="media-body">
+                      <span class="name mb-0 text-sm font-weight-bold">{{ member.name }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge badge-info">{{ member.get_position_display_custom }}</span>
+                </td>
+                <td>
+                  <input type="number" class="order-input" 
+                         value="{{ member.display_order }}" 
+                         data-member-id="{{ member.id }}"
+                         min="0">
+                </td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <label class="custom-toggle mr-2">
+                      <input type="checkbox" class="toggle-active" 
+                             data-member-id="{{ member.id }}" 
+                             {% if member.is_active %}checked{% endif %}>
+                      <span class="custom-toggle-slider rounded-circle"></span>
+                    </label>
+                    <span class="status-text">
+                      {% if member.is_active %}
+                        <span class="badge badge-success">Aktif</span>
+                      {% else %}
+                        <span class="badge badge-secondary">Pasif</span>
+                      {% endif %}
+                    </span>
+                  </div>
+                </td>
+                <td class="text-right">
+                  <div class="dropdown">
+                    <a class="btn btn-sm btn-icon-only text-light" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                      <a class="dropdown-item" href="{% url 'team:team_detail' member.id %}">
+                        <i class="fas fa-eye mr-2"></i> Detay
+                      </a>
+                      <a class="dropdown-item" href="{% url 'team:team_update' member.id %}">
+                        <i class="fas fa-edit mr-2"></i> Düzenle
+                      </a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item text-danger delete-member" href="#" 
+                         data-member-id="{{ member.id }}" 
+                         data-member-name="{{ member.name }}">
+                        <i class="fas fa-trash-alt mr-2"></i> Sil
+                      </a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if team_members.has_other_pages %}
+        <div class="card-footer py-4">
+          <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-end mb-0">
+              {% if team_members.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ team_members.previous_page_number }}">
+                    <i class="fas fa-angle-left"></i>
+                    <span class="sr-only">Önceki</span>
+                  </a>
+                </li>
+              {% endif %}
+              
+              {% for num in team_members.paginator.page_range %}
+                {% if team_members.number == num %}
+                  <li class="page-item active">
+                    <a class="page-link" href="#">{{ num }}</a>
+                  </li>
+                {% elif num > team_members.number|add:'-3' and num < team_members.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ num }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+              
+              {% if team_members.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ team_members.next_page_number }}">
+                    <i class="fas fa-angle-right"></i>
+                    <span class="sr-only">Sonraki</span>
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state">
+          <i class="fas fa-users"></i>
+          <h3>Henüz ekip üyesi yok</h3>
+          <p>İlk ekip üyenizi ekleyerek başlayın. Ekip üyeleri web sitesinde "Uzman Ekibimiz" bölümünde görünecektir.</p>
+          <a href="{% url 'team:team_create' %}" class="btn btn-koc-red">
+            <i class="fas fa-plus mr-2"></i>
+            İlk Ekip Üyesini Ekle
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+$(document).ready(function() {
+  // Aktiflik durumu değiştirme
+  $('.toggle-active').change(function() {
+    var memberId = $(this).data('member-id');
+    var $toggle = $(this);
+    var $statusText = $toggle.closest('td').find('.status-text');
+    
+    $.ajax({
+      url: "{% url 'team:team_toggle_status' 0 %}".replace('0', memberId),
+      type: 'POST',
+      data: {
+        field: 'is_active',
+        csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+      },
+      success: function(response) {
+        if (response.success) {
+          showAlert(response.message, 'success');
+          if (response.new_status) {
+            $statusText.html('<span class="badge badge-success">Aktif</span>');
+          } else {
+            $statusText.html('<span class="badge badge-secondary">Pasif</span>');
+          }
+        } else {
+          showAlert(response.message, 'danger');
+          $toggle.prop('checked', !$toggle.prop('checked'));
+        }
+      },
+      error: function() {
+        showAlert('Bir hata oluştu.', 'danger');
+        $toggle.prop('checked', !$toggle.prop('checked'));
+      }
+    });
+  });
+  
+  // Sıralama güncelleme
+  $('.order-input').change(function() {
+    var memberId = $(this).data('member-id');
+    var newOrder = $(this).val();
+    
+    $.ajax({
+      url: "{% url 'team:team_update_order' 0 %}".replace('0', memberId),
+      type: 'POST',
+      data: {
+        order: newOrder,
+        csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+      },
+      success: function(response) {
+        if (response.success) {
+          showAlert(response.message, 'success');
+        } else {
+          showAlert(response.message, 'danger');
+        }
+      },
+      error: function() {
+        showAlert('Sıralama güncellenirken bir hata oluştu.', 'danger');
+      }
+    });
+  });
+  
+  // Üye silme
+  $('.delete-member').click(function(e) {
+    e.preventDefault();
+    
+    var memberId = $(this).data('member-id');
+    var memberName = $(this).data('member-name');
+    
+    if (confirm('Bu ekip üyesini silmek istediğinizden emin misiniz?\n"' + memberName + '"')) {
+      $.ajax({
+        url: "{% url 'team:team_delete' 0 %}".replace('0', memberId),
+        type: 'POST',
+        data: {
+          csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+          if (response.success) {
+            showAlert(response.message, 'success');
+            setTimeout(function() {
+              location.reload();
+            }, 1500);
+          } else {
+            showAlert(response.message, 'danger');
+          }
+        },
+        error: function() {
+          showAlert('Silme işlemi başarısız.', 'danger');
+        }
+      });
+    }
+  });
+  
+  // Uyarı gösterme fonksiyonu
+  function showAlert(message, type) {
+    var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+                   message +
+                   '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                   '<span aria-hidden="true">&times;</span></button></div>';
+                   
+    $('.header-body').prepend(alertHtml);
+    
+    setTimeout(function() {
+      $('.alert').alert('close');
+    }, 3000);
+  }
+});
+</script>
+{% endblock javascripts %} 

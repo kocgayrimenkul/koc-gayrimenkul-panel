@@ -1,0 +1,514 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Müşteri Hatırlatmaları {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+    --koc-gray: #f5f5f5;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Sayfa özel stilleri */
+  .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: none;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .filter-header {
+    background: linear-gradient(45deg, var(--koc-red-dark), var(--koc-red));
+    border-bottom: none;
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .table thead th {
+    border-top: none;
+    border-bottom: 2px solid var(--koc-red);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(var(--koc-red-rgb), 0.04);
+  }
+  
+  .reminder-today {
+    border-left: 4px solid #f5365c;
+    background-color: rgba(245, 54, 92, 0.05);
+  }
+  
+  .reminder-upcoming {
+    border-left: 4px solid #11cdef;
+    background-color: rgba(17, 205, 239, 0.05);
+  }
+  
+  .reminder-past {
+    border-left: 4px solid #fb6340;
+    background-color: rgba(251, 99, 64, 0.05);
+  }
+  
+  .reminder-sent {
+    border-left: 4px solid #2dce89;
+    background-color: rgba(45, 206, 137, 0.05);
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  
+  .empty-state i {
+    font-size: 4rem;
+    color: #ccc;
+    margin-bottom: 1rem;
+  }
+  
+  .empty-state h3 {
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+  
+  .empty-state p {
+    color: #8898aa;
+    margin-bottom: 2rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Müşteri Hatırlatmaları</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'customer_list' %}">Müşteriler</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Hatırlatmalar</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'customer_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-users mr-2"></i>Müşteri Listesi
+          </a>
+        </div>
+      </div>
+      
+      <!-- Header cards -->
+      <div class="row">
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Bugünkü Hatırlatmalar</h5>
+                  <span class="h2 font-weight-bold mb-0">
+                    {{ reminders|length|default:0 }}
+                  </span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow">
+                    <i class="fas fa-bell"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Gönderilmemiş</h5>
+                  <span class="h2 font-weight-bold mb-0">
+                    {% with unsent=reminders|length %}{{ unsent|default:0 }}{% endwith %}
+                  </span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-yellow text-white rounded-circle shadow">
+                    <i class="fas fa-exclamation-triangle"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Geçmiş Hatırlatmalar</h5>
+                  <span class="h2 font-weight-bold mb-0">0</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow">
+                    <i class="fas fa-history"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Toplam</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ reminders|length|default:0 }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-green text-white rounded-circle shadow">
+                    <i class="fas fa-calendar-check"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- Filtreleme kartı -->
+  <div class="row">
+    <div class="col">
+      <div class="card mb-4">
+        <div class="card-header filter-header">
+          <h3 class="text-white mb-0">
+            <i class="fas fa-filter mr-2"></i>
+            Hatırlatma Filtreleme
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-2">
+              <a href="{% url 'customer_reminders' %}" 
+                 class="btn {% if not filter_status %}btn-koc-red{% else %}btn-outline-secondary{% endif %} btn-block">
+                <i class="fas fa-list mr-1"></i> Tümü
+              </a>
+            </div>
+            <div class="col-md-2">
+              <a href="{% url 'customer_reminders' %}?status=today" 
+                 class="btn {% if filter_status == 'today' %}btn-danger{% else %}btn-outline-secondary{% endif %} btn-block">
+                <i class="fas fa-calendar-day mr-1"></i> Bugün
+              </a>
+            </div>
+            <div class="col-md-2">
+              <a href="{% url 'customer_reminders' %}?status=upcoming" 
+                 class="btn {% if filter_status == 'upcoming' %}btn-info{% else %}btn-outline-secondary{% endif %} btn-block">
+                <i class="fas fa-calendar-plus mr-1"></i> Yaklaşan
+              </a>
+            </div>
+            <div class="col-md-2">
+              <a href="{% url 'customer_reminders' %}?status=past" 
+                 class="btn {% if filter_status == 'past' %}btn-warning{% else %}btn-outline-secondary{% endif %} btn-block">
+                <i class="fas fa-calendar-minus mr-1"></i> Geçmiş
+              </a>
+            </div>
+            <div class="col-md-2">
+              <a href="{% url 'customer_reminders' %}?status=sent" 
+                 class="btn {% if filter_status == 'sent' %}btn-success{% else %}btn-outline-secondary{% endif %} btn-block">
+                <i class="fas fa-check-circle mr-1"></i> Gönderilmiş
+              </a>
+            </div>
+            <div class="col-md-2">
+              <a href="{% url 'customer_reminders' %}?status=unsent" 
+                 class="btn {% if filter_status == 'unsent' %}btn-secondary{% else %}btn-outline-secondary{% endif %} btn-block">
+                <i class="fas fa-times-circle mr-1"></i> Gönderilmemiş
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Hatırlatma listesi -->
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">
+                {% if filter_status == 'today' %}
+                  Bugünkü Hatırlatmalar
+                {% elif filter_status == 'upcoming' %}
+                  Yaklaşan Hatırlatmalar
+                {% elif filter_status == 'past' %}
+                  Geçmiş Hatırlatmalar
+                {% elif filter_status == 'sent' %}
+                  Gönderilmiş Hatırlatmalar
+                {% elif filter_status == 'unsent' %}
+                  Gönderilmemiş Hatırlatmalar
+                {% else %}
+                  Tüm Hatırlatmalar
+                {% endif %}
+              </h3>
+            </div>
+            <div class="col text-right">
+              <span class="badge badge-primary badge-lg">{{ reminders|length }} hatırlatma</span>
+            </div>
+          </div>
+        </div>
+        
+        {% if reminders %}
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">Müşteri</th>
+                <th scope="col">Hatırlatma Tarihi</th>
+                <th scope="col">Mesaj</th>
+                <th scope="col">Danışman</th>
+                <th scope="col">Durum</th>
+                <th scope="col">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for reminder in reminders %}
+              <tr class="
+                {% if reminder.reminder_date == today %}reminder-today
+                {% elif reminder.reminder_date > today %}reminder-upcoming
+                {% elif reminder.is_sent %}reminder-sent
+                {% else %}reminder-past
+                {% endif %}
+              ">
+                <td>
+                  <div class="media align-items-center">
+                    <div class="media-body">
+                      <div class="d-flex align-items-center">
+                        <div>
+                          <span class="avatar avatar-sm rounded-circle bg-koc-red text-white">
+                            {{ reminder.customer.full_name|first|upper }}
+                          </span>
+                        </div>
+                        <div class="ml-3">
+                          <h5 class="mb-0">{{ reminder.customer.full_name }}</h5>
+                          <div class="text-sm text-muted">
+                            <i class="fas fa-phone mr-1"></i> {{ reminder.customer.phone }}
+                            {% if reminder.customer.neighborhood %}
+                            <br><i class="fas fa-map-marker-alt mr-1"></i> {{ reminder.customer.neighborhood.name }}
+                            {% endif %}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex flex-column">
+                    <span class="text-sm font-weight-bold">
+                      {{ reminder.reminder_date|date:"d.m.Y" }}
+                    </span>
+                    <span class="text-xs text-muted">
+                      {% if reminder.reminder_date == today %}
+                        Bugün
+                      {% elif reminder.reminder_date > today %}
+                        {{ reminder.reminder_date|timeuntil }} kaldı
+                      {% else %}
+                        {{ reminder.reminder_date|timesince }} önce
+                      {% endif %}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div class="text-sm">
+                    {{ reminder.message|truncatechars:50 }}
+                    {% if reminder.message|length > 50 %}
+                      <a href="#" class="text-koc-red" data-toggle="tooltip" title="{{ reminder.message }}">
+                        <i class="fas fa-info-circle"></i>
+                      </a>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                  {% if reminder.customer.consultant %}
+                    <span class="badge badge-info">
+                      {{ reminder.customer.consultant.get_full_name|default:reminder.customer.consultant.username }}
+                    </span>
+                  {% else %}
+                    <span class="text-muted">Atanmamış</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if reminder.is_sent %}
+                    <span class="badge badge-success">
+                      <i class="fas fa-check mr-1"></i> Gönderildi
+                    </span>
+                  {% elif reminder.reminder_date == today %}
+                    <span class="badge badge-danger">
+                      <i class="fas fa-exclamation mr-1"></i> Bugün
+                    </span>
+                  {% elif reminder.reminder_date > today %}
+                    <span class="badge badge-info">
+                      <i class="fas fa-clock mr-1"></i> Bekliyor
+                    </span>
+                  {% else %}
+                    <span class="badge badge-warning">
+                      <i class="fas fa-exclamation-triangle mr-1"></i> Gecikmiş
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  <div class="dropdown">
+                    <a class="btn btn-sm btn-icon-only text-light" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                      <a class="dropdown-item" href="{% url 'customer_detail' reminder.customer.id %}">
+                        <i class="fas fa-eye mr-2"></i> Müşteri Detayı
+                      </a>
+                      {% if reminder.customer.phone %}
+                      <a class="dropdown-item" href="tel:{{ reminder.customer.phone }}">
+                        <i class="fas fa-phone mr-2"></i> Ara
+                      </a>
+                      {% endif %}
+                      {% if not reminder.is_sent %}
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item text-success" href="#" onclick="markAsSent({{ reminder.id }})">
+                        <i class="fas fa-check mr-2"></i> Gönderildi Olarak İşaretle
+                      </a>
+                      {% endif %}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+        {% else %}
+        <div class="empty-state">
+          <i class="fas fa-bell-slash"></i>
+          <h3>
+            {% if filter_status %}
+              Bu filtrede hatırlatma bulunamadı
+            {% else %}
+              Henüz hatırlatma yok
+            {% endif %}
+          </h3>
+          <p>
+            {% if filter_status %}
+              Farklı bir filtre seçmeyi deneyin.
+            {% else %}
+              Müşteri kayıtlarında hatırlatma tarihi belirlediğinizde burada görünecektir.
+            {% endif %}
+          </p>
+          <a href="{% url 'customer_list' %}" class="btn btn-koc-red">
+            <i class="fas fa-users mr-2"></i>
+            Müşteri Listesine Git
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+$(document).ready(function() {
+  // Tooltip'leri etkinleştir
+  $('[data-toggle="tooltip"]').tooltip();
+});
+
+function markAsSent(reminderId) {
+  if (confirm('Bu hatırlatmayı gönderildi olarak işaretlemek istediğinizden emin misiniz?')) {
+    // AJAX request to mark as sent
+    $.ajax({
+      url: '/api/reminders/' + reminderId + '/mark-sent/',
+      type: 'POST',
+      headers: {
+        'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+      },
+      success: function(response) {
+        location.reload();
+      },
+      error: function(xhr, status, error) {
+        alert('Bir hata oluştu: ' + error);
+      }
+    });
+  }
+}
+</script>
+{% endblock javascripts %} 

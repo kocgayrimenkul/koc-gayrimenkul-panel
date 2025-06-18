@@ -492,7 +492,6 @@
               <tr>
                 <th scope="col">Daire Adı</th>
                 <th scope="col">Sahibi</th>
-                <th scope="col">Telefon</th>
                 <th scope="col">İlan Numaraları</th>
                 <th scope="col">Durum</th>
                 <th scope="col">Oda</th>
@@ -530,16 +529,6 @@
                   </div>
                 </th>
                 <td>{{ property.owner_name|default:"-" }}</td>
-                <td>
-                  {% if property.phone %}
-                  <div class="d-flex align-items-center">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Flag_of_Turkey.svg/20px-Flag_of_Turkey.svg.png" alt="TR" class="mr-1" style="width: 16px;">
-                    {{ property.phone }}
-                  </div>
-                  {% else %}
-                  -
-                  {% endif %}
-                </td>
                 <td>
                   {% if property.owner_listing_number %}
                     <div class="mb-1">
@@ -819,12 +808,6 @@
                 <p class="text-muted small mb-2 text-truncate">{{ property.address }}</p>
                 <div class="mb-2">
                   <strong class="d-block">{{ property.owner_name|default:"Bilinmiyor" }}</strong>
-                  {% if property.phone %}
-                  <div class="d-flex align-items-center mb-1">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Flag_of_Turkey.svg/20px-Flag_of_Turkey.svg.png" alt="TR" class="mr-1" style="width: 16px;">
-                    {{ property.phone }}
-                  </div>
-                  {% endif %}
                 </div>
                 <div class="d-flex justify-content-between align-items-baseline mb-2">
                   <p class="property-price mb-0">{{ property.price|floatformat:0 }} TL</p>

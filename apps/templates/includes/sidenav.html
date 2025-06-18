@@ -71,6 +71,14 @@
             </a>
           </li>
           
+          <!-- Ekip Yönetimi -->
+          <li class="nav-item">
+            <a class="nav-link {% if 'team' in segment or 'ekip' in segment %} active {% endif %}" href="{% url 'team:team_list' %}">
+              <i class="ni ni-circle-08 text-success"></i>
+              <span class="nav-link-text">Ekip Yönetimi</span>
+            </a>
+          </li>
+          
           {% if user|can_view_presentation %}
           <li class="nav-item">
             <a class="nav-link {% if 'presentation' in segment %} active {% endif %}" href="{% url 'presentation_list' %}">
