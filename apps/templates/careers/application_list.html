@@ -1,0 +1,464 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} İş Başvuruları {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+    --koc-gray: #f5f5f5;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Sayfa özel stilleri */
+  .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: none;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .filter-header {
+    background: linear-gradient(45deg, var(--koc-red-dark), var(--koc-red));
+    border-bottom: none;
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .table thead th {
+    border-top: none;
+    border-bottom: 2px solid var(--koc-red);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(var(--koc-red-rgb), 0.04);
+  }
+  
+  .dropdown-item:hover {
+    background-color: rgba(var(--koc-red-rgb), 0.1);
+    color: var(--koc-red);
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  
+  .empty-state i {
+    font-size: 4rem;
+    color: #ccc;
+    margin-bottom: 1rem;
+  }
+  
+  .empty-state h3 {
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+  
+  .empty-state p {
+    color: #8898aa;
+    margin-bottom: 2rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">İş Başvuruları</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item active" aria-current="page">Kariyer</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <!-- API üzerinden yönetilecek -->
+        </div>
+      </div>
+      
+      <!-- Header cards -->
+      <div class="row">
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Toplam Başvuru</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ total_applications|default:0 }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow">
+                    <i class="fas fa-briefcase"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Yeni Başvuru</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ new_applications|default:0 }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-yellow text-white rounded-circle shadow">
+                    <i class="fas fa-plus-circle"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Mülakat</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ interview_applications|default:0 }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow">
+                    <i class="fas fa-users"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Bu Ay</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ this_month_applications|default:0 }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-green text-white rounded-circle shadow">
+                    <i class="fas fa-calendar-alt"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- Filtreleme kartı -->
+  <div class="row">
+    <div class="col">
+      <div class="card mb-4">
+        <div class="card-header filter-header">
+          <h3 class="text-white mb-0">
+            <i class="fas fa-filter mr-2"></i>
+            Başvuru Filtreleme
+          </h3>
+        </div>
+        <div class="card-body">
+          <form method="get" action="">
+            <div class="row">
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label for="search" class="form-control-label">Arama</label>
+                  <input type="text" id="search" name="search" class="form-control" placeholder="Ad, soyad, e-posta..." value="{{ request.GET.search }}">
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label for="status" class="form-control-label">Durum</label>
+                  <select name="status" id="status" class="form-control">
+                    <option value="">Tümü</option>
+                    {% for status_choice in status_choices %}
+                    <option value="{{ status_choice.0 }}" {% if request.GET.status == status_choice.0 %}selected{% endif %}>{{ status_choice.1 }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label for="position" class="form-control-label">Pozisyon</label>
+                  <select name="position" id="position" class="form-control">
+                    <option value="">Tümü</option>
+                    {% for position_choice in position_choices %}
+                    <option value="{{ position_choice.0 }}" {% if request.GET.position == position_choice.0 %}selected{% endif %}>{{ position_choice.1 }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label for="experience" class="form-control-label">Deneyim</label>
+                  <select name="experience" id="experience" class="form-control">
+                    <option value="">Tümü</option>
+                    {% for exp_choice in experience_choices %}
+                    <option value="{{ exp_choice.0 }}" {% if request.GET.experience == exp_choice.0 %}selected{% endif %}>{{ exp_choice.1 }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label for="date_range" class="form-control-label">Tarih</label>
+                  <select name="date_range" id="date_range" class="form-control">
+                    <option value="">Tümü</option>
+                    <option value="today" {% if request.GET.date_range == 'today' %}selected{% endif %}>Bugün</option>
+                    <option value="week" {% if request.GET.date_range == 'week' %}selected{% endif %}>Bu Hafta</option>
+                    <option value="month" {% if request.GET.date_range == 'month' %}selected{% endif %}>Bu Ay</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label class="form-control-label">&nbsp;</label>
+                  <div>
+                    <button type="submit" class="btn btn-koc-red btn-block">
+                      <i class="fas fa-search mr-1"></i> Filtrele
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Başvuru listesi -->
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">İş Başvuru Listesi</h3>
+            </div>
+            <div class="col text-right">
+              <!-- API üzerinden yönetilecek -->
+            </div>
+          </div>
+        </div>
+        
+        {% if applications %}
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">Başvuran</th>
+                <th scope="col">Pozisyon</th>
+                <th scope="col">Deneyim</th>
+                <th scope="col">Durum</th>
+                <th scope="col">Tarih</th>
+                <th scope="col">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for application in applications %}
+              <tr>
+                <td>
+                  <div class="media align-items-center">
+                    <div class="media-body">
+                      <div class="d-flex align-items-center">
+                        <div>
+                          <span class="avatar avatar-sm rounded-circle bg-koc-red text-white">
+                            {{ application.first_name|first|upper }}
+                          </span>
+                        </div>
+                        <div class="ml-3">
+                          <h5 class="mb-0">{{ application.full_name }}</h5>
+                          <div class="text-sm text-muted">
+                            <i class="fas fa-envelope mr-1"></i> {{ application.email }}
+                            {% if application.phone %}
+                            <br><i class="fas fa-phone mr-1"></i> {{ application.phone }}
+                            {% endif %}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge badge-info">{{ application.get_position_display }}</span>
+                </td>
+                <td>
+                  <span class="badge badge-secondary">{{ application.get_experience_display }}</span>
+                </td>
+                <td>
+                  {% if application.status == 'yeni' %}
+                    <span class="badge badge-warning">Yeni Başvuru</span>
+                  {% elif application.status == 'inceleniyor' %}
+                    <span class="badge badge-info">İnceleniyor</span>
+                  {% elif application.status == 'mulakat' %}
+                    <span class="badge badge-primary">Mülakat</span>
+                  {% elif application.status == 'onaylandi' %}
+                    <span class="badge badge-success">Onaylandı</span>
+                  {% elif application.status == 'reddedildi' %}
+                    <span class="badge badge-danger">Reddedildi</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="text-sm">{{ application.created_at|date:"d.m.Y H:i" }}</span>
+                </td>
+                <td class="text-right">
+                  <div class="dropdown">
+                    <a class="btn btn-sm btn-icon-only text-light" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                      <a class="dropdown-item" href="{% url 'careers-views:application_detail' application.id %}">
+                        <i class="fas fa-eye mr-2"></i> Detay
+                      </a>
+                      <div class="dropdown-divider"></div>
+                      <span class="dropdown-item text-muted">
+                        <i class="fas fa-info-circle mr-2"></i> Düzenleme API üzerinden
+                      </span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Sayfalama -->
+        {% if is_paginated %}
+        <div class="card-footer py-4">
+          <nav aria-label="...">
+            <ul class="pagination justify-content-end mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                    <i class="fas fa-angle-double-left"></i>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                    <i class="fas fa-angle-left"></i>
+                  </a>
+                </li>
+              {% endif %}
+              
+              <li class="page-item active">
+                <span class="page-link">{{ page_obj.number }}</span>
+              </li>
+              
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                    <i class="fas fa-angle-right"></i>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                    <i class="fas fa-angle-double-right"></i>
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state">
+          <i class="fas fa-briefcase"></i>
+          <h3>Henüz iş başvurusu yok</h3>
+          <p>İş başvuruları API üzerinden alınmaktadır.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+$(document).ready(function() {
+  // Filtreleme formu otomatik gönderimi
+  $('#status, #position, #experience, #date_range').change(function() {
+    $(this).closest('form').submit();
+  });
+});
+</script>
+{% endblock javascripts %} 

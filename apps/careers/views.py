@@ -11,6 +11,12 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 from django.conf import settings
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Q, Count
+from django.utils import timezone
+from datetime import timedelta
 
 from .models import JobApplication
 from .serializers import (
@@ -133,3 +139,94 @@ def job_application_stats(request):
     }
     
     return Response(data, status=status.HTTP_200_OK)
+
+
+# Template-based Views (admin paneli için)
+@login_required
+def application_list(request):
+    """İş başvuruları listesi view"""
+    # Filtreleme parametreleri
+    search = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    position_filter = request.GET.get('position', '')
+    experience_filter = request.GET.get('experience', '')
+    date_range = request.GET.get('date_range', '')
+    
+    # Base queryset
+    applications = JobApplication.objects.all()
+    
+    # Arama filtresi
+    if search:
+        applications = applications.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search) |
+            Q(phone__icontains=search)
+        )
+    
+    # Durum filtresi
+    if status_filter:
+        applications = applications.filter(status=status_filter)
+    
+    # Pozisyon filtresi
+    if position_filter:
+        applications = applications.filter(position=position_filter)
+    
+    # Deneyim filtresi
+    if experience_filter:
+        applications = applications.filter(experience=experience_filter)
+    
+    # Tarih aralığı filtresi
+    if date_range:
+        today = timezone.now().date()
+        if date_range == 'today':
+            applications = applications.filter(created_at__date=today)
+        elif date_range == 'week':
+            week_ago = today - timedelta(days=7)
+            applications = applications.filter(created_at__date__gte=week_ago)
+        elif date_range == 'month':
+            month_ago = today - timedelta(days=30)
+            applications = applications.filter(created_at__date__gte=month_ago)
+    
+    # Sıralama
+    applications = applications.order_by('-created_at')
+    
+    # Sayfalama
+    paginator = Paginator(applications, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # İstatistikler
+    total_applications = JobApplication.objects.count()
+    new_applications = JobApplication.objects.filter(status='yeni').count()
+    interview_applications = JobApplication.objects.filter(status='mulakat').count()
+    this_month_applications = JobApplication.objects.filter(
+        created_at__date__gte=timezone.now().date() - timedelta(days=30)
+    ).count()
+    
+    context = {
+        'applications': page_obj,
+        'total_applications': total_applications,
+        'new_applications': new_applications,
+        'interview_applications': interview_applications,
+        'this_month_applications': this_month_applications,
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+        'position_choices': JobApplication.POSITION_CHOICES,
+        'experience_choices': JobApplication.EXPERIENCE_CHOICES,
+        'status_choices': JobApplication.STATUS_CHOICES,
+    }
+    
+    return render(request, 'careers/application_list.html', context)
+
+
+@login_required
+def application_detail(request, pk):
+    """İş başvurusu detay view (sadece görüntüleme)"""
+    application = get_object_or_404(JobApplication, pk=pk)
+    
+    context = {
+        'application': application,
+    }
+    
+    return render(request, 'careers/application_detail.html', context)

@@ -16,7 +16,7 @@
           <li class="nav-item">
             <a class="nav-link {% if 'calendar' in segment or 'ajenda' in segment or segment == 'home' or request.resolver_match.url_name == 'home' %} active {% endif %}" href="/">
               <i class="ni ni-calendar-grid-58 text-primary"></i>
-              <span class="nav-link-text">Ajanda</span>
+              <span class="nav-link-text">Ajenda</span>
             </a>
           </li>
           
@@ -60,6 +60,14 @@
             <a class="nav-link {% if 'contact' in segment or 'iletisim' in segment %} active {% endif %}" href="{% url 'contact-views:contact_list' %}">
               <i class="ni ni-chat-round text-warning"></i>
               <span class="nav-link-text">İletişim Yönetimi</span>
+            </a>
+          </li>
+          
+          <!-- Kariyer Yönetimi -->
+          <li class="nav-item">
+            <a class="nav-link {% if 'careers' in segment or 'kariyer' in segment %} active {% endif %}" href="{% url 'careers-views:application_list' %}">
+              <i class="ni ni-briefcase-24 text-purple"></i>
+              <span class="nav-link-text">Kariyer Yönetimi</span>
             </a>
           </li>
           

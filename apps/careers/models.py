@@ -10,7 +10,13 @@ import os
 
 def cv_upload_path(instance, filename):
     """CV dosyası için upload path"""
-    return f'careers/cv/{instance.created_at.year}/{instance.created_at.month}/{filename}'
+    # Eğer instance henüz kaydedilmediyse created_at None olabilir
+    if instance.created_at:
+        date_obj = instance.created_at
+    else:
+        date_obj = timezone.now()
+    
+    return f'careers/cv/{date_obj.year}/{date_obj.month}/{filename}'
 
 
 class JobApplication(models.Model):

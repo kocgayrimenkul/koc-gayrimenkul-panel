@@ -1,0 +1,501 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} İş Başvurusu Detayı - {{ application.full_name }} {% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+<style>
+  /* Koç Gayrimenkul kurumsal renkleri */
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-light: #b82e42;
+    --koc-red-dark: #7a1a29;
+    --koc-black: #212529;
+    --koc-red-rgb: 157, 34, 53;
+    --koc-gray: #f5f5f5;
+  }
+  
+  .bg-koc-red {
+    background-color: var(--koc-red) !important;
+  }
+  
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  
+  .text-koc-red {
+    color: var(--koc-red) !important;
+  }
+  
+  .btn-koc-red {
+    color: #fff;
+    background-color: var(--koc-red);
+    border-color: var(--koc-red);
+  }
+  
+  .btn-koc-red:hover {
+    color: #fff;
+    background-color: var(--koc-red-light);
+    border-color: var(--koc-red-light);
+  }
+  
+  .border-koc-red {
+    border-color: var(--koc-red) !important;
+  }
+  
+  /* Sayfa özel stilleri */
+  .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: none;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .detail-header {
+    background: linear-gradient(45deg, var(--koc-red-dark), var(--koc-red));
+    border-bottom: none;
+    padding: 2rem;
+  }
+  
+  .avatar-profile {
+    width: 120px;
+    height: 120px;
+    font-size: 3rem;
+    border: 4px solid white;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+  
+  .status-badge {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+  }
+  
+  .detail-section {
+    border-left: 3px solid var(--koc-red);
+    padding-left: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .detail-item {
+    border-bottom: 1px solid #f8f9fe;
+    padding: 1rem 0;
+  }
+  
+  .detail-item:last-child {
+    border-bottom: none;
+  }
+  
+  .detail-label {
+    font-weight: 600;
+    color: #5e72e4;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+  }
+  
+  .detail-value {
+    color: #32325d;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  .cv-preview {
+    border: 2px dashed #ddd;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    background: #f8f9fe;
+    transition: all 0.3s ease;
+  }
+  
+  .cv-preview:hover {
+    border-color: var(--koc-red);
+    background: rgba(var(--koc-red-rgb), 0.05);
+  }
+  
+  .cv-icon {
+    font-size: 3rem;
+    color: var(--koc-red);
+    margin-bottom: 1rem;
+  }
+  
+  .timeline-item {
+    position: relative;
+    padding-left: 3rem;
+    padding-bottom: 2rem;
+  }
+  
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #e9ecef;
+  }
+  
+  .timeline-item::after {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    background: var(--koc-red);
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 3px #e9ecef;
+  }
+  
+  .timeline-item:last-child::before {
+    display: none;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="header bg-gradient-koc-red pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">İş Başvurusu Detayı</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'careers-views:application_list' %}">Kariyer</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Başvuru Detayı</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'careers-views:application_list' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-arrow-left mr-2"></i>Geri Dön
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+  
+  <!-- Uyarı mesajları -->
+  {% if messages %}
+  <div class="row">
+    <div class="col">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
+        <span class="alert-text">{{ message }}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- Ana içerik -->
+  <div class="row">
+    <!-- Sol kolon - Başvuran bilgileri -->
+    <div class="col-xl-8">
+      <div class="card">
+        <div class="card-header detail-header">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <div class="avatar avatar-profile rounded-circle bg-white text-koc-red">
+                {{ application.first_name|first|upper }}{{ application.last_name|first|upper }}
+              </div>
+            </div>
+            <div class="col ml-2">
+              <h1 class="text-white mb-0">{{ application.full_name }}</h1>
+              <p class="text-white opacity-8 mb-0">
+                <i class="fas fa-briefcase mr-2"></i>
+                {{ application.get_position_display }} Pozisyonu için Başvuru
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          
+          <!-- Kişisel Bilgiler -->
+          <div class="detail-section">
+            <h3 class="text-koc-red mb-3">
+              <i class="fas fa-user mr-2"></i>
+              Kişisel Bilgiler
+            </h3>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="detail-item">
+                  <div class="detail-label">Ad Soyad</div>
+                  <div class="detail-value">{{ application.full_name }}</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="detail-item">
+                  <div class="detail-label">E-posta</div>
+                  <div class="detail-value">
+                    <a href="mailto:{{ application.email }}" class="text-koc-red">
+                      <i class="fas fa-envelope mr-1"></i>
+                      {{ application.email }}
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="detail-item">
+                  <div class="detail-label">Telefon</div>
+                  <div class="detail-value">
+                    {% if application.phone %}
+                      <a href="tel:{{ application.phone }}" class="text-koc-red">
+                        <i class="fas fa-phone mr-1"></i>
+                        {{ application.phone }}
+                      </a>
+                    {% else %}
+                      <span class="text-muted">Belirtilmemiş</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Başvuru Bilgileri -->
+          <div class="detail-section">
+            <h3 class="text-koc-red mb-3">
+              <i class="fas fa-briefcase mr-2"></i>
+              Başvuru Bilgileri
+            </h3>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="detail-item">
+                  <div class="detail-label">Pozisyon</div>
+                  <div class="detail-value">
+                    <span class="badge badge-info status-badge">{{ application.get_position_display }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="detail-item">
+                  <div class="detail-label">Deneyim Süresi</div>
+                  <div class="detail-value">
+                    <span class="badge badge-secondary status-badge">{{ application.get_experience_display }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="detail-item">
+                  <div class="detail-label">Ön Yazı / Açıklama</div>
+                  <div class="detail-value">
+                    {% if application.cover_letter %}
+                      <div class="bg-light p-3 rounded">
+                        {{ application.cover_letter|linebreaksbr }}
+                      </div>
+                    {% else %}
+                      <span class="text-muted">Ön yazı belirtilmemiş</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- CV Dosyası -->
+          <div class="detail-section">
+            <h3 class="text-koc-red mb-3">
+              <i class="fas fa-file-pdf mr-2"></i>
+              CV Dosyası
+            </h3>
+            {% if application.cv_file %}
+              <div class="cv-preview">
+                <div class="cv-icon">
+                  <i class="fas fa-file-pdf"></i>
+                </div>
+                <h5 class="mb-2">{{ application.cv_filename }}</h5>
+                <p class="text-muted mb-3">
+                  CV dosyasını görüntülemek için aşağıdaki butona tıklayın
+                </p>
+                <a href="{{ application.cv_file.url }}" target="_blank" class="btn btn-koc-red">
+                  <i class="fas fa-download mr-2"></i>
+                  CV'yi İndir
+                </a>
+              </div>
+            {% else %}
+              <div class="cv-preview">
+                <div class="cv-icon text-muted">
+                  <i class="fas fa-file-times"></i>
+                </div>
+                <h5 class="text-muted mb-2">CV dosyası yüklenmemiş</h5>
+                <p class="text-muted">Bu başvuru için CV dosyası bulunmamaktadır.</p>
+              </div>
+            {% endif %}
+          </div>
+          
+          <!-- Sistem Notları -->
+          {% if application.notes %}
+          <div class="detail-section">
+            <h3 class="text-koc-red mb-3">
+              <i class="fas fa-sticky-note mr-2"></i>
+              İK Notları
+            </h3>
+            <div class="bg-light p-3 rounded">
+              {{ application.notes|linebreaksbr }}
+            </div>
+          </div>
+          {% endif %}
+          
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sağ kolon - Durum ve timeline -->
+    <div class="col-xl-4">
+      <!-- Durum kartı -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">
+            <i class="fas fa-info-circle mr-2"></i>
+            Başvuru Durumu
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="text-center mb-4">
+            {% if application.status == 'yeni' %}
+              <span class="badge badge-warning status-badge">
+                <i class="fas fa-clock mr-2"></i>Yeni Başvuru
+              </span>
+            {% elif application.status == 'inceleniyor' %}
+              <span class="badge badge-info status-badge">
+                <i class="fas fa-search mr-2"></i>İnceleniyor
+              </span>
+            {% elif application.status == 'mulakat' %}
+              <span class="badge badge-primary status-badge">
+                <i class="fas fa-users mr-2"></i>Mülakat Aşaması
+              </span>
+            {% elif application.status == 'onaylandi' %}
+              <span class="badge badge-success status-badge">
+                <i class="fas fa-check-circle mr-2"></i>Onaylandı
+              </span>
+            {% elif application.status == 'reddedildi' %}
+              <span class="badge badge-danger status-badge">
+                <i class="fas fa-times-circle mr-2"></i>Reddedildi
+              </span>
+            {% endif %}
+          </div>
+          
+          <div class="row text-center">
+            <div class="col-6">
+              <div class="border-right">
+                <h5 class="text-muted mb-0">Başvuru Tarihi</h5>
+                <span class="h6 text-koc-red">{{ application.created_at|date:"d.m.Y" }}</span>
+                <div class="text-sm text-muted">{{ application.created_at|date:"H:i" }}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <h5 class="text-muted mb-0">Son Güncelleme</h5>
+              <span class="h6 text-koc-red">{{ application.updated_at|date:"d.m.Y" }}</span>
+              <div class="text-sm text-muted">{{ application.updated_at|date:"H:i" }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- İşlemler kartı -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">
+            <i class="fas fa-cogs mr-2"></i>
+            İşlemler
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <small class="text-muted d-block mb-2">
+              <i class="fas fa-info-circle mr-1"></i>
+              Durum değişiklikleri API üzerinden yapılmaktadır
+            </small>
+          </div>
+          
+          <div class="d-grid gap-2">
+            {% if application.email %}
+            <a href="mailto:{{ application.email }}?subject=Başvurunuz Hakkında - {{ application.get_position_display }}" 
+               class="btn btn-outline-primary btn-block">
+              <i class="fas fa-envelope mr-2"></i>
+              E-posta Gönder
+            </a>
+            {% endif %}
+            
+            {% if application.phone %}
+            <a href="tel:{{ application.phone }}" class="btn btn-outline-success btn-block">
+              <i class="fas fa-phone mr-2"></i>
+              Ara
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Başvuru geçmişi -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">
+            <i class="fas fa-history mr-2"></i>
+            Başvuru Geçmişi
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-content">
+                <h6 class="mb-1">Başvuru Alındı</h6>
+                <p class="text-sm text-muted mb-1">
+                  {{ application.created_at|date:"d.m.Y H:i" }}
+                </p>
+                <p class="text-sm">
+                  {{ application.get_position_display }} pozisyonu için başvuru yapıldı.
+                </p>
+              </div>
+            </div>
+            
+            {% if application.status != 'yeni' %}
+            <div class="timeline-item">
+              <div class="timeline-content">
+                <h6 class="mb-1">Durum Güncellendi</h6>
+                <p class="text-sm text-muted mb-1">
+                  {{ application.updated_at|date:"d.m.Y H:i" }}
+                </p>
+                <p class="text-sm">
+                  Başvuru durumu "{{ application.get_status_display }}" olarak güncellendi.
+                </p>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+$(document).ready(function() {
+  // Sayfa yüklendiğinde animasyon
+  $('.card').hide().fadeIn(1000);
+});
+</script>
+{% endblock javascripts %} 
