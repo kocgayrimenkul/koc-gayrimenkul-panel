@@ -9,6 +9,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.template import loader
 from django.urls import reverse
 from django.utils import timezone
+from django.shortcuts import render
 from datetime import timedelta, datetime, date
 from django.db.models import Count, Q, Sum, Case, When, IntegerField, Value, Avg, F, Min, Max
 from django.db.models.functions import TruncMonth, ExtractMonth, ExtractYear
@@ -743,3 +744,11 @@ def neighborhood_analytics(request):
     neighborhood_data.sort(key=lambda x: x['properties_count'], reverse=True)
     
     return JsonResponse({'neighborhoods': neighborhood_data})
+
+@login_required(login_url="/login/")
+def map_view(request):
+    """Harita sayfası view'i"""
+    context = {
+        'segment': 'map',
+    }
+    return render(request, 'home/map.html', context)

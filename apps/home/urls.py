@@ -10,6 +10,9 @@ urlpatterns = [
 
     # Genel bakış sayfası (artık /genel-bakis/ altında)
     path('', views.index, name='dashboard'),
+    
+    # Harita sayfası
+    path('map/', views.map_view, name='map'),
 
     # Matches any html file
     re_path(r'^.*\.*', views.pages, name='pages'),
