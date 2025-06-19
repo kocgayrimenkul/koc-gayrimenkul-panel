@@ -9,9 +9,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.core.mail import send_mail
 from django.conf import settings
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from django.core.cache import cache
 
 from apps.portfolio.models import Property, PropertyImage
 from apps.fsbo.models import FSBO
@@ -27,11 +30,33 @@ from .serializers import (
 )
 
 
+@method_decorator(cache_page(60 * 5), name='dispatch')  # 5 dakika cache
 class PropertyListAPIView(generics.ListAPIView):
     """Gayrimenkul listesi API"""
-    queryset = Property.objects.filter(is_active=True).select_related('neighborhood', 'consultant').prefetch_related('images')
     serializer_class = PropertyListSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    
+    def get_queryset(self):
+        """Optimized queryset with selective image prefetch"""
+        # Ana resim için optimize edilmiş prefetch - önce is_main_photo=True olan, sonra order'a göre
+        main_image_prefetch = Prefetch(
+            'images',
+            queryset=PropertyImage.objects.select_related().order_by('-is_main_photo', 'order')[:3],
+            to_attr='main_image_only'
+        )
+        
+        return Property.objects.filter(is_active=True)\
+            .select_related('neighborhood', 'consultant')\
+            .prefetch_related(main_image_prefetch)\
+            .only(
+                'id', 'apartment_name', 'web_title', 'property_type', 'status', 'price',
+                'gross_area', 'net_area', 'room_count', 'floor', 'building_age', 
+                'bathroom_count', 'listing_date', 'created_at', 'category', 'listing_type',
+                'is_featured', 'description', 'address', 'has_balcony', 'heating',
+                'dues', 'floor_count', 'deed_status', 'is_suitable_for_credit',
+                'is_bargainable', 'is_furnished', 'is_in_site', 'is_exchangeable',
+                'neighborhood_id', 'consultant_id'
+            )
     
     # Filtreleme alanları
     filterset_fields = {
@@ -61,11 +86,33 @@ class PropertyListAPIView(generics.ListAPIView):
     ordering = ['-created_at']
 
 
+@method_decorator(cache_page(60 * 5), name='dispatch')  # 5 dakika cache
 class FeaturedPropertyListAPIView(generics.ListAPIView):
     """Öne çıkan gayrimenkul listesi API"""
-    queryset = Property.objects.filter(is_active=True, is_featured=True).select_related('neighborhood', 'consultant').prefetch_related('images')
     serializer_class = PropertyListSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    
+    def get_queryset(self):
+        """Optimized queryset with selective image prefetch for featured properties"""
+        # Ana resim için optimize edilmiş prefetch - önce is_main_photo=True olan, sonra order'a göre
+        main_image_prefetch = Prefetch(
+            'images',
+            queryset=PropertyImage.objects.select_related().order_by('-is_main_photo', 'order')[:3],
+            to_attr='main_image_only'
+        )
+        
+        return Property.objects.filter(is_active=True, is_featured=True)\
+            .select_related('neighborhood', 'consultant')\
+            .prefetch_related(main_image_prefetch)\
+            .only(
+                'id', 'apartment_name', 'web_title', 'property_type', 'status', 'price',
+                'gross_area', 'net_area', 'room_count', 'floor', 'building_age', 
+                'bathroom_count', 'listing_date', 'created_at', 'category', 'listing_type',
+                'is_featured', 'description', 'address', 'has_balcony', 'heating',
+                'dues', 'floor_count', 'deed_status', 'is_suitable_for_credit',
+                'is_bargainable', 'is_furnished', 'is_in_site', 'is_exchangeable',
+                'neighborhood_id', 'consultant_id'
+            )
     
     # Filtreleme alanları
     filterset_fields = {
@@ -97,7 +144,12 @@ class FeaturedPropertyListAPIView(generics.ListAPIView):
 
 class PropertyDetailAPIView(generics.RetrieveAPIView):
     """Gayrimenkul detay API"""
-    queryset = Property.objects.filter(is_active=True).select_related('neighborhood', 'consultant').prefetch_related('images', 'environments')
+    queryset = Property.objects.filter(is_active=True)\
+        .select_related('neighborhood', 'consultant')\
+        .prefetch_related(
+            Prefetch('images', queryset=PropertyImage.objects.order_by('-is_main_photo', 'order')),
+            'environments'
+        )
     serializer_class = PropertyDetailSerializer
     lookup_field = 'id'
 
@@ -123,8 +175,15 @@ class FSBOListAPIView(generics.ListAPIView):
 
 
 @api_view(['GET'])
+@cache_page(60 * 10)  # 10 dakika cache
 def property_stats_api(request):
     """Gayrimenkul istatistikleri API"""
+    cache_key = 'property_stats'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        return Response(cached_data, status=status.HTTP_200_OK)
+    
     total_properties = Property.objects.filter(is_active=True).count()
     for_sale = Property.objects.filter(is_active=True, status='satilik').count()
     for_rent = Property.objects.filter(is_active=True, status='kiralik').count()
@@ -143,13 +202,39 @@ def property_stats_api(request):
         'property_types': type_counts
     }
     
+    # Cache'e kaydet - 10 dakika
+    cache.set(cache_key, data, 60 * 10)
+    
     return Response(data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
 def property_search_api(request):
     """Gelişmiş gayrimenkul arama API"""
-    queryset = Property.objects.filter(is_active=True).select_related('neighborhood', 'consultant').prefetch_related('images')
+    # Cache key oluştur
+    cache_key = f"property_search_{hash(str(sorted(request.GET.items())))}"
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        return Response(cached_data, status=status.HTTP_200_OK)
+    
+    # Optimized queryset
+    main_image_prefetch = Prefetch(
+        'images',
+        queryset=PropertyImage.objects.select_related().order_by('-is_main_photo', 'order')[:3],
+        to_attr='main_image_only'
+    )
+    
+    queryset = Property.objects.filter(is_active=True)\
+        .select_related('neighborhood', 'consultant')\
+        .prefetch_related(main_image_prefetch)\
+        .only(
+            'id', 'apartment_name', 'web_title', 'property_type', 'status', 'price',
+            'gross_area', 'net_area', 'room_count', 'floor', 'building_age', 
+            'bathroom_count', 'listing_date', 'created_at', 'category', 'listing_type',
+            'is_featured', 'description', 'address', 'has_balcony', 'heating',
+            'dues', 'floor_count', 'deed_status', 'neighborhood_id', 'consultant_id'
+        )
     
     # Fiyat aralığı
     min_price = request.GET.get('min_price')
@@ -202,11 +287,9 @@ def property_search_api(request):
     # Sayfalama
     page_size = int(request.GET.get('page_size', 20))
     page = int(request.GET.get('page', 1))
-    start = (page - 1) * page_size
-    end = start + page_size
     
     total_count = queryset.count()
-    results = queryset[start:end]
+    results = queryset[page_size * (page - 1):page_size * page]
     
     serializer = PropertyListSerializer(results, many=True, context={'request': request})
     
@@ -217,6 +300,9 @@ def property_search_api(request):
         'total_pages': (total_count + page_size - 1) // page_size,
         'results': serializer.data
     }
+    
+    # Cache'e kaydet - 3 dakika (arama sonuçları daha sık güncellenmeli)
+    cache.set(cache_key, data, 60 * 3)
     
     return Response(data, status=status.HTTP_200_OK)
 

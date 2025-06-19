@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',  # Fiyat formatlaması için humanize filter'ları
     
     # Django REST Framework
     'rest_framework',

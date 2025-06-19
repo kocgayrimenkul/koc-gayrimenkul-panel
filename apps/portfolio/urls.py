@@ -37,6 +37,10 @@ urlpatterns = [
     
     # API URL'leri
     path('api/properties/', views.api_properties, name='api_properties'),
+    
+    path('image-delete/', views.property_image_delete, name='image-delete'),
+    path('image-update-main/', views.image_update_main, name='image-update-main'),
+    path('image-update-order/', views.image_update_order, name='image-update-order'),
 ] 
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

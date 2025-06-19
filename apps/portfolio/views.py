@@ -24,6 +24,7 @@ from apps.employees.decorators import (
     can_delete_portfolio,
     require_portfolio_permission
 )
+from django.views.decorators.http import require_http_methods
 
 def get_user_role(user):
     """Kullanıcının rolünü döndürür"""
@@ -65,17 +66,28 @@ def property_list(request):
     # Başlangıç sorgusu - yetki kontrolü ile
     if request.user.is_superuser or role in ['admin', 'manager']:
         # Yönetici ve Müdür tüm gayrimenkulleri görebilir
-        properties_list = Property.objects.filter(is_active=True)
+        properties_list = Property.objects.filter(is_active=True)\
+            .select_related('neighborhood', 'consultant')\
+            .prefetch_related(
+                'images'
+            )
     elif role == 'secretary':
         # Santral tüm aktif gayrimenkulleri görebilir (okuma yetkisi)
-        properties_list = Property.objects.filter(is_active=True)
+        properties_list = Property.objects.filter(is_active=True)\
+            .select_related('neighborhood', 'consultant')\
+            .prefetch_related(
+                'images'
+            )
     elif role == 'consultant':
         # Danışman sadece kendi mahallelerindeki gayrimenkulleri görebilir
         consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
         properties_list = Property.objects.filter(
             is_active=True,
             neighborhood__in=consultant_neighborhoods
-        )
+        ).select_related('neighborhood', 'consultant')\
+         .prefetch_related(
+             'images'
+         )
     else:
         # Diğer roller için sınırlı erişim
         properties_list = Property.objects.none()
@@ -1046,3 +1058,50 @@ def api_properties(request):
         })
     
     return JsonResponse(result, safe=False)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def image_update_main(request):
+    """Ana fotoğraf seçimi güncelleme"""
+    try:
+        image_id = request.POST.get('image_id')
+        if not image_id:
+            return JsonResponse({'success': False, 'error': 'Image ID gerekli'})
+        
+        # Eski ana fotoğrafı kaldır
+        PropertyImage.objects.filter(property__isnull=False).update(is_main_photo=False)
+        
+        # Yeni ana fotoğrafı ayarla
+        image = get_object_or_404(PropertyImage, id=image_id)
+        image.is_main_photo = True
+        image.save()
+        
+        return JsonResponse({'success': True})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def image_update_order(request):
+    """Fotoğraf sıralaması güncelleme"""
+    try:
+        orders_json = request.POST.get('orders')
+        if not orders_json:
+            return JsonResponse({'success': False, 'error': 'Orders gerekli'})
+        
+        orders = json.loads(orders_json)
+        
+        for order_data in orders:
+            image_id = order_data.get('id')
+            order = order_data.get('order')
+            
+            if image_id and order is not None:
+                image = PropertyImage.objects.get(id=image_id)
+                image.order = order
+                image.save()
+        
+        return JsonResponse({'success': True})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

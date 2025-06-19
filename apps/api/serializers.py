@@ -11,29 +11,35 @@ from apps.customers.models import Neighborhood
 from apps.careers.models import JobApplication
 from django.utils import timezone
 from datetime import datetime
+from .utils import get_optimized_image_url
 
 
-def get_full_image_url(image_url):
-    """Image URL'ini tam URL'e çevirir"""
+def get_full_image_url(image_url, use_thumbnail=False, thumbnail_size=(300, 200)):
+    """Image URL'ini tam URL'e çevirir ve opsiyonel olarak thumbnail kullanır"""
     if not image_url:
         return None
     
     if image_url.startswith('http'):
-        return image_url
+        full_url = image_url
+    else:
+        # Production domain'i kullan
+        base_url = 'https://panelkocgayrimenkul.com'
+        full_url = base_url + image_url
     
-    # Production domain'i kullan
-    base_url = 'https://panelkocgayrimenkul.com'
-    return base_url + image_url
+    # Eğer thumbnail isteniyorsa optimize edilmiş URL döndür
+    if use_thumbnail:
+        return get_optimized_image_url(full_url, thumbnail_size)
+    
+    return full_url
 
 
 class NeighborhoodSerializer(serializers.ModelSerializer):
     """Mahalle serializer"""
-    district_name = serializers.CharField(source='district.name', read_only=True)
-    city_name = serializers.CharField(source='district.city.name', read_only=True)
+    district_name = serializers.CharField(source='district', read_only=True)
     
     class Meta:
         model = Neighborhood
-        fields = ['id', 'name', 'district_name', 'city_name']
+        fields = ['id', 'name', 'district_name']
 
 
 class PropertyImageSerializer(serializers.ModelSerializer):
@@ -52,7 +58,7 @@ class PropertyImageSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = PropertyImage
-        fields = ['id', 'title', 'image_url', 'image', 'order']
+        fields = ['id', 'title', 'image_url', 'image', 'order', 'is_main_photo']
 
 
 class PropertyEnvironmentSerializer(serializers.ModelSerializer):
@@ -79,9 +85,28 @@ class PropertyListSerializer(serializers.ModelSerializer):
         return obj.web_title if obj.web_title else obj.apartment_name
     
     def get_main_image(self, obj):
+        """Optimize edilmiş ana görsel alma - önce is_main_photo=True olan resmi ara, bulamazsa order'a göre ilk resmi al"""
+        # Prefetch'lenmiş main_image_only'yi kullan
+        if hasattr(obj, 'main_image_only') and obj.main_image_only:
+            # Önce ana fotoğraf olarak işaretlenmiş resmi ara
+            for image in obj.main_image_only:
+                if image.is_main_photo and image.image:
+                    return get_full_image_url(image.image.url, use_thumbnail=True, thumbnail_size=(300, 200))
+            
+            # Ana fotoğraf yoksa ilk resmi al
+            if obj.main_image_only[0] and obj.main_image_only[0].image:
+                return get_full_image_url(obj.main_image_only[0].image.url, use_thumbnail=True, thumbnail_size=(300, 200))
+        
+        # Fallback: eğer prefetch çalışmadıysa standart yöntem
+        # Önce ana fotoğraf olarak işaretlenmiş resmi ara
+        main_image = obj.images.filter(is_main_photo=True).first()
+        if main_image and main_image.image:
+            return get_full_image_url(main_image.image.url, use_thumbnail=True, thumbnail_size=(300, 200))
+        
+        # Ana fotoğraf yoksa order'a göre ilk resmi al
         main_image = obj.images.order_by('order').first()
         if main_image and main_image.image:
-            return get_full_image_url(main_image.image.url)
+            return get_full_image_url(main_image.image.url, use_thumbnail=True, thumbnail_size=(300, 200))
         return None
     
     def get_badges(self, obj):
@@ -226,7 +251,13 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
         return None
     
     def get_main_image(self, obj):
-        """Ana resim - ilk sıradaki resim"""
+        """Ana resim - önce is_main_photo=True olan resmi ara, bulamazsa order'a göre ilk resmi al"""
+        # Önce ana fotoğraf olarak işaretlenmiş resmi ara
+        main_image = obj.images.filter(is_main_photo=True).first()
+        if main_image and main_image.image:
+            return get_full_image_url(main_image.image.url)
+        
+        # Ana fotoğraf yoksa order'a göre ilk resmi al
         main_image = obj.images.order_by('order').first()
         if main_image and main_image.image:
             return get_full_image_url(main_image.image.url)

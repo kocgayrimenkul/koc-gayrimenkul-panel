@@ -128,7 +128,6 @@ class Property(models.Model):
     owner_listing_number = models.CharField(max_length=50, verbose_name="Sahibinden İlan No", blank=True)
     emlakjet_listing_number = models.CharField(max_length=50, verbose_name="Emlakjet İlan No", blank=True)
     hepsiemlak_listing_number = models.CharField(max_length=50, verbose_name="Hepsiemlak İlan No", blank=True)
-    website_listing_number = models.CharField(max_length=50, verbose_name="Web Sitesi İlan No", blank=True)
     branda_number = models.CharField(max_length=50, verbose_name="Branda No", blank=True)
     
     # Operasyonel Bilgiler
@@ -170,8 +169,37 @@ class PropertyImage(models.Model):
     """Gayrimenkul görselleri"""
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="images", null=True, blank=True)
     image = models.ImageField(upload_to='properties/', verbose_name="Görsel")
+    thumbnail = models.ImageField(upload_to='properties/thumbnails/', verbose_name="Küçük Görsel", blank=True, null=True)
     title = models.CharField(max_length=100, verbose_name="Görsel Başlığı", blank=True)
     order = models.PositiveSmallIntegerField(default=0, verbose_name="Sıralama")
+    is_main_photo = models.BooleanField(default=False, verbose_name="Ana Fotoğraf")
+    
+    def save(self, *args, **kwargs):
+        """Kayıt sırasında thumbnail oluştur"""
+        
+        # Eğer bu fotoğraf ana fotoğraf olarak işaretleniyorsa, diğer ana fotoğrafları kaldır
+        if self.is_main_photo and self.property:
+            PropertyImage.objects.filter(property=self.property, is_main_photo=True).update(is_main_photo=False)
+        
+        # Eğer hiç ana fotoğraf yoksa ve bu ilk fotoğrafsa, bunu ana fotoğraf yap
+        if self.property and not PropertyImage.objects.filter(property=self.property, is_main_photo=True).exists():
+            self.is_main_photo = True
+        
+        super().save(*args, **kwargs)
+        
+        # Eğer thumbnail yoksa ve orijinal görsel varsa thumbnail oluştur
+        if self.image and not self.thumbnail:
+            from apps.api.utils import create_thumbnail
+            try:
+                thumbnail_url = create_thumbnail(self.image.name)
+                if thumbnail_url:
+                    # Thumbnail path'ini thumbnail field'a kaydet
+                    thumbnail_path = thumbnail_url.split('/media/')[-1] if '/media/' in thumbnail_url else thumbnail_url
+                    self.thumbnail = thumbnail_path
+                    # Recursive save'i önlemek için update kullan
+                    PropertyImage.objects.filter(id=self.id).update(thumbnail=thumbnail_path)
+            except Exception as e:
+                print(f"Thumbnail oluşturma hatası: {e}")
     
     def __str__(self):
         return f"{self.property.apartment_name if self.property and self.property.apartment_name else 'Bağlantısız'} - {self.title or 'Görsel'}"

@@ -110,18 +110,37 @@
   .photo-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 15px;
     margin-top: 15px;
   }
   
   .photo-preview {
-    width: 150px;
-    height: 150px;
+    width: 200px;
+    height: 200px;
     overflow: hidden;
     position: relative;
-    border-radius: 5px;
-    border: 1px solid #ddd;
+    border-radius: 8px;
+    border: 2px solid #ddd;
     margin: 10px;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: move;
+  }
+  
+  .photo-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+  }
+  
+  .photo-preview.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+  }
+  
+  .photo-preview.main-photo {
+    border-color: var(--koc-red);
+    border-width: 3px;
   }
   
   .photo-preview img {
@@ -130,20 +149,108 @@
     object-fit: cover;
   }
   
-  .photo-preview .delete-btn {
+  .photo-controls {
     position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(255, 0, 0, 0.7);
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  
+  .photo-controls .delete-btn {
+    background: rgba(220, 53, 69, 0.9);
     color: white;
     border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+  
+  .photo-controls .delete-btn:hover {
+    background: rgba(220, 53, 69, 1);
+    transform: scale(1.1);
+  }
+  
+  .photo-controls .order-badge {
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border-radius: 12px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  
+  .photo-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    padding: 10px 8px 8px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .main-photo-btn {
+    background: var(--koc-red);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .main-photo-btn:hover {
+    background: var(--koc-red-dark);
+    transform: scale(1.05);
+  }
+  
+  .main-photo-btn.active {
+    background: #28a745;
+  }
+  
+  .main-photo-btn.active:hover {
+    background: #218838;
+  }
+  
+  .main-photo-indicator {
+    position: absolute;
+    top: 40px;
+    left: 8px;
+    background: #28a745;
+    color: white;
     border-radius: 50%;
     width: 25px;
     height: 25px;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 10;
+  }
+  
+  /* Drag & Drop feedback */
+  .photo-container.drag-over {
+    background-color: rgba(157, 34, 53, 0.1);
+    border: 2px dashed var(--koc-red);
+    border-radius: 8px;
+    padding: 10px;
   }
   
   /* Tip boxes */
@@ -554,24 +661,12 @@
                   </div>
                   <div class="col-lg-6">
                     <div class="form-group">
-                      <label class="form-control-label" for="website_listing_number">Web Sitesi İlan No</label>
-                      <div class="input-group">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
-                        </div>
-                        <input type="text" id="website_listing_number" name="website_listing_number" class="form-control" placeholder="Web sitesi ilan numarası">
-                      </div>
-                      <div class="field-help">Kendi web sitenizdeki ilan numarası</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
                       <label class="form-control-label" for="branda_number">Branda No</label>
                       <input type="text" id="branda_number" name="branda_number" class="form-control" placeholder="Branda numarası">
                     </div>
                   </div>
+                </div>
+                <div class="row">
                   <div class="col-lg-6">
                     <div class="form-group">
                       <label class="form-control-label" for="key_holder">Anahtar Kimde</label>
@@ -774,8 +869,24 @@
                       <input type="file" id="photo-upload" name="photos[]" multiple accept="image/jpeg,image/png,image/jpg">
                     </div>
                     
-                    <!-- Fotoğraf önizleme alanı -->
-                    <div id="photo-preview-container" class="photo-container"></div>
+                    <!-- Fotoğraf önizleme ve yönetim alanı -->
+                    <div id="photo-preview-container" class="photo-container">
+                      <!-- Yüklenen fotoğraflar burada gösterilecek -->
+                    </div>
+                    
+                    <!-- Sıralama Bilgisi -->
+                    <div class="mt-3" id="sorting-info" style="display: none;">
+                      <div class="alert alert-info">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Fotoğraf Yönetimi:</strong>
+                        <ul class="mb-0 mt-2">
+                          <li>Fotoğrafları sürükleyerek sıralayabilirsiniz</li>
+                          <li>"Ana Fotoğraf" butonuna basarak ana fotoğrafı seçebilirsiniz</li>
+                          <li>Ana fotoğraf ilan kapağında görünecektir</li>
+                          <li>Fotoğrafları silmek için çarpı butonuna tıklayın</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -1062,10 +1173,7 @@
                           Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
       $('#owner_phone').val(ownerPhone);
       
-      $('#owner_listing_number').val(Math.floor(Math.random() * 1000000) + 100000);
-      $('#emlakjet_listing_number').val(Math.floor(Math.random() * 1000000) + 100000);
       $('#hepsiemlak_listing_number').val(Math.floor(Math.random() * 1000000) + 100000);
-      $('#website_listing_number').val(Math.floor(Math.random() * 1000000) + 100000);
       $('#branda_number').val(Math.floor(Math.random() * 1000) + 100);
       $('#key_holder').val(["sahibi", "danisman", "kiracı", "diger"][Math.floor(Math.random() * 4)]);
       
@@ -1151,7 +1259,11 @@
       return true;
     });
     
-    // Fotoğraf önizleme
+    // Fotoğraf önizleme ve yönetim
+    let photoFiles = [];
+    let photoOrder = [];
+    let mainPhotoIndex = -1;
+    
     $('#photo-upload, #camera-input').on('change', function() {
       const files = this.files;
       if (!files || files.length === 0) return;
@@ -1170,27 +1282,194 @@
           return;
         }
         
+        // Dosyayı array'e ekle
+        const fileIndex = photoFiles.length;
+        photoFiles.push(file);
+        photoOrder.push(fileIndex);
+        
+        // İlk fotoğrafı ana fotoğraf yap
+        if (mainPhotoIndex === -1) {
+          mainPhotoIndex = fileIndex;
+        }
+        
         // Dosyayı önizleme için göster
         const reader = new FileReader();
         reader.onload = function(e) {
-          // Önizleme elemanı oluştur
-          const previewElement = $('<div class="photo-preview">' +
-            '<img src="' + e.target.result + '" alt="Property Image">' +
-            '<button type="button" class="delete-btn"><i class="fas fa-times"></i></button>' +
-            '</div>');
-          
-          // Silme düğmesi işlevselliği
-          previewElement.find('.delete-btn').on('click', function() {
-            previewElement.remove();
-          });
-          
-          // Önizleme alanına ekle
-          $('#photo-preview-container').append(previewElement);
+          createPhotoPreview(e.target.result, fileIndex, file.name);
+          updatePhotoContainer();
         };
         
         reader.readAsDataURL(file);
       });
+      
+      // File input'u temizle
+      $(this).val('');
     });
+    
+    function createPhotoPreview(src, fileIndex, fileName) {
+      const isMainPhoto = fileIndex === mainPhotoIndex;
+      const orderIndex = photoOrder.indexOf(fileIndex) + 1;
+      
+      const previewElement = $(`
+        <div class="photo-preview ${isMainPhoto ? 'main-photo' : ''}" data-file-index="${fileIndex}" draggable="true">
+          ${isMainPhoto ? '<div class="main-photo-indicator"><i class="fas fa-star"></i></div>' : ''}
+          <img src="${src}" alt="Property Image">
+          <div class="photo-controls">
+            <span class="order-badge">${orderIndex}</span>
+            <button type="button" class="delete-btn" data-file-index="${fileIndex}">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="photo-actions">
+            <button type="button" class="main-photo-btn ${isMainPhoto ? 'active' : ''}" data-file-index="${fileIndex}">
+              ${isMainPhoto ? 'Ana Fotoğraf' : 'Ana Yap'}
+            </button>
+          </div>
+        </div>
+      `);
+      
+      $('#photo-preview-container').append(previewElement);
+      $('#sorting-info').show();
+    }
+    
+    function updatePhotoContainer() {
+      // Fotoğrafları sıraya göre yeniden düzenle
+      const container = $('#photo-preview-container');
+      const photos = container.find('.photo-preview').get();
+      
+      photos.sort(function(a, b) {
+        const aIndex = photoOrder.indexOf(parseInt($(a).data('file-index')));
+        const bIndex = photoOrder.indexOf(parseInt($(b).data('file-index')));
+        return aIndex - bIndex;
+      });
+      
+      container.empty().append(photos);
+      
+      // Sıra numaralarını güncelle
+      photos.forEach(function(photo, index) {
+        $(photo).find('.order-badge').text(index + 1);
+      });
+    }
+    
+    // Ana fotoğraf seçimi
+    $(document).on('click', '.main-photo-btn', function() {
+      const fileIndex = parseInt($(this).data('file-index'));
+      
+      // Eski ana fotoğrafı temizle
+      $('.photo-preview').removeClass('main-photo');
+      $('.main-photo-indicator').remove();
+      $('.main-photo-btn').removeClass('active').text('Ana Yap');
+      
+      // Yeni ana fotoğrafı ayarla
+      mainPhotoIndex = fileIndex;
+      const photoElement = $(`.photo-preview[data-file-index="${fileIndex}"]`);
+      photoElement.addClass('main-photo');
+      photoElement.prepend('<div class="main-photo-indicator"><i class="fas fa-star"></i></div>');
+      $(this).addClass('active').text('Ana Fotoğraf');
+    });
+    
+    // Fotoğraf silme
+    $(document).on('click', '.delete-btn', function() {
+      const fileIndex = parseInt($(this).data('file-index'));
+      
+      // Array'den kaldır
+      const orderIndex = photoOrder.indexOf(fileIndex);
+      if (orderIndex > -1) {
+        photoOrder.splice(orderIndex, 1);
+      }
+      
+      // Ana fotoğraf ise başka bir fotoğrafı ana yap
+      if (fileIndex === mainPhotoIndex) {
+        mainPhotoIndex = photoOrder.length > 0 ? photoOrder[0] : -1;
+      }
+      
+      // DOM'dan kaldır
+      $(`.photo-preview[data-file-index="${fileIndex}"]`).remove();
+      
+      // Container'ı güncelle
+      updatePhotoContainer();
+      
+      // Ana fotoğrafı yeniden ayarla
+      if (mainPhotoIndex !== -1) {
+        $(`.main-photo-btn[data-file-index="${mainPhotoIndex}"]`).click();
+      }
+      
+      // Eğer hiç fotoğraf kalmadıysa bilgi kutusunu gizle
+      if (photoOrder.length === 0) {
+        $('#sorting-info').hide();
+      }
+    });
+    
+    // Drag & Drop işlevselliği
+    let draggedElement = null;
+    let draggedIndex = null;
+    
+    $(document).on('dragstart', '.photo-preview', function(e) {
+      draggedElement = this;
+      draggedIndex = photoOrder.indexOf(parseInt($(this).data('file-index')));
+      $(this).addClass('dragging');
+      
+      // Drag effect
+      e.originalEvent.dataTransfer.effectAllowed = 'move';
+      e.originalEvent.dataTransfer.setData('text/html', this.outerHTML);
+    });
+    
+    $(document).on('dragend', '.photo-preview', function(e) {
+      $(this).removeClass('dragging');
+      draggedElement = null;
+      draggedIndex = null;
+    });
+    
+    $(document).on('dragover', '#photo-preview-container', function(e) {
+      e.preventDefault();
+      e.originalEvent.dataTransfer.dropEffect = 'move';
+      $(this).addClass('drag-over');
+    });
+    
+    $(document).on('dragleave', '#photo-preview-container', function(e) {
+      $(this).removeClass('drag-over');
+    });
+    
+    $(document).on('drop', '#photo-preview-container', function(e) {
+      e.preventDefault();
+      $(this).removeClass('drag-over');
+      
+      if (!draggedElement) return;
+      
+      // Drop pozisyonunu hesapla
+      const afterElement = getDragAfterElement(this, e.originalEvent.clientX);
+      let newIndex;
+      
+      if (afterElement == null) {
+        newIndex = photoOrder.length - 1;
+      } else {
+        const afterFileIndex = parseInt($(afterElement).data('file-index'));
+        newIndex = photoOrder.indexOf(afterFileIndex);
+      }
+      
+      // Array'i yeniden sırala
+      const draggedFileIndex = photoOrder[draggedIndex];
+      photoOrder.splice(draggedIndex, 1);
+      photoOrder.splice(newIndex, 0, draggedFileIndex);
+      
+      // Görsel olarak güncelle
+      updatePhotoContainer();
+    });
+    
+    function getDragAfterElement(container, x) {
+      const draggableElements = [...container.querySelectorAll('.photo-preview:not(.dragging)')];
+      
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = x - box.left - box.width / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
     
     // Kamera ile fotoğraf çekme
     $('#take-photo-btn').on('click', function() {

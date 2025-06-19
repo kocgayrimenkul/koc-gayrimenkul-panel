@@ -20,7 +20,7 @@ class PropertyForm(forms.ModelForm):
             'room_count', 'floor', 'building_age', 'heating', 'has_balcony',
             'dues', 'deed_status', 'is_suitable_for_credit', 'is_bargainable',
             'owner_name', 'owner_phone', 'owner_listing_number', 
-            'emlakjet_listing_number', 'hepsiemlak_listing_number', 'website_listing_number',
+            'emlakjet_listing_number', 'hepsiemlak_listing_number',
             'branda_number', 'key_holder', 'photo_status', 'listing_date',
             'floor_count', 'bathroom_count', 'usage_status', 'is_furnished',
             'is_in_site', 'is_exchangeable', 'category', 'listing_type',
@@ -52,7 +52,6 @@ class PropertyForm(forms.ModelForm):
             'owner_listing_number': forms.TextInput(attrs={"class": "form-control", "placeholder": "Sahibinden İlan No"}),
             'emlakjet_listing_number': forms.TextInput(attrs={"class": "form-control", "placeholder": "Emlakjet İlan No"}),
             'hepsiemlak_listing_number': forms.TextInput(attrs={"class": "form-control", "placeholder": "Hepsiemlak İlan No"}),
-            'website_listing_number': forms.TextInput(attrs={"class": "form-control", "placeholder": "Web Sitesi İlan No"}),
             'branda_number': forms.TextInput(attrs={"class": "form-control", "placeholder": "Branda No"}),
             'key_holder': forms.Select(attrs={"class": "form-control"}),
             'photo_status': forms.CheckboxInput(attrs={"class": "custom-control-input"}),
@@ -88,9 +87,10 @@ class PropertyImageForm(forms.ModelForm):
     
     class Meta:
         model = PropertyImage
-        fields = ['image', 'title', 'order']
+        fields = ['image', 'title', 'order', 'is_main_photo']
         widgets = {
             'image': forms.FileInput(attrs={"class": "form-control-file"}),
             'title': forms.TextInput(attrs={"class": "form-control", "placeholder": "Görsel Başlığı"}),
             'order': forms.NumberInput(attrs={"class": "form-control", "placeholder": "Sıralama"}),
+            'is_main_photo': forms.CheckboxInput(attrs={"class": "form-check-input"}),
         } 
