@@ -264,6 +264,7 @@ def property_create(request):
         print("============= YENİ GAYRİMENKUL EKLE - POST VERİLERİ =============")
         print(f"POST içeriği alındı - tarih/saat: {timezone.now().strftime('%d.%m.%Y %H:%M:%S')}")
         print(f"apartment_name: {request.POST.get('apartment_name', 'Boş')}")
+        print(f"web_title: {request.POST.get('web_title', 'Boş')}")
         print(f"description: {request.POST.get('description', 'Boş')[:30]}{'...' if len(request.POST.get('description', '')) > 30 else ''}")
         print(f"property_type: {request.POST.get('property_type', 'Boş')}")
         print(f"status: {request.POST.get('status', 'Boş')}")
@@ -303,6 +304,7 @@ def property_create(request):
         
         # Temel bilgiler
         apartment_name = request.POST.get('apartment_name', '')
+        web_title = request.POST.get('web_title', '')
         description = request.POST.get('description', '')
         property_type = request.POST.get('property_type', '')
         status = request.POST.get('status', '')
@@ -344,6 +346,7 @@ def property_create(request):
             # Yeni portföy oluştur
             property_obj = Property(
                 apartment_name=apartment_name,
+                web_title=web_title,
                 description=description,
                 property_type=property_type,
                 status=status,
@@ -397,6 +400,7 @@ def property_create(request):
             print("============= KAYIT İŞLEMİ SONRASI GAYRİMENKUL BİLGİLERİ =============")
             print(f"ID: {property_obj.id}")
             print(f"Daire Adı: {property_obj.apartment_name}")
+            print(f"Web Başlığı: {property_obj.web_title}")
             print(f"Açıklama: {property_obj.description[:50]}{'...' if len(property_obj.description) > 50 else ''}")
             print(f"Emlak Tipi: {property_obj.property_type}")
             print(f"Durum: {property_obj.status}")
@@ -518,6 +522,7 @@ def property_update(request, property_id):
     print(f"Güncelleme sayfası açıldı - ID: {property_obj.id} - Tarih/Saat: {timezone.now().strftime('%d.%m.%Y %H:%M:%S')}")
     print(f"ID: {property_obj.id}")
     print(f"Başlık: {property_obj.apartment_name}")
+    print(f"Web Başlığı: {property_obj.web_title}")
     print(f"Açıklama: {property_obj.description[:100]}{'...' if len(property_obj.description) > 100 else ''}")
     print(f"Emlak Tipi: {property_obj.property_type}")
     print(f"Durum: {property_obj.status}")
@@ -573,6 +578,7 @@ def property_update(request, property_id):
         print("============= GAYRİMENKUL GÜNCELLEME - POST VERİLERİ =============")
         print(f"POST içeriği alındı - tarih/saat: {timezone.now().strftime('%d.%m.%Y %H:%M:%S')}")
         print(f"apartment_name: {request.POST.get('apartment_name', 'Boş')}")
+        print(f"web_title: {request.POST.get('web_title', 'Boş')}")
         print(f"description: {request.POST.get('description', 'Boş')[:30]}{'...' if len(request.POST.get('description', '')) > 30 else ''}")
         print(f"property_type: {request.POST.get('property_type', 'Boş')}")
         print(f"status: {request.POST.get('status', 'Boş')}")
@@ -622,6 +628,7 @@ def property_update(request, property_id):
         
         # Temel bilgileri güncelle
         property_obj.apartment_name = request.POST.get('apartment_name', '')
+        property_obj.web_title = request.POST.get('web_title', '')
         property_obj.description = request.POST.get('description', '')
         property_obj.status = request.POST.get('status', '')
         property_obj.price = request.POST.get('price', '').replace(',', '.')
@@ -687,6 +694,7 @@ def property_update(request, property_id):
         print("============= GÜNCELLEME SONRASI GAYRİMENKUL BİLGİLERİ =============")
         print(f"ID: {property_obj.id}")
         print(f"Başlık: {property_obj.apartment_name}")
+        print(f"Web Başlığı: {property_obj.web_title}")
         print(f"Açıklama: {property_obj.description[:50]}{'...' if len(property_obj.description) > 50 else ''}")
         print(f"Emlak Tipi: {property_obj.property_type}")
         print(f"Durum: {property_obj.status}")
