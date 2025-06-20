@@ -390,9 +390,9 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'is_active', 'is_featured',
             'images', 'environments', 'main_image', 'badges', 'features', 
             'date_display', 'video_url', 'map_url',
-            # Modelde bulunan eksik alanlar
+            # Modelde bulunan alanlar
             'owner_listing_number', 'emlakjet_listing_number', 'hepsiemlak_listing_number',
-            'website_listing_number', 'branda_number'
+            'branda_number'
         ]
 
 

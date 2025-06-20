@@ -410,7 +410,7 @@
     cursor: grab;
     z-index: 10;
   }
-
+  
   .image-card .drag-handle:hover {
     background: rgba(0,0,0,0.7);
   }
@@ -1109,7 +1109,7 @@
                       <div class="image-actions">
                         <button type="button" class="main-photo-btn {% if image.is_main_photo %}active{% endif %}" data-id="{{ image.id }}">
                           {% if image.is_main_photo %}Ana Fotoğraf{% else %}Ana Yap{% endif %}
-                        </button>
+                          </button>
                       </div>
                       <div class="image-title">{{ image.title }}</div>
                     </div>
@@ -1633,10 +1633,10 @@
         },
         stop: function(e, ui) {
           ui.item.removeClass("dragging");
-          updateImageOrders();
-        }
-      });
-      
+        updateImageOrders();
+      }
+    });
+    
       // Yeni yüklenen önizleme fotoğrafları için sortable
       $("#photo-preview-container").sortable({
         placeholder: "photo-preview image-card-placeholder",
@@ -1652,8 +1652,8 @@
         stop: function(e, ui) {
           ui.item.removeClass("dragging");
           updatePreviewOrder();
-        }
-      });
+      }
+    });
     }
     
     // Sayfa yüklendiğinde sortable'ı başlat

@@ -262,16 +262,16 @@
     cursor: grab;
     z-index: 10;
   }
-
+  
   .photo-preview .drag-handle:hover {
     background: rgba(0,0,0,0.7);
   }
-
+  
   .photo-preview.dragging {
     opacity: 0.6;
     cursor: grabbing;
   }
-
+  
   .photo-preview-placeholder {
     border: 2px dashed var(--koc-red-light);
     background-color: rgba(157, 34, 53, 0.1);
@@ -1427,19 +1427,19 @@
           // Yeni sıralamayı photoOrder array'ine yansıt
           const newOrder = [];
           $('#photo-preview-container .photo-preview').each(function() {
-            const fileIndex = parseInt($(this).data('file-index'));
+      const fileIndex = parseInt($(this).data('file-index'));
             newOrder.push(fileIndex);
           });
           photoOrder = newOrder;
-          
+        
           // Sıra numaralarını güncelle
           $('#photo-preview-container .photo-preview').each(function(index) {
             $(this).find('.order-badge').text(index + 1);
           });
           
           console.log('Fotoğraf sıralaması güncellendi:', photoOrder);
-        }
-      });
+      }
+    });
     }
     
     // Ana fotoğraf seçimi

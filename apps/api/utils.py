@@ -30,7 +30,13 @@ def create_thumbnail(image_path, size=(300, 200), quality=80):
         
         # Eğer thumbnail zaten varsa URL'ini döndür
         if default_storage.exists(thumbnail_path):
-            return default_storage.url(thumbnail_path)
+            thumbnail_url = default_storage.url(thumbnail_path)
+            # Tam URL'e çevir
+            if thumbnail_url.startswith('http'):
+                return thumbnail_url
+            else:
+                base_url = 'https://panelkocgayrimenkul.com'
+                return base_url + thumbnail_url
         
         # Orijinal görseli aç
         if not default_storage.exists(image_path):
@@ -54,7 +60,13 @@ def create_thumbnail(image_path, size=(300, 200), quality=80):
             # Thumbnail'i kaydet
             default_storage.save(thumbnail_path, ContentFile(buffer.getvalue()))
             
-            return default_storage.url(thumbnail_path)
+            # Tam URL'e çevir
+            thumbnail_url = default_storage.url(thumbnail_path)
+            if thumbnail_url.startswith('http'):
+                return thumbnail_url
+            else:
+                base_url = 'https://panelkocgayrimenkul.com'
+                return base_url + thumbnail_url
             
     except Exception as e:
         print(f"Thumbnail oluşturma hatası: {e}")
@@ -91,7 +103,16 @@ def get_optimized_image_url(image_url, thumbnail_size=(300, 200)):
         thumbnail_url = create_thumbnail(image_path, thumbnail_size)
         
         # Eğer thumbnail oluşturulamadıysa orijinal URL'i döndür
-        return thumbnail_url if thumbnail_url else image_url
+        if not thumbnail_url:
+            return image_url
+        
+        # Thumbnail URL'i tam URL'e çevir
+        if thumbnail_url.startswith('http'):
+            return thumbnail_url
+        else:
+            # Production domain'i kullan
+            base_url = 'https://panelkocgayrimenkul.com'
+            return base_url + thumbnail_url
         
     except Exception as e:
         print(f"Görsel optimizasyon hatası: {e}")
