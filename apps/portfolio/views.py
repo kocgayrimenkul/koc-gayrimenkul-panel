@@ -450,25 +450,45 @@ def property_create(request):
             # Fotoğrafları doğrudan işle
             if request.FILES:
                 photos = request.FILES.getlist('photos[]')
-                for photo in photos:
+                new_main_photo_order = request.POST.get('new_main_photo_order', None)
+                
+                print(f"Yüklenen yeni resim sayısı: {len(photos)}")
+                if new_main_photo_order:
+                    print(f"Yeni ana fotoğraf sırası: {new_main_photo_order}")
+                
+                # Mevcut fotoğraf sayısını al (sıralama için)
+                existing_photos_count = property_obj.images.count()
+                
+                for index, photo in enumerate(photos):
                     # Dosya boyutu kontrolü (5MB)
                     if photo.size > 5 * 1024 * 1024:
+                        print(f"Fotoğraf çok büyük, atlanıyor: {photo.name}")
                         continue
                     
                     # Dosya tipi kontrolü
                     if photo.content_type not in ['image/jpeg', 'image/png', 'image/jpg']:
+                        print(f"Desteklenmeyen format, atlanıyor: {photo.name}")
                         continue
                     
                     # Başlık oluştur
                     title = photo.name.split('.')[0][:50]
+                    
+                    # Ana fotoğraf mı kontrol et (sadece mevcut ana fotoğraf yoksa)
+                    has_existing_main = property_obj.images.filter(is_main_photo=True).exists()
+                    is_main_photo = False
+                    if not has_existing_main and new_main_photo_order and (str(index + 1) == str(new_main_photo_order)):
+                        is_main_photo = True
                     
                     # Fotoğrafı kaydet ve property ile ilişkilendir
                     PropertyImage.objects.create(
                         property=property_obj,
                         image=photo,
                         title=title,
-                        order=0
+                        order=existing_photos_count + index + 1,
+                        is_main_photo=is_main_photo
                     )
+                    
+                    print(f"Fotoğraf kaydedildi: {photo.name}, Sıra: {existing_photos_count + index + 1}, Ana fotoğraf: {is_main_photo}")
             
             # Ayrıca halihazırda yüklenmiş fotoğrafları da ilişkilendir (eski mekanizma için)
             image_ids = request.POST.getlist('image_ids[]')
@@ -476,7 +496,7 @@ def property_create(request):
                 for image_id in image_ids:
                     try:
                         image = PropertyImage.objects.get(id=image_id)
-                        if not image.property:  # Eğer bir gayrimenkule atanmamışsa
+                        if not image.property or image.property != property_obj:
                             image.property = property_obj
                             image.save()
                     except PropertyImage.DoesNotExist:
@@ -764,25 +784,45 @@ def property_update(request, property_id):
         # Fotoğrafları doğrudan işle
         if request.FILES:
             photos = request.FILES.getlist('photos[]')
-            for photo in photos:
+            new_main_photo_order = request.POST.get('new_main_photo_order', None)
+            
+            print(f"Yüklenen yeni resim sayısı: {len(photos)}")
+            if new_main_photo_order:
+                print(f"Yeni ana fotoğraf sırası: {new_main_photo_order}")
+            
+            # Mevcut fotoğraf sayısını al (sıralama için)
+            existing_photos_count = property_obj.images.count()
+            
+            for index, photo in enumerate(photos):
                 # Dosya boyutu kontrolü (5MB)
                 if photo.size > 5 * 1024 * 1024:
+                    print(f"Fotoğraf çok büyük, atlanıyor: {photo.name}")
                     continue
                 
                 # Dosya tipi kontrolü
                 if photo.content_type not in ['image/jpeg', 'image/png', 'image/jpg']:
+                    print(f"Desteklenmeyen format, atlanıyor: {photo.name}")
                     continue
                 
                 # Başlık oluştur
                 title = photo.name.split('.')[0][:50]
+                
+                # Ana fotoğraf mı kontrol et (sadece mevcut ana fotoğraf yoksa)
+                has_existing_main = property_obj.images.filter(is_main_photo=True).exists()
+                is_main_photo = False
+                if not has_existing_main and new_main_photo_order and (str(index + 1) == str(new_main_photo_order)):
+                    is_main_photo = True
                 
                 # Fotoğrafı kaydet ve property ile ilişkilendir
                 PropertyImage.objects.create(
                     property=property_obj,
                     image=photo,
                     title=title,
-                    order=0
+                    order=existing_photos_count + index + 1,
+                    is_main_photo=is_main_photo
                 )
+                
+                print(f"Fotoğraf kaydedildi: {photo.name}, Sıra: {existing_photos_count + index + 1}, Ana fotoğraf: {is_main_photo}")
         
         # Ayrıca halihazırda yüklenmiş fotoğrafları da ilişkilendir (eski mekanizma için)
         image_ids = request.POST.getlist('image_ids[]')
@@ -795,6 +835,39 @@ def property_update(request, property_id):
                         image.save()
                 except PropertyImage.DoesNotExist:
                     pass
+        
+        # Mevcut fotoğrafların sıralama bilgilerini güncelle
+        existing_image_orders = request.POST.getlist('existing_image_orders[]')
+        if existing_image_orders:
+            print("Mevcut fotoğraf sıralaması güncelleniyor...")
+            for order_data in existing_image_orders:
+                if ':' in order_data:
+                    image_id, order = order_data.split(':')
+                    try:
+                        image = PropertyImage.objects.get(id=int(image_id), property=property_obj)
+                        image.order = int(order)
+                        image.save()
+                        print(f"Fotoğraf {image_id} sıralaması {order} olarak güncellendi")
+                    except (PropertyImage.DoesNotExist, ValueError):
+                        print(f"Fotoğraf {image_id} bulunamadı veya geçersiz order değeri")
+                        pass
+        
+        # Ana fotoğraf bilgisini güncelle
+        main_image_id = request.POST.get('main_image_id')
+        if main_image_id:
+            print(f"Ana fotoğraf güncelleniyor: {main_image_id}")
+            # Önce tüm fotoğrafları ana fotoğraf olmaktan çıkar
+            PropertyImage.objects.filter(property=property_obj).update(is_main_photo=False)
+            
+            # Seçilen fotoğrafı ana fotoğraf yap
+            try:
+                main_image = PropertyImage.objects.get(id=int(main_image_id), property=property_obj)
+                main_image.is_main_photo = True
+                main_image.save()
+                print(f"Fotoğraf {main_image_id} ana fotoğraf olarak ayarlandı")
+            except (PropertyImage.DoesNotExist, ValueError):
+                print(f"Ana fotoğraf {main_image_id} bulunamadı")
+                pass
         
         messages.success(request, "Gayrimenkul başarıyla güncellendi.")
         return redirect('property_detail', property_id=property_obj.id)
@@ -1068,11 +1141,13 @@ def image_update_main(request):
         if not image_id:
             return JsonResponse({'success': False, 'error': 'Image ID gerekli'})
         
-        # Eski ana fotoğrafı kaldır
-        PropertyImage.objects.filter(property__isnull=False).update(is_main_photo=False)
-        
-        # Yeni ana fotoğrafı ayarla
+        # Seçilen resmi al
         image = get_object_or_404(PropertyImage, id=image_id)
+        
+        # Aynı property'ye ait diğer resimlerin ana fotoğraf durumunu kaldır
+        PropertyImage.objects.filter(property=image.property).update(is_main_photo=False)
+        
+        # Seçilen resmi ana fotoğraf yap
         image.is_main_photo = True
         image.save()
         

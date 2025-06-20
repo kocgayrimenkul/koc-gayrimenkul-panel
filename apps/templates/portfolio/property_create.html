@@ -125,7 +125,6 @@
     background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
-    cursor: move;
   }
   
   .photo-preview:hover {
@@ -230,8 +229,8 @@
   
   .main-photo-indicator {
     position: absolute;
-    top: 40px;
-    left: 8px;
+    top: 8px;
+    right: 8px;
     background: #28a745;
     color: white;
     border-radius: 50%;
@@ -243,6 +242,46 @@
     font-size: 12px;
     font-weight: bold;
     z-index: 10;
+  }
+  
+  /* Sıralama butonları */
+  .photo-preview .sorting-controls {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .photo-preview .sort-btn {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+  }
+  
+  .photo-preview .sort-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+  }
+  
+  .photo-preview .sort-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .photo-preview .sort-btn:disabled:hover {
+    transform: none;
   }
   
   /* Drag & Drop feedback */
@@ -1268,6 +1307,8 @@
       const files = this.files;
       if (!files || files.length === 0) return;
       
+      console.log('Fotoğraf seçildi, dosya sayısı:', files.length);
+      
       // Her dosya için önizleme oluştur
       Array.from(files).forEach(function(file, index) {
         // Dosya boyutu kontrolü
@@ -1282,6 +1323,8 @@
           return;
         }
         
+        console.log('Dosya ekleniyor:', file.name);
+        
         // Dosyayı array'e ekle
         const fileIndex = photoFiles.length;
         photoFiles.push(file);
@@ -1290,6 +1333,7 @@
         // İlk fotoğrafı ana fotoğraf yap
         if (mainPhotoIndex === -1) {
           mainPhotoIndex = fileIndex;
+          console.log('İlk fotoğraf ana fotoğraf olarak ayarlandı:', file.name);
         }
         
         // Dosyayı önizleme için göster
@@ -1311,13 +1355,21 @@
       const orderIndex = photoOrder.indexOf(fileIndex) + 1;
       
       const previewElement = $(`
-        <div class="photo-preview ${isMainPhoto ? 'main-photo' : ''}" data-file-index="${fileIndex}" draggable="true">
+        <div class="photo-preview ${isMainPhoto ? 'main-photo' : ''}" data-file-index="${fileIndex}">
           ${isMainPhoto ? '<div class="main-photo-indicator"><i class="fas fa-star"></i></div>' : ''}
           <img src="${src}" alt="Property Image">
           <div class="photo-controls">
             <span class="order-badge">${orderIndex}</span>
             <button type="button" class="delete-btn" data-file-index="${fileIndex}">
               <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="sorting-controls">
+            <button type="button" class="sort-btn move-up" data-file-index="${fileIndex}" title="Yukarı Taşı">
+              <i class="fas fa-chevron-up"></i>
+            </button>
+            <button type="button" class="sort-btn move-down" data-file-index="${fileIndex}" title="Aşağı Taşı">
+              <i class="fas fa-chevron-down"></i>
             </button>
           </div>
           <div class="photo-actions">
@@ -1330,6 +1382,7 @@
       
       $('#photo-preview-container').append(previewElement);
       $('#sorting-info').show();
+      updateNewPhotoSortingButtons();
     }
     
     function updatePhotoContainer() {
@@ -1349,7 +1402,69 @@
       photos.forEach(function(photo, index) {
         $(photo).find('.order-badge').text(index + 1);
       });
+      
+      // Sıralama butonlarını güncelle
+      updateNewPhotoSortingButtons();
     }
+    
+    // Yeni fotoğraflar için sıralama butonlarının durumunu güncelle
+    function updateNewPhotoSortingButtons() {
+      const photoCards = $('#photo-preview-container .photo-preview');
+      
+      photoCards.each(function(index) {
+        const $card = $(this);
+        const $moveUp = $card.find('.move-up');
+        const $moveDown = $card.find('.move-down');
+        
+        // İlk fotoğraf için yukarı taşı butonunu disable et
+        if (index === 0) {
+          $moveUp.prop('disabled', true);
+        } else {
+          $moveUp.prop('disabled', false);
+        }
+        
+        // Son fotoğraf için aşağı taşı butonunu disable et
+        if (index === photoCards.length - 1) {
+          $moveDown.prop('disabled', true);
+        } else {
+          $moveDown.prop('disabled', false);
+        }
+      });
+    }
+    
+    // Yeni fotoğraflar için sıralama butonları - yukarı taşı
+    $(document).on('click', '.photo-preview .move-up', function() {
+      const fileIndex = parseInt($(this).data('file-index'));
+      const currentOrderIndex = photoOrder.indexOf(fileIndex);
+      
+      if (currentOrderIndex > 0) {
+        // Array'de pozisyonları değiştir
+        const temp = photoOrder[currentOrderIndex];
+        photoOrder[currentOrderIndex] = photoOrder[currentOrderIndex - 1];
+        photoOrder[currentOrderIndex - 1] = temp;
+        
+        // Görsel olarak güncelle
+        updatePhotoContainer();
+        console.log('Fotoğraf yukarı taşındı');
+      }
+    });
+    
+    // Yeni fotoğraflar için sıralama butonları - aşağı taşı
+    $(document).on('click', '.photo-preview .move-down', function() {
+      const fileIndex = parseInt($(this).data('file-index'));
+      const currentOrderIndex = photoOrder.indexOf(fileIndex);
+      
+      if (currentOrderIndex < photoOrder.length - 1) {
+        // Array'de pozisyonları değiştir
+        const temp = photoOrder[currentOrderIndex];
+        photoOrder[currentOrderIndex] = photoOrder[currentOrderIndex + 1];
+        photoOrder[currentOrderIndex + 1] = temp;
+        
+        // Görsel olarak güncelle
+        updatePhotoContainer();
+        console.log('Fotoğraf aşağı taşındı');
+      }
+    });
     
     // Ana fotoğraf seçimi
     $(document).on('click', '.main-photo-btn', function() {
@@ -1400,80 +1515,49 @@
       }
     });
     
-    // Drag & Drop işlevselliği
-    let draggedElement = null;
-    let draggedIndex = null;
-    
-    $(document).on('dragstart', '.photo-preview', function(e) {
-      draggedElement = this;
-      draggedIndex = photoOrder.indexOf(parseInt($(this).data('file-index')));
-      $(this).addClass('dragging');
-      
-      // Drag effect
-      e.originalEvent.dataTransfer.effectAllowed = 'move';
-      e.originalEvent.dataTransfer.setData('text/html', this.outerHTML);
-    });
-    
-    $(document).on('dragend', '.photo-preview', function(e) {
-      $(this).removeClass('dragging');
-      draggedElement = null;
-      draggedIndex = null;
-    });
-    
-    $(document).on('dragover', '#photo-preview-container', function(e) {
-      e.preventDefault();
-      e.originalEvent.dataTransfer.dropEffect = 'move';
-      $(this).addClass('drag-over');
-    });
-    
-    $(document).on('dragleave', '#photo-preview-container', function(e) {
-      $(this).removeClass('drag-over');
-    });
-    
-    $(document).on('drop', '#photo-preview-container', function(e) {
-      e.preventDefault();
-      $(this).removeClass('drag-over');
-      
-      if (!draggedElement) return;
-      
-      // Drop pozisyonunu hesapla
-      const afterElement = getDragAfterElement(this, e.originalEvent.clientX);
-      let newIndex;
-      
-      if (afterElement == null) {
-        newIndex = photoOrder.length - 1;
-      } else {
-        const afterFileIndex = parseInt($(afterElement).data('file-index'));
-        newIndex = photoOrder.indexOf(afterFileIndex);
-      }
-      
-      // Array'i yeniden sırala
-      const draggedFileIndex = photoOrder[draggedIndex];
-      photoOrder.splice(draggedIndex, 1);
-      photoOrder.splice(newIndex, 0, draggedFileIndex);
-      
-      // Görsel olarak güncelle
-      updatePhotoContainer();
-    });
-    
-    function getDragAfterElement(container, x) {
-      const draggableElements = [...container.querySelectorAll('.photo-preview:not(.dragging)')];
-      
-      return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = x - box.left - box.width / 2;
-        
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
-        }
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-    
     // Kamera ile fotoğraf çekme
     $('#take-photo-btn').on('click', function() {
       $('#camera-input').click();
+    });
+    
+    // Form submit işlemini hijack et - fotoğrafları ekle
+    $('#property-form').on('submit', function(e) {
+      console.log('Form submit edildi, fotoğraflar ekleniyor...');
+      
+      // Eğer photoFiles array'inde fotoğraf varsa, bunları form'a ekle
+      if (photoFiles.length > 0) {
+        console.log('Toplamda ' + photoFiles.length + ' fotoğraf form\'a ekleniyor');
+        
+        // Her fotoğraf için hidden input oluştur
+        photoOrder.forEach(function(fileIndex, order) {
+          const file = photoFiles[fileIndex];
+          if (file) {
+            // File input oluştur ve form'a ekle
+            const fileInput = $('<input type="file" name="photos[]" style="display:none;">');
+            
+            // File input'a dosyayı ekle (bu biraz tricky, FileList oluşturmamız gerekiyor)
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput[0].files = dt.files;
+            
+            $('#property-form').append(fileInput);
+            
+            console.log('Fotoğraf eklendi:', file.name, 'Sıra:', order + 1);
+          }
+        });
+        
+        // Ana fotoğraf bilgisini ekle
+        if (mainPhotoIndex !== -1) {
+          const mainPhotoOrder = photoOrder.indexOf(mainPhotoIndex) + 1;
+          $('#property-form').append('<input type="hidden" name="main_photo_order" value="' + mainPhotoOrder + '">');
+          console.log('Ana fotoğraf sırası:', mainPhotoOrder);
+        }
+      } else {
+        console.log('Hiç fotoğraf seçilmemiş');
+      }
+      
+      // Form normal şekilde submit olsun
+      return true;
     });
   });
 </script>
