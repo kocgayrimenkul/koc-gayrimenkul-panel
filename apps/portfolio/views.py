@@ -97,12 +97,13 @@ def property_list(request):
     if search:
         properties_list = properties_list.filter(
             Q(apartment_name__icontains=search) | 
+            Q(web_title__icontains=search) |
             Q(description__icontains=search) | 
             Q(address__icontains=search) | 
             Q(owner_name__icontains=search) | 
             Q(owner_listing_number__icontains=search) |
-            Q(website_listing_number__icontains=search) |
-            Q(emlakjet_listing_number__icontains=search)
+            Q(emlakjet_listing_number__icontains=search) |
+            Q(hepsiemlak_listing_number__icontains=search)
         )
     
     # Filtreleri uygula

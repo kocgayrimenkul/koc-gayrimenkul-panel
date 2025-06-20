@@ -292,8 +292,13 @@
                       <select id="property_id" name="property_id" class="form-control select2-property">
                         <option value="">Daire Seçiniz (Opsiyonel)</option>
                         {% for property in properties %}
-                          <option value="{{ property.id }}" {% if form_data.property_id == property.id|stringformat:"i" %}selected{% endif %}>
-                            {{ property.web_title|default:property.apartment_name }} - {{ property.neighborhood.name }} ({{ property.price|floatformat:0 }} ₺)
+                          <option value="{{ property.id }}">
+                            {% if property.web_title %}
+                              {{ property.web_title }} - {{ property.apartment_name }}
+                            {% else %}
+                              {{ property.apartment_name }}
+                            {% endif %}
+                            - {{ property.neighborhood.name }} ({{ property.price|floatformat:0 }} ₺)
                           </option>
                         {% endfor %}
                       </select>

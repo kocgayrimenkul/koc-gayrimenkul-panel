@@ -4,6 +4,7 @@
 
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.min.css">
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
   :root {
@@ -127,17 +128,11 @@
     background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
-    cursor: move;
   }
   
   .photo-preview:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-  }
-  
-  .photo-preview.dragging {
-    opacity: 0.5;
-    transform: rotate(5deg);
   }
   
   .photo-preview.main-photo {
@@ -247,20 +242,22 @@
     z-index: 10;
   }
   
-  /* Drag & Drop feedback */
-  .photo-container.drag-over {
-    background-color: rgba(157, 34, 53, 0.1);
-    border: 2px dashed var(--koc-red);
-    border-radius: 8px;
-    padding: 10px;
+  /* Fotoğraf container stilleri */
+  .photo-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 15px;
   }
   
-  /* Mevcut fotoğraflar container'ı için drag-over styling */
-  .existing-images.drag-over {
-    background-color: rgba(157, 34, 53, 0.1);
-    border: 2px dashed var(--koc-red);
-    border-radius: 8px;
-    padding: 10px;
+  /* Mevcut fotoğraflar container'ı */
+  .existing-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    min-height: 60px;
+    transition: all 0.3s ease;
   }
   
   /* Mevcut fotoğraflar için güncellenmiş stiller */
@@ -268,8 +265,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
-    margin-bottom: 20px;
-    min-height: 60px; /* Drag & drop için minimum yükseklik */
+    margin-bottom: 20px; /* Minimum yükseklik */
     transition: all 0.3s ease;
   }
   
@@ -284,11 +280,13 @@
     border: 2px solid #ddd;
     background: white;
     margin-bottom: 15px;
+    cursor: grab;
   }
   
   .image-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    border-color: var(--koc-red-light);
   }
   
   .image-card.main-photo {
@@ -339,8 +337,8 @@
   
   .image-card .main-photo-indicator {
     position: absolute;
-    top: 40px;
-    left: 8px;
+    top: 8px;
+    right: 46px;
     background: #28a745;
     color: white;
     border-radius: 50%;
@@ -396,44 +394,41 @@
     display: none; /* Eski title alanını gizle */
   }
   
-  /* Sıralama butonları */
-  .image-card .sorting-controls {
+  /* Drag drop için özel stiller */
+  .image-card .drag-handle {
     position: absolute;
-    top: 50%;
+    top: 40px;
     right: 8px;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-  
-  .image-card .sort-btn {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0,0,0,0.5);
     color: white;
-    border: none;
-    border-radius: 50%;
     width: 30px;
     height: 30px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    font-size: 12px;
-    transition: all 0.2s ease;
+    cursor: grab;
+    z-index: 10;
   }
-  
-  .image-card .sort-btn:hover {
-    background: rgba(0, 0, 0, 0.9);
-    transform: scale(1.1);
+
+  .image-card .drag-handle:hover {
+    background: rgba(0,0,0,0.7);
   }
-  
-  .image-card .sort-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+
+  .image-card.dragging {
+    opacity: 0.6;
+    cursor: grabbing;
   }
-  
-  .image-card .sort-btn:disabled:hover {
-    transform: none;
+
+  .image-card-placeholder {
+    border: 2px dashed var(--koc-red-light);
+    background-color: rgba(157, 34, 53, 0.1);
+    border-radius: 8px;
+    box-shadow: none;
+  }
+
+  .ui-sortable-helper {
+    cursor: grabbing;
   }
   
   /* Tip boxes */
@@ -1091,7 +1086,7 @@
                       <i class="fas fa-info-circle mr-2"></i>
                       <strong>Fotoğraf Yönetimi:</strong>
                       <ul class="mb-0 mt-2">
-                        <li>Fotoğrafları sürükleyerek sıralayabilirsiniz</li>
+                        <li>Fotoğrafları sürükleyerek istediğiniz sıraya koyabilirsiniz</li>
                         <li>"Ana Fotoğraf" butonuna basarak ana fotoğrafı seçebilirsiniz</li>
                         <li>Ana fotoğraf ilan kapağında görünecektir</li>
                         <li>Fotoğrafları silmek için çarpı butonuna tıklayın</li>
@@ -1106,17 +1101,10 @@
                       {% if image.is_main_photo %}
                         <div class="main-photo-indicator"><i class="fas fa-star"></i></div>
                       {% endif %}
+                      <div class="drag-handle" title="Sürükleyerek sıralayın"><i class="fas fa-grip-lines"></i></div>
                       <img src="{{ image.image.url }}" alt="{{ image.title }}">
                       <div class="delete-image" data-id="{{ image.id }}">
                         <i class="fas fa-times"></i>
-                      </div>
-                      <div class="sorting-controls">
-                        <button type="button" class="sort-btn move-up" data-id="{{ image.id }}" title="Yukarı Taşı">
-                          <i class="fas fa-chevron-up"></i>
-                        </button>
-                        <button type="button" class="sort-btn move-down" data-id="{{ image.id }}" title="Aşağı Taşı">
-                          <i class="fas fa-chevron-down"></i>
-                        </button>
                       </div>
                       <div class="image-actions">
                         <button type="button" class="main-photo-btn {% if image.is_main_photo %}active{% endif %}" data-id="{{ image.id }}">
@@ -1150,7 +1138,7 @@
                         <i class="fas fa-info-circle mr-2"></i>
                         <strong>Yeni Fotoğraflar:</strong>
                         <ul class="mb-0 mt-2">
-                          <li>Yeni yüklenen fotoğrafları sürükleyerek sıralayabilirsiniz</li>
+                          <li>Yeni yüklenen fotoğrafları yukarı/aşağı butonlarıyla sıralayabilirsiniz</li>
                           <li>Ana fotoğraf seçimi için butona tıklayın</li>
                           <li>Değişiklikleri kaydetmek için "Gayrimenkulü Kaydet" butonuna basın</li>
                         </ul>
@@ -1202,6 +1190,7 @@
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js" integrity="sha512-efAcjYoYT0sXxQRtxGY37CKYmqsFVOIwMApaEbrxJr4RwqVVGw8o+Lfh/+59TU07+suZn1BWq4fDl5fdgyCNkw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js" integrity="sha256-lSjKY0/srUM9BE3dPm+c4fBo1dky2v27Gdjm2uoZaL0=" crossorigin="anonymous"></script>
 <!-- Google Maps API -->
 <script>
   var map, marker, geocoder, autocomplete;
@@ -1379,145 +1368,6 @@
   }
 
   $(document).ready(function() {
-    // Fotoğraf yönetimi değişkenleri
-    let existingImages = [];
-    let newPhotoFiles = [];
-    let newPhotoOrder = [];
-    let newMainPhotoIndex = -1;
-    
-    // Sayfa yüklendiğinde mevcut fotoğrafları yükle
-    function loadExistingImages() {
-      existingImages = []; // Array'i temizle
-      $('#existing-images-container .image-card').each(function(index) {
-        const imageData = {
-          id: parseInt($(this).data('id')),
-          order: parseInt($(this).data('order')) || index + 1,
-          isMain: $(this).hasClass('main-photo')
-        };
-        existingImages.push(imageData);
-      });
-      updateExistingImagesOrder();
-    }
-    
-    function updateExistingImagesOrder() {
-      // Mevcut fotoğrafları sıraya göre yeniden düzenle
-      const container = $('#existing-images-container');
-      const images = container.find('.image-card').get();
-      
-      images.sort(function(a, b) {
-        const aOrder = parseInt($(a).data('order')) || 0;
-        const bOrder = parseInt($(b).data('order')) || 0;
-        return aOrder - bOrder;
-      });
-      
-      container.empty().append(images);
-      
-      // Sıra numaralarını güncelle
-      images.forEach(function(image, index) {
-        $(image).find('.order-badge').text(index + 1);
-        $(image).data('order', index + 1);
-        
-        // existingImages array'inde de güncelle
-        const imageId = parseInt($(image).data('id'));
-        const existingIndex = existingImages.findIndex(img => img.id === imageId);
-        if (existingIndex !== -1) {
-          existingImages[existingIndex].order = index + 1;
-        }
-      });
-    }
-    
-    // Mevcut fotoğraflar için basit sıralama sistemi
-    function updateExistingImagesSorting() {
-      const container = $('#existing-images-container');
-      const imageCards = container.find('.image-card');
-      
-      // Her bir fotoğrafın mevcut pozisyonunu array'e kaydet
-      const currentOrder = [];
-      imageCards.each(function(index) {
-        const imageId = parseInt($(this).data('id'));
-        currentOrder.push(imageId);
-        
-        // Sıra numarasını güncelle
-        $(this).find('.order-badge').text(index + 1);
-        
-        // existingImages array'inde güncelle
-        const existingIndex = existingImages.findIndex(img => img.id === imageId);
-        if (existingIndex !== -1) {
-          existingImages[existingIndex].order = index + 1;
-        }
-      });
-      
-      // Sıralama butonlarının durumunu güncelle
-      updateSortingButtons();
-      
-      console.log('Mevcut fotoğraf sıralaması güncellendi:', currentOrder);
-    }
-    
-    // Sıralama butonlarının durumunu güncelle (ilk ve son fotoğraf için disable)
-    function updateSortingButtons() {
-      const imageCards = $('#existing-images-container .image-card');
-      
-      imageCards.each(function(index) {
-        const $card = $(this);
-        const $moveUp = $card.find('.move-up');
-        const $moveDown = $card.find('.move-down');
-        
-        // İlk fotoğraf için yukarı taşı butonunu disable et
-        if (index === 0) {
-          $moveUp.prop('disabled', true);
-        } else {
-          $moveUp.prop('disabled', false);
-        }
-        
-        // Son fotoğraf için aşağı taşı butonunu disable et
-        if (index === imageCards.length - 1) {
-          $moveDown.prop('disabled', true);
-        } else {
-          $moveDown.prop('disabled', false);
-        }
-      });
-    }
-    
-    // Fotoğraf sıralama butonları - yukarı taşı
-    $(document).on('click', '.move-up', function() {
-      const $currentCard = $(this).closest('.image-card');
-      const $prevCard = $currentCard.prev('.image-card');
-      
-      if ($prevCard.length > 0) {
-        $currentCard.insertBefore($prevCard);
-        updateExistingImagesSorting();
-        console.log('Fotoğraf yukarı taşındı');
-      }
-    });
-    
-    // Fotoğraf sıralama butonları - aşağı taşı
-    $(document).on('click', '.move-down', function() {
-      const $currentCard = $(this).closest('.image-card');
-      const $nextCard = $currentCard.next('.image-card');
-      
-      if ($nextCard.length > 0) {
-        $currentCard.insertAfter($nextCard);
-        updateExistingImagesSorting();
-        console.log('Fotoğraf aşağı taşındı');
-      }
-    });
-    
-    // Drag & Drop yardımcı fonksiyonu - create'teki gibi
-    function getDragAfterElement(container, x) {
-      const draggableElements = [...container.querySelectorAll('.image-card:not(.dragging)')];
-      
-      return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = x - box.left - box.width / 2;
-        
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
-        }
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-    
     // Google Maps API'sini yükle
     loadGoogleMaps();
     
@@ -1548,20 +1398,6 @@
     });
     
     $('#get-current-location').on('click', getCurrentLocation);
-    
-    // Rastgele Doldur Butonu
-    $('#fill-random-data').click(function(e) {
-      e.preventDefault();
-      
-      // Harita koordinatlarını güncelle (Gaziantep)
-      $('#map_coordinates').val("37.066667, 37.383333");
-      if (map && marker) {
-        var newLocation = { lat: 37.066667, lng: 37.383333 };
-        map.setCenter(newLocation);
-        map.setZoom(12);
-        marker.setPosition(newLocation);
-      }
-    });
     
     // Çevre bilgisi ekleme/çıkarma
     $('#add-environment').on('click', function() {
@@ -1605,14 +1441,83 @@
       }
     }
     
-    // Sayfa yüklendiğinde çalıştır
-    updateRemoveButtons();
-    loadExistingImages(); // Mevcut fotoğrafları yükle
+    // Fotoğraf yükleme ve önizleme
+    $('#photo-upload').on('change', function() {
+      const files = this.files;
+      
+      if (files.length > 0) {
+        $('#new-sorting-info').show();
+        
+        // Önizleme için fotoğrafları hazırla
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          
+          // Dosya tipi kontrolü
+          if (!file.type.match('image/jpeg') && !file.type.match('image/png') && !file.type.match('image/jpg')) {
+            continue;
+          }
+          
+          // FileReader ile dosyayı oku
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const imagePreviewIndex = $('#photo-preview-container .photo-preview').length + 1;
+            
+            // Önizleme HTML'ini oluştur
+            const photoPreview = `
+              <div class="photo-preview" data-index="${imagePreviewIndex}">
+                <div class="photo-controls">
+                  <span class="order-badge">${imagePreviewIndex}</span>
+                  <button type="button" class="delete-btn" title="Kaldır">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <div class="drag-handle" title="Sürükleyerek sıralayın">
+                  <i class="fas fa-grip-lines"></i>
+                </div>
+                <img src="${e.target.result}" alt="">
+                <div class="photo-actions">
+                  <button type="button" class="main-photo-btn" data-index="${imagePreviewIndex}">
+                    Ana Yap
+                  </button>
+                </div>
+              </div>
+            `;
+            
+            $('#photo-preview-container').append(photoPreview);
+            
+            // Sortable'ı güncelle
+            initSortable();
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    });
     
-    // Sayfa yüklendiğinde sıralama butonlarını güncelle
-    setTimeout(function() {
-      updateSortingButtons();
-    }, 100);
+    // Önizleme fotoğrafını silme
+    $(document).on('click', '.photo-preview .delete-btn', function() {
+      $(this).closest('.photo-preview').remove();
+      updatePreviewOrder();
+    });
+    
+    // Önizleme fotoğrafları için ana fotoğraf belirleme
+    $(document).on('click', '.photo-preview .main-photo-btn', function() {
+      // Tüm önizleme fotoğraflarından main-photo sınıfını kaldır
+      $('.photo-preview').removeClass('main-photo');
+      $('.photo-preview .main-photo-btn').removeClass('active').text('Ana Yap');
+      
+      // Tıklanan fotoğrafa main-photo sınıfı ekle
+      const preview = $(this).closest('.photo-preview');
+      preview.addClass('main-photo');
+      $(this).addClass('active').text('Ana Fotoğraf');
+    });
+    
+    // Fotoğrafların sırasını güncelle
+    function updatePreviewOrder() {
+      $('#photo-preview-container .photo-preview').each(function(index) {
+        $(this).find('.order-badge').text(index + 1);
+        $(this).attr('data-index', index + 1);
+      });
+    }
     
     // Fotoğraf silme işlemi
     $(document).on('click', '.delete-image', function() {
@@ -1629,12 +1534,9 @@
           },
           success: function(response) {
             if (response.success) {
-              // Array'den de kaldır
-              existingImages = existingImages.filter(img => img.id !== parseInt(imageId));
-              
               imageCard.fadeOut(300, function() {
                 $(this).remove();
-                updateExistingImagesSorting();
+                updateImageOrders();
               });
             } else {
               alert('Fotoğraf silinirken bir hata oluştu: ' + response.error);
@@ -1646,89 +1548,6 @@
         });
       }
     });
-    
-    // Fotoğraf önizleme ve yönetimi
-    $('#photo-upload, #camera-input').on('change', function() {
-      const files = this.files;
-      if (!files || files.length === 0) return;
-      
-      // Her dosya için önizleme oluştur
-      Array.from(files).forEach(function(file, index) {
-        // Dosya boyutu kontrolü
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Dosya boyutu 5MB\'dan büyük olamaz: ' + file.name);
-          return;
-        }
-        
-        // Dosya tipi kontrolü
-        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-          alert('Sadece JPG ve PNG formatları kabul edilmektedir: ' + file.name);
-          return;
-        }
-        
-        // Dosyayı array'e ekle
-        const fileIndex = newPhotoFiles.length;
-        newPhotoFiles.push(file);
-        newPhotoOrder.push(fileIndex);
-        
-        // Dosyayı önizleme için göster
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          createNewPhotoPreview(e.target.result, fileIndex, file.name);
-          updateNewPhotoContainer();
-        };
-        
-        reader.readAsDataURL(file);
-      });
-      
-      // File input'u temizle
-      $(this).val('');
-    });
-    
-    function createNewPhotoPreview(src, fileIndex, fileName) {
-      const isMainPhoto = fileIndex === newMainPhotoIndex;
-      const orderIndex = newPhotoOrder.indexOf(fileIndex) + 1;
-      
-      const previewElement = $(`
-        <div class="photo-preview ${isMainPhoto ? 'main-photo' : ''}" data-file-index="${fileIndex}" draggable="true">
-          ${isMainPhoto ? '<div class="main-photo-indicator"><i class="fas fa-star"></i></div>' : ''}
-          <img src="${src}" alt="Property Image">
-          <div class="photo-controls">
-            <span class="order-badge">${orderIndex}</span>
-            <button type="button" class="delete-btn" data-file-index="${fileIndex}">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="photo-actions">
-            <button type="button" class="main-photo-btn ${isMainPhoto ? 'active' : ''}" data-file-index="${fileIndex}">
-              ${isMainPhoto ? 'Ana Fotoğraf' : 'Ana Yap'}
-            </button>
-          </div>
-        </div>
-      `);
-      
-      $('#photo-preview-container').append(previewElement);
-      $('#new-sorting-info').show();
-    }
-    
-    function updateNewPhotoContainer() {
-      // Fotoğrafları sıraya göre yeniden düzenle
-      const container = $('#photo-preview-container');
-      const photos = container.find('.photo-preview').get();
-      
-      photos.sort(function(a, b) {
-        const aIndex = newPhotoOrder.indexOf(parseInt($(a).data('file-index')));
-        const bIndex = newPhotoOrder.indexOf(parseInt($(b).data('file-index')));
-        return aIndex - bIndex;
-      });
-      
-      container.empty().append(photos);
-      
-      // Sıra numaralarını güncelle
-      photos.forEach(function(photo, index) {
-        $(photo).find('.order-badge').text(index + 1);
-      });
-    }
     
     // Mevcut fotoğraflar için ana fotoğraf seçimi
     $(document).on('click', '.image-card .main-photo-btn', function() {
@@ -1745,175 +1564,22 @@
       imageCard.prepend('<div class="main-photo-indicator"><i class="fas fa-star"></i></div>');
       $(this).addClass('active').text('Ana Fotoğraf');
       
-      // existingImages array'inde de güncelle
-      existingImages.forEach(img => {
-        img.isMain = (img.id === imageId);
-      });
-      
       console.log('Ana fotoğraf seçildi:', imageId);
-    });
-    
-    // Yeni fotoğraflar için ana fotoğraf seçimi
-    $(document).on('click', '.photo-preview .main-photo-btn', function() {
-      const fileIndex = parseInt($(this).data('file-index'));
       
-      // Eski ana fotoğrafı temizle
-      $('.photo-preview').removeClass('main-photo');
-      $('.photo-preview .main-photo-indicator').remove();
-      $('.photo-preview .main-photo-btn').removeClass('active').text('Ana Yap');
-      
-      // Yeni ana fotoğrafı ayarla
-      newMainPhotoIndex = fileIndex;
-      const photoElement = $(`.photo-preview[data-file-index="${fileIndex}"]`);
-      photoElement.addClass('main-photo');
-      photoElement.prepend('<div class="main-photo-indicator"><i class="fas fa-star"></i></div>');
-      $(this).addClass('active').text('Ana Fotoğraf');
-    });
-    
-    // Yeni fotoğraf silme
-    $(document).on('click', '.photo-preview .delete-btn', function() {
-      const fileIndex = parseInt($(this).data('file-index'));
-      
-      // Array'den kaldır
-      const orderIndex = newPhotoOrder.indexOf(fileIndex);
-      if (orderIndex > -1) {
-        newPhotoOrder.splice(orderIndex, 1);
-      }
-      
-      // Ana fotoğraf ise başka bir fotoğrafı ana yap
-      if (fileIndex === newMainPhotoIndex) {
-        newMainPhotoIndex = newPhotoOrder.length > 0 ? newPhotoOrder[0] : -1;
-      }
-      
-      // DOM'dan kaldır
-      $(`.photo-preview[data-file-index="${fileIndex}"]`).remove();
-      
-      // Container'ı güncelle
-      updateNewPhotoContainer();
-      
-      // Ana fotoğrafı yeniden ayarla
-      if (newMainPhotoIndex !== -1) {
-        $(`.photo-preview .main-photo-btn[data-file-index="${newMainPhotoIndex}"]`).click();
-      }
-      
-      // Eğer hiç fotoğraf kalmadıysa bilgi kutusunu gizle
-      if (newPhotoOrder.length === 0) {
-        $('#new-sorting-info').hide();
-      }
-    });
-    
-    // Yeni fotoğraflar için Drag & Drop - create'teki gibi
-    let draggedNewElement = null;
-    let draggedNewIndex = null;
-    
-    $(document).on('dragstart', '.photo-preview', function(e) {
-      draggedNewElement = this;
-      draggedNewIndex = newPhotoOrder.indexOf(parseInt($(this).data('file-index')));
-      $(this).addClass('dragging');
-      
-      e.originalEvent.dataTransfer.effectAllowed = 'move';
-      e.originalEvent.dataTransfer.setData('text/html', this.outerHTML);
-    });
-    
-    $(document).on('dragend', '.photo-preview', function(e) {
-      $(this).removeClass('dragging');
-      draggedNewElement = null;
-      draggedNewIndex = null;
-    });
-    
-    $(document).on('dragover', '#photo-preview-container', function(e) {
-      e.preventDefault();
-      e.originalEvent.dataTransfer.dropEffect = 'move';
-      $(this).addClass('drag-over');
-    });
-    
-    $(document).on('dragleave', '#photo-preview-container', function(e) {
-      $(this).removeClass('drag-over');
-    });
-    
-    // Yeni fotoğraflar için Drag & Drop helper fonksiyonu
-    function getDragAfterElementForNew(container, x) {
-      const draggableElements = [...container.querySelectorAll('.photo-preview:not(.dragging)')];
-      
-      return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = x - box.left - box.width / 2;
-        
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
-        }
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-    
-    $(document).on('drop', '#photo-preview-container', function(e) {
-      e.preventDefault();
-      $(this).removeClass('drag-over');
-      
-      if (!draggedNewElement) return;
-      
-      // Drop pozisyonunu hesapla
-      const afterElement = getDragAfterElementForNew(this, e.originalEvent.clientX);
-      let newIndex;
-      
-      if (afterElement == null) {
-        newIndex = newPhotoOrder.length - 1;
-      } else {
-        const afterFileIndex = parseInt($(afterElement).data('file-index'));
-        newIndex = newPhotoOrder.indexOf(afterFileIndex);
-      }
-      
-      // Array'i yeniden sırala
-      const draggedFileIndex = newPhotoOrder[draggedNewIndex];
-      newPhotoOrder.splice(draggedNewIndex, 1);
-      newPhotoOrder.splice(newIndex, 0, draggedFileIndex);
-      
-      // Görsel olarak güncelle
-      updateNewPhotoContainer();
+      // Hidden input'ları güncelle
+      updateHiddenInputs();
     });
     
     // Form submit edilmeden önce mevcut fotoğrafların bilgilerini hazırla
     $('#property-form').on('submit', function(e) {
-      console.log('Form submit edildi, fotoğraflar ekleniyor...');
-      
-      // Yeni fotoğrafları form'a ekle
-      if (newPhotoFiles.length > 0) {
-        console.log('Toplamda ' + newPhotoFiles.length + ' yeni fotoğraf form\'a ekleniyor');
-        
-        // Her fotoğraf için hidden input oluştur
-        newPhotoOrder.forEach(function(fileIndex, order) {
-          const file = newPhotoFiles[fileIndex];
-          if (file) {
-            // File input oluştur ve form'a ekle
-            const fileInput = $('<input type="file" name="photos[]" style="display:none;">');
-            
-            // File input'a dosyayı ekle
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            fileInput[0].files = dt.files;
-            
-            $('#property-form').append(fileInput);
-            
-            console.log('Yeni fotoğraf eklendi:', file.name, 'Sıra:', order + 1);
-          }
-        });
-        
-        // Yeni fotoğraflar için ana fotoğraf bilgisini ekle
-        if (newMainPhotoIndex !== -1) {
-          const newMainPhotoOrder = newPhotoOrder.indexOf(newMainPhotoIndex) + 1;
-          // Eğer mevcut fotoğraf yoksa veya yeni fotoğraf ana seçildiyse
-          const existingMainPhoto = $('.image-card.main-photo').length;
-          if (!existingMainPhoto) {
-            $('#property-form').append('<input type="hidden" name="new_main_photo_order" value="' + newMainPhotoOrder + '">');
-            console.log('Yeni ana fotoğraf sırası:', newMainPhotoOrder);
-          }
-        }
-      }
-      
-      // Mevcut fotoğrafların güncellenmiş bilgilerini hidden input'lara ekle
-      const existingImagesContainer = $('#existing-images-data');
-      existingImagesContainer.empty();
+      console.log('Form submit edildi');
+      updateHiddenInputs();
+    });
+    
+    // Hidden input'ları güncelle
+    function updateHiddenInputs() {
+      const container = $('#existing-images-data');
+      container.empty();
       
       // Mevcut DOM sırasına göre fotoğraf bilgilerini hazırla
       $('#existing-images-container .image-card').each(function(index) {
@@ -1921,25 +1587,122 @@
         const isMain = $(this).hasClass('main-photo');
         
         // Sıralama bilgisi
-        existingImagesContainer.append(
+        container.append(
           `<input type="hidden" name="existing_image_orders[]" value="${imageId}:${index + 1}">`
         );
         
         // Ana fotoğraf bilgisi
         if (isMain) {
-          existingImagesContainer.append(
+          container.append(
             `<input type="hidden" name="main_image_id" value="${imageId}">`
           );
         }
       });
       
-      console.log('Form gönderiliyor - mevcut fotoğraf bilgileri eklendi');
-    });
+      console.log('Hidden inputs güncellendi');
+    }
+    
+    // Image sıralamasını güncelle
+    function updateImageOrders() {
+      // Mevcut tüm kartların sıra numarasını güncelle
+      $('#existing-images-container .image-card').each(function(index) {
+        $(this).find('.order-badge').text(index + 1);
+      });
+      
+      // Hidden input'ları güncelle
+      updateHiddenInputs();
+    }
+    
+    // Sayfa yüklendiğinde çalıştır
+    updateRemoveButtons();
+    
+    // --- SÜRÜKLE BIRAK FONKSİYONALİTESİ ---
+    // Sortable fonksiyonunu başlatma
+    function initSortable() {
+      // Mevcut fotoğraflar için sortable
+      $("#existing-images-container").sortable({
+        placeholder: "image-card-placeholder",
+        cursor: "move",
+        opacity: 0.7,
+        tolerance: "pointer",
+        handle: ".drag-handle",
+        start: function(e, ui) {
+          ui.placeholder.height(ui.item.height());
+          ui.placeholder.width(ui.item.width());
+          ui.item.addClass("dragging");
+        },
+        stop: function(e, ui) {
+          ui.item.removeClass("dragging");
+          updateImageOrders();
+        }
+      });
+      
+      // Yeni yüklenen önizleme fotoğrafları için sortable
+      $("#photo-preview-container").sortable({
+        placeholder: "photo-preview image-card-placeholder",
+        cursor: "move",
+        opacity: 0.7,
+        tolerance: "pointer",
+        handle: ".drag-handle",
+        start: function(e, ui) {
+          ui.placeholder.height(ui.item.height());
+          ui.placeholder.width(ui.item.width());
+          ui.item.addClass("dragging");
+        },
+        stop: function(e, ui) {
+          ui.item.removeClass("dragging");
+          updatePreviewOrder();
+        }
+      });
+    }
+    
+    // Sayfa yüklendiğinde sortable'ı başlat
+    initSortable();
     
     // Kamera ile fotoğraf çekme
     $('#take-photo-btn').on('click', function() {
       $('#camera-input').click();
     });
+    
+    $('#camera-input').on('change', function(e) {
+      if (this.files && this.files.length > 0) {
+        const file = this.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(event) {
+          const imagePreviewIndex = $('#photo-preview-container .photo-preview').length + 1;
+          
+          // Önizleme HTML'ini oluştur
+          const photoPreview = `
+            <div class="photo-preview" data-index="${imagePreviewIndex}">
+              <div class="photo-controls">
+                <span class="order-badge">${imagePreviewIndex}</span>
+                <button type="button" class="delete-btn" title="Kaldır">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <div class="drag-handle" title="Sürükleyerek sıralayın">
+                <i class="fas fa-grip-lines"></i>
+              </div>
+              <img src="${event.target.result}" alt="">
+              <div class="photo-actions">
+                <button type="button" class="main-photo-btn" data-index="${imagePreviewIndex}">
+                  Ana Yap
+                </button>
+              </div>
+            </div>
+          `;
+          
+          $('#photo-preview-container').append(photoPreview);
+          $('#new-sorting-info').show();
+          
+          // Sortable'ı güncelle
+          initSortable();
+        };
+        
+        reader.readAsDataURL(file);
+      }
+    });
   });
 </script>
-{% endblock javascripts %} 
+{% endblock javascripts %}

@@ -79,7 +79,7 @@ class PropertyListAPIView(generics.ListAPIView):
     }
     
     # Arama alanları
-    search_fields = ['apartment_name', 'description', 'address', 'neighborhood__name']
+    search_fields = ['apartment_name', 'web_title', 'description', 'address', 'neighborhood__name']
     
     # Sıralama alanları
     ordering_fields = ['price', 'created_at', 'listing_date', 'gross_area', 'net_area']
@@ -135,7 +135,7 @@ class FeaturedPropertyListAPIView(generics.ListAPIView):
     }
     
     # Arama alanları
-    search_fields = ['apartment_name', 'description', 'address', 'neighborhood__name']
+    search_fields = ['apartment_name', 'web_title', 'description', 'address', 'neighborhood__name']
     
     # Sıralama alanları
     ordering_fields = ['price', 'created_at', 'listing_date', 'gross_area', 'net_area']
@@ -275,6 +275,7 @@ def property_search_api(request):
     if search:
         queryset = queryset.filter(
             Q(apartment_name__icontains=search) |
+            Q(web_title__icontains=search) |
             Q(description__icontains=search) |
             Q(address__icontains=search) |
             Q(neighborhood__name__icontains=search)

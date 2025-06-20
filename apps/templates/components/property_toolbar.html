@@ -21,7 +21,7 @@
         {% if request.GET.page %}<input type="hidden" name="page" value="1">{% endif %}
         
         <div class="input-group input-group-sm">
-          <input type="text" class="form-control" name="search" placeholder="{{ search_placeholder|default:'İlan başlığında ara...' }}" value="{{ request.GET.search|default:'' }}">
+          <input type="text" class="form-control" name="search" placeholder="{{ search_placeholder|default:'Daire adı veya başlığında ara...' }}" value="{{ request.GET.search|default:'' }}">
           <div class="input-group-append">
             <button class="btn btn-outline-koc-red" type="submit">
               <i class="fas fa-search"></i>

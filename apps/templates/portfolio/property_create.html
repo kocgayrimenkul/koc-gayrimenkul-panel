@@ -2,6 +2,7 @@
 {% block title %} Yeni Gayrimenkul Ekle {% endblock %}
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.min.css">
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
   :root {
@@ -125,6 +126,7 @@
     background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
+    cursor: grab;
   }
   
   .photo-preview:hover {
@@ -133,8 +135,8 @@
   }
   
   .photo-preview.dragging {
-    opacity: 0.5;
-    transform: rotate(5deg);
+    opacity: 0.6;
+    cursor: grabbing;
   }
   
   .photo-preview.main-photo {
@@ -244,44 +246,41 @@
     z-index: 10;
   }
   
-  /* Sıralama butonları */
-  .photo-preview .sorting-controls {
+  /* Drag drop için özel stiller */
+  .photo-preview .drag-handle {
     position: absolute;
-    top: 50%;
+    top: 40px;
     right: 8px;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-  
-  .photo-preview .sort-btn {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0,0,0,0.5);
     color: white;
-    border: none;
-    border-radius: 50%;
     width: 30px;
     height: 30px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    font-size: 12px;
-    transition: all 0.2s ease;
+    cursor: grab;
+    z-index: 10;
   }
-  
-  .photo-preview .sort-btn:hover {
-    background: rgba(0, 0, 0, 0.9);
-    transform: scale(1.1);
+
+  .photo-preview .drag-handle:hover {
+    background: rgba(0,0,0,0.7);
   }
-  
-  .photo-preview .sort-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+
+  .photo-preview.dragging {
+    opacity: 0.6;
+    cursor: grabbing;
   }
-  
-  .photo-preview .sort-btn:disabled:hover {
-    transform: none;
+
+  .photo-preview-placeholder {
+    border: 2px dashed var(--koc-red-light);
+    background-color: rgba(157, 34, 53, 0.1);
+    border-radius: 8px;
+    box-shadow: none;
+  }
+
+  .ui-sortable-helper {
+    cursor: grabbing;
   }
   
   /* Drag & Drop feedback */
@@ -919,7 +918,7 @@
                         <i class="fas fa-info-circle mr-2"></i>
                         <strong>Fotoğraf Yönetimi:</strong>
                         <ul class="mb-0 mt-2">
-                          <li>Fotoğrafları sürükleyerek sıralayabilirsiniz</li>
+                          <li>Fotoğrafları sürükleyerek istediğiniz sıraya koyabilirsiniz</li>
                           <li>"Ana Fotoğraf" butonuna basarak ana fotoğrafı seçebilirsiniz</li>
                           <li>Ana fotoğraf ilan kapağında görünecektir</li>
                           <li>Fotoğrafları silmek için çarpı butonuna tıklayın</li>
@@ -962,6 +961,7 @@
 <!-- Specific JS goes HERE --> 
 {% block javascripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js" integrity="sha512-efAcjYoYT0sXxQRtxGY37CKYmqsFVOIwMApaEbrxJr4RwqVVGw8o+Lfh/+59TU07+suZn1BWq4fDl5fdgyCNkw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js" integrity="sha256-lSjKY0/srUM9BE3dPm+c4fBo1dky2v27Gdjm2uoZaL0=" crossorigin="anonymous"></script>
 <!-- Google Maps API -->
 <script>
   var map, marker, geocoder, autocomplete;
@@ -1364,13 +1364,8 @@
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <div class="sorting-controls">
-            <button type="button" class="sort-btn move-up" data-file-index="${fileIndex}" title="Yukarı Taşı">
-              <i class="fas fa-chevron-up"></i>
-            </button>
-            <button type="button" class="sort-btn move-down" data-file-index="${fileIndex}" title="Aşağı Taşı">
-              <i class="fas fa-chevron-down"></i>
-            </button>
+          <div class="drag-handle" title="Sürükleyerek sıralayın">
+            <i class="fas fa-grip-lines"></i>
           </div>
           <div class="photo-actions">
             <button type="button" class="main-photo-btn ${isMainPhoto ? 'active' : ''}" data-file-index="${fileIndex}">
@@ -1382,7 +1377,7 @@
       
       $('#photo-preview-container').append(previewElement);
       $('#sorting-info').show();
-      updateNewPhotoSortingButtons();
+      initSortable();
     }
     
     function updatePhotoContainer() {
@@ -1403,68 +1398,49 @@
         $(photo).find('.order-badge').text(index + 1);
       });
       
-      // Sıralama butonlarını güncelle
-      updateNewPhotoSortingButtons();
+      // Sortable'ı yeniden başlat
+      initSortable();
     }
     
-    // Yeni fotoğraflar için sıralama butonlarının durumunu güncelle
-    function updateNewPhotoSortingButtons() {
-      const photoCards = $('#photo-preview-container .photo-preview');
+    // Sortable fonksiyonunu başlatma
+    function initSortable() {
+      // Önce mevcut sortable'ı destroy et
+      if ($('#photo-preview-container').hasClass('ui-sortable')) {
+        $('#photo-preview-container').sortable('destroy');
+      }
       
-      photoCards.each(function(index) {
-        const $card = $(this);
-        const $moveUp = $card.find('.move-up');
-        const $moveDown = $card.find('.move-down');
-        
-        // İlk fotoğraf için yukarı taşı butonunu disable et
-        if (index === 0) {
-          $moveUp.prop('disabled', true);
-        } else {
-          $moveUp.prop('disabled', false);
-        }
-        
-        // Son fotoğraf için aşağı taşı butonunu disable et
-        if (index === photoCards.length - 1) {
-          $moveDown.prop('disabled', true);
-        } else {
-          $moveDown.prop('disabled', false);
+      // Yeni sortable'ı başlat
+      $("#photo-preview-container").sortable({
+        placeholder: "photo-preview photo-preview-placeholder",
+        cursor: "move",
+        opacity: 0.7,
+        tolerance: "pointer",
+        handle: ".drag-handle",
+        start: function(e, ui) {
+          ui.placeholder.height(ui.item.height());
+          ui.placeholder.width(ui.item.width());
+          ui.item.addClass("dragging");
+        },
+        stop: function(e, ui) {
+          ui.item.removeClass("dragging");
+          
+          // Yeni sıralamayı photoOrder array'ine yansıt
+          const newOrder = [];
+          $('#photo-preview-container .photo-preview').each(function() {
+            const fileIndex = parseInt($(this).data('file-index'));
+            newOrder.push(fileIndex);
+          });
+          photoOrder = newOrder;
+          
+          // Sıra numaralarını güncelle
+          $('#photo-preview-container .photo-preview').each(function(index) {
+            $(this).find('.order-badge').text(index + 1);
+          });
+          
+          console.log('Fotoğraf sıralaması güncellendi:', photoOrder);
         }
       });
     }
-    
-    // Yeni fotoğraflar için sıralama butonları - yukarı taşı
-    $(document).on('click', '.photo-preview .move-up', function() {
-      const fileIndex = parseInt($(this).data('file-index'));
-      const currentOrderIndex = photoOrder.indexOf(fileIndex);
-      
-      if (currentOrderIndex > 0) {
-        // Array'de pozisyonları değiştir
-        const temp = photoOrder[currentOrderIndex];
-        photoOrder[currentOrderIndex] = photoOrder[currentOrderIndex - 1];
-        photoOrder[currentOrderIndex - 1] = temp;
-        
-        // Görsel olarak güncelle
-        updatePhotoContainer();
-        console.log('Fotoğraf yukarı taşındı');
-      }
-    });
-    
-    // Yeni fotoğraflar için sıralama butonları - aşağı taşı
-    $(document).on('click', '.photo-preview .move-down', function() {
-      const fileIndex = parseInt($(this).data('file-index'));
-      const currentOrderIndex = photoOrder.indexOf(fileIndex);
-      
-      if (currentOrderIndex < photoOrder.length - 1) {
-        // Array'de pozisyonları değiştir
-        const temp = photoOrder[currentOrderIndex];
-        photoOrder[currentOrderIndex] = photoOrder[currentOrderIndex + 1];
-        photoOrder[currentOrderIndex + 1] = temp;
-        
-        // Görsel olarak güncelle
-        updatePhotoContainer();
-        console.log('Fotoğraf aşağı taşındı');
-      }
-    });
     
     // Ana fotoğraf seçimi
     $(document).on('click', '.main-photo-btn', function() {
@@ -1519,6 +1495,64 @@
     $('#take-photo-btn').on('click', function() {
       $('#camera-input').click();
     });
+    
+    $('#camera-input').on('change', function(e) {
+      if (this.files && this.files.length > 0) {
+        const file = this.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(event) {
+          // Dosyayı array'e ekle
+          const fileIndex = photoFiles.length;
+          photoFiles.push(file);
+          photoOrder.push(fileIndex);
+          
+          // İlk fotoğrafı ana fotoğraf yap
+          if (mainPhotoIndex === -1) {
+            mainPhotoIndex = fileIndex;
+          }
+          
+          const imagePreviewIndex = photoOrder.indexOf(fileIndex) + 1;
+          const isMainPhoto = fileIndex === mainPhotoIndex;
+          
+          // Önizleme HTML'ini oluştur
+          const photoPreview = `
+            <div class="photo-preview ${isMainPhoto ? 'main-photo' : ''}" data-file-index="${fileIndex}">
+              ${isMainPhoto ? '<div class="main-photo-indicator"><i class="fas fa-star"></i></div>' : ''}
+              <img src="${event.target.result}" alt="">
+              <div class="photo-controls">
+                <span class="order-badge">${imagePreviewIndex}</span>
+                <button type="button" class="delete-btn" data-file-index="${fileIndex}" title="Kaldır">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <div class="drag-handle" title="Sürükleyerek sıralayın">
+                <i class="fas fa-grip-lines"></i>
+              </div>
+              <div class="photo-actions">
+                <button type="button" class="main-photo-btn ${isMainPhoto ? 'active' : ''}" data-file-index="${fileIndex}">
+                  ${isMainPhoto ? 'Ana Fotoğraf' : 'Ana Yap'}
+                </button>
+              </div>
+            </div>
+          `;
+          
+          $('#photo-preview-container').append(photoPreview);
+          $('#sorting-info').show();
+          
+          // Sortable'ı güncelle
+          initSortable();
+        };
+        
+        reader.readAsDataURL(file);
+        
+        // File input'u temizle
+        $(this).val('');
+      }
+    });
+    
+    // Sayfa yüklendiğinde sortable'ı başlat
+    initSortable();
     
     // Form submit işlemini hijack et - fotoğrafları ekle
     $('#property-form').on('submit', function(e) {
