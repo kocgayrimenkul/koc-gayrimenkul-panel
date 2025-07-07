@@ -35,6 +35,7 @@ class Customer(models.Model):
         ('sahibinden', 'Sahibinden'),
         ('referans', 'Referans'),
         ('emlakjet', 'Emlakjet'),
+        ('hepsi_emlak', 'Hepsi Emlak'),
         ('sosyal_medya', 'Sosyal Medya'),
         ('diger', 'Diğer'),
     ]
@@ -51,6 +52,8 @@ class Customer(models.Model):
     neighborhood = models.ForeignKey(Neighborhood, on_delete=models.CASCADE, verbose_name="Mahalle")
     consultant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, 
                                   related_name="customers", verbose_name="Danışman")
+    property = models.ForeignKey('portfolio.Property', on_delete=models.SET_NULL, null=True, blank=True, 
+                               related_name="customers", verbose_name="İlgilendiği Gayrimenkul")
     
     # Eklenen yeni alanlar
     source = models.CharField(max_length=50, choices=SOURCE_CHOICES, blank=True, null=True, verbose_name="Müşteri Kaynağı")

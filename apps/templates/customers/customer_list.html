@@ -532,7 +532,7 @@
         <div class="card-body py-3">
           <div class="row align-items-center">
             <div class="col-md-6">
-              <h5 class="mb-0">Müşteriler <span class="text-muted text-sm">({{ customers.count }} kayıt)</span></h5>
+              <h5 class="mb-0">Müşteriler <span class="text-muted text-sm">({{ customers.paginator.count }} kayıt)</span></h5>
             </div>
             <div class="col-md-6 text-md-right">
               <button id="toggleFilters" class="btn btn-sm btn-outline-secondary mr-2">
@@ -551,10 +551,11 @@
                   <i class="fas fa-sort mr-1"></i> Sırala
                 </button>
                 <div class="dropdown-menu dropdown-menu-right">
-                  <a class="dropdown-item" href="#">Yakın tarihli</a>
-                  <a class="dropdown-item" href="#">İsim (A-Z)</a>
-                  <a class="dropdown-item" href="#">İsim (Z-A)</a>
-                  <a class="dropdown-item" href="#">Durum</a>
+                  <a class="dropdown-item {% if sort_by == '-created_at' %}active{% endif %}" href="?{% if query_params %}{{ query_params }}&{% endif %}sort=-created_at">Yakın tarihli</a>
+                  <a class="dropdown-item {% if sort_by == 'created_at' %}active{% endif %}" href="?{% if query_params %}{{ query_params }}&{% endif %}sort=created_at">Eski tarihli</a>
+                  <a class="dropdown-item {% if sort_by == 'full_name' %}active{% endif %}" href="?{% if query_params %}{{ query_params }}&{% endif %}sort=full_name">İsim (A-Z)</a>
+                  <a class="dropdown-item {% if sort_by == '-full_name' %}active{% endif %}" href="?{% if query_params %}{{ query_params }}&{% endif %}sort=-full_name">İsim (Z-A)</a>
+                  <a class="dropdown-item {% if sort_by == 'meeting_status' %}active{% endif %}" href="?{% if query_params %}{{ query_params }}&{% endif %}sort=meeting_status">Durum</a>
                 </div>
               </div>
             </div>
@@ -597,6 +598,15 @@
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-sm text-muted"><i class="ni ni-bell-55 mr-2"></i> Hatırlatma:</span>
                     <span class="text-sm font-weight-bold badge badge-danger">{{ customer.reminder_date|date:"d.m.Y" }}</span>
+                  </div>
+                  {% endif %}
+                  
+                  {% if customer.property %}
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-sm text-muted"><i class="ni ni-building mr-2"></i> Gayrimenkul:</span>
+                    <a href="{% url 'property_detail' customer.property.id %}" class="text-sm font-weight-bold badge badge-primary">
+                      {{ customer.property.apartment_name|truncatechars:15 }}
+                    </a>
                   </div>
                   {% endif %}
                 </div>
@@ -651,6 +661,7 @@
                 <th scope="col">Kayıt Tarihi</th>
                 <th scope="col">Hatırlatma</th>
                 <th scope="col">Durum</th>
+                  <th scope="col">Gayrimenkul</th>
                   <th scope="col" class="text-right">İşlemler</th>
               </tr>
             </thead>
@@ -686,6 +697,15 @@
                     <span class="badge badge-status badge-olumsuz">Olumsuz</span>
                   {% endif %}
                 </td>
+                  <td>
+                    {% if customer.property %}
+                      <a href="{% url 'property_detail' customer.property.id %}" class="badge badge-primary">
+                        {{ customer.property.apartment_name|truncatechars:15 }}
+                      </a>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
                   <td class="text-right">
                     <a href="{% url 'customer_detail' customer.id %}" class="btn btn-sm btn-outline-koc-red">
                       <i class="fas fa-eye"></i>
@@ -697,7 +717,7 @@
               </tr>
               {% empty %}
               <tr>
-                  <td colspan="7" class="text-center py-5">
+                  <td colspan="8" class="text-center py-5">
                     <i class="ni ni-user-run" style="font-size: 2rem; color: #f0f0f0;"></i>
                     <h4 class="mt-3">Henüz müşteri kaydı yok</h4>
                     <p class="text-muted">Hiç müşteri kaydı bulunmuyor veya seçilen filtrelere uyan müşteri yok.</p>
@@ -714,30 +734,54 @@
       </div>
       
       <!-- Pagination -->
-      {% if customers.count > 20 %}
+      {% if customers.has_other_pages %}
       <div class="card mt-4">
         <div class="card-body py-2">
-          <nav aria-label="...">
+          <nav aria-label="Sayfalama">
             <ul class="pagination justify-content-center mb-0">
-              <li class="page-item disabled">
-                <a class="page-link" href="#" tabindex="-1">
-                  <i class="fas fa-angle-left"></i>
-                  <span class="sr-only">Önceki</span>
-                </a>
-              </li>
-              <li class="page-item active">
-                <a class="page-link" href="#">1</a>
-              </li>
-              <li class="page-item">
-                <a class="page-link" href="#">2 <span class="sr-only">(current)</span></a>
-              </li>
-              <li class="page-item"><a class="page-link" href="#">3</a></li>
-              <li class="page-item">
-                <a class="page-link" href="#">
-                  <i class="fas fa-angle-right"></i>
-                  <span class="sr-only">Sonraki</span>
-                </a>
-              </li>
+              {% if customers.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ customers.previous_page_number }}">
+                    <i class="fas fa-angle-left"></i>
+                    <span class="sr-only">Önceki</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" tabindex="-1">
+                    <i class="fas fa-angle-left"></i>
+                    <span class="sr-only">Önceki</span>
+                  </a>
+                </li>
+              {% endif %}
+              
+              {% for num in customers.paginator.page_range %}
+                {% if customers.number == num %}
+                  <li class="page-item active">
+                    <a class="page-link" href="#">{{ num }}</a>
+                  </li>
+                {% elif num > customers.number|add:'-3' and num < customers.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link" href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ num }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+              
+              {% if customers.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ customers.next_page_number }}">
+                    <i class="fas fa-angle-right"></i>
+                    <span class="sr-only">Sonraki</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" tabindex="-1">
+                    <i class="fas fa-angle-right"></i>
+                    <span class="sr-only">Sonraki</span>
+                  </a>
+                </li>
+              {% endif %}
             </ul>
           </nav>
         </div>
@@ -817,34 +861,6 @@
         $('.collapse').collapse('hide');
         $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
         $('.filter-title i.fas.fa-chevron-up').removeClass('fa-chevron-up').addClass('fa-chevron-down');
-      }
-    });
-    
-    // Grafik oluşturma
-    var ctx = document.getElementById('chart-customer-stats').getContext('2d');
-    
-    // Django template değişkenlerini JavaScript değişkenlerine aktarma
-    var bekleyenSayisi = parseInt("{{ bekleyen_musteri_sayisi|default:1 }}");
-    var olumluSayisi = parseInt("{{ olumlu_musteri_sayisi|default:1 }}");
-    var olumsuzSayisi = parseInt("{{ olumsuz_musteri_sayisi|default:1 }}");
-    
-    var myChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Bekleyen', 'Olumlu', 'Olumsuz'],
-        datasets: [{
-          data: [bekleyenSayisi, olumluSayisi, olumsuzSayisi],
-          backgroundColor: ['#ffc107', '#2dce89', '#f5365c'],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        cutoutPercentage: 70,
-        legend: {
-          display: false
-        },
-        responsive: true,
-        maintainAspectRatio: false
       }
     });
   });

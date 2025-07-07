@@ -545,7 +545,14 @@
                       </a>
                     </div>
                   {% endif %}
-                  {% if not property.owner_listing_number and not property.emlakjet_listing_number %}
+                  {% if property.hepsiemlak_listing_number %}
+                    <div class="mb-1">
+                      <a href="https://www.hepsiemlak.com/ilan/{{ property.hepsiemlak_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Hepsiemlak'ta görüntüle">
+                        <span class="badge badge-pill badge-warning"><i class="fas fa-external-link-alt mr-1"></i>Hepsiemlak: {{ property.hepsiemlak_listing_number }}</span>
+                      </a>
+                    </div>
+                  {% endif %}
+                  {% if not property.owner_listing_number and not property.emlakjet_listing_number and not property.hepsiemlak_listing_number %}
                     <span class="badge badge-pill badge-light">-</span>
                   {% endif %}
                 </td>
@@ -836,7 +843,7 @@
                     {% endif %}
                   {% endif %}
                   
-                  {% if property.owner_listing_number or property.emlakjet_listing_number %}
+                  {% if property.owner_listing_number or property.emlakjet_listing_number or property.hepsiemlak_listing_number %}
                   <div class="my-2">
                     {% if property.owner_listing_number %}
                     <div class="mb-1">
@@ -849,6 +856,13 @@
                     <div class="mb-1">
                       <a href="https://www.emlakjet.com/ilan/{{ property.emlakjet_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Emlakjet'de görüntüle">
                         <span class="badge badge-pill badge-success"><i class="fas fa-external-link-alt mr-1"></i>Emlakjet: {{ property.emlakjet_listing_number }}</span>
+                      </a>
+                    </div>
+                    {% endif %}
+                    {% if property.hepsiemlak_listing_number %}
+                    <div class="mb-1">
+                      <a href="https://www.hepsiemlak.com/ilan/{{ property.hepsiemlak_listing_number }}" target="_blank" class="text-decoration-none" data-toggle="tooltip" title="Hepsiemlak'ta görüntüle">
+                        <span class="badge badge-pill badge-warning"><i class="fas fa-external-link-alt mr-1"></i>Hepsiemlak: {{ property.hepsiemlak_listing_number }}</span>
                       </a>
                     </div>
                     {% endif %}

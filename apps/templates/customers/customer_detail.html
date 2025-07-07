@@ -294,6 +294,29 @@
             </div>
           </div>
           
+          {% if customer.property %}
+          <h6 class="heading-small text-muted mb-3 mt-4">İlgilendiği Gayrimenkul</h6>
+          <div class="detail-item">
+            <div class="d-flex justify-content-between mb-2">
+              <span><i class="fas fa-home icon"></i> Gayrimenkul</span>
+              <strong>{{ customer.property.apartment_name }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span><i class="fas fa-map-marker-alt icon"></i> Mahalle</span>
+              <strong>{{ customer.property.neighborhood.name }}</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span><i class="fas fa-lira-sign icon"></i> Fiyat</span>
+              <strong>{{ customer.property.price|floatformat:0 }} TL</strong>
+            </div>
+            <div class="text-center mt-3">
+              <a href="{% url 'property_detail' customer.property.id %}" class="btn btn-sm btn-outline-koc-red">
+                <i class="fas fa-external-link-alt mr-2"></i> Gayrimenkul Detayı
+              </a>
+            </div>
+          </div>
+          {% endif %}
+          
           {% if customer.response_date %}
           <div class="detail-item">
             <div class="d-flex justify-content-between">

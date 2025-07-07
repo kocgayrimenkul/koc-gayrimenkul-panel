@@ -25,6 +25,7 @@ from apps.employees.decorators import (
     can_delete_customers,
     require_customer_permission
 )
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 def get_user_role(user):
     """Kullanıcının rolünü döndürür"""
@@ -142,6 +143,10 @@ def customer_list(request):
     if filter_contact_type:
         customers = customers.filter(contact_type=filter_contact_type)
     
+    # Sıralama
+    sort_by = request.GET.get('sort', '-created_at')  # Varsayılan olarak en yeni kayıtlar
+    customers = customers.order_by(sort_by)
+    
     # İstatistikler
     all_customers = customers
     olumlu_musteri_sayisi = all_customers.filter(meeting_status='olumlu').count()
@@ -150,6 +155,24 @@ def customer_list(request):
     
     # Müşteri kaynakları için istatistik
     kaynak_istatistikleri = all_customers.values('source').annotate(toplam=Count('id')).order_by('-toplam')
+    
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(customers, 9)  # Her sayfada 9 müşteri
+    
+    try:
+        customers = paginator.page(page)
+    except PageNotAnInteger:
+        # Eğer sayfa bir tamsayı değilse, ilk sayfayı göster
+        customers = paginator.page(1)
+    except EmptyPage:
+        # Eğer sayfa sayıları dışında bir değerse, son sayfayı göster
+        customers = paginator.page(paginator.num_pages)
+    
+    # URL parametrelerini alma (pagination için)
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
     
     context = {
         'segment': 'musteri',
@@ -167,6 +190,8 @@ def customer_list(request):
         'bekleyen_musteri_sayisi': bekleyen_musteri_sayisi,
         'kaynak_istatistikleri': kaynak_istatistikleri,
         'user_role': role,
+        'query_params': query_params.urlencode(),
+        'sort_by': sort_by,
     }
     
     html_template = loader.get_template('customers/customer_list.html')
@@ -242,7 +267,7 @@ def customer_edit(request, customer_id):
         neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
     
     # Daire tipi portföyleri getir
-    properties = Property.objects.filter(property_type='daire', is_active=True).order_by('-created_at')
+    properties = Property.objects.filter(is_active=True).order_by('-created_at')
     
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '')
@@ -252,6 +277,9 @@ def customer_edit(request, customer_id):
         notes = request.POST.get('notes', '')
         meeting_status = request.POST.get('meeting_status', 'bekliyor')
         response_date_str = request.POST.get('response_date', '')
+        property_id = request.POST.get('property_id', '')
+        reminder_date_str = request.POST.get('reminder_date', '')
+        contact_type = request.POST.get('contact_type', customer.contact_type)
         
         # Validation
         if not full_name or not phone or not neighborhood_id:
@@ -280,6 +308,17 @@ def customer_edit(request, customer_id):
             customer.source = source
             customer.notes = notes
             customer.meeting_status = meeting_status
+            customer.contact_type = contact_type
+            
+            # İlgilendiği gayrimenkulü güncelle
+            if property_id:
+                try:
+                    property_obj = Property.objects.get(id=property_id)
+                    customer.property = property_obj
+                except Property.DoesNotExist:
+                    customer.property = None
+            else:
+                customer.property = None
             
             if response_date_str:
                 try:
@@ -289,6 +328,15 @@ def customer_edit(request, customer_id):
                     messages.warning(request, "Geri dönüş tarihi geçerli bir format değil. Tarih bilgisi güncellenmedi.")
             else:
                 customer.response_date = None
+            
+            if reminder_date_str:
+                try:
+                    reminder_date = timezone.datetime.strptime(reminder_date_str, '%Y-%m-%d').date()
+                    customer.reminder_date = reminder_date
+                except ValueError:
+                    messages.warning(request, "Hatırlatma tarihi geçerli bir format değil.")
+            else:
+                customer.reminder_date = None
                 
             customer.save()
             
@@ -384,8 +432,8 @@ def customer_create(request):
     else:
         neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
     
-    # Daire tipi portföyleri getir
-    properties = Property.objects.filter(property_type='daire', is_active=True).order_by('-created_at')
+    # Tüm aktif portföyleri getir (daire, işyeri, dublex vs.)
+    properties = Property.objects.filter(is_active=True).order_by('-created_at')
     
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '')
@@ -395,6 +443,7 @@ def customer_create(request):
         source = request.POST.get('source', '')
         contact_type = request.POST.get('contact_type', 'bilgi_alma')
         notes = request.POST.get('notes', '')
+        reminder_date_str = request.POST.get('reminder_date', '')
         
         # Validation
         if not full_name or not phone or not neighborhood_id or not source:
@@ -421,12 +470,29 @@ def customer_create(request):
                 full_name=full_name,
                 phone=phone,
                 neighborhood=neighborhood,
-                consultant=neighborhood.consultant,
+                consultant=request.user,
                 source=source,
                 contact_type=contact_type,
                 notes=notes,
                 meeting_status='bekliyor',
             )
+            
+            # Seçilen gayrimenkul varsa ekle
+            if property_id:
+                try:
+                    property_obj = Property.objects.get(id=property_id)
+                    customer.property = property_obj
+                except Property.DoesNotExist:
+                    pass
+            
+            # Hatırlatma tarihi varsa ekle
+            if reminder_date_str:
+                try:
+                    reminder_date = timezone.datetime.strptime(reminder_date_str, '%Y-%m-%d').date()
+                    customer.reminder_date = reminder_date
+                except ValueError:
+                    pass
+            
             customer.save()
             
             messages.success(request, "Müşteri başarıyla oluşturuldu.")

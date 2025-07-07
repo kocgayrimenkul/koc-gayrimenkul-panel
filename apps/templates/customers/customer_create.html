@@ -239,6 +239,7 @@
                         <option value="sahibinden" {% if form_data.source == 'sahibinden' %}selected{% endif %}>Sahibinden</option>
                         <option value="referans" {% if form_data.source == 'referans' %}selected{% endif %}>Referans</option>
                         <option value="emlakjet" {% if form_data.source == 'emlakjet' %}selected{% endif %}>Emlakjet</option>
+                        <option value="hepsi_emlak" {% if form_data.source == 'hepsi_emlak' %}selected{% endif %}>Hepsi Emlak</option>
                         <option value="sosyal_medya" {% if form_data.source == 'sosyal_medya' %}selected{% endif %}>Sosyal Medya</option>
                         <option value="diger" {% if form_data.source == 'diger' %}selected{% endif %}>Diğer</option>
                       </select>
@@ -284,15 +285,16 @@
               <div class="row">
                 <div class="col-lg-6">
                   <div class="form-group">
-                    <label class="form-control-label" for="property_id">Portföydeki Daire</label>
+                    <label class="form-control-label" for="property_id">Portföydeki Emlak</label>
                     <div class="input-group input-group-merge">
                       <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-home"></i></span>
                       </div>
                       <select id="property_id" name="property_id" class="form-control select2-property">
-                        <option value="">Daire Seçiniz (Opsiyonel)</option>
+                        <option value="">Emlak Seçiniz (Opsiyonel)</option>
                         {% for property in properties %}
                           <option value="{{ property.id }}">
+                            [{{ property.property_type|upper }}] 
                             {% if property.web_title %}
                               {{ property.web_title }} - {{ property.apartment_name }}
                             {% else %}
@@ -408,17 +410,55 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
   $(document).ready(function() {
+    // Türkçe karakter normalleştirme fonksiyonu
+    function normalizeText(text) {
+      return text.toLowerCase()
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ı/g, 'i')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/Ğ/g, 'g')
+        .replace(/Ü/g, 'u')
+        .replace(/Ş/g, 's')
+        .replace(/İ/g, 'i')
+        .replace(/Ö/g, 'o')
+        .replace(/Ç/g, 'c');
+    }
+    
     // Select2 - Portföydeki Daire
     $('.select2-property').select2({
-      placeholder: "Daire Seçiniz (Opsiyonel)",
+      placeholder: "Emlak Seçiniz (Opsiyonel)",
       allowClear: true,
       width: '100%',
+      matcher: function(params, data) {
+        // Eğer arama terimi yoksa tüm sonuçları göster
+        if ($.trim(params.term) === '') {
+          return data;
+        }
+        
+        // Arama terimini normalleştir
+        var searchTerm = normalizeText(params.term);
+        var optionText = normalizeText(data.text);
+        
+        // Metin içinde herhangi bir yerde arama yap
+        if (optionText.indexOf(searchTerm) > -1) {
+          return data;
+        }
+        
+        // Sonuç bulunamadı
+        return null;
+      },
       language: {
         noResults: function() {
           return "Sonuç bulunamadı";
         },
         searching: function() {
           return "Aranıyor...";
+        },
+        inputTooShort: function() {
+          return "En az 1 karakter giriniz";
         }
       }
     });
