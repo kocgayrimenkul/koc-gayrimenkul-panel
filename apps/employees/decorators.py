@@ -107,9 +107,9 @@ def check_role_permission(role, permission_type, module):
         if permission_type == 'delete':
             return False  # Hiçbir şey silemez
         elif permission_type in ['view', 'add']:
-            return module in ['customers', 'portfolio', 'calendar', 'fsbo']
+            return module in ['portfolio', 'calendar', 'fsbo', 'presentation']  # 'presentation' eklendi
         elif permission_type == 'edit':
-            return module in ['customers']  # Sadece müşteri düzenleyebilir
+            return False  # Müşteri düzenleme izni de kaldırıldı
     
     # Santral izinleri
     elif role == 'secretary':

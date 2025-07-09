@@ -44,6 +44,9 @@
               <span class="nav-link-text">Müşteriler</span>
             </a>
           </li>
+          {% endif %}
+          
+          {% if user|can_view_customers or user.employee_profile.role == 'consultant' %}
           <li class="nav-item">
             <a class="nav-link {% if 'musteri_hatirlatmalari' in segment %} active {% endif %}" href="{% url 'customer_reminders' %}">
               <i class="ni ni-bell-55 text-danger"></i>
