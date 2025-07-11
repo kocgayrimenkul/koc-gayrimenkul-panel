@@ -689,16 +689,41 @@
                       <i class="fas fa-ellipsis-v"></i>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
+                      <!-- Detay butonu - herkes görebilir -->
                       <a class="dropdown-item" href="{% url 'property_detail' property.id %}">
                         <i class="fas fa-eye text-koc-red mr-2"></i> Detay
                       </a>
+                      
+                      <!-- Düzenleme butonu - sadece admin, manager ve consultant -->
+                      {% if user_role == 'admin' or user_role == 'manager' or user_role == 'consultant' %}
                       <a class="dropdown-item" href="{% url 'property_update' property.id %}">
                         <i class="fas fa-edit text-koc-red mr-2"></i> Düzenle
                       </a>
+                      {% endif %}
+                      
+                      <!-- Silme butonu - sadece admin ve manager -->
+                      {% if user_role == 'admin' or user_role == 'manager' %}
                       <div class="dropdown-divider"></div>
                       <a class="dropdown-item text-danger delete-property" href="#" data-property-id="{{ property.id }}" data-property-title="{{ property.apartment_name }}">
                         <i class="fas fa-trash-alt mr-2"></i> Sil
                       </a>
+                      {% endif %}
+                      
+                      <!-- Santral için bilgilendirme -->
+                      {% if user_role == 'secretary' %}
+                      <div class="dropdown-divider"></div>
+                      <span class="dropdown-item text-muted" style="cursor: default;">
+                        <i class="fas fa-info-circle mr-2"></i> Sadece görüntüleme yetkiniz var
+                      </span>
+                      {% endif %}
+                      
+                      <!-- Yetki yoksa bilgilendirme -->
+                      {% if not user_role or user_role != 'admin' and user_role != 'manager' and user_role != 'consultant' and user_role != 'secretary' %}
+                      <div class="dropdown-divider"></div>
+                      <span class="dropdown-item text-danger" style="cursor: default;">
+                        <i class="fas fa-ban mr-2"></i> Bu işlemler için yetkiniz yoktur
+                      </span>
+                      {% endif %}
                     </div>
                   </div>
                 </td>
@@ -991,12 +1016,25 @@
               <div class="card-footer d-flex justify-content-between align-items-center">
                 <small class="text-muted">{{ property.listing_date|date:"d.m.Y" }}</small>
                 <div class="btn-group">
-                  <a href="{% url 'property_detail' property.id %}" class="btn btn-sm btn-outline-koc-red">
+                  <!-- Detay butonu - herkes görebilir -->
+                  <a href="{% url 'property_detail' property.id %}" class="btn btn-sm btn-outline-koc-red" data-toggle="tooltip" title="Detay">
                     <i class="fas fa-eye"></i>
                   </a>
-                  <a href="{% url 'property_update' property.id %}" class="btn btn-sm btn-outline-koc-red">
+                  
+                  <!-- Düzenleme butonu - sadece admin, manager ve consultant -->
+                  {% if user_role == 'admin' or user_role == 'manager' or user_role == 'consultant' %}
+                  <a href="{% url 'property_update' property.id %}" class="btn btn-sm btn-outline-koc-red" data-toggle="tooltip" title="Düzenle">
                     <i class="fas fa-edit"></i>
                   </a>
+                  {% elif user_role == 'secretary' %}
+                  <button class="btn btn-sm btn-outline-secondary" disabled data-toggle="tooltip" title="Düzenleme yetkiniz yok">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  {% elif not user_role or user_role != 'admin' and user_role != 'manager' and user_role != 'consultant' and user_role != 'secretary' %}
+                  <button class="btn btn-sm btn-outline-danger" disabled data-toggle="tooltip" title="Bu işlem için yetkiniz yoktur">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -1072,9 +1110,11 @@
 </div>
 
 <!-- Mobil cihazlar için yeni gayrimenkul ekleme butonu -->
-<a href="{% url 'property_create' %}" class="btn btn-koc-red btn-float d-block d-md-none">
+{% if user_role == 'admin' or user_role == 'manager' or user_role == 'consultant' %}
+<a href="{% url 'property_create' %}" class="btn btn-koc-red btn-float d-block d-md-none" data-toggle="tooltip" title="Yeni Gayrimenkul Ekle">
   <i class="fas fa-plus"></i>
 </a>
+{% endif %}
 
 {% endblock content %}
 

@@ -49,25 +49,19 @@ def fsbo_list(request):
     # Arama formu
     form = FSBOSearchForm(request.GET or None)
     
-    # Varsayılan filtreleme - son 30 günlük kayıtlar
-    thirty_days_ago = timezone.now().date() - timedelta(days=30)
-    
     # Yetkiye göre FSBO kayıtlarını getir
     if request.user.is_superuser:
-        # Superuser tüm kayıtları görebilir, zaman sınırı olmadan
+        # Superuser tüm kayıtları görebilir
         fsbo_records = FSBO.objects.all()
     elif role in ['admin', 'manager', 'secretary']:
-        # Yönetici, Müdür ve Santral son 30 günlük kayıtları görebilir
-        fsbo_records = FSBO.objects.filter(created_at__date__gte=thirty_days_ago)
+        # Yönetici, Müdür ve Santral tüm kayıtları görebilir
+        fsbo_records = FSBO.objects.all()
     elif role == 'consultant':
-        # Danışman sadece kendisine yönlendirilen kayıtları görebilir
-        fsbo_records = FSBO.objects.filter(
-            Q(consultant=request.user) | Q(created_by=request.user),
-            created_at__date__gte=thirty_days_ago
-        )
+        # Danışman tüm kayıtları görebilir
+        fsbo_records = FSBO.objects.all()
     else:
-        # Diğer roller veya rolü olmayanlar sadece görüntüleyebilir ama işlem yapamaz
-        fsbo_records = FSBO.objects.filter(created_at__date__gte=thirty_days_ago)
+        # Diğer roller veya rolü olmayanlar tüm kayıtları görebilir ama işlem yapamaz
+        fsbo_records = FSBO.objects.all()
         if role != 'employee' and role is not None:
             messages.warning(request, "Sınırlı erişim modu: Sadece görüntüleme yapabilirsiniz.")
     
@@ -252,10 +246,9 @@ def fsbo_detail(request, fsbo_id):
     
     # Yetki kontrolü - Superuser her zaman erişebilir
     if not request.user.is_superuser:
-        if role not in ['admin', 'manager', 'secretary']:
-            if role == 'consultant' and fsbo.consultant != request.user and fsbo.created_by != request.user:
-                messages.error(request, "Bu FSBO kaydını görüntüleme yetkiniz bulunmamaktadır.")
-                return redirect('fsbo_list')
+        if role not in ['admin', 'manager', 'secretary', 'consultant']:
+            messages.error(request, "Bu FSBO kaydını görüntüleme yetkiniz bulunmamaktadır.")
+            return redirect('fsbo_list')
     
     # İşlem günlüğünü al
     logs = FSBOLog.objects.filter(fsbo=fsbo).order_by('-timestamp')
@@ -347,13 +340,8 @@ def fsbo_search(request):
             return JsonResponse({'error': 'Telefon numarası gerekli.'}, status=400)
         
         # Rol kontrolü - Superuser her zaman erişebilir
-        if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
+        if request.user.is_superuser or role in ['admin', 'manager', 'secretary', 'consultant']:
             results = FSBO.objects.filter(phone__icontains=phone)[:10]
-        elif role == 'consultant':
-            results = FSBO.objects.filter(
-                Q(consultant=request.user) | Q(created_by=request.user),
-                phone__icontains=phone
-            )[:10]
         else:
             return JsonResponse({'error': 'Yetki hatası'}, status=403)
         
@@ -383,14 +371,8 @@ def fsbo_reminders_today(request):
     today = timezone.now().date()
     
     # Kullanıcı rolüne göre filtreleme
-    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary', 'consultant']:
         reminders = FSBO.objects.filter(
-            reminder_status='acik',
-            reminder_date=today
-        ).order_by('reminder_time')
-    elif role == 'consultant':
-        reminders = FSBO.objects.filter(
-            Q(consultant=request.user) | Q(created_by=request.user),
             reminder_status='acik',
             reminder_date=today
         ).order_by('reminder_time')

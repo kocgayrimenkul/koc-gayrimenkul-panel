@@ -133,16 +133,29 @@ def presentation_detail(request, presentation_id):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
-@can_add_presentation
 def presentation_create(request):
     """Yeni sunum oluşturma"""
     
     role = get_user_role(request.user)
     
-    # Sadece Yönetici, Müdür, Danışmanlar ve superuser sunum oluşturabilir
-    if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
-        messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
-        return redirect('home')
+    # İlk olarak temel yetki kontrolü yap - logout atmadan
+    if not request.user.is_superuser:
+        # Employee profili var mı kontrol et
+        try:
+            employee = request.user.employee_profile
+            if not employee.is_active:
+                messages.error(request, "Hesabınız deaktif edilmiştir.")
+                return redirect('presentation_list')
+        except:
+            messages.error(request, "Çalışan profili bulunamadı.")
+            return redirect('presentation_list')
+        
+        # Permission modülünden yetki kontrolü
+        from apps.employees.decorators import has_module_permission
+        
+        if not has_module_permission(request.user, 'presentation', 'add'):
+            messages.error(request, "Daire sunumu oluşturma yetkiniz bulunmamaktadır.")
+            return redirect('presentation_list')
     
     # Danışmanın erişebileceği mahalleleri getir
     if request.user.is_superuser or role in ['admin', 'manager']:
@@ -176,13 +189,10 @@ def presentation_create(request):
         else:
             form = PresentationForm()
             
-    # Daireleri çek
-    properties = Property.objects.filter(property_type='daire', is_active=True)
-    
+    # Properties artık AJAX ile yüklenecek, context'ten kaldır
     context = {
         'segment': 'daire_sunumu',
         'form': form,
-        'properties': properties,
         'neighborhoods': neighborhoods,
     }
     
@@ -190,7 +200,6 @@ def presentation_create(request):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
-@can_edit_presentation
 def presentation_edit(request, presentation_id):
     """Sunum düzenleme"""
     
@@ -199,7 +208,26 @@ def presentation_edit(request, presentation_id):
     
     role = get_user_role(request.user)
     
-    # Yönetici, Müdür, Santral veya superuser değilse ve sunum ile ilişkisi yoksa erişimi engelle
+    # İlk olarak temel yetki kontrolü yap - logout atmadan
+    if not request.user.is_superuser:
+        # Employee profili var mı kontrol et
+        try:
+            employee = request.user.employee_profile
+            if not employee.is_active:
+                messages.error(request, "Hesabınız deaktif edilmiştir.")
+                return redirect('presentation_list')
+        except:
+            messages.error(request, "Çalışan profili bulunamadı.")
+            return redirect('presentation_list')
+        
+        # Permission modülünden yetki kontrolü
+        from apps.employees.decorators import has_module_permission
+        
+        if not has_module_permission(request.user, 'presentation', 'edit'):
+            messages.error(request, "Daire sunumu düzenleme yetkiniz bulunmamaktadır.")
+            return redirect('presentation_list')
+    
+    # Sunum ile ilişki kontrolü
     if not request.user.is_superuser and role not in ['admin', 'manager', 'secretary']:
         consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
         if not (presentation.neighborhood in consultant_neighborhoods or presentation.presenter == request.user):
@@ -237,6 +265,7 @@ def presentation_edit(request, presentation_id):
         if not request.user.is_superuser and role not in ['admin', 'manager']:
             form.fields['presenter'].widget.attrs['readonly'] = True
     
+    # Properties artık AJAX ile yüklenecek, context'ten kaldır
     context = {
         'segment': 'daire_sunumu',
         'form': form,
@@ -248,7 +277,6 @@ def presentation_edit(request, presentation_id):
     return HttpResponse(html_template.render(context, request))
 
 @login_required(login_url="/login/")
-@can_delete_presentation
 def presentation_delete(request, presentation_id):
     """Sunum silme"""
     
@@ -257,10 +285,24 @@ def presentation_delete(request, presentation_id):
     
     role = get_user_role(request.user)
     
-    # Sadece Yönetici, Müdürler ve superuser sunum silebilir
-    if not request.user.is_superuser and role not in ['admin', 'manager']:
-        messages.error(request, "Sunum silme yetkiniz yok.")
-        return redirect('presentation_list')
+    # İlk olarak temel yetki kontrolü yap - logout atmadan
+    if not request.user.is_superuser:
+        # Employee profili var mı kontrol et
+        try:
+            employee = request.user.employee_profile
+            if not employee.is_active:
+                messages.error(request, "Hesabınız deaktif edilmiştir.")
+                return redirect('presentation_list')
+        except:
+            messages.error(request, "Çalışan profili bulunamadı.")
+            return redirect('presentation_list')
+        
+        # Permission modülünden yetki kontrolü
+        from apps.employees.decorators import has_module_permission
+        
+        if not has_module_permission(request.user, 'presentation', 'delete'):
+            messages.error(request, "Daire sunumu silme yetkiniz bulunmamaktadır.")
+            return redirect('presentation_list')
     
     if request.method == 'POST':
         presentation.delete()
@@ -319,3 +361,90 @@ def get_neighborhood_consultant(request):
         return JsonResponse({'status': 'error', 'message': 'Mahalle ID eksik.'}, status=400)
     
     return JsonResponse({'status': 'error', 'message': 'Geçersiz istek'}, status=400)
+
+@login_required(login_url="/login/")
+def property_search_ajax(request):
+    """AJAX ile daire arama - Select2 için"""
+    if request.method == 'GET' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        search_term = request.GET.get('q', '').strip()
+        page = int(request.GET.get('page', 1))
+        page_size = 20  # Her seferde 20 kayıt
+        
+        # Base queryset
+        properties = Property.objects.filter(
+            is_active=True
+        ).select_related('neighborhood')
+        
+        # Arama filtresi
+        if search_term:
+            from django.db.models import Q
+            # Türkçe karakter normalleştirme için
+            search_terms = []
+            
+            # Orijinal terim
+            search_terms.append(search_term)
+            
+            # Türkçe karakterleri dönüştür
+            normalized_term = search_term.lower()
+            char_map = {
+                'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+                'Ç': 'c', 'Ğ': 'g', 'İ': 'i', 'Ö': 'o', 'Ş': 's', 'Ü': 'u'
+            }
+            
+            for char, replacement in char_map.items():
+                normalized_term = normalized_term.replace(char, replacement)
+            
+            if normalized_term != search_term.lower():
+                search_terms.append(normalized_term)
+            
+            # Arama sorgusu oluştur
+            q_objects = Q()
+            for term in search_terms:
+                q_objects |= (
+                    Q(web_title__icontains=term) |
+                    Q(apartment_name__icontains=term) |
+                    Q(neighborhood__name__icontains=term) |
+                    Q(property_code__icontains=term)
+                )
+            
+            properties = properties.filter(q_objects)
+        
+        # Pagination
+        from django.core.paginator import Paginator
+        paginator = Paginator(properties, page_size)
+        
+        try:
+            current_page = paginator.page(page)
+        except:
+            current_page = paginator.page(1)
+        
+        # Results formatı
+        results = []
+        for property_obj in current_page:
+            title = f"[{property_obj.property_type.upper()}] "
+            if property_obj.web_title:
+                title += f"{property_obj.web_title} - {property_obj.apartment_name}"
+            else:
+                title += property_obj.apartment_name
+            
+            title += f" - {property_obj.neighborhood.name}"
+            
+            if property_obj.price:
+                title += f" ({property_obj.price:,.0f} ₺)"
+            
+            results.append({
+                'id': property_obj.id,
+                'text': title
+            })
+        
+        # Response formatı Select2 için
+        response_data = {
+            'results': results,
+            'pagination': {
+                'more': current_page.has_next()
+            }
+        }
+        
+        return JsonResponse(response_data)
+    
+    return JsonResponse({'results': [], 'pagination': {'more': False}})

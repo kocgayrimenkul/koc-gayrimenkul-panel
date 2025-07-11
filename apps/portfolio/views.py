@@ -230,10 +230,10 @@ def property_detail(request, property_id):
             # Danışman sadece kendi mahallelerindeki gayrimenkulleri görebilir
             consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
             if property_obj.neighborhood not in consultant_neighborhoods:
-                messages.error(request, "Bu gayrimenkul detaylarını görüntüleme yetkiniz yok.")
+                messages.error(request, f"Bu gayrimenkul {property_obj.neighborhood.name} mahallesinde bulunuyor ve bu mahalleye erişim yetkiniz bulunmamaktadır.")
                 return redirect('property_list')
         else:
-            messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
+            messages.error(request, f"Gayrimenkul detaylarını görüntüleme yetkiniz bulunmamaktadır. Mevcut rolünüz: {role or 'Tanımsız'}")
             return redirect('property_list')
     
     # Çevre bilgileri
@@ -261,7 +261,7 @@ def property_create(request):
     
     # Yetki kontrolü - Sadece Yönetici, Müdür ve Danışman ekleme yapabilir
     if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
-        messages.error(request, "Gayrimenkul ekleme yetkiniz bulunmamaktadır.")
+        messages.error(request, f"Gayrimenkul ekleme yetkiniz bulunmamaktadır. Mevcut rolünüz: {role or 'Tanımsız'}. Sadece Yönetici, Müdür ve Danışman gayrimenkul ekleyebilir.")
         return redirect('property_list')
     
     # Mahalleler - yetki kontrolü ile
@@ -536,10 +536,10 @@ def property_update(request, property_id):
             # Danışman sadece kendi mahallelerindeki gayrimenkulleri güncelleyebilir
             consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
             if property_obj.neighborhood not in consultant_neighborhoods:
-                messages.error(request, "Bu gayrimenkulü güncelleme yetkiniz yok.")
+                messages.error(request, f"Bu gayrimenkul {property_obj.neighborhood.name} mahallesinde bulunuyor ve bu mahalleyi düzenleme yetkiniz bulunmamaktadır.")
                 return redirect('property_list')
         else:
-            messages.error(request, "Gayrimenkul güncelleme yetkiniz bulunmamaktadır.")
+            messages.error(request, f"Gayrimenkul düzenleme yetkiniz bulunmamaktadır. Mevcut rolünüz: {role or 'Tanımsız'}. Sadece Yönetici ve Müdür düzenleme yapabilir.")
             return redirect('property_list')
     
     # Mahalleler - yetki kontrolü ile
@@ -997,9 +997,15 @@ def property_update_field(request):
                     # Danışman sadece kendi mahallelerindeki gayrimenkulleri güncelleyebilir
                     consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
                     if property_obj.neighborhood not in consultant_neighborhoods:
-                        return JsonResponse({'success': False, 'error': 'Bu gayrimenkulü düzenleme yetkiniz yok'})
+                        return JsonResponse({
+                            'success': False, 
+                            'error': f'Bu gayrimenkul {property_obj.neighborhood.name} mahallesinde bulunuyor ve bu mahalleyi düzenleme yetkiniz bulunmamaktadır.'
+                        })
                 else:
-                    return JsonResponse({'success': False, 'error': 'Bu gayrimenkulü düzenleme yetkiniz yok'})
+                    return JsonResponse({
+                        'success': False, 
+                        'error': f'Bu gayrimenkulü düzenleme yetkiniz bulunmamaktadır. Mevcut rolünüz: {role or "Tanımsız"}. Sadece Yönetici, Müdür ve ilgili Danışman düzenleme yapabilir.'
+                    })
             
             # Alan türüne göre değer dönüşümü
             if field == 'consultant':
@@ -1069,7 +1075,10 @@ def property_delete(request, property_id):
             # Yetki kontrolü - Sadece Yönetici ve Müdür silebilir
             role = get_user_role(request.user)
             if not request.user.is_superuser and role not in ['admin', 'manager']:
-                return JsonResponse({'success': False, 'error': 'Gayrimenkul silme yetkiniz bulunmamaktadır'})
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'Gayrimenkul silme yetkiniz bulunmamaktadır. Mevcut rolünüz: {role or "Tanımsız"}. Sadece Yönetici ve Müdür gayrimenkul silebilir.'
+                })
             
             # Gayrimenkulün başlığını sakla
             property_title = property_obj.apartment_name

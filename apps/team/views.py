@@ -274,12 +274,20 @@ def team_delete(request, pk):
     name = team_member.name
     
     try:
+        # Silme işlemini gerçekleştir
         team_member.delete()
+        
         return JsonResponse({
             'success': True,
             'message': f'{name} başarıyla silindi.'
         })
+        
     except Exception as e:
+        # Hata logunu kaydet
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'Team member deletion failed for {name}: {str(e)}')
+        
         return JsonResponse({
             'success': False,
             'message': f'Silme işlemi başarısız: {str(e)}'

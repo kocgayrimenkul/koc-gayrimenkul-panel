@@ -84,6 +84,44 @@
     color: var(--koc-red);
   }
 </style>
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+  /* Select2 özel stilleri */
+  .select2-container--default .select2-selection--single {
+    height: calc(2.75rem + 2px);
+    padding: 0.625rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.375rem;
+    border: 1px solid #cad1d7;
+  }
+  
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.5;
+    padding-left: 0;
+    color: #8898aa;
+  }
+  
+  .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: calc(2.75rem + 2px);
+  }
+  
+  .input-group .select2-container {
+    width: auto !important;
+    flex: 1 1 auto;
+  }
+  
+  .select2-dropdown {
+    border-color: #cad1d7;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px rgba(50, 50, 93, 0.15), 0 1px 0 rgba(0, 0, 0, 0.02);
+  }
+  
+  .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--koc-red);
+  }
+</style>
 {% endblock stylesheets %}
 
 {% block content %}
@@ -177,7 +215,9 @@
                 <div class="col-md-6">
                   <div class="form-group">
                     <label for="{{ form.property.id_for_label }}">{{ form.property.label }}</label>
-                    {{ form.property }}
+                    <select name="{{ form.property.name }}" class="form-control select2-property-ajax" id="{{ form.property.id_for_label }}">
+                      <option value="">Ana Daire Seçiniz</option>
+                    </select>
                     {% if form.property.errors %}
                     <div class="invalid-feedback d-block">
                       {% for error in form.property.errors %}
@@ -227,7 +267,6 @@
                     {% if form.customer_phone.errors %}
                     <div class="invalid-feedback d-block">
                       {% for error in form.customer_phone.errors %}
-                      {{ error }}
                       {% endfor %}
                     </div>
                     {% endif %}
@@ -272,7 +311,9 @@
                 <div class="col-md-4">
                   <div class="form-group">
                     <label for="{{ form.other_property1.id_for_label }}">{{ form.other_property1.label }}</label>
-                    {{ form.other_property1 }}
+                    <select name="{{ form.other_property1.name }}" class="form-control select2-property-ajax" id="{{ form.other_property1.id_for_label }}">
+                      <option value="">Daire Seçiniz (Opsiyonel)</option>
+                    </select>
                     {% if form.other_property1.errors %}
                     <div class="invalid-feedback d-block">
                       {% for error in form.other_property1.errors %}
@@ -296,11 +337,13 @@
                 <div class="col-md-4">
                   <div class="form-group">
                     <label for="{{ form.other_property2.id_for_label }}">{{ form.other_property2.label }}</label>
-                    {{ form.other_property2 }}
+                    <select name="{{ form.other_property2.name }}" class="form-control select2-property-ajax" id="{{ form.other_property2.id_for_label }}">
+                      <option value="">Daire Seçiniz (Opsiyonel)</option>
+                    </select>
                     {% if form.other_property2.errors %}
                     <div class="invalid-feedback d-block">
                       {% for error in form.other_property2.errors %}
-                      {{ error }}
+                      {{ error %}
                       {% endfor %}
                     </div>
                     {% endif %}
@@ -320,7 +363,9 @@
                 <div class="col-md-4">
                   <div class="form-group">
                     <label for="{{ form.other_property3.id_for_label }}">{{ form.other_property3.label }}</label>
-                    {{ form.other_property3 }}
+                    <select name="{{ form.other_property3.name }}" class="form-control select2-property-ajax" id="{{ form.other_property3.id_for_label }}">
+                      <option value="">Daire Seçiniz (Opsiyonel)</option>
+                    </select>
                     {% if form.other_property3.errors %}
                     <div class="invalid-feedback d-block">
                       {% for error in form.other_property3.errors %}
@@ -355,7 +400,7 @@
                     {% if form.status.errors %}
                     <div class="invalid-feedback d-block">
                       {% for error in form.status.errors %}
-                      {{ error }}
+                      {{ error %}
                       {% endfor %}
                     </div>
                     {% endif %}
@@ -399,43 +444,79 @@
 {% endblock content %}
 
 {% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-  $(document).ready(function() {
-    // Select2 etkinleştirme
-    if($.fn.select2) {
-      $('.select2').select2({
-        placeholder: "Seçiniz",
-        allowClear: true
-      });
-    }
-    
-    // DateTime picker etkinleştirme (eğer flatpickr kullanılıyorsa)
-    if(typeof flatpickr !== 'undefined') {
-      flatpickr('input[type="datetime-local"]', {
-        enableTime: true,
-        dateFormat: "Y-m-d H:i",
-        time_24hr: true
-      });
-    }
-    
-    // Mahalle seçildiğinde danışman otomatik atanması
-    $('#{{ form.neighborhood.id_for_label }}').change(function() {
-      var neighborhoodId = $(this).val();
-      if (neighborhoodId) {
-        $.ajax({
-          url: '/daire-sunumu/mahalle-danismani/',
-          data: {
-            'neighborhood_id': neighborhoodId
-          },
-          dataType: 'json',
-          success: function(data) {
-            if (data.consultant_id) {
-              $('#{{ form.presenter.id_for_label }}').val(data.consultant_id).trigger('change');
-            }
+$(document).ready(function() {
+  // Select2 - Property (Daire) select'leri AJAX ile
+  $('.select2-property-ajax').select2({
+    placeholder: "Daire Seçiniz",
+    allowClear: true,
+    width: '100%',
+    ajax: {
+      url: "{% url 'property_search_ajax' %}",
+      dataType: 'json',
+      delay: 250,
+      data: function(params) {
+        return {
+          q: params.term, // Arama terimi
+          page: params.page || 1
+        };
+      },
+      processResults: function(data, params) {
+        params.page = params.page || 1;
+        return {
+          results: data.results,
+          pagination: {
+            more: data.pagination.more
           }
-        });
+        };
+      },
+      cache: true
+    },
+    minimumInputLength: 0, // Boş başlangıç için
+    language: {
+      noResults: function() {
+        return "Daire bulunamadı";
+      },
+      searching: function() {
+        return "Daireler aranıyor...";
+      },
+      inputTooShort: function() {
+        return "Aramak için yazmaya başlayın";
+      },
+      loadingMore: function() {
+        return "Daha fazla daire yükleniyor...";
       }
-    });
+    }
   });
+  
+  // DateTime picker etkinleştirme (eğer flatpickr kullanılıyorsa)
+  if(typeof flatpickr !== 'undefined') {
+    flatpickr('input[type="datetime-local"]', {
+      enableTime: true,
+      dateFormat: "Y-m-d H:i",
+      time_24hr: true
+    });
+  }
+  
+  // Mahalle seçildiğinde danışman otomatik atanması
+  $('#{{ form.neighborhood.id_for_label }}').change(function() {
+    var neighborhoodId = $(this).val();
+    if (neighborhoodId) {
+      $.ajax({
+        url: '/daire-sunumu/mahalle-danismani/',
+        data: {
+          'neighborhood_id': neighborhoodId
+        },
+        dataType: 'json',
+        success: function(data) {
+          if (data.consultant_id) {
+            $('#{{ form.presenter.id_for_label }}').val(data.consultant_id).trigger('change');
+          }
+        }
+      });
+    }
+  });
+});
 </script>
 {% endblock javascripts %} 
