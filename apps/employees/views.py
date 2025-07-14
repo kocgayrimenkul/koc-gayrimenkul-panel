@@ -793,8 +793,8 @@ def employee_permissions_reset(request, employee_id):
             permission.can_edit_fsbo = False
             permission.can_delete_fsbo = False
             permission.can_view_presentation = True
-            permission.can_add_presentation = False
-            permission.can_edit_presentation = False
+            permission.can_add_presentation = True
+            permission.can_edit_presentation = True
             permission.can_delete_presentation = False
             permission.can_view_careers = True
             permission.can_add_careers = False
@@ -809,10 +809,10 @@ def employee_permissions_reset(request, employee_id):
             permission.can_access_api = False
             
         elif employee.role == 'secretary':
-            # Santral - Müşteri kayıt ve ajanda
+            # Santral - Müşteri ve takvim odaklı
             permission.can_view_customers = True
             permission.can_add_customers = True
-            permission.can_edit_customers = False
+            permission.can_edit_customers = True
             permission.can_delete_customers = False
             permission.can_view_portfolio = True
             permission.can_add_portfolio = False
@@ -827,8 +827,8 @@ def employee_permissions_reset(request, employee_id):
             permission.can_edit_fsbo = False
             permission.can_delete_fsbo = False
             permission.can_view_presentation = True
-            permission.can_add_presentation = False
-            permission.can_edit_presentation = False
+            permission.can_add_presentation = True  # True olarak değiştirildi
+            permission.can_edit_presentation = True  # True olarak değiştirildi
             permission.can_delete_presentation = False
             permission.can_view_careers = True
             permission.can_add_careers = False

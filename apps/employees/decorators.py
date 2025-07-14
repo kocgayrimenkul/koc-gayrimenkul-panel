@@ -107,9 +107,9 @@ def check_role_permission(role, permission_type, module):
         if permission_type == 'delete':
             return False  # Hiçbir şey silemez
         elif permission_type in ['view', 'add']:
-            return module in ['portfolio', 'calendar', 'fsbo', 'presentation']  # 'presentation' eklendi
+            return module in ['customers', 'portfolio', 'calendar', 'fsbo', 'presentation']  # customers eklendi
         elif permission_type == 'edit':
-            return False  # Müşteri düzenleme izni de kaldırıldı
+            return module in ['customers', 'presentation']  # Müşteri ve presentation düzenleme izni eklendi
     
     # Santral izinleri
     elif role == 'secretary':
@@ -118,9 +118,9 @@ def check_role_permission(role, permission_type, module):
         elif permission_type == 'view':
             return module in ['customers', 'portfolio', 'calendar', 'fsbo', 'presentation', 'careers']
         elif permission_type == 'add':
-            return module in ['customers', 'calendar']  # Müşteri ve randevu ekleyebilir
+            return module in ['customers', 'calendar', 'presentation']  # Müşteri, randevu ve presentation ekleyebilir
         elif permission_type == 'edit':
-            return module in ['calendar']  # Sadece takvim düzenleyebilir
+            return module in ['customers', 'calendar', 'presentation']  # Müşteri, takvim ve presentation düzenleyebilir
     
     # Çalışan izinleri
     elif role == 'employee':

@@ -70,14 +70,38 @@ def presentation_list(request):
         month_ago = timezone.now().date() - timedelta(days=30)
         presentations = presentations.filter(presentation_date__date__gte=month_ago)
     
-    # İstatistikler
-    bekleyen_sunum_sayisi = presentations.filter(status='bekliyor').count()
-    tamamlanan_sunum_sayisi = presentations.filter(status='tamamlandi').count()
-    iptal_sunum_sayisi = presentations.filter(status='iptal').count()
+    # Sıralama
+    presentations = presentations.select_related('property', 'presenter', 'neighborhood').order_by('-presentation_date')
+    
+    # Pagination
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    
+    page = request.GET.get('page', 1)
+    paginator = Paginator(presentations, 15)  # Sayfa başına 15 kayıt
+    
+    try:
+        presentations_page = paginator.page(page)
+    except PageNotAnInteger:
+        presentations_page = paginator.page(1)
+    except EmptyPage:
+        presentations_page = paginator.page(paginator.num_pages)
+    
+    # İstatistikler (filtrelenmemiş tüm veriler üzerinden)
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
+        all_presentations = Presentation.objects.all()
+    else:
+        consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+        all_presentations = Presentation.objects.filter(
+            Q(neighborhood__in=consultant_neighborhoods) | Q(presenter=request.user)
+        ).distinct()
+    
+    bekleyen_sunum_sayisi = all_presentations.filter(status='bekliyor').count()
+    tamamlanan_sunum_sayisi = all_presentations.filter(status='tamamlandi').count()
+    iptal_sunum_sayisi = all_presentations.filter(status='iptal').count()
     
     context = {
         'segment': 'daire_sunumu',
-        'presentations': presentations,
+        'presentations': presentations_page,
         'filter_status': filter_status,
         'filter_date': filter_date,
         'bekleyen_sunum_sayisi': bekleyen_sunum_sayisi,
@@ -381,30 +405,37 @@ def property_search_ajax(request):
             # Türkçe karakter normalleştirme için
             search_terms = []
             
-            # Orijinal terim
-            search_terms.append(search_term)
+            # Arama terimini kelimelere böl
+            words = search_term.strip().split()
             
-            # Türkçe karakterleri dönüştür
-            normalized_term = search_term.lower()
-            char_map = {
-                'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
-                'Ç': 'c', 'Ğ': 'g', 'İ': 'i', 'Ö': 'o', 'Ş': 's', 'Ü': 'u'
-            }
-            
-            for char, replacement in char_map.items():
-                normalized_term = normalized_term.replace(char, replacement)
-            
-            if normalized_term != search_term.lower():
-                search_terms.append(normalized_term)
-            
-            # Arama sorgusu oluştur
+            # Her kelime için Q objesi oluştur
             q_objects = Q()
+            
+            for word in words:
+                # Orijinal kelime
+                search_terms.append(word)
+                
+                # Türkçe karakterleri dönüştür
+                normalized_word = word.lower()
+                char_map = {
+                    'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+                    'Ç': 'c', 'Ğ': 'g', 'İ': 'i', 'Ö': 'o', 'Ş': 's', 'Ü': 'u'
+                }
+                
+                for char, replacement in char_map.items():
+                    normalized_word = normalized_word.replace(char, replacement)
+                
+                if normalized_word != word.lower():
+                    search_terms.append(normalized_word)
+            
+            # Tüm arama terimleri için sorgu oluştur
             for term in search_terms:
                 q_objects |= (
+                    Q(apartment_name__icontains=term) |  # Daire adında arama (öncelik)
                     Q(web_title__icontains=term) |
-                    Q(apartment_name__icontains=term) |
                     Q(neighborhood__name__icontains=term) |
-                    Q(property_code__icontains=term)
+                    Q(owner_listing_number__icontains=term) |  # property_code yerine owner_listing_number
+                    Q(address__icontains=term)  # Adres araması da eklendi
                 )
             
             properties = properties.filter(q_objects)
@@ -422,10 +453,13 @@ def property_search_ajax(request):
         results = []
         for property_obj in current_page:
             title = f"[{property_obj.property_type.upper()}] "
-            if property_obj.web_title:
-                title += f"{property_obj.web_title} - {property_obj.apartment_name}"
-            else:
-                title += property_obj.apartment_name
+            
+            # Önce apartment_name'i kullan
+            title += property_obj.apartment_name
+            
+            # Web title varsa parantez içinde ekle
+            if property_obj.web_title and property_obj.web_title != property_obj.apartment_name:
+                title += f" ({property_obj.web_title})"
             
             title += f" - {property_obj.neighborhood.name}"
             

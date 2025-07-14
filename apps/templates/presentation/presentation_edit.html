@@ -224,10 +224,9 @@
                       {% if form.instance.property %}
                         <option value="{{ form.instance.property.id }}" selected>
                           [{{ form.instance.property.property_type|upper }}] 
-                          {% if form.instance.property.web_title %}
-                            {{ form.instance.property.web_title }} - {{ form.instance.property.apartment_name }}
-                          {% else %}
-                            {{ form.instance.property.apartment_name }}
+                          {{ form.instance.property.apartment_name }}
+                          {% if form.instance.property.web_title and form.instance.property.web_title != form.instance.property.apartment_name %}
+                            ({{ form.instance.property.web_title }})
                           {% endif %}
                           - {{ form.instance.property.neighborhood.name }} ({{ form.instance.property.price|floatformat:0 }} ₺)
                         </option>
@@ -332,10 +331,9 @@
                       {% if form.instance.other_property1 %}
                         <option value="{{ form.instance.other_property1.id }}" selected>
                           [{{ form.instance.other_property1.property_type|upper }}] 
-                          {% if form.instance.other_property1.web_title %}
-                            {{ form.instance.other_property1.web_title }} - {{ form.instance.other_property1.apartment_name }}
-                          {% else %}
-                            {{ form.instance.other_property1.apartment_name }}
+                          {{ form.instance.other_property1.apartment_name }}
+                          {% if form.instance.other_property1.web_title and form.instance.other_property1.web_title != form.instance.other_property1.apartment_name %}
+                            ({{ form.instance.other_property1.web_title }})
                           {% endif %}
                           - {{ form.instance.other_property1.neighborhood.name }} ({{ form.instance.other_property1.price|floatformat:0 }} ₺)
                         </option>
@@ -369,10 +367,9 @@
                       {% if form.instance.other_property2 %}
                         <option value="{{ form.instance.other_property2.id }}" selected>
                           [{{ form.instance.other_property2.property_type|upper }}] 
-                          {% if form.instance.other_property2.web_title %}
-                            {{ form.instance.other_property2.web_title }} - {{ form.instance.other_property2.apartment_name }}
-                          {% else %}
-                            {{ form.instance.other_property2.apartment_name }}
+                          {{ form.instance.other_property2.apartment_name }}
+                          {% if form.instance.other_property2.web_title and form.instance.other_property2.web_title != form.instance.other_property2.apartment_name %}
+                            ({{ form.instance.other_property2.web_title }})
                           {% endif %}
                           - {{ form.instance.other_property2.neighborhood.name }} ({{ form.instance.other_property2.price|floatformat:0 }} ₺)
                         </option>
@@ -406,10 +403,9 @@
                       {% if form.instance.other_property3 %}
                         <option value="{{ form.instance.other_property3.id }}" selected>
                           [{{ form.instance.other_property3.property_type|upper }}] 
-                          {% if form.instance.other_property3.web_title %}
-                            {{ form.instance.other_property3.web_title }} - {{ form.instance.other_property3.apartment_name }}
-                          {% else %}
-                            {{ form.instance.other_property3.apartment_name }}
+                          {{ form.instance.other_property3.apartment_name }}
+                          {% if form.instance.other_property3.web_title and form.instance.other_property3.web_title != form.instance.other_property3.apartment_name %}
+                            ({{ form.instance.other_property3.web_title }})
                           {% endif %}
                           - {{ form.instance.other_property3.neighborhood.name }} ({{ form.instance.other_property3.price|floatformat:0 }} ₺)
                         </option>
