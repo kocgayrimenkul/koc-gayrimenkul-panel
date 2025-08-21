@@ -1,0 +1,68 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %}NetGSM Santral Yönetimi{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">NetGSM Santral Yönetim Paneli</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Arama İstatistikleri</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>Günlük arama istatistiklerini buradan takip edebilirsiniz.</p>
+                                    <a href="{% url 'sales_process:call_statistics' %}" class="btn btn-primary">İstatistikleri Görüntüle</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Arama Kayıtları</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>Tüm arama kayıtlarını görüntüleyebilirsiniz.</p>
+                                    <a href="{% url 'sales_process:call_logs' %}" class="btn btn-info">Kayıtları Görüntüle</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Agent Dashboard</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>Agent performans panelini görüntüleyebilirsiniz.</p>
+                                    <a href="{% url 'sales_process:agent_dashboard' %}" class="btn btn-success">Dashboard'a Git</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Rapor İndir</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>Arama kayıtlarını Excel formatında indirebilirsiniz.</p>
+                                    <a href="{% url 'sales_process:export_call_logs' %}" class="btn btn-warning">Rapor İndir</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

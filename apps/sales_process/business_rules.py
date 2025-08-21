@@ -29,11 +29,9 @@ class SalesProcessRules:
         # Aşama geçiş kuralları
         stage_flow = {
             'bilgi_verildi': ['ihtiyac_analizi'],
-            'ihtiyac_analizi': ['teklif_gonderildi', 'bilgi_verildi'],
-            'teklif_gonderildi': ['daire_sunumu', 'ihtiyac_analizi'],
-            'daire_sunumu': ['cevap_bekleniyor', 'teklif_gonderildi'],
-            'cevap_bekleniyor': ['sozlesme_yapildi', 'daire_sunumu'],
-            'sozlesme_yapildi': ['kredi_islemleri'],
+            'ihtiyac_analizi': ['daire_sunumu'],
+            'daire_sunumu': ['sozlesme_yapildi', 'ihtiyac_analizi'],  # Sözleşme yapıldı veya tekrar ihtiyaç analizine
+            'sozlesme_yapildi': ['kredi_islemleri', 'tapu_islemi'],  # Kredili veya nakit işlem
             'kredi_islemleri': ['tapu_islemi'],
             'tapu_islemi': ['hizmet_tamamlandi'],
             'hizmet_tamamlandi': ['memnuniyet_anketi'],

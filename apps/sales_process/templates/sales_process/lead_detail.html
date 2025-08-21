@@ -1,0 +1,477 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .lead-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    .timeline-item {
+        border-left: 3px solid #e9ecef;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #007bff;
+    }
+    
+    .timeline-item.note::before {
+        background: #28a745;
+    }
+    
+    .timeline-item.task::before {
+        background: #ffc107;
+    }
+    
+    .timeline-item.appointment::before {
+        background: #dc3545;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .status-active { background: #d4edda; color: #155724; }
+    .status-completed { background: #cce5ff; color: #004085; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+    
+    .priority-high { color: #dc3545; }
+    .priority-medium { color: #ffc107; }
+    .priority-low { color: #28a745; }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary { background: #007bff; color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-warning { background: #ffc107; color: #212529; }
+    .btn-info { background: #17a2b8; color: white; }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Lead Header -->
+    <div class="lead-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-2">{{ lead.customer_name }}</h2>
+                <p class="mb-1"><i class="fas fa-phone"></i> {{ lead.customer_phone }}</p>
+                {% if lead.customer_email %}
+                <p class="mb-1"><i class="fas fa-envelope"></i> {{ lead.customer_email }}</p>
+                {% endif %}
+                <p class="mb-0"><i class="fas fa-calendar"></i> {{ lead.created_at|date:"d.m.Y H:i" }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="mb-2">
+                    <span class="status-badge status-{{ lead.status }}">
+                        {{ lead.get_status_display }}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <strong>Aşama:</strong> {{ lead.current_stage.name|default:"Belirtilmemiş" }}
+                </div>
+                <div>
+                    <strong>Sorumlu:</strong> {{ lead.assigned_staff.get_full_name|default:"Atanmamış" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Lead Bilgileri -->
+        <div class="col-lg-4">
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-info-circle"></i> Lead Bilgileri</h5>
+                
+                <div class="mb-3">
+                    <strong>Lead ID:</strong><br>
+                    <code>{{ lead.lead_id }}</code>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Kaynak:</strong><br>
+                    {{ lead.get_source_display }}
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Emlak Türü:</strong><br>
+                    {{ lead.get_property_type_display }}
+                </div>
+                
+                {% if lead.budget_min or lead.budget_max %}
+                <div class="mb-3">
+                    <strong>Bütçe:</strong><br>
+                    {% if lead.budget_min and lead.budget_max %}
+                        {{ lead.budget_min|floatformat:0 }} - {{ lead.budget_max|floatformat:0 }} TL
+                    {% elif lead.budget_min %}
+                        {{ lead.budget_min|floatformat:0 }} TL+
+                    {% elif lead.budget_max %}
+                        Max {{ lead.budget_max|floatformat:0 }} TL
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if lead.property_location %}
+                <div class="mb-3">
+                    <strong>Lokasyon:</strong><br>
+                    {{ lead.property_location }}
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <strong>Öncelik:</strong><br>
+                    <span class="priority-{{ lead.priority }}">
+                        <i class="fas fa-flag"></i> {{ lead.get_priority_display }}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Hızlı İşlemler -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-bolt"></i> Hızlı İşlemler</h5>
+                <div class="action-buttons">
+                    <button class="btn-action btn-primary" onclick="makeCall('{{ lead.customer_phone }}')">Ara</button>
+                    <button class="btn-action btn-success" onclick="sendWhatsApp('{{ lead.lead_id }}')">WhatsApp</button>
+                    <button class="btn-action btn-warning" onclick="addNote('{{ lead.lead_id }}')">Not Ekle</button>
+                    <button class="btn-action btn-info" onclick="scheduleAppointment('{{ lead.lead_id }}')">Randevu</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Timeline -->
+        <div class="col-lg-8">
+            <div class="info-card">
+                <h5 class="mb-3"><i class="fas fa-history"></i> Aktivite Timeline</h5>
+                
+                <div class="timeline">
+                    <!-- Notlar -->
+                    {% for note in notes %}
+                    <div class="timeline-item note">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Not</h6>
+                                <p class="mb-1">{{ note.content }}</p>
+                                <small class="text-muted">
+                                    {{ note.created_by.get_full_name }} - {{ note.created_at|date:"d.m.Y H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Görevler -->
+                    {% for task in tasks %}
+                    <div class="timeline-item task">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Görev: {{ task.title }}</h6>
+                                <p class="mb-1">{{ task.description }}</p>
+                                <div class="mb-1">
+                                    <span class="status-badge status-{{ task.status }}">
+                                        {{ task.get_status_display }}
+                                    </span>
+                                    {% if task.due_date %}
+                                    <span class="ms-2">
+                                        <i class="fas fa-clock"></i> {{ task.due_date|date:"d.m.Y H:i" }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">
+                                    {{ task.assigned_to.get_full_name }} - {{ task.created_at|date:"d.m.Y H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Randevular -->
+                    {% for appointment in appointments %}
+                    <div class="timeline-item appointment">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">Randevu: {{ appointment.title }}</h6>
+                                <p class="mb-1">{{ appointment.description }}</p>
+                                <div class="mb-1">
+                                    <span class="status-badge status-{{ appointment.status }}">
+                                        {{ appointment.get_status_display }}
+                                    </span>
+                                    <span class="ms-2">
+                                        <i class="fas fa-calendar"></i> {{ appointment.scheduled_date|date:"d.m.Y H:i" }}
+                                    </span>
+                                </div>
+                                <small class="text-muted">
+                                    {{ appointment.created_by.get_full_name }} - {{ appointment.created_at|date:"d.m.Y H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not notes and not tasks and not appointments %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>Henüz aktivite bulunmuyor.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<!-- Not Ekleme Modal -->
+<div class="modal fade" id="addNoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Not Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addNoteForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="noteContent" class="form-label">Not İçeriği</label>
+                        <textarea class="form-control" id="noteContent" name="content" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="submitNote()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Randevu Modal -->
+<div class="modal fade" id="appointmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Randevu Oluştur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="appointmentForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="appointmentTitle" class="form-label">Başlık</label>
+                        <input type="text" class="form-control" id="appointmentTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="appointmentDate" class="form-label">Tarih ve Saat</label>
+                        <input type="datetime-local" class="form-control" id="appointmentDate" name="scheduled_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="appointmentDescription" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="appointmentDescription" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="submitAppointment()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentLeadId = '{{ lead.lead_id }}';
+
+function makeCall(phone) {
+    if (confirm(`${phone} numarasını aramak istediğinizden emin misiniz?`)) {
+        console.log('Arama başlatılıyor:', {
+            lead_id: currentLeadId,
+            phone: phone
+        });
+        
+        fetch('{% url "sales_process:make_call" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: currentLeadId,
+                phone: phone
+            })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                showNotification(`Arama başlatıldı: ${data.phone_number}`, 'success');
+                // Sayfayı yenile ki yeni call log görünsün
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification(data.message || 'Arama başlatılamadı: undefined', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            showNotification(`Arama başlatılamadı: ${error.message}`, 'error');
+        });
+    }
+}
+
+function sendWhatsApp(leadId) {
+    showNotification('WhatsApp özelliği yakında aktif olacak', 'info');
+}
+
+function addNote(leadId) {
+    const modal = new bootstrap.Modal(document.getElementById('addNoteModal'));
+    modal.show();
+}
+
+function scheduleAppointment(leadId) {
+    const modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
+    modal.show();
+}
+
+function submitNote() {
+    const form = document.getElementById('addNoteForm');
+    const formData = new FormData(form);
+    formData.append('lead_id', currentLeadId);
+    
+    fetch('{% url "sales_process:add_note" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Not başarıyla eklendi', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('addNoteModal')).hide();
+            location.reload();
+        } else {
+            showNotification(data.message || 'Not eklenirken hata oluştu', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Bir hata oluştu', 'error');
+    });
+}
+
+function submitAppointment() {
+    const form = document.getElementById('appointmentForm');
+    const formData = new FormData(form);
+    formData.append('lead_id', currentLeadId);
+    
+    fetch('{% url "sales_process:schedule_appointment" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Randevu başarıyla oluşturuldu', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('appointmentModal')).hide();
+            location.reload();
+        } else {
+            showNotification(data.message || 'Randevu oluşturulurken hata oluştu', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Bir hata oluştu', 'error');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type) {
+    // Bootstrap toast veya alert kullanarak bildirim göster
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'error' ? 'alert-danger' : 'alert-info';
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

@@ -346,15 +346,20 @@
                                     {% endif %}
                                     
                                     <div class="lead-actions">
-                                        <button class="btn-action btn-call" onclick="makeCall('{{ lead.customer_phone }}', '{{ lead.id }}')" title="Ara">
+                                        <button class="btn-action btn-call" onclick="makeCall('{{ lead.customer_phone }}', '{{ lead.id }}')
+" title="Ara">
                                             <i class="fas fa-phone"></i>
                                         </button>
-                                        <button class="btn-action btn-whatsapp" onclick="sendWhatsApp('{{ lead.lead_id }}')" title="WhatsApp">
+                                        <button class="btn-action btn-whatsapp" onclick="sendWhatsApp('{{ lead.lead_id }}')
+" title="WhatsApp">
                                             <i class="fab fa-whatsapp"></i>
                                         </button>
-                                        <button class="btn-action btn-next" onclick="moveToNextStage('{{ lead.id }}')" title="Sonraki Aşama">
-                                            <i class="fas fa-arrow-right"></i>
+                                        {% if lead.current_stage.name == 'ihtiyac_analizi' %}
+                                        <button class="btn-action btn-next" onclick="moveToDaireSunumu('{{ lead.id }}')
+" title="Daire Sunumu Yapıldı">
+                                            <i class="fas fa-home"></i>
                                         </button>
+                                        {% endif %}
                                     </div>
                                     
                                     <div class="lead-meta">
@@ -505,22 +510,24 @@ function toggleFullscreen() {
 function makeCall(phoneNumber, leadId) {
     // Santral entegrasyonu ile arama yapma
     const makeCallUrl = '{% url "sales_process:make_call" lead_id=0 %}'.replace('0', leadId);
+    
+    // Form data olarak gönder (POST parametresi olarak)
+    const formData = new FormData();
+    formData.append('agent_extension', '100'); // Varsayılan dahili
+    
     fetch(makeCallUrl, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrftoken')
         },
-        body: JSON.stringify({
-            'phone': phoneNumber
-        })
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('success', 'Arama başlatıldı: ' + phoneNumber);
+            showNotification('success', data.message || 'Arama başlatıldı: ' + phoneNumber);
         } else {
-            showNotification('error', 'Arama başlatılamadı: ' + data.message);
+            showNotification('error', 'Arama başlatılamadı: ' + (data.error || data.message || 'Bilinmeyen hata'));
         }
     })
     .catch(error => {
@@ -559,6 +566,39 @@ function moveToNextStage(leadId) {
                 }, 1500);
             } else {
                 showNotification('error', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('error', 'Bir hata oluştu');
+        });
+    }
+}
+
+function moveToDaireSunumu(leadId) {
+    // Daire sunumu yapıldı onayı
+    if (confirm('Müşteriye daire sunumu yapıldı mı? Bu işlem lead\'i "Daire Sunumu" aşamasına geçirecek.')) {
+        const updateStageUrl = '{% url "sales_process:update_stage_ajax" %}';
+        fetch(updateStageUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                'lead_id': leadId,
+                'new_stage': 'daire_sunumu'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('success', 'Müşteri "Daire Sunumu" aşamasına geçirildi.');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showNotification('error', data.message || 'Aşama geçişi başarısız.');
             }
         })
         .catch(error => {

@@ -366,7 +366,7 @@ def lead_detail(request, lead_id):
     lead = get_object_or_404(Lead, lead_id=lead_id)
     notes = LeadNote.objects.filter(lead=lead).order_by('-created_at')
     tasks = Task.objects.filter(lead=lead).order_by('-created_at')
-    appointments = Appointment.objects.filter(lead=lead).order_by('-appointment_date')
+    appointments = Appointment.objects.filter(lead=lead).order_by('-scheduled_date')
     
     context = {
         'title': f'{lead.customer_name} - Detay',
@@ -485,8 +485,9 @@ def move_stage_ajax(request):
             lead=lead,
             from_stage=old_stage,
             to_stage=new_stage,
-            changed_by=request.user,
-            notes=f"Aşama değiştirildi: {old_stage.display_name} -> {new_stage.display_name}"
+            transition_type='manual',
+            performed_by=request.user,
+            reason=f"Aşama değiştirildi: {old_stage.name if old_stage else 'Başlangıç'} -> {new_stage.name}"
         )
         
         # Lead'i güncelle
@@ -559,7 +560,7 @@ def schedule_appointment(request):
     try:
         data = json.loads(request.body)
         lead_id = data.get('lead_id')
-        appointment_date = data.get('appointment_date')
+        appointment_date = data.get('scheduled_date')
         appointment_time = data.get('appointment_time')
         appointment_type = data.get('appointment_type', 'daire_sunumu')
         notes = data.get('notes', '')
@@ -575,7 +576,7 @@ def schedule_appointment(request):
         
         appointment = Appointment.objects.create(
             lead=lead,
-            appointment_date=appointment_datetime,
+            scheduled_date=appointment_datetime,
             appointment_type=appointment_type,
             notes=notes,
             created_by=request.user,
@@ -693,14 +694,20 @@ def make_call(request):
     try:
         data = json.loads(request.body)
         lead_id = data.get('lead_id')
+        phone = data.get('phone', '')
         
-        lead = get_object_or_404(Lead, id=lead_id)
+        # lead_id UUID formatında olduğu için lead_id field'ını kullan
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Telefon numarası kontrolü
+        if not phone:
+            phone = lead.customer_phone
         
         # Arama kaydı oluştur
         from .models import CallLog
         call_log = CallLog.objects.create(
             lead=lead,
-            phone_number=lead.customer_phone,
+            phone_number=phone,
             call_type='outbound',
             initiated_by=request.user,
             status='initiated'
@@ -709,21 +716,27 @@ def make_call(request):
         # Sistem notu ekle
         LeadNote.objects.create(
             lead=lead,
-            note=f"Müşteri arandı: {lead.customer_phone}",
+            note=f"Müşteri arandı: {phone}",
             created_by=request.user,
             note_type='call'
         )
         
         return JsonResponse({
             'success': True,
-            'message': 'Arama başlatıldı.',
-            'call_id': call_log.id
+            'message': 'Arama başarıyla başlatıldı.',
+            'call_id': call_log.id,
+            'phone_number': phone
         })
         
+    except Lead.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Lead bulunamadı.'
+        })
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': str(e)
+            'message': f'Arama başlatılırken hata oluştu: {str(e)}'
         })
 
 
@@ -785,8 +798,9 @@ def update_stage_ajax(request):
             lead=lead,
             from_stage=old_stage,
             to_stage=new_stage,
-            changed_by=request.user,
-            notes=f"Aşama güncellendi: {old_stage.display_name} -> {new_stage.display_name}"
+            transition_type='manual',
+            reason=f"Aşama güncellendi: {old_stage.display_name} -> {new_stage.display_name}",
+            performed_by=request.user
         )
         
         # Lead'i güncelle
@@ -797,7 +811,8 @@ def update_stage_ajax(request):
         # Sistem notu ekle
         LeadNote.objects.create(
             lead=lead,
-            note=f"Aşama güncellendi: {old_stage.display_name} -> {new_stage.display_name}",
+            title="Aşama Güncellendi",
+            content=f"Aşama güncellendi: {old_stage.display_name} -> {new_stage.display_name}",
             created_by=request.user,
             note_type='system'
         )

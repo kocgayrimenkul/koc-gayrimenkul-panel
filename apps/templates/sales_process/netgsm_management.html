@@ -1,0 +1,527 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %} NetGSM Santral Yönetimi {% endblock %}
+
+{% block stylesheets %}
+<style>
+    .netgsm-card {
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        margin-bottom: 1.5rem;
+    }
+    
+    .netgsm-card-header {
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        color: #5a5c69;
+    }
+    
+    .netgsm-card-body {
+        padding: 1.25rem;
+    }
+    
+    .btn-netgsm {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        margin: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-netgsm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        color: white;
+    }
+    
+    .btn-danger-netgsm {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        margin: 0.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-danger-netgsm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        color: white;
+    }
+    
+    .form-control-netgsm {
+        border: 2px solid #e3e6f0;
+        border-radius: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        margin: 0.25rem 0;
+        transition: border-color 0.3s ease;
+    }
+    
+    .form-control-netgsm:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .status-online {
+        background-color: #28a745;
+        animation: pulse 2s infinite;
+    }
+    
+    .status-offline {
+        background-color: #dc3545;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .queue-stats {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin: 0.5rem 0;
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-phone-alt"></i> NetGSM Santral Yönetimi
+        </h1>
+        <div>
+            <button class="btn btn-netgsm" onclick="refreshQueueStats()">
+                <i class="fas fa-sync-alt"></i> Kuyruk Durumunu Yenile
+            </button>
+        </div>
+    </div>
+
+    <!-- Çağrı Yönetimi -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="netgsm-card">
+                <div class="netgsm-card-header">
+                    <i class="fas fa-phone"></i> Çağrı Başlatma
+                </div>
+                <div class="netgsm-card-body">
+                    <form id="makeCallForm">
+                        <div class="form-group">
+                            <label>Müşteri Numarası:</label>
+                            <input type="text" class="form-control form-control-netgsm" id="customerNumber" placeholder="05xxxxxxxxx" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Dahili Numara:</label>
+                            <input type="text" class="form-control form-control-netgsm" id="internalNumber" placeholder="101" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Çalma Süresi (saniye):</label>
+                            <input type="number" class="form-control form-control-netgsm" id="ringTimeout" value="30" min="10" max="120">
+                        </div>
+                        <button type="submit" class="btn btn-netgsm btn-block">
+                            <i class="fas fa-phone"></i> Çağrı Başlat
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="netgsm-card">
+                <div class="netgsm-card-header">
+                    <i class="fas fa-phone-slash"></i> Çağrı Kontrolü
+                </div>
+                <div class="netgsm-card-body">
+                    <form id="callControlForm">
+                        <div class="form-group">
+                            <label>Çağrı ID:</label>
+                            <input type="text" class="form-control form-control-netgsm" id="callId" placeholder="Çağrı ID'sini girin">
+                        </div>
+                        <div class="btn-group btn-block" role="group">
+                            <button type="button" class="btn btn-danger-netgsm" onclick="hangupCall()">
+                                <i class="fas fa-phone-slash"></i> Çağrıyı Sonlandır
+                            </button>
+                            <button type="button" class="btn btn-netgsm" onclick="muteCall()">
+                                <i class="fas fa-microphone-slash"></i> Sessize Al
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kuyruk Yönetimi -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="netgsm-card">
+                <div class="netgsm-card-header">
+                    <i class="fas fa-users"></i> Kuyruk Yönetimi
+                </div>
+                <div class="netgsm-card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Dahili Yönetimi</h6>
+                            <form id="agentManagementForm">
+                                <div class="form-group">
+                                    <label>Dahili Numara:</label>
+                                    <input type="text" class="form-control form-control-netgsm" id="agentExtension" placeholder="101">
+                                </div>
+                                <div class="form-group">
+                                    <label>Kuyruk Adı:</label>
+                                    <input type="text" class="form-control form-control-netgsm" id="queueName" placeholder="sales">
+                                </div>
+                                <div class="btn-group btn-block" role="group">
+                                    <button type="button" class="btn btn-netgsm" onclick="agentLogin()">
+                                        <i class="fas fa-sign-in-alt"></i> Giriş
+                                    </button>
+                                    <button type="button" class="btn btn-danger-netgsm" onclick="agentLogout()">
+                                        <i class="fas fa-sign-out-alt"></i> Çıkış
+                                    </button>
+                                </div>
+                                <button type="button" class="btn btn-netgsm btn-block mt-2" onclick="agentPause()">
+                                    <i class="fas fa-pause"></i> Duraklat/Devam Et
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Harici Numara Ekleme</h6>
+                            <form id="externalNumberForm">
+                                <div class="form-group">
+                                    <label>Harici Numara:</label>
+                                    <input type="text" class="form-control form-control-netgsm" id="externalNumber" placeholder="05xxxxxxxxx">
+                                </div>
+                                <div class="form-group">
+                                    <label>Kuyruk Adı:</label>
+                                    <input type="text" class="form-control form-control-netgsm" id="externalQueueName" placeholder="sales">
+                                </div>
+                                <button type="button" class="btn btn-netgsm btn-block" onclick="addExternalToQueue()">
+                                    <i class="fas fa-plus"></i> Kuyruğa Ekle
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="netgsm-card">
+                <div class="netgsm-card-header">
+                    <i class="fas fa-chart-bar"></i> Kuyruk İstatistikleri
+                </div>
+                <div class="netgsm-card-body" id="queueStatsContainer">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Çağrı Bağlama ve Yönlendirme -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="netgsm-card">
+                <div class="netgsm-card-header">
+                    <i class="fas fa-link"></i> Çağrı Bağlama
+                </div>
+                <div class="netgsm-card-body">
+                    <form id="linkCallsForm">
+                        <div class="form-group">
+                            <label>Birinci Çağrı ID:</label>
+                            <input type="text" class="form-control form-control-netgsm" id="firstCallId" placeholder="İlk çağrı ID">
+                        </div>
+                        <div class="form-group">
+                            <label>İkinci Çağrı ID:</label>
+                            <input type="text" class="form-control form-control-netgsm" id="secondCallId" placeholder="İkinci çağrı ID">
+                        </div>
+                        <button type="button" class="btn btn-netgsm btn-block" onclick="linkCalls()">
+                            <i class="fas fa-link"></i> Çağrıları Bağla
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="netgsm-card">
+                <div class="netgsm-card-header">
+                    <i class="fas fa-route"></i> Dinamik Yönlendirme
+                </div>
+                <div class="netgsm-card-body">
+                    <form id="dynamicRedirectForm">
+                        <div class="form-group">
+                            <label>Kaynak Numara:</label>
+                            <input type="text" class="form-control form-control-netgsm" id="sourceNumber" placeholder="05xxxxxxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label>Hedef Numara:</label>
+                            <input type="text" class="form-control form-control-netgsm" id="targetNumber" placeholder="05xxxxxxxxx">
+                        </div>
+                        <button type="button" class="btn btn-netgsm btn-block" onclick="dynamicRedirect()">
+                            <i class="fas fa-route"></i> Yönlendir
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Messages -->
+<div class="position-fixed" style="top: 20px; right: 20px; z-index: 1050;">
+    <div id="alertContainer"></div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+// CSRF Token
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Utility Functions
+function showAlert(message, type = 'success') {
+    const alertContainer = document.getElementById('alertContainer');
+    const alertId = 'alert-' + Date.now();
+    
+    const alertHtml = `
+        <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    `;
+    
+    alertContainer.insertAdjacentHTML('beforeend', alertHtml);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        const alert = document.getElementById(alertId);
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function makeApiRequest(url, data = {}) {
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message || 'İşlem başarılı', 'success');
+        } else {
+            showAlert(data.error || 'İşlem başarısız', 'danger');
+        }
+        return data;
+    })
+    .catch(error => {
+        showAlert('Bir hata oluştu: ' + error.message, 'danger');
+        throw error;
+    });
+}
+
+// Call Management Functions
+document.getElementById('makeCallForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const customerNumber = document.getElementById('customerNumber').value;
+    const internalNumber = document.getElementById('internalNumber').value;
+    const ringTimeout = document.getElementById('ringTimeout').value;
+    
+    makeApiRequest('/satis-surec/netgsm/originate/', {
+        customer_num: customerNumber,
+        internal_num: internalNumber,
+        ring_timeout: ringTimeout
+    });
+});
+
+function hangupCall() {
+    const callId = document.getElementById('callId').value;
+    if (!callId) {
+        showAlert('Çağrı ID gerekli', 'warning');
+        return;
+    }
+    
+    makeApiRequest('/satis-surec/netgsm/hangup/', {
+        call_id: callId
+    });
+}
+
+function muteCall() {
+    const callId = document.getElementById('callId').value;
+    if (!callId) {
+        showAlert('Çağrı ID gerekli', 'warning');
+        return;
+    }
+    
+    makeApiRequest('/satis-surec/netgsm/mute/', {
+        call_id: callId
+    });
+}
+
+function linkCalls() {
+    const firstCallId = document.getElementById('firstCallId').value;
+    const secondCallId = document.getElementById('secondCallId').value;
+    
+    if (!firstCallId || !secondCallId) {
+        showAlert('Her iki çağrı ID de gerekli', 'warning');
+        return;
+    }
+    
+    makeApiRequest('/satis-surec/netgsm/link/', {
+        first_call_id: firstCallId,
+        second_call_id: secondCallId
+    });
+}
+
+// Queue Management Functions
+function agentLogin() {
+    const extension = document.getElementById('agentExtension').value;
+    const queueName = document.getElementById('queueName').value;
+    
+    if (!extension || !queueName) {
+        showAlert('Dahili numara ve kuyruk adı gerekli', 'warning');
+        return;
+    }
+    
+    makeApiRequest('/satis-surec/netgsm/agent-login/', {
+        extension: extension,
+        queue_name: queueName
+    });
+}
+
+function agentLogout() {
+    const extension = document.getElementById('agentExtension').value;
+    const queueName = document.getElementById('queueName').value;
+    
+    if (!extension || !queueName) {
+        showAlert('Dahili numara ve kuyruk adı gerekli', 'warning');
+        return;
+    }
+    
+    makeApiRequest('/satis-surec/netgsm/agent-logout/', {
+        extension: extension,
+        queue_name: queueName
+    });
+}
+
+function agentPause() {
+    const extension = document.getElementById('agentExtension').value;
+    const queueName = document.getElementById('queueName').value;
+    
+    if (!extension || !queueName) {
+        showAlert('Dahili numara ve kuyruk adı gerekli', 'warning');
+        return;
+    }
+    
+    makeApiRequest('/satis-surec/netgsm/agent-pause/', {
+        extension: extension,
+        queue_name: queueName
+    });
+}
+
+function addExternalToQueue() {
+    const externalNumber = document.getElementById('externalNumber').value;
+    const queueName = document.getElementById('externalQueueName').value;
+    
+    if (!externalNumber || !queueName) {
+        showAlert('Harici numara ve kuyruk adı gerekli', 'warning');
+        return;
+    }
+    
+    makeApiRequest('/satis-surec/netgsm/add-external/', {
+        external_number: externalNumber,
+        queue_name: queueName
+    });
+}
+
+function dynamicRedirect() {
+    const sourceNumber = document.getElementById('sourceNumber').value;
+    const targetNumber = document.getElementById('targetNumber').value;
+    
+    if (!sourceNumber || !targetNumber) {
+        showAlert('Kaynak ve hedef numara gerekli', 'warning');
+        return;
+    }
+    
+    makeApiRequest('/satis-surec/netgsm/dynamic-redirect/', {
+        source_number: sourceNumber,
+        target_number: targetNumber
+    });
+}
+
+// Queue Statistics
+function refreshQueueStats() {
+    fetch('/satis-surec/netgsm/queue-stats/', {
+        method: 'GET',
+        headers: {
+            'X-CSrfToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const container = document.getElementById('queueStatsContainer');
+        
+        if (data.success && data.stats) {
+            let statsHtml = '';
+            
+            for (const [queueName, stats] of Object.entries(data.stats)) {
+                statsHtml += `
+                    <div class="queue-stats">
+                        <h6><i class="fas fa-users"></i> ${queueName}</h6>
+                        <small>
+                            <div><strong>Bekleyen:</strong> ${stats.waiting || 0}</div>
+                            <div><strong>Aktif Ajanlar:</strong> ${stats.active_agents || 0}</div>
+                            <div><strong>Toplam Ajanlar:</strong> ${stats.total_agents || 0}</div>
+                        </small>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = statsHtml || '<div class="text-muted">Kuyruk istatistiği bulunamadı</div>';
+        } else {
+            container.innerHTML = '<div class="text-danger">İstatistik yüklenemedi</div>';
+        }
+    })
+    .catch(error => {
+        document.getElementById('queueStatsContainer').innerHTML = '<div class="text-danger">Hata: ' + error.message + '</div>';
+    });
+}
+
+// Load queue stats on page load
+document.addEventListener('DOMContentLoaded', function() {
+    refreshQueueStats();
+    
+    // Auto refresh every 30 seconds
+    setInterval(refreshQueueStats, 30000);
+});
+</script>
+{% endblock javascripts %}

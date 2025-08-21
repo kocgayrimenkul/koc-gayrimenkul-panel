@@ -688,7 +688,7 @@ function completeCreditProcess(leadId) {
             },
             body: JSON.stringify({
                 lead_id: leadId,
-                new_stage: 'hizmet_tamamlandi'
+                new_stage: 'tapu_islemi'
             })
         })
         .then(response => response.json())

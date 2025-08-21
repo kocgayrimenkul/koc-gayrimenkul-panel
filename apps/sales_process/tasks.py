@@ -46,7 +46,8 @@ def check_overdue_tasks_periodic():
             if not existing_note:
                 LeadNote.objects.create(
                     lead=task.lead,
-                    note=(
+                    title="Geciken Görev Uyarısı",
+                    content=(
                         f"GECİKEN GÖREV: {task.title}\n"
                         f"Bitiş tarihi: {task.due_date.strftime('%d.%m.%Y %H:%M')}\n"
                         f"Gecikme süresi: {overdue_days} gün, {overdue_hours} saat"
@@ -114,7 +115,8 @@ def auto_follow_up_inactive_leads():
                 
                 LeadNote.objects.create(
                     lead=lead,
-                    note=(
+                    title="Otomatik Takip Görevi",
+                    content=(
                         f"Otomatik takip görevi oluşturuldu. "
                         f"Müşteri {inactive_days} gündür hareketsiz."
                     ),
@@ -342,7 +344,8 @@ def send_appointment_reminders():
             # Hatırlatma notu oluştur
             LeadNote.objects.create(
                 lead=appointment.lead,
-                note=(
+                title="Randevu Hatırlatması",
+                content=(
                     f"RANDEVU HATIRLATMASI: {appointment.get_appointment_type_display()}\n"
                     f"Tarih: {appointment.appointment_date.strftime('%d.%m.%Y %H:%M')}\n"
                     f"Lokasyon: {appointment.location or 'Belirtilmemiş'}"

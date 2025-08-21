@@ -858,7 +858,7 @@
 
         // WhatsApp gönderme
         function sendWhatsApp(leadId, messageType) {
-            fetch(`/sales/whatsapp/send/${leadId}/`, {
+            fetch(`{% url 'sales_process:send_whatsapp_message' 0 %}`.replace('0', leadId), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -880,13 +880,14 @@
 
         // Lead aşama güncelleme
         function updateLeadStage(leadId, newStage) {
-            fetch(`/sales/update-stage/${leadId}/`, {
+            fetch('{% url "sales_process:update_stage_ajax" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
                 },
                 body: JSON.stringify({
+                    lead_id: leadId,
                     new_stage: newStage
                 })
             })

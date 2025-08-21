@@ -76,7 +76,8 @@ class Command(BaseCommand):
                 if not existing_note:
                     LeadNote.objects.create(
                         lead=task.lead,
-                        note=note_text,
+                        title="Geciken Görev Uyarısı",
+                        content=note_text,
                         created_by=task.assigned_to,
                         note_type='warning'
                     )

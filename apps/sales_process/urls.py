@@ -47,6 +47,18 @@ urlpatterns = [
     path('update-call-notes/<int:call_id>/', netgsm_views.update_call_notes, name='update_call_notes'),
     path('export-call-logs/', netgsm_views.export_call_logs, name='export_call_logs'),
     
+    # NetGSM Santral API Endpoints
+    path('netgsm/hangup-call/', netgsm_views.hangup_call, name='hangup_call'),
+    path('netgsm/mute-call/', netgsm_views.mute_call, name='mute_call'),
+    path('netgsm/link-calls/', netgsm_views.link_calls, name='link_calls'),
+    path('netgsm/queue-stats/', netgsm_views.queue_stats, name='queue_stats'),
+    path('netgsm/agent-login/', netgsm_views.agent_login, name='agent_login'),
+    path('netgsm/agent-logout/', netgsm_views.agent_logout, name='agent_logout'),
+    path('netgsm/agent-pause/', netgsm_views.agent_pause, name='agent_pause'),
+    path('netgsm/add-external-number/', netgsm_views.add_external_number_to_queue, name='add_external_number_to_queue'),
+    path('netgsm/dynamic-redirect/', netgsm_views.dynamic_redirect, name='dynamic_redirect'),
+    path('netgsm/management/', netgsm_views.netgsm_management, name='netgsm_management'),
+    
     # Assignment Management
     path('assignment/', assignment_views.assignment_dashboard, name='assignment_dashboard'),
     path('assignment/list/', assignment_views.lead_assignment_list, name='lead_assignment_list'),

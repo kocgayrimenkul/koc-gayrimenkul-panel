@@ -159,7 +159,8 @@ class Command(BaseCommand):
                             # Atama notu ekle
                             LeadNote.objects.create(
                                 lead=lead,
-                                note=(
+                                title="Yeniden Atama",
+                                content=(
                                     f"Yeniden atama: {old_staff.get_full_name() if old_staff else 'Atanmamış'} "
                                     f"→ {staff.get_full_name()}"
                                 ),
@@ -202,7 +203,8 @@ class Command(BaseCommand):
                         # Atama notu ekle
                         LeadNote.objects.create(
                             lead=lead,
-                            note=f"Otomatik atama: {target_staff.get_full_name()}",
+                            title="Otomatik Atama",
+                            content=f"Otomatik atama: {target_staff.get_full_name()}",
                             created_by=target_staff,
                             note_type='system'
                         )

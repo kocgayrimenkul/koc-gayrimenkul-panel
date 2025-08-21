@@ -39,6 +39,15 @@ def lead_created_handler(sender, instance, created, **kwargs):
                 status='pending'
             )
         
+        # Tapu görevleri oluşturuldu notu
+        LeadNote.objects.create(
+            lead=instance,
+            title="Tapu Devri Görevleri Oluşturuldu",
+            content=f"Tapu tarihi ({instance.deed_transfer_date.strftime('%d.%m.%Y')}) için otomatik görevler oluşturuldu.",
+            created_by=instance.assigned_staff,
+            note_type='system'
+        )
+        
         # Sistem notu ekle
         LeadNote.objects.create(
             lead=instance,
@@ -46,6 +55,88 @@ def lead_created_handler(sender, instance, created, **kwargs):
             content=f"Yeni müşteri sisteme eklendi. İlk arama görevi oluşturuldu.",
             created_by=instance.assigned_staff or User.objects.filter(is_staff=True).first(),
             note_type='system'
+        )
+    
+    # Tapu tarihi değişikliği kontrolü (hem yeni hem güncelleme için)
+    if instance.deed_transfer_date and instance.assigned_staff:
+        # Mevcut tapu görevlerini kontrol et
+        existing_deed_tasks = Task.objects.filter(
+            lead=instance,
+            task_type='deed_transfer',
+            status__in=['pending', 'in_progress']
+        )
+        
+        # Eğer tapu tarihi değiştiyse, eski görevleri iptal et ve yenilerini oluştur
+        if existing_deed_tasks.exists():
+            # Eski görevleri iptal et
+            existing_deed_tasks.update(status='cancelled')
+            
+            # İptal notu ekle
+            LeadNote.objects.create(
+                lead=instance,
+                title="Tapu Görevleri Güncellendi",
+                content="Tapu tarihi değiştiği için eski görevler iptal edildi ve yenileri oluşturuldu.",
+                created_by=instance.assigned_staff,
+                note_type='system'
+            )
+        
+        # Tapu tarihinden 7 gün önce hatırlatma görevi
+        reminder_date = timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time()) - timedelta(days=7)
+        if reminder_date > timezone.now():
+            Task.objects.create(
+                lead=instance,
+                title=f"{instance.customer_name} - Tapu Devri Hatırlatması",
+                description=f"Tapu devri tarihi yaklaşıyor. Tarih: {instance.deed_transfer_date.strftime('%d.%m.%Y')}",
+                task_type='reminder',
+                priority=4,
+                due_date=reminder_date,
+                assigned_to=instance.assigned_staff,
+                status='pending',
+                is_automatic=True
+            )
+        
+        # Tapu tarihinden 1 gün önce son kontrol görevi
+        final_check_date = timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time()) - timedelta(days=1)
+        if final_check_date > timezone.now():
+            Task.objects.create(
+                lead=instance,
+                title=f"{instance.customer_name} - Tapu Devri Son Kontrol",
+                description=f"Tapu devri için son kontroller yapılmalı. Belgeler hazır mı? Tarih: {instance.deed_transfer_date.strftime('%d.%m.%Y')}",
+                task_type='deed_transfer',
+                priority=5,
+                due_date=final_check_date,
+                assigned_to=instance.assigned_staff,
+                status='pending',
+                is_automatic=True
+            )
+        
+        # Tapu tarihi günü görevi
+        deed_day = timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time().replace(hour=9))
+        if deed_day > timezone.now():
+            Task.objects.create(
+                lead=instance,
+                title=f"{instance.customer_name} - Tapu Devri",
+                description=f"Bugün tapu devri gerçekleştirilecek. Müşteri ile iletişime geçin.",
+                task_type='deed_transfer',
+                priority=5,
+                due_date=deed_day,
+                assigned_to=instance.assigned_staff,
+                status='pending',
+                is_automatic=True
+            )
+        
+        # Tapu tarihinden 1 gün sonra takip görevi
+        follow_up_date = timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time()) + timedelta(days=1)
+        Task.objects.create(
+            lead=instance,
+            title=f"{instance.customer_name} - Tapu Devri Takibi",
+            description=f"Tapu devri tamamlandı mı? Müşteri memnuniyeti kontrol edilmeli.",
+            task_type='follow_up',
+            priority=3,
+            due_date=follow_up_date,
+            assigned_to=instance.assigned_staff,
+            status='pending',
+            is_automatic=True
         )
 
 
@@ -127,6 +218,87 @@ def stage_transition_handler(sender, instance, created, **kwargs):
                 assigned_to=lead.assigned_staff,
                 status='pending'
             )
+            
+        elif new_stage.name == 'hizmet_tamamlandi':
+            # Hizmet tamamlandığında otomatik memnuniyet anketi gönderimi
+            from .whatsapp_service import WhatsAppService
+            
+            # Memnuniyet anketi gönderilmemiş ise gönder
+            if not lead.satisfaction_survey_sent:
+                try:
+                    whatsapp_service = WhatsAppService()
+                    
+                    # Memnuniyet anketi mesajı
+                    survey_message = f"""Merhaba {lead.customer_name},
+
+Koç Gayrimenkul olarak size verdiğimiz hizmet tamamlanmıştır. 🏠
+
+Memnuniyetinizi öğrenmek için kısa bir anket hazırladık:
+
+1️⃣ Hizmetimizden memnun kaldınız mı?
+2️⃣ Personelimizin yaklaşımını nasıl değerlendiriyorsunuz?
+3️⃣ Bizi arkadaşlarınıza tavsiye eder misiniz?
+
+Görüşlerinizi bizimle paylaşırsanız çok memnun oluruz.
+
+Teşekkürler! 🙏
+Koç Gayrimenkul Ekibi"""
+                    
+                    # WhatsApp mesajı gönder
+                    result = whatsapp_service.send_message(
+                        phone=lead.phone,
+                        message=survey_message
+                    )
+                    
+                    if result.get('success'):
+                        # Memnuniyet anketi gönderildi olarak işaretle
+                        lead.satisfaction_survey_sent = True
+                        lead.save(update_fields=['satisfaction_survey_sent'])
+                        
+                        # Sistem notu ekle
+                        LeadNote.objects.create(
+                            lead=lead,
+                            note="Otomatik memnuniyet anketi WhatsApp ile gönderildi.",
+                            note_type='system',
+                            created_by=None
+                        )
+                        
+                        # Takip görevi oluştur
+                        Task.objects.create(
+                            lead=lead,
+                            title=f"{lead.customer_name} - Memnuniyet Anketi Takibi",
+                            description="Müşterinin memnuniyet anketine verdiği yanıtların takip edilmesi.",
+                            task_type='call',
+                            priority=2,
+                            due_date=timezone.now() + timedelta(days=3),
+                            assigned_to=lead.assigned_staff,
+                            status='pending'
+                        )
+                    else:
+                        # Hata durumunda sistem notu
+                        LeadNote.objects.create(
+                            lead=lead,
+                            note=f"Memnuniyet anketi gönderiminde hata: {result.get('error', 'Bilinmeyen hata')}",
+                            note_type='system',
+                            created_by=None
+                        )
+                        
+                except Exception as e:
+                    # Hata durumunda sistem notu
+                    LeadNote.objects.create(
+                        lead=lead,
+                        note=f"Memnuniyet anketi gönderiminde sistem hatası: {str(e)}",
+                        note_type='system',
+                        created_by=None
+                    )
+            else:
+                # Zaten gönderilmiş ise bilgi notu
+                LeadNote.objects.create(
+                    lead=lead,
+                    note="Memnuniyet anketi daha önce gönderilmiş.",
+                    note_type='system',
+                    created_by=None
+                )
             
         elif new_stage.name == 'kredi_islemleri':
             # Kredi onayı takibi

@@ -395,16 +395,21 @@
         <div class="kanban-board" id="kanban-board">
             {% for stage_data in stages_with_leads %}
             <div class="kanban-column">
-                <div class="column-header">
-                    <span>{{ stage_data.stage.display_name }}</span>
-                    <span class="column-count">{{ stage_data.leads|length }}</span>
+                <div class="kanban-header">
+                    <span class="kanban-title">{{ stage_data.stage.display_name }}</span>
+                    <span class="kanban-count">{{ stage_data.leads|length }}</span>
                 </div>
-                <div class="column-content">
+                <div class="kanban-content">
                     {% for lead in stage_data.leads %}
                     <div class="lead-card" data-lead-id="{{ lead.id }}">
-                        <div class="customer-name">{{ lead.customer_name }}</div>
-                        <div class="customer-phone">
-                            <i class="fas fa-phone"></i> {{ lead.customer_phone }}
+                        <div class="lead-header">
+                            <div>
+                                <h5 class="lead-name">{{ lead.customer_name }}</h5>
+                                <div class="lead-phone">
+                                    <i class="fas fa-phone"></i> {{ lead.customer_phone }}
+                                </div>
+                            </div>
+                            <span class="lead-priority priority-medium">{{ lead.priority|default:"Orta" }}</span>
                         </div>
                         
                         <div class="property-info">
@@ -412,33 +417,34 @@
                             {{ lead.property_location }}
                         </div>
                         
-                        <div class="budget-info">
+                        <div class="budget-info" style="margin: 10px 0; color: #6c757d; font-size: 0.9rem;">
                             <i class="fas fa-money-bill-wave"></i>
                             {{ lead.budget_min|floatformat:0 }} - {{ lead.budget_max|floatformat:0 }} TL
                         </div>
                         
                         {% if lead.notes %}
-                        <div class="lead-notes">
+                        <div class="lead-notes" style="margin: 10px 0; font-size: 0.85rem; color: #6c757d; font-style: italic;">
                             <i class="fas fa-sticky-note"></i>
                             {{ lead.notes|truncatechars:50 }}
                         </div>
                         {% endif %}
                         
-                        <div class="card-actions">
-                            <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
+                        <div class="lead-actions">
+                            <a href="tel:{{ lead.customer_phone }}" class="btn-action btn-call">
                                 <i class="fas fa-phone"></i> Ara
                             </a>
-                            <button class="action-btn btn-whatsapp" onclick="sendWhatsApp('{{ lead.id }}')">
+                            <button class="btn-action btn-whatsapp" onclick="sendWhatsApp('{{ lead.id }}')">
                                 <i class="fab fa-whatsapp"></i> WhatsApp
                             </button>
-                            {% if stage_data.stage.name != 'sozlesme_yapildi' %}
-                            <button class="action-btn btn-next" onclick="moveToNextStage('{{ lead.id }}')">
-                                <i class="fas fa-arrow-right"></i> İlerlet
+                            {% if stage_data.stage.name == 'ihtiyac_analizi' %}
+                            <button class="btn-action btn-next" onclick="moveToDaireSunumu('{{ lead.id }}')">
+                                <i class="fas fa-home"></i> Daire Sunumu
                             </button>
+
                             {% endif %}
                         </div>
                         
-                        <div class="card-meta">
+                        <div class="lead-meta">
                             <span class="assigned-staff">{{ lead.assigned_staff.get_full_name }}</span>
                             <span class="stage-date">{{ lead.stage_updated_at|date:"d.m.Y H:i" }}</span>
                         </div>
@@ -455,6 +461,39 @@
         </div>
     </div>
 
+    <!-- Lead Detay Modal -->
+    <div class="modal fade" id="leadDetailModal" tabindex="-1" role="dialog" aria-labelledby="leadDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="leadDetailModalLabel">
+                        <i class="fas fa-user-circle mr-2"></i>
+                        Lead Detayları
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="leadDetailContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Yükleniyor...</span>
+                        </div>
+                        <p class="mt-2">Lead bilgileri yükleniyor...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>
+                        Kapat
+                    </button>
+                    <button type="button" class="btn btn-primary" id="editLeadBtn" style="display: none;">
+                        <i class="fas fa-edit mr-1"></i>
+                        Düzenle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -466,35 +505,25 @@
 
         // WhatsApp gönderme
         function sendWhatsApp(leadId) {
-            fetch(`/sales/whatsapp/send/${leadId}/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    message_type: 'general'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('success', 'WhatsApp mesajı gönderildi!');
-                } else {
-                    showNotification('error', 'WhatsApp mesajı gönderilemedi!');
-                }
-            });
+            // WhatsApp mesaj gönderme modal'ı aç
+            // Bu kısım modal oluşturulduktan sonra tamamlanacak
+            showNotification('info', 'WhatsApp özelliği yakında aktif olacak');
         }
 
         // Sonraki aşamaya taşıma
         function moveToNextStage(leadId) {
             if (confirm('Bu müşteriyi sonraki aşamaya taşımak istediğinizden emin misiniz?')) {
-                fetch(`/sales/move-to-next-stage/${leadId}/`, {
+                const moveStageUrl = '{% url "sales_process:move_stage_ajax" %}';
+                fetch(moveStageUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': getCookie('csrftoken')
-                    }
+                    },
+                    body: JSON.stringify({
+                        'lead_id': leadId,
+                        'action': 'next_stage'
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -506,6 +535,39 @@
                     } else {
                         showNotification('error', data.message || 'İşlem başarısız!');
                     }
+                });
+            }
+        }
+
+        // Daire sunumu yapıldı - İhtiyaç Analizi'nden Daire Sunumu'na geçiş
+        function moveToDaireSunumu(leadId) {
+            if (confirm('Müşteriye daire sunumu yapıldı mı? Bu işlem lead\'i "Daire Sunumu" aşamasına geçirecek.')) {
+                const updateStageUrl = '{% url "sales_process:update_stage_ajax" %}';
+                fetch(updateStageUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        'lead_id': leadId,
+                        'new_stage': 'daire_sunumu'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', 'Müşteri "Daire Sunumu" aşamasına geçirildi.');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showNotification('error', data.message || 'Aşama geçişi başarısız.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('error', 'Bir hata oluştu');
                 });
             }
         }
@@ -549,15 +611,167 @@
             }, 5000);
         }
 
+        // Lead detay modal'ını aç
+        function openLeadModal(leadId) {
+            // Modal'ı göster
+            const modal = new bootstrap.Modal(document.getElementById('leadDetailModal'));
+            modal.show();
+            
+            // Loading state'i göster
+            document.getElementById('leadDetailContent').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                    <p class="mt-2">Lead bilgileri yükleniyor...</p>
+                </div>
+            `;
+            
+            // Lead detaylarını getir
+            const leadDetailUrl = '{% url "sales_process:lead_detail_ajax" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', leadId);
+            fetch(leadDetailUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayLeadDetails(data.lead);
+                        document.getElementById('editLeadBtn').style.display = 'inline-block';
+                        document.getElementById('editLeadBtn').onclick = () => {
+                            window.location.href = '{% url "sales_process:lead_detail" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', leadId);
+                        };
+                    } else {
+                        document.getElementById('leadDetailContent').innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                ${data.message || 'Lead bilgileri yüklenirken hata oluştu.'}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('leadDetailContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Bir hata oluştu. Lütfen tekrar deneyin.
+                        </div>
+                    `;
+                });
+        }
+
+        // Lead detaylarını modal içinde göster
+        function displayLeadDetails(lead) {
+            const content = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="fas fa-user mr-2"></i>Müşteri Bilgileri</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Ad Soyad:</strong> ${lead.customer_name}</p>
+                                <p><strong>Telefon:</strong> 
+                                    <a href="tel:${lead.customer_phone}" class="text-primary">
+                                        <i class="fas fa-phone mr-1"></i>${lead.customer_phone}
+                                    </a>
+                                </p>
+                                <p><strong>E-posta:</strong> 
+                                    <a href="mailto:${lead.customer_email}" class="text-primary">
+                                        <i class="fas fa-envelope mr-1"></i>${lead.customer_email || 'Belirtilmemiş'}
+                                    </a>
+                                </p>
+                                <p><strong>Kaynak:</strong> 
+                                    <span class="badge bg-info">${lead.source_display}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="fas fa-building mr-2"></i>Emlak Bilgileri</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Emlak Türü:</strong> ${lead.property_type_display}</p>
+                                <p><strong>Bütçe:</strong> 
+                                    <span class="text-success fw-bold">
+                                        <i class="fas fa-lira-sign mr-1"></i>${lead.budget_display || 'Belirtilmemiş'}
+                                    </span>
+                                </p>
+                                <p><strong>Lokasyon:</strong> ${lead.location || 'Belirtilmemiş'}</p>
+                                <p><strong>Durum:</strong> 
+                                    <span class="badge ${lead.status === 'active' ? 'bg-success' : 'bg-secondary'}">
+                                        ${lead.status_display}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="fas fa-chart-line mr-2"></i>Süreç Bilgileri</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <p><strong>Mevcut Aşama:</strong> 
+                                            <span class="badge bg-primary">${lead.current_stage_display}</span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p><strong>Atanan Personel:</strong> ${lead.assigned_staff || 'Atanmamış'}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p><strong>Oluşturma Tarihi:</strong> ${lead.created_at}</p>
+                                    </div>
+                                </div>
+                                ${lead.notes ? `
+                                    <div class="mt-3">
+                                        <strong>Notlar:</strong>
+                                        <div class="bg-light p-3 rounded mt-2">
+                                            ${lead.notes}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-center">
+                            <button class="btn btn-success me-2" onclick="window.location.href='tel:${lead.customer_phone}'">
+                                <i class="fas fa-phone me-1"></i>Ara
+                            </button>
+                            <button class="btn btn-success me-2" onclick="sendWhatsApp(${lead.id})">
+                                <i class="fab fa-whatsapp me-1"></i>WhatsApp
+                            </button>
+                            <button class="btn btn-primary" onclick="moveToNextStage(${lead.id})">
+                                <i class="fas fa-arrow-right me-1"></i>Sonraki Aşama
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('leadDetailContent').innerHTML = content;
+            document.getElementById('leadDetailModalLabel').innerHTML = `
+                <i class="fas fa-user-circle me-2"></i>
+                ${lead.customer_name} - Lead Detayları
+            `;
+        }
+
         // Lead kartlarına tıklama olayı
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.lead-card').forEach(card => {
                 card.addEventListener('click', function(e) {
                     // Buton tıklamalarını hariç tut
-                    if (!e.target.closest('.card-actions')) {
+                    if (!e.target.closest('.lead-actions')) {
                         const leadId = this.dataset.leadId;
-                        // Lead detay sayfasına yönlendir
-                        window.open(`/sales/lead/${leadId}/`, '_blank');
+                        // Modal aç
+                        openLeadModal(leadId);
                     }
                 });
             });

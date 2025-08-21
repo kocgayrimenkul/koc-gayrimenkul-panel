@@ -109,7 +109,8 @@ class Command(BaseCommand):
                         # Bilgi notu ekle
                         LeadNote.objects.create(
                             lead=lead,
-                            note=(
+                            title="Otomatik Takip Görevi",
+                            content=(
                                 f"Otomatik takip görevi oluşturuldu. "
                                 f"Müşteri {inactive_days} gündür hareketsiz."
                             ),
