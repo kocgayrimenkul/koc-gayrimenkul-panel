@@ -1,0 +1,481 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Arama Geçmişi{% endblock %}
+
+{% block extra_css %}
+<style>
+.call-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+.call-status.answered { background-color: #d4edda; color: #155724; }
+.call-status.missed { background-color: #f8d7da; color: #721c24; }
+.call-status.busy { background-color: #fff3cd; color: #856404; }
+.call-status.no-answer { background-color: #e2e3e5; color: #383d41; }
+
+.call-type {
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+}
+.call-type.incoming { background-color: #cce5ff; color: #004085; }
+.call-type.outgoing { background-color: #d1ecf1; color: #0c5460; }
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.filter-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.call-row:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.duration-badge {
+    background-color: #6c757d;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-phone"></i> Arama Geçmişi</h2>
+                <div>
+                    <a href="{% url 'sales_process:export_call_logs' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" 
+                       class="btn btn-success me-2">
+                        <i class="fas fa-download"></i> Excel İndir
+                    </a>
+                    <a href="{% url 'sales_process:call_statistics' %}" class="btn btn-info">
+                        <i class="fas fa-chart-bar"></i> İstatistikler
+                    </a>
+                </div>
+            </div>
+
+            <!-- İstatistik Kartları -->
+            <div class="row mb-4">
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <h4>{{ stats.total_calls }}</h4>
+                        <small>Toplam Arama</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <h4>{{ stats.answered_calls }}</h4>
+                        <small>Cevaplanmış</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <h4>{{ stats.missed_calls }}</h4>
+                        <small>Kaçırılmış</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <h4>{{ stats.busy_calls }}</h4>
+                        <small>Meşgul</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <h4>{{ stats.total_duration|floatformat:0 }}s</h4>
+                        <small>Toplam Süre</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stats-card text-center">
+                        <h4>{{ stats.avg_duration|floatformat:0 }}s</h4>
+                        <small>Ort. Süre</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtreler -->
+            <div class="filter-card">
+                <form method="get" class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Arama Tipi</label>
+                        <select name="call_type" class="form-select">
+                            <option value="">Tümü</option>
+                            <option value="incoming" {% if call_type == 'incoming' %}selected{% endif %}>Gelen</option>
+                            <option value="outgoing" {% if call_type == 'outgoing' %}selected{% endif %}>Giden</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Durum</label>
+                        <select name="status" class="form-select">
+                            <option value="">Tümü</option>
+                            <option value="answered" {% if status == 'answered' %}selected{% endif %}>Cevaplanmış</option>
+                            <option value="missed" {% if status == 'missed' %}selected{% endif %}>Kaçırılmış</option>
+                            <option value="busy" {% if status == 'busy' %}selected{% endif %}>Meşgul</option>
+                            <option value="no_answer" {% if status == 'no_answer' %}selected{% endif %}>Cevapsız</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Başlangıç</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Bitiş</label>
+                        <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Telefon/İsim Ara</label>
+                        <input type="text" name="phone_search" class="form-control" 
+                               placeholder="Telefon numarası veya isim" value="{{ phone_search }}">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary d-block w-100">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Arama Listesi -->
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tarih/Saat</th>
+                                    <th>Telefon</th>
+                                    <th>Müşteri</th>
+                                    <th>Tip</th>
+                                    <th>Durum</th>
+                                    <th>Süre</th>
+                                    <th>Agent</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for call in page_obj %}
+                                <tr class="call-row" onclick="showCallDetail('{{ call.id }}')">
+                                    <td>
+                                        <div class="fw-bold">{{ call.start_time|date:"d.m.Y" }}</div>
+                                        <small class="text-muted">{{ call.start_time|time:"H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">{{ call.phone_number }}</span>
+                                        {% if call.lead %}
+                                            <br><small class="text-success">Kayıtlı müşteri</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if call.lead %}
+                                            <a href="{% url 'sales_process:lead_detail' call.lead.id %}" 
+                                               class="text-decoration-none" onclick="event.stopPropagation()">
+                                                {{ call.lead.customer_name }}
+                                            </a>
+                                            <br><small class="text-muted">{{ call.lead.get_current_stage_display }}</small>
+                                        {% else %}
+                                            <span class="text-muted">Bilinmiyor</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="call-type {{ call.call_type }}">
+                                            {% if call.call_type == 'incoming' %}
+                                                <i class="fas fa-arrow-down"></i> Gelen
+                                            {% else %}
+                                                <i class="fas fa-arrow-up"></i> Giden
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="call-status {{ call.status }}">
+                                            {% if call.status == 'answered' %}
+                                                <i class="fas fa-check"></i> Cevaplanmış
+                                            {% elif call.status == 'missed' %}
+                                                <i class="fas fa-times"></i> Kaçırılmış
+                                            {% elif call.status == 'busy' %}
+                                                <i class="fas fa-phone-slash"></i> Meşgul
+                                            {% else %}
+                                                <i class="fas fa-question"></i> Cevapsız
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if call.duration %}
+                                            <span class="duration-badge">{{ call.duration }}s</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if call.agent_extension %}
+                                            <span class="badge bg-info">{{ call.agent_extension }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" onclick="event.stopPropagation()">
+                                            <button class="btn btn-outline-primary" 
+                                                    onclick="showCallDetail('{{ call.id }}')" 
+                                                    title="Detay">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if call.lead %}
+                                                <button class="btn btn-outline-success" 
+                                                        onclick="makeCall('{{ call.lead.id }}')" 
+                                                        title="Tekrar Ara">
+                                                    <i class="fas fa-phone"></i>
+                                                </button>
+                                            {% endif %}
+                                            <button class="btn btn-outline-info" 
+                                                    onclick="addCallNote('{{ call.id }}')" 
+                                                    title="Not Ekle">
+                                                <i class="fas fa-sticky-note"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <i class="fas fa-phone-slash fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">Arama kaydı bulunamadı</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sayfalama -->
+            {% if page_obj.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Arama Detay Modal -->
+<div class="modal fade" id="callDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Arama Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="callDetailContent">
+                <!-- AJAX ile yüklenecek -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Not Ekleme Modal -->
+<div class="modal fade" id="callNoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Arama Notu Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="callNoteForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Not</label>
+                        <textarea name="notes" class="form-control" rows="4" 
+                                  placeholder="Arama ile ilgili notlarınızı yazın..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Arama Başlatma Modal -->
+<div class="modal fade" id="makeCallModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Arama Başlat</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="makeCallForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Agent Dahili</label>
+                        <input type="text" name="agent_extension" class="form-control" 
+                               placeholder="Dahili numara (opsiyonel)">
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Arama başlatıldıktan sonra telefonunuz çalacaktır.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-phone"></i> Ara
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentCallId = null;
+let currentLeadId = null;
+
+function showCallDetail(callId) {
+    currentCallId = callId;
+    
+    // Modal içeriğini yükle
+    $('#callDetailContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>');
+    $('#callDetailModal').modal('show');
+    
+    $.get(`/sales-process/call-detail/${callId}/`)
+        .done(function(data) {
+            $('#callDetailContent').html(data);
+        })
+        .fail(function() {
+            $('#callDetailContent').html('<div class="alert alert-danger">Detaylar yüklenemedi.</div>');
+        });
+}
+
+function addCallNote(callId) {
+    currentCallId = callId;
+    $('#callNoteForm')[0].reset();
+    $('#callNoteModal').modal('show');
+}
+
+function makeCall(leadId) {
+    currentLeadId = leadId;
+    $('#makeCallForm')[0].reset();
+    $('#makeCallModal').modal('show');
+}
+
+// Not kaydetme
+$('#callNoteForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    $.ajax({
+        url: `/sales-process/update-call-notes/${currentCallId}/`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            if (response.success) {
+                toastr.success(response.message);
+                $('#callNoteModal').modal('hide');
+                location.reload();
+            } else {
+                toastr.error(response.error);
+            }
+        },
+        error: function() {
+            toastr.error('Bir hata oluştu');
+        }
+    });
+});
+
+// Arama başlatma
+$('#makeCallForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    $.ajax({
+        url: `/sales-process/make-call/${currentLeadId}/`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            if (response.success) {
+                toastr.success(response.message);
+                $('#makeCallModal').modal('hide');
+            } else {
+                toastr.error(response.error);
+            }
+        },
+        error: function() {
+            toastr.error('Arama başlatılamadı');
+        }
+    });
+});
+
+// Otomatik yenileme (30 saniyede bir)
+setInterval(function() {
+    if (!$('.modal').hasClass('show')) {
+        location.reload();
+    }
+}, 30000);
+</script>
+{% endblock %}

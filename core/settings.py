@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'apps.careers',          # Kariyer yönetimi
     'apps.contact',          # İletişim yönetimi
     'apps.team',             # Ekip yönetimi
+    'apps.sales_process',    # Satış Süreç Yönetimi
 ]
 
 # Django 3.2+ için modellerdeki otomatik primary key tipi ayarı
@@ -257,6 +258,28 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+# WhatsApp Business Cloud API Settings
+WHATSAPP_ACCESS_TOKEN = env('WHATSAPP_ACCESS_TOKEN', default='')
+WHATSAPP_PHONE_NUMBER_ID = env('WHATSAPP_PHONE_NUMBER_ID', default='')
+WHATSAPP_BUSINESS_ACCOUNT_ID = env('WHATSAPP_BUSINESS_ACCOUNT_ID', default='')
+WHATSAPP_WEBHOOK_VERIFY_TOKEN = env('WHATSAPP_WEBHOOK_VERIFY_TOKEN', default='koc_gayrimenkul_webhook_token')
+WHATSAPP_API_VERSION = env('WHATSAPP_API_VERSION', default='v18.0')
+WHATSAPP_API_BASE_URL = f'https://graph.facebook.com/{WHATSAPP_API_VERSION}'
+
+# Celery Configuration (for async tasks)
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
+# Netgsm API Settings (for call center integration)
+NETGSM_USERNAME = env('NETGSM_USERNAME', default='')
+NETGSM_PASSWORD = env('NETGSM_PASSWORD', default='')
+NETGSM_API_KEY = env('NETGSM_API_KEY', default='')
+NETGSM_WEBHOOK_SECRET = env('NETGSM_WEBHOOK_SECRET', default='netgsm_webhook_secret')
 
 #############################################################
 #############################################################

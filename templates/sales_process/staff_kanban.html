@@ -1,0 +1,705 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %}Personel Kanban Paneli{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.css">
+<style>
+.kanban-board {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+    min-height: 70vh;
+}
+
+.kanban-column {
+    min-width: 300px;
+    max-width: 350px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.kanban-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.kanban-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.kanban-count {
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.kanban-cards {
+    min-height: 400px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.lead-card {
+    background: white;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    cursor: move;
+    transition: all 0.3s ease;
+    border-left: 4px solid #007bff;
+}
+
+.lead-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.lead-card.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+.lead-header {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.lead-name {
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.lead-phone {
+    color: #666;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.lead-priority {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-weight: bold;
+    margin-left: auto;
+}
+
+.priority-high { background: #dc3545; color: white; }
+.priority-medium { background: #ffc107; color: #000; }
+.priority-low { background: #28a745; color: white; }
+
+.lead-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.lead-date {
+    font-size: 0.75rem;
+}
+
+.lead-actions {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.action-btn {
+    padding: 0.25rem 0.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-view { background: #17a2b8; color: white; }
+.btn-edit { background: #ffc107; color: #000; }
+.btn-call { background: #28a745; color: white; }
+.btn-whatsapp { background: #25d366; color: white; }
+
+.action-btn:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+.stage-new { border-left-color: #6c757d; }
+.stage-contacted { border-left-color: #17a2b8; }
+.stage-qualified { border-left-color: #ffc107; }
+.stage-proposal { border-left-color: #fd7e14; }
+.stage-negotiation { border-left-color: #e83e8c; }
+.stage-closed-won { border-left-color: #28a745; }
+.stage-closed-lost { border-left-color: #dc3545; }
+
+.kanban-column.new .kanban-count { background: #6c757d; }
+.kanban-column.contacted .kanban-count { background: #17a2b8; }
+.kanban-column.qualified .kanban-count { background: #ffc107; color: #000; }
+.kanban-column.proposal .kanban-count { background: #fd7e14; }
+.kanban-column.negotiation .kanban-count { background: #e83e8c; }
+.kanban-column.closed-won .kanban-count { background: #28a745; }
+.kanban-column.closed-lost .kanban-count { background: #dc3545; }
+
+.drop-zone {
+    min-height: 50px;
+    border: 2px dashed #dee2e6;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+    transition: all 0.3s ease;
+}
+
+.drop-zone.drag-over {
+    border-color: #007bff;
+    background: rgba(0, 123, 255, 0.1);
+    color: #007bff;
+}
+
+.filters-section {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.quick-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.stats-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 120px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    display: none;
+}
+
+.loading-spinner {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Personel Kanban Paneli</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}">Satış Paneli</a></li>
+                        <li class="breadcrumb-item active">Personel Kanban</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Bar -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <p class="stat-value" id="totalLeads">{{ total_leads|default:0 }}</p>
+            <p class="stat-label">Toplam Lead</p>
+        </div>
+        <div class="stat-item">
+            <p class="stat-value" id="myLeads">{{ my_leads|default:0 }}</p>
+            <p class="stat-label">Benim Leadlerim</p>
+        </div>
+        <div class="stat-item">
+            <p class="stat-value" id="todayTasks">{{ today_tasks|default:0 }}</p>
+            <p class="stat-label">Bugünkü Görevler</p>
+        </div>
+        <div class="stat-item">
+            <p class="stat-value" id="conversionRate">{{ conversion_rate|default:0 }}%</p>
+            <p class="stat-label">Dönüşüm Oranı</p>
+        </div>
+    </div>
+
+    <!-- Filters and Quick Actions -->
+    <div class="filters-section">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <select id="priorityFilter" class="form-select form-select-sm">
+                            <option value="">Tüm Öncelikler</option>
+                            <option value="high">Yüksek</option>
+                            <option value="medium">Orta</option>
+                            <option value="low">Düşük</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="sourceFilter" class="form-select form-select-sm">
+                            <option value="">Tüm Kaynaklar</option>
+                            <option value="website">Website</option>
+                            <option value="phone">Telefon</option>
+                            <option value="referral">Referans</option>
+                            <option value="social">Sosyal Medya</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" id="dateFilter" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="searchFilter" class="form-control form-control-sm" placeholder="Lead ara...">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="quick-actions">
+                    <button class="btn btn-primary btn-sm" onclick="refreshKanban()">
+                        <i class="fas fa-sync-alt"></i> Yenile
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="addNewLead()">
+                        <i class="fas fa-plus"></i> Yeni Lead
+                    </button>
+                    <button class="btn btn-info btn-sm" onclick="exportLeads()">
+                        <i class="fas fa-download"></i> Dışa Aktar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="kanban-board" id="kanbanBoard">
+        {% for stage in stages %}
+        <div class="kanban-column {{ stage.slug }}" data-stage-id="{{ stage.id }}">
+            <div class="kanban-header">
+                <h5 class="kanban-title">{{ stage.name }}</h5>
+                <span class="kanban-count" id="count-{{ stage.id }}">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-{{ stage.id }}">
+                <div class="drop-zone" data-stage-id="{{ stage.id }}">
+                    Leadleri buraya sürükleyin
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Yükleniyor...</span>
+        </div>
+        <p class="mt-2">İşlem yapılıyor...</p>
+    </div>
+</div>
+
+<!-- Lead Detail Modal -->
+<div class="modal fade" id="leadDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lead Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="leadDetailContent">
+                <!-- Content will be loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div class="modal fade" id="addNoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Not Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addNoteForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" id="noteLeadId" name="lead_id">
+                    <div class="mb-3">
+                        <label class="form-label">Not</label>
+                        <textarea name="note" class="form-control" rows="4" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Not Türü</label>
+                        <select name="note_type" class="form-select">
+                            <option value="general">Genel</option>
+                            <option value="call">Arama</option>
+                            <option value="meeting">Toplantı</option>
+                            <option value="email">E-posta</option>
+                            <option value="whatsapp">WhatsApp</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Not Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script>
+let kanbanData = {};
+let sortableInstances = [];
+
+$(document).ready(function() {
+    initializeKanban();
+    setupFilters();
+    setupAutoRefresh();
+});
+
+function initializeKanban() {
+    loadKanbanData();
+    setupDragAndDrop();
+}
+
+function loadKanbanData() {
+    showLoading();
+    
+    $.ajax({
+        url: '{% url "sales_process:get_leads_ajax" %}',
+        method: 'GET',
+        data: {
+            view_type: 'staff',
+            priority: $('#priorityFilter').val(),
+            source: $('#sourceFilter').val(),
+            date: $('#dateFilter').val(),
+            search: $('#searchFilter').val()
+        },
+        success: function(data) {
+            kanbanData = data;
+            renderKanbanCards();
+            updateStatistics();
+            hideLoading();
+        },
+        error: function() {
+            hideLoading();
+            alert('Kanban verileri yüklenirken hata oluştu.');
+        }
+    });
+}
+
+function renderKanbanCards() {
+    // Clear all columns
+    $('.kanban-cards').each(function() {
+        $(this).find('.lead-card').remove();
+    });
+    
+    // Render leads in their respective stages
+    if (kanbanData.leads) {
+        kanbanData.leads.forEach(function(lead) {
+            const cardHtml = createLeadCard(lead);
+            $(`#cards-${lead.current_stage_id}`).append(cardHtml);
+        });
+    }
+    
+    // Update counts
+    $('.kanban-count').each(function() {
+        const stageId = $(this).attr('id').replace('count-', '');
+        const count = $(`#cards-${stageId} .lead-card`).length;
+        $(this).text(count);
+    });
+}
+
+function createLeadCard(lead) {
+    const priorityClass = `priority-${lead.priority}`;
+    const stageClass = `stage-${lead.current_stage_slug}`;
+    
+    return `
+        <div class="lead-card ${stageClass}" data-lead-id="${lead.id}" draggable="true">
+            <div class="lead-header">
+                <div>
+                    <h6 class="lead-name">${lead.first_name} ${lead.last_name}</h6>
+                    <p class="lead-phone">${lead.phone}</p>
+                </div>
+                <span class="lead-priority ${priorityClass}">${lead.priority_display}</span>
+            </div>
+            <div class="lead-info">
+                <span class="lead-source">${lead.source_display}</span>
+                <span class="lead-date">${lead.created_at_display}</span>
+            </div>
+            <div class="lead-actions">
+                <button class="action-btn btn-view" onclick="viewLead(${lead.id})" title="Görüntüle">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="action-btn btn-edit" onclick="editLead(${lead.id})" title="Düzenle">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn btn-call" onclick="makeCall(${lead.id})" title="Ara">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button class="action-btn btn-whatsapp" onclick="sendWhatsApp(${lead.id})" title="WhatsApp">
+                    <i class="fab fa-whatsapp"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function setupDragAndDrop() {
+    // Destroy existing sortable instances
+    sortableInstances.forEach(instance => instance.destroy());
+    sortableInstances = [];
+    
+    $('.kanban-cards').each(function() {
+        const sortable = new Sortable(this, {
+            group: 'kanban',
+            animation: 150,
+            ghostClass: 'dragging',
+            onStart: function(evt) {
+                $(evt.item).addClass('dragging');
+            },
+            onEnd: function(evt) {
+                $(evt.item).removeClass('dragging');
+                
+                const leadId = $(evt.item).data('lead-id');
+                const newStageId = $(evt.to).closest('.kanban-column').data('stage-id');
+                const oldStageId = $(evt.from).closest('.kanban-column').data('stage-id');
+                
+                if (newStageId !== oldStageId) {
+                    moveLeadToStage(leadId, newStageId, oldStageId);
+                }
+            }
+        });
+        
+        sortableInstances.push(sortable);
+    });
+}
+
+function moveLeadToStage(leadId, newStageId, oldStageId) {
+    showLoading();
+    
+    $.ajax({
+        url: '{% url "sales_process:move_stage_ajax" %}',
+        method: 'POST',
+        data: {
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val(),
+            lead_id: leadId,
+            stage_id: newStageId
+        },
+        success: function(data) {
+            if (data.success) {
+                updateCounts();
+                showNotification('Lead başarıyla taşındı', 'success');
+            } else {
+                // Revert the move
+                revertLeadMove(leadId, oldStageId);
+                showNotification('Hata: ' + data.message, 'error');
+            }
+            hideLoading();
+        },
+        error: function() {
+            revertLeadMove(leadId, oldStageId);
+            showNotification('Lead taşınırken hata oluştu', 'error');
+            hideLoading();
+        }
+    });
+}
+
+function revertLeadMove(leadId, stageId) {
+    const leadCard = $(`.lead-card[data-lead-id="${leadId}"]`);
+    $(`#cards-${stageId}`).append(leadCard);
+    updateCounts();
+}
+
+function updateCounts() {
+    $('.kanban-count').each(function() {
+        const stageId = $(this).attr('id').replace('count-', '');
+        const count = $(`#cards-${stageId} .lead-card`).length;
+        $(this).text(count);
+    });
+}
+
+function setupFilters() {
+    $('#priorityFilter, #sourceFilter, #dateFilter').on('change', function() {
+        loadKanbanData();
+    });
+    
+    let searchTimeout;
+    $('#searchFilter').on('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            loadKanbanData();
+        }, 500);
+    });
+}
+
+function setupAutoRefresh() {
+    setInterval(function() {
+        if (!document.hidden) {
+            loadKanbanData();
+        }
+    }, 30000); // Refresh every 30 seconds
+}
+
+function updateStatistics() {
+    if (kanbanData.statistics) {
+        $('#totalLeads').text(kanbanData.statistics.total_leads || 0);
+        $('#myLeads').text(kanbanData.statistics.my_leads || 0);
+        $('#todayTasks').text(kanbanData.statistics.today_tasks || 0);
+        $('#conversionRate').text((kanbanData.statistics.conversion_rate || 0) + '%');
+    }
+}
+
+// Action Functions
+function viewLead(leadId) {
+    $.ajax({
+        url: `/sales-process/lead/${leadId}/`,
+        method: 'GET',
+        success: function(data) {
+            $('#leadDetailContent').html(data);
+            $('#leadDetailModal').modal('show');
+        },
+        error: function() {
+            alert('Lead detayları yüklenirken hata oluştu.');
+        }
+    });
+}
+
+function editLead(leadId) {
+    window.location.href = `/sales-process/lead/${leadId}/update/`;
+}
+
+function makeCall(leadId) {
+    window.location.href = `/sales-process/make-call/${leadId}/`;
+}
+
+function sendWhatsApp(leadId) {
+    window.location.href = `/sales-process/whatsapp/send/${leadId}/`;
+}
+
+function addNewLead() {
+    window.location.href = '{% url "sales_process:lead_create" %}';
+}
+
+function refreshKanban() {
+    loadKanbanData();
+}
+
+function exportLeads() {
+    window.location.href = '{% url "sales_process:export_reports" %}?format=excel';
+}
+
+// Utility Functions
+function showLoading() {
+    $('#loadingOverlay').show();
+}
+
+function hideLoading() {
+    $('#loadingOverlay').hide();
+}
+
+function showNotification(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const notification = `
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 10000;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    $('body').append(notification);
+    
+    setTimeout(function() {
+        $('.alert').alert('close');
+    }, 3000);
+}
+
+// Add Note Form
+$('#addNoteForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    $.ajax({
+        url: '{% url "sales_process:add_note" 0 %}'.replace('0', $('#noteLeadId').val()),
+        method: 'POST',
+        data: $(this).serialize(),
+        success: function(data) {
+            if (data.success) {
+                $('#addNoteModal').modal('hide');
+                showNotification('Not başarıyla eklendi', 'success');
+                loadKanbanData();
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        },
+        error: function() {
+            alert('Not eklenirken hata oluştu.');
+        }
+    });
+});
+</script>
+{% endblock %}

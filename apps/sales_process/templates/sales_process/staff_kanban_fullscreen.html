@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personel Satış Akışı - Tam Ekran</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* Koç Gayrimenkul kurumsal renkleri */
+        :root {
+            --koc-red: #9d2235;
+            --koc-red-light: #b82e42;
+            --koc-red-dark: #7a1a29;
+            --koc-black: #212529;
+            --koc-red-rgb: 157, 34, 53;
+            --koc-gray: #f5f5f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            overflow-x: hidden;
+            height: 100vh;
+        }
+
+        .fullscreen-header {
+            background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-header {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-header:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .kanban-container {
+            height: calc(100vh - 80px);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .kanban-board {
+            display: flex;
+            gap: 20px;
+            height: 100%;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+
+        .kanban-column {
+            min-width: 320px;
+            max-width: 350px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            border: 1px solid rgba(var(--koc-red-rgb), 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .kanban-header {
+            padding: 20px;
+            border-bottom: 2px solid rgba(var(--koc-red-rgb), 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .kanban-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--koc-black);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kanban-count {
+            background: var(--koc-red);
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(var(--koc-red-rgb), 0.3);
+        }
+
+        .kanban-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .lead-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border-left: 4px solid var(--koc-red);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(var(--koc-red-rgb), 0.08);
+            cursor: pointer;
+        }
+
+        .lead-card:hover {
+            box-shadow: 0 8px 25px rgba(var(--koc-red-rgb), 0.15);
+            transform: translateY(-3px);
+            border-left-color: var(--koc-red-light);
+        }
+
+        .lead-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .lead-name {
+            font-weight: 700;
+            color: var(--koc-black);
+            font-size: 1rem;
+            margin: 0 0 5px 0;
+        }
+
+        .lead-phone {
+            color: #6c757d;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .lead-priority {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .priority-medium {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .priority-low {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .lead-actions {
+            display: flex;
+            gap: 8px;
+            margin: 15px 0 10px 0;
+        }
+
+        .btn-action {
+            background: none;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn-call {
+            color: #059669;
+            border-color: #059669;
+        }
+
+        .btn-call:hover {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-whatsapp {
+            color: #25d366;
+            border-color: #25d366;
+        }
+
+        .btn-whatsapp:hover {
+            background: #25d366;
+            color: white;
+        }
+
+        .btn-next {
+            color: var(--koc-red);
+            border-color: var(--koc-red);
+        }
+
+        .btn-next:hover {
+            background: var(--koc-red);
+            color: white;
+        }
+
+        .lead-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #6b7280;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 10px;
+        }
+
+        .empty-column {
+            text-align: center;
+            color: #9ca3af;
+            font-style: italic;
+            padding: 60px 20px;
+        }
+
+        .empty-column i {
+            color: #d1d5db;
+            margin-bottom: 15px;
+        }
+
+        /* Scrollbar Styling */
+        .kanban-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .kanban-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .kanban-content::-webkit-scrollbar-thumb {
+            background: var(--koc-red);
+            border-radius: 3px;
+        }
+
+        .kanban-board::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .kanban-board::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .kanban-board::-webkit-scrollbar-thumb {
+            background: var(--koc-red);
+            border-radius: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .fullscreen-header {
+                padding: 10px 15px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-stats {
+                gap: 15px;
+            }
+
+            .kanban-container {
+                padding: 10px;
+                height: calc(100vh - 120px);
+            }
+
+            .kanban-board {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .kanban-column {
+                min-width: 100%;
+                max-width: 100%;
+                height: auto;
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="fullscreen-header">
+        <div class="header-left">
+            <h1 class="header-title">
+                <i class="fas fa-columns me-2"></i>
+                Personel Satış Akışı
+            </h1>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-number">{{ user_leads }}</div>
+                    <div class="stat-label">Müşterilerim</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ stages_with_leads|length }}</div>
+                    <div class="stat-label">Aktif Aşamalar</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{% url 'sales_process:lead_create' %}" class="btn-header">
+                <i class="fas fa-plus me-1"></i> Yeni Müşteri
+            </a>
+            <button class="btn-header" onclick="refreshKanban()">
+                <i class="fas fa-sync-alt me-1"></i> Yenile
+            </button>
+            <a href="{% url 'sales_process:staff_kanban' %}" class="btn-header">
+                <i class="fas fa-compress me-1"></i> Normal Görünüm
+            </a>
+        </div>
+    </div>
+
+    <div class="kanban-container">
+        <div class="kanban-board" id="kanban-board">
+            {% for stage_data in stages_with_leads %}
+            <div class="kanban-column">
+                <div class="column-header">
+                    <span>{{ stage_data.stage.display_name }}</span>
+                    <span class="column-count">{{ stage_data.leads|length }}</span>
+                </div>
+                <div class="column-content">
+                    {% for lead in stage_data.leads %}
+                    <div class="lead-card" data-lead-id="{{ lead.id }}">
+                        <div class="customer-name">{{ lead.customer_name }}</div>
+                        <div class="customer-phone">
+                            <i class="fas fa-phone"></i> {{ lead.customer_phone }}
+                        </div>
+                        
+                        <div class="property-info">
+                            <strong>{{ lead.property_type }}</strong><br>
+                            {{ lead.property_location }}
+                        </div>
+                        
+                        <div class="budget-info">
+                            <i class="fas fa-money-bill-wave"></i>
+                            {{ lead.budget_min|floatformat:0 }} - {{ lead.budget_max|floatformat:0 }} TL
+                        </div>
+                        
+                        {% if lead.notes %}
+                        <div class="lead-notes">
+                            <i class="fas fa-sticky-note"></i>
+                            {{ lead.notes|truncatechars:50 }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="card-actions">
+                            <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
+                                <i class="fas fa-phone"></i> Ara
+                            </a>
+                            <button class="action-btn btn-whatsapp" onclick="sendWhatsApp('{{ lead.id }}')">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </button>
+                            {% if stage_data.stage.name != 'sozlesme_yapildi' %}
+                            <button class="action-btn btn-next" onclick="moveToNextStage('{{ lead.id }}')">
+                                <i class="fas fa-arrow-right"></i> İlerlet
+                            </button>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-meta">
+                            <span class="assigned-staff">{{ lead.assigned_staff.get_full_name }}</span>
+                            <span class="stage-date">{{ lead.stage_updated_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-column">
+                        <i class="fas fa-inbox fa-3x"></i>
+                        <p>Bu aşamada müşteri yok</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Kanban yenileme fonksiyonu
+        function refreshKanban() {
+            location.reload();
+        }
+
+        // WhatsApp gönderme
+        function sendWhatsApp(leadId) {
+            fetch(`/sales/whatsapp/send/${leadId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    message_type: 'general'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', 'WhatsApp mesajı gönderildi!');
+                } else {
+                    showNotification('error', 'WhatsApp mesajı gönderilemedi!');
+                }
+            });
+        }
+
+        // Sonraki aşamaya taşıma
+        function moveToNextStage(leadId) {
+            if (confirm('Bu müşteriyi sonraki aşamaya taşımak istediğinizden emin misiniz?')) {
+                fetch(`/sales/move-to-next-stage/${leadId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', 'Müşteri sonraki aşamaya taşındı!');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showNotification('error', data.message || 'İşlem başarısız!');
+                    }
+                });
+            }
+        }
+
+        // Cookie alma fonksiyonu
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Bildirim gösterme fonksiyonu
+        function showNotification(type, message) {
+            const alertClass = type === 'success' ? 'alert-success' : 
+                              type === 'error' ? 'alert-danger' : 'alert-info';
+            
+            const alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', alertHtml);
+            
+            // 5 saniye sonra otomatik kapat
+            setTimeout(() => {
+                const alert = document.querySelector('.alert');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Lead kartlarına tıklama olayı
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.lead-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    // Buton tıklamalarını hariç tut
+                    if (!e.target.closest('.card-actions')) {
+                        const leadId = this.dataset.leadId;
+                        // Lead detay sayfasına yönlendir
+                        window.open(`/sales/lead/${leadId}/`, '_blank');
+                    }
+                });
+            });
+
+            // ESC tuşu ile çıkış
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    window.location.href = '/sales/staff-kanban/';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

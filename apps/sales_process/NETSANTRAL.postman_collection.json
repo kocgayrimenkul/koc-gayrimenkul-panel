@@ -1,0 +1,1319 @@
+{
+	"info": {
+		"_postman_id": "e7991cb6-6138-4f9b-8f0d-f5934ad11a16",
+		"name": "NETSANTRAL",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "47788142",
+		"_collection_link": "https://nihallkemer-8469408.postman.co/workspace/01193dd8-769f-4579-861f-e827fcce5a76/collection/47788142-e7991cb6-6138-4f9b-8f0d-f5934ad11a16?action=share&source=collection_link&creator=47788142"
+	},
+	"item": [
+		{
+			"name": "Santral Yönetimi",
+			"item": [
+				{
+					"name": "Çağrı Başlatma",
+					"item": [
+						{
+							"name": "HTTP GET Çağrı Başlatma",
+							"item": [
+								{
+									"name": "HTTP GET Çağrı Başlatma",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/originate?username=kullaniciadi&password=sifre&customer_num=5XXXXXXXXX&pbxnum=850XXXXXXX&internal_num=XXX&ring_timeout=20&crm_id=XXX&wait_response=1&originate_order=of&trunk=850XXXXXXX",
+											"protocol": "http",
+											"host": [
+												"crmsntrl",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"port": "9111",
+											"path": [
+												"850XXXXXXX",
+												"originate"
+											],
+											"query": [
+												{
+													"key": "username",
+													"value": "kullaniciadi",
+													"description": "Santral numaranız"
+												},
+												{
+													"key": "password",
+													"value": "sifre",
+													"description": "Kullanıcı şifreniz"
+												},
+												{
+													"key": "customer_num",
+													"value": "5XXXXXXXXX",
+													"description": "Arama yapılacak dış numara bilgisi"
+												},
+												{
+													"key": "pbxnum",
+													"value": "850XXXXXXX",
+													"description": "Santralinizin Netgsm arayüzünde görünen adı"
+												},
+												{
+													"key": "internal_num",
+													"value": "XXX",
+													"description": "Çağrının başlatılacağı iç dahilinin numarası"
+												},
+												{
+													"key": "ring_timeout",
+													"value": "20",
+													"description": "Çağrının açılmadan önce çaldırma süresi"
+												},
+												{
+													"key": "crm_id",
+													"value": "XXX",
+													"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+												},
+												{
+													"key": "wait_response",
+													"value": "1",
+													"description": "Yapılan istekte responseun hangi durumda döneceği (1/0)"
+												},
+												{
+													"key": "originate_order",
+													"value": "of",
+													"description": "Önce dış numaranın veya dahilinin çalması seçimi (of/if)"
+												},
+												{
+													"key": "trunk",
+													"value": "850XXXXXXX",
+													"description": "Santral numaranız, Aramada görünecek numara bilgisi"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Çağrı Sonlandırma",
+					"item": [
+						{
+							"name": "HTTP GET Çağrı Sonlandırma",
+							"item": [
+								{
+									"name": "HTTP GET Çağrı Sonlandırma",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/hangup?username=kullaniciadi&password=sifre&unique_id=XXX&crm_id=XXX",
+											"protocol": "http",
+											"host": [
+												"crmsntrl",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"port": "9111",
+											"path": [
+												"850XXXXXXX",
+												"hangup"
+											],
+											"query": [
+												{
+													"key": "username",
+													"value": "kullaniciadi",
+													"description": "Santral numaranız"
+												},
+												{
+													"key": "password",
+													"value": "sifre",
+													"description": "Kullanıcı şifreniz"
+												},
+												{
+													"key": "unique_id",
+													"value": "XXX",
+													"description": "Sonlandırmak istenilen çağrıya ait ID"
+												},
+												{
+													"key": "crm_id",
+													"value": "XXX",
+													"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Çağrıyı Sessize Alma",
+					"item": [
+						{
+							"name": "HTTP GET Çağrıyı Sessize Alma",
+							"item": [
+								{
+									"name": "HTTP GET Çağrıyı Sessize Alma",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/muteaudio?username=kullaniciadi&password=sifre&unique_id=XXX&crm_id=XXX&direction=all&state=mute",
+											"protocol": "http",
+											"host": [
+												"crmsntrl",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"port": "9111",
+											"path": [
+												"850XXXXXXX",
+												"muteaudio"
+											],
+											"query": [
+												{
+													"key": "username",
+													"value": "kullaniciadi",
+													"description": "Santral numaranız"
+												},
+												{
+													"key": "password",
+													"value": "sifre",
+													"description": "Kullanıcı şifreniz"
+												},
+												{
+													"key": "unique_id",
+													"value": "XXX",
+													"description": "Sessize alınmak istenilen çağrıya ait ID"
+												},
+												{
+													"key": "crm_id",
+													"value": "XXX",
+													"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+												},
+												{
+													"key": "direction",
+													"value": "all",
+													"description": "Hangi tarafa doğru sessize alınacağı bilgisi. (all/in/out) "
+												},
+												{
+													"key": "state",
+													"value": "mute",
+													"description": "Sessize alırken mute - sessizden alırken unmute "
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Çağrı Bağlama",
+					"item": [
+						{
+							"name": "HTTP GET Çağrı Bağlama",
+							"item": [
+								{
+									"name": "HTTP GET Çağrı Bağlama",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/linkup?username=kullaniciadi&password=sifre&caller=5XXXXXXXXX&called=5XXXXXXXXX&ring_timeout=20&crm_id=XXX&wait_response=1&originate_order=if&trunk=850XXXXXXX",
+											"protocol": "http",
+											"host": [
+												"crmsntrl",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"port": "9111",
+											"path": [
+												"850XXXXXXX",
+												"linkup"
+											],
+											"query": [
+												{
+													"key": "username",
+													"value": "kullaniciadi",
+													"description": "Santral numaranız"
+												},
+												{
+													"key": "password",
+													"value": "sifre",
+													"description": "Kullanıcı şifreniz"
+												},
+												{
+													"key": "caller",
+													"value": "5XXXXXXXXX",
+													"description": "Arama yapılacak dış numara"
+												},
+												{
+													"key": "called",
+													"value": "5XXXXXXXXX",
+													"description": "Çağrının bağlanacağı diğer dış numara "
+												},
+												{
+													"key": "ring_timeout",
+													"value": "20",
+													"description": "Çağrının açılmadan önce çaldırma süresi"
+												},
+												{
+													"key": "crm_id",
+													"value": "XXX",
+													"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+												},
+												{
+													"key": "wait_response",
+													"value": "1",
+													"description": "Yapılan istekte responseun hangi durumda döneceği (1/0)"
+												},
+												{
+													"key": "originate_order",
+													"value": "if",
+													"description": "Önce dış numaranın veya dahilinin çalması seçimi (of/if)"
+												},
+												{
+													"key": "trunk",
+													"value": "850XXXXXXX",
+													"description": "Santral numaranız, Aramada görünecek numara bilgisi"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Kuyruk Durum Sorgulama",
+					"item": [
+						{
+							"name": "HTTP GET Çağrı Kuyruğu",
+							"item": [
+								{
+									"name": "HTTP GET Çağrı Kuyruğu",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/queuestats?username=kullaniciadi&password=sifre&queue=XXX&crm_id=XXX",
+											"protocol": "http",
+											"host": [
+												"crmsntrl",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"port": "9111",
+											"path": [
+												"850XXXXXXX",
+												"queuestats"
+											],
+											"query": [
+												{
+													"key": "username",
+													"value": "kullaniciadi",
+													"description": "Santral numaranız"
+												},
+												{
+													"key": "password",
+													"value": "sifre",
+													"description": "Kullanıcı şifreniz"
+												},
+												{
+													"key": "queue",
+													"value": "XXX",
+													"description": "Sorgulanmak istenen kuyruğun adı"
+												},
+												{
+													"key": "crm_id",
+													"value": "XXX",
+													"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Kuyruğa Dahili Ekleme/Çıkarma",
+					"item": [
+						{
+							"name": "Dahili Ekleme",
+							"item": [
+								{
+									"name": "HTTP GET Dahili Ekleme",
+									"item": [
+										{
+											"name": "HTTP GET Dahili Ekleme",
+											"request": {
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/agentlogin?username=kullaniciadi&password=sifre&crm_id=XXX&queue=XXX&paused=1&penalty=1&exten=XXX",
+													"protocol": "http",
+													"host": [
+														"crmsntrl",
+														"netgsm",
+														"com",
+														"tr"
+													],
+													"port": "9111",
+													"path": [
+														"850XXXXXXX",
+														"agentlogin"
+													],
+													"query": [
+														{
+															"key": "username",
+															"value": "kullaniciadi",
+															"description": "Santral numaranız"
+														},
+														{
+															"key": "password",
+															"value": "sifre",
+															"description": "Kullanıcı şifreniz"
+														},
+														{
+															"key": "crm_id",
+															"value": "XXX",
+															"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+														},
+														{
+															"key": "queue",
+															"value": "XXX",
+															"description": "Ekleme yapılmak istenen kuyruğun adı"
+														},
+														{
+															"key": "paused",
+															"value": "1",
+															"description": "Molada baslangic için 1, açık başlamak için 0"
+														},
+														{
+															"key": "penalty",
+															"value": "1",
+															"description": "Kuyruktaki dahililerinizin hangisine fazla çağrı verileceği"
+														},
+														{
+															"key": "exten",
+															"value": "XXX",
+															"description": "Eklenmek istenen dahili numarası "
+														}
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "Dahili Çıkarma",
+							"item": [
+								{
+									"name": "HTTP GET Dahili Çıkarma",
+									"item": [
+										{
+											"name": "HTTP GET Dahili Çıkarma",
+											"request": {
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/agentlogoff?username=kullaniciadi&password=sifre&crm_id=XXX&exten=XXX&queue=XXX",
+													"protocol": "http",
+													"host": [
+														"crmsntrl",
+														"netgsm",
+														"com",
+														"tr"
+													],
+													"port": "9111",
+													"path": [
+														"850XXXXXXX",
+														"agentlogoff"
+													],
+													"query": [
+														{
+															"key": "username",
+															"value": "kullaniciadi",
+															"description": "Santral numaranız"
+														},
+														{
+															"key": "password",
+															"value": "sifre",
+															"description": "Kullanıcı şifreniz"
+														},
+														{
+															"key": "crm_id",
+															"value": "XXX",
+															"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+														},
+														{
+															"key": "exten",
+															"value": "XXX",
+															"description": "Eklenmek istenen dahili numarası "
+														},
+														{
+															"key": "queue",
+															"value": "XXX",
+															"description": "Dahili çıkarılmak istenen kuyruğun adı"
+														}
+													]
+												}
+											},
+											"response": []
+										}
+									]
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Kuyruktaki Dahiliyi Molaya Alma/Çıkarma",
+					"item": [
+						{
+							"name": "HTTP GET Dahili Mola",
+							"item": [
+								{
+									"name": "HTTP GET Dahili Molaya Alma",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/agentpause?username=kullaniciadi&password=sifre&crm_id=XXX&exten=XXX&queue=XXX&paused=1&reason=test",
+											"protocol": "http",
+											"host": [
+												"crmsntrl",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"port": "9111",
+											"path": [
+												"850XXXXXXX",
+												"agentpause"
+											],
+											"query": [
+												{
+													"key": "username",
+													"value": "kullaniciadi",
+													"description": "Santral numaranız"
+												},
+												{
+													"key": "password",
+													"value": "sifre",
+													"description": "Kullanıcı şifreniz"
+												},
+												{
+													"key": "crm_id",
+													"value": "XXX",
+													"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+												},
+												{
+													"key": "exten",
+													"value": "XXX",
+													"description": "Eklenmek istenen dahili numarası "
+												},
+												{
+													"key": "queue",
+													"value": "XXX",
+													"description": "Dahilinin bulunduğu kuyruğun adı"
+												},
+												{
+													"key": "paused",
+													"value": "1",
+													"description": "Molaya almak için 1 değeri, moladan çıkmak için 0 "
+												},
+												{
+													"key": "reason",
+													"value": "test",
+													"description": "Molaya alma sebebi"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "HTTP GET Dahili Moladan Çıkarma",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/agentpause?username=kullaniciadi&password=sifre&crm_id=XXX&exten=XXX&queue=XXX&paused=0&reason=test",
+											"protocol": "http",
+											"host": [
+												"crmsntrl",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"port": "9111",
+											"path": [
+												"850XXXXXXX",
+												"agentpause"
+											],
+											"query": [
+												{
+													"key": "username",
+													"value": "kullaniciadi",
+													"description": "Santral numaranız"
+												},
+												{
+													"key": "password",
+													"value": "sifre",
+													"description": "Kullanıcı şifreniz"
+												},
+												{
+													"key": "crm_id",
+													"value": "XXX",
+													"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+												},
+												{
+													"key": "exten",
+													"value": "XXX",
+													"description": "Eklenmek istenen dahili numarası "
+												},
+												{
+													"key": "queue",
+													"value": "XXX",
+													"description": "Dahilinin bulunduğu kuyruğun adı"
+												},
+												{
+													"key": "paused",
+													"value": "0",
+													"description": "Molaya almak için 1 değeri, moladan çıkmak için 0 "
+												},
+												{
+													"key": "reason",
+													"value": "test",
+													"description": "Molaya alma sebebi"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Kuyruğa Dış Numara Ekleme/Çıkarma",
+					"item": [
+						{
+							"name": "JSON POST",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"kullaniciadi\",\r\n    \"password\": \"sifre\",\r\n    \"command\": \"queueaddnumber\",\r\n    \"tenant\": \"850XXXXXXX\",\r\n    \"queue\": \"850XXXXXXX-queue-kuyrukismi\",\r\n    \"no\": \"5079201874\",\r\n    \"penalty\": \"1\"\r\n    }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://api.netgsm.com.tr/netsantral/queue",
+									"protocol": "https",
+									"host": [
+										"api",
+										"netgsm",
+										"com",
+										"tr"
+									],
+									"path": [
+										"netsantral",
+										"queue"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Dinamik Yönlendirme",
+					"item": [
+						{
+							"name": "HTTP GET Yönlendirme",
+							"item": [
+								{
+									"name": "HTTP GET Yönlendirme",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/dynamic_redirect?username=kullaniciadi&password=sifre&called=5XXXXXXXXX&redirect_menu=ivrtesting&redirect_type=ivr&ring_timeout=20&crm_id=XXX&wait_response=1&trunk=850XXXXXXX",
+											"protocol": "http",
+											"host": [
+												"crmsntrl",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"port": "9111",
+											"path": [
+												"850XXXXXXX",
+												"dynamic_redirect"
+											],
+											"query": [
+												{
+													"key": "username",
+													"value": "kullaniciadi",
+													"description": "Santral numaranız"
+												},
+												{
+													"key": "password",
+													"value": "sifre",
+													"description": "Kullanıcı şifreniz"
+												},
+												{
+													"key": "called",
+													"value": "5XXXXXXXXX",
+													"description": "Arama yapılacak numara "
+												},
+												{
+													"key": "redirect_menu",
+													"value": "ivrtesting",
+													"description": "Aktarılcak menü ismi "
+												},
+												{
+													"key": "redirect_type",
+													"value": "ivr",
+													"description": "Yönlendirmenin yapılması için; queue , announcement , ivr "
+												},
+												{
+													"key": "ring_timeout",
+													"value": "20",
+													"description": "Çağrının açılmadan önce çaldırma süresi"
+												},
+												{
+													"key": "crm_id",
+													"value": "XXX",
+													"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+												},
+												{
+													"key": "wait_response",
+													"value": "1",
+													"description": "Yapılan istekte responseun hangi durumda döneceği (1/0)"
+												},
+												{
+													"key": "trunk",
+													"value": "850XXXXXXX",
+													"description": "Santral numaranız, Aramada görünecek numara bilgisi"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Çağrı Transfer",
+					"item": [
+						{
+							"name": "HTTP GET Çağrı Transfer",
+							"item": [
+								{
+									"name": "HTTP GET Kör Çağrı Transferi",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/xfer?username=kullanicidiniz&password=sifreniz&exten=XXX&unique_id=xxx.xxx&crm_id=xxx",
+											"protocol": "http",
+											"host": [
+												"crmsntrl",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"port": "9111",
+											"path": [
+												"850XXXXXXX",
+												"xfer"
+											],
+											"query": [
+												{
+													"key": "username",
+													"value": "kullanicidiniz",
+													"description": "Santral numaranız"
+												},
+												{
+													"key": "password",
+													"value": "sifreniz",
+													"description": "Kullanıcı şifreniz"
+												},
+												{
+													"key": "exten",
+													"value": "XXX",
+													"description": "Çağrının aktarılacağı dahili numarası "
+												},
+												{
+													"key": "unique_id",
+													"value": "xxx.xxx",
+													"description": "Çağrıya ait ID"
+												},
+												{
+													"key": "crm_id",
+													"value": "xxx",
+													"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "HTTP GET Katılımlı Çağrı Transferi",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "http://crmsntrl.netgsm.com.tr:9111/850XXXXXXX/atxfer?username=kullanicidiniz&password=sifreniz&exten=XXX&unique_id=xxx.xxx&crm_id=xxx",
+											"protocol": "http",
+											"host": [
+												"crmsntrl",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"port": "9111",
+											"path": [
+												"850XXXXXXX",
+												"atxfer"
+											],
+											"query": [
+												{
+													"key": "username",
+													"value": "kullanicidiniz",
+													"description": "Santral numaranız"
+												},
+												{
+													"key": "password",
+													"value": "sifreniz",
+													"description": "Kullanıcı şifreniz"
+												},
+												{
+													"key": "exten",
+													"value": "XXX",
+													"description": "Çağrının aktarılacağı dahili numarası "
+												},
+												{
+													"key": "unique_id",
+													"value": "xxx.xxx",
+													"description": "Çağrıya ait ID"
+												},
+												{
+													"key": "crm_id",
+													"value": "xxx",
+													"description": "Yapılan isteğinde tarafınızda oluşturup gönderdiğiniz IDsi"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Webhook Santral Dinleme",
+			"item": [
+				{
+					"name": "*Çağrı Trafiği İzleme",
+					"item": [
+						{
+							"name": "URL'e Yönlendirme",
+							"item": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Rapor",
+			"item": [
+				{
+					"name": "Görüşme Detayı (CDR)",
+					"item": [
+						{
+							"name": "JSON POST Görüşme Detay",
+							"item": [
+								{
+									"name": "JSON POST Görüşme Detay",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\r\n    \"usercode\": \"kullaniciadi\",\r\n    \"password\": \"sifre\",\r\n    \"startdate\": \"100520211000\",\r\n    \"stopdate\": \"110520211000\",\r\n    \"querytype\": \"1\",\r\n    \"no\": [\r\n       \"5XXXXXXXXX\"\r\n    ]\r\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "https://api.netgsm.com.tr/netsantral/report",
+											"protocol": "https",
+											"host": [
+												"api",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"path": [
+												"netsantral",
+												"report"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "HTTP GET Görüşme Detay",
+							"item": [
+								{
+									"name": "HTTP GET Görüşme Detay",
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://api.netgsm.com.tr/netsantral/report?usercode=kullaniciadi&password=sifre&startdate=110520211000&stopdate=110520211500",
+											"protocol": "https",
+											"host": [
+												"api",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"path": [
+												"netsantral",
+												"report"
+											],
+											"query": [
+												{
+													"key": "usercode",
+													"value": "kullaniciadi"
+												},
+												{
+													"key": "password",
+													"value": "sifre"
+												},
+												{
+													"key": "startdate",
+													"value": "110520211000"
+												},
+												{
+													"key": "stopdate",
+													"value": "110520211500"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "XML POST Görüşme Detay",
+							"item": [
+								{
+									"name": "XML POST Görüşme Detay",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "<?xml version=\"1.0\"?>\r\n<mainbody>\r\n    <header>\r\n        <usercode>kullaniciadi</usercode>\r\n        <password>sifre</password>\r\n        <startdate>110520211000</startdate>\r\n        <stopdate>110520211500</stopdate>\r\n        <version>3</version>\r\n    </header>\r\n</mainbody>",
+											"options": {
+												"raw": {
+													"language": "xml"
+												}
+											}
+										},
+										"url": {
+											"raw": "https://api.netgsm.com.tr/netsantral/report",
+											"protocol": "https",
+											"host": [
+												"api",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"path": [
+												"netsantral",
+												"report"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "İstatistik (Gelen Çağrı)",
+					"item": [
+						{
+							"name": "Günlük İstatistik",
+							"item": [
+								{
+									"name": "XML POST Günlük İstatistik",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "<?xml version='1.0'?>\r\n<mainbody>\r\n   <header>\r\n       <usercode>kullaniciadi</usercode>\r\n       <password>sifre</password>\r\n       <startdate>200520210900</startdate>\r\n       <stopdate>250520210900</stopdate>     \r\n   </header>\r\n</mainbody>",
+											"options": {
+												"raw": {
+													"language": "xml"
+												}
+											}
+										},
+										"url": {
+											"raw": "https://api.netgsm.com.tr/netsantral/statistics",
+											"protocol": "https",
+											"host": [
+												"api",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"path": [
+												"netsantral",
+												"statistics"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Gün Detayı",
+							"item": [
+								{
+									"name": "XML POST Gün Detayı",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "<?xml version='1.0' encoding='UTF-8'?>\r\n<mainbody>\r\n   <header>\r\n       <usercode>kullaniciadi</usercode>\r\n       <password>sifre</password>\r\n       <date>07052021</date>\r\n       <answered>1</answered>\r\n   </header>\r\n</mainbody>",
+											"options": {
+												"raw": {
+													"language": "xml"
+												}
+											}
+										},
+										"url": {
+											"raw": "https://api.netgsm.com.tr/netsantral/statistics",
+											"protocol": "https",
+											"host": [
+												"api",
+												"netgsm",
+												"com",
+												"tr"
+											],
+											"path": [
+												"netsantral",
+												"statistics"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Dinamik IVR Yönetimi",
+			"item": []
+		},
+		{
+			"name": "Otomatik Arama",
+			"item": [
+				{
+					"name": "Arama Listesi Oluştur",
+					"item": [
+						{
+							"name": "JSON POST Arama Listesi Oluştur",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"header\": {\r\n        \"username\": \"kullaniciadi\",\r\n        \"password\": \"sifre\"\r\n    },\r\n    \"body\": {\r\n        \"event\": \"addautocall\",\r\n        \"data\": {\r\n            \"list_name\": \"listeadi\",\r\n            \"list_prefix\": \"XXX\",\r\n            \"liste_type\": \"2\",\r\n            \"list_startdate\": \"2021-05-11\",\r\n            \"list_stopdate\": \"2021-05-11\",\r\n            \"list_starttime\": \"14:30\",\r\n            \"list_stoptime\": \"18:00\",\r\n            \"retry_count\": \"1\",\r\n            \"try_time\": \"5\",\r\n            \"department\": \"XXX\",\r\n            \"trunk\": \"8XXXXXXXXX\",\r\n            \"destination_type\": \"ivr\",\r\n            \"destination_name\": \"ivrtesting\",\r\n            \"queue_limit\": \"1\",\r\n            \"groups\": [\"grup1\"],\r\n            \"numbers\": [\r\n\t\t\t\t{\r\n                    \"number\": \"5XXXXXXXXX\",\r\n                    \"name\": \"ad\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://api.netgsm.com.tr/autocallservice",
+									"protocol": "https",
+									"host": [
+										"api",
+										"netgsm",
+										"com",
+										"tr"
+									],
+									"path": [
+										"autocallservice"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Otomatik Arama Listele",
+					"item": [
+						{
+							"name": "JSON Otomatik Arama Listee",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"header\": {\r\n        \"username\": \"kullaniciadi\",\r\n        \"password\": \"sifre\"\r\n    },\r\n    \"body\": {\r\n        \"event\": \"listautocall\",\r\n        \"list_id\": \"XXXX\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://api.netgsm.com.tr/autocallservice",
+									"protocol": "https",
+									"host": [
+										"api",
+										"netgsm",
+										"com",
+										"tr"
+									],
+									"path": [
+										"autocallservice"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Listeyi Durdur/Başlat",
+					"item": [
+						{
+							"name": "JSON Listeyi Durdur/Başlat",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"header\": {\r\n        \"username\": \"kullaniciadi\",\r\n        \"password\": \"sifre\"\r\n    },\r\n    \"body\": {\r\n        \"event\": \"updateliststatus\",\r\n        \"list_id\": \"XXX\",\r\n\t\t\"data\": {\r\n            \"status\": \"1\"\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://api.netgsm.com.tr/autocallservice",
+									"protocol": "https",
+									"host": [
+										"api",
+										"netgsm",
+										"com",
+										"tr"
+									],
+									"path": [
+										"autocallservice"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Arama Raporları",
+					"item": [
+						{
+							"name": "JSON Arama Raporları",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"header\": {\r\n        \"username\": \"kullaniciadi\",\r\n        \"password\": \"sifre\"\r\n    },\r\n    \"body\": {\r\n        \"event\": \"reportautocall\",\r\n        \"list_id\": \"XXXX\",\r\n\t\t\"data\": {\r\n            \"status\": \"1\"\r\n        }\r\n    }\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://api.netgsm.com.tr/autocallservice",
+									"protocol": "https",
+									"host": [
+										"api",
+										"netgsm",
+										"com",
+										"tr"
+									],
+									"path": [
+										"autocallservice"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Listeye Numara Ekle",
+					"item": [
+						{
+							"name": "JSON Listeye Numara Ekle",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"header\": {\r\n        \"username\": \"kullaniciadi\",\r\n        \"password\": \"sifre\"\r\n    },\r\n    \"body\": {\r\n        \"event\": \"addnumber\",\r\n        \"list_id\": \"XXXX\",\r\n        \"data\": {\r\n            \"numbers\": [\r\n\t\t\t\t{\r\n                    \"number\": \"5XXXXXXXXX\",\r\n                    \"name\": \"ad\",\r\n                    \"nstatus\": \"1\",\r\n                    \"calltime\": \"050920201500\",\r\n                    \"trunk\": \"8XXXXXXXXX\"\r\n                }\r\n            ]\r\n        }\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://api.netgsm.com.tr/autocallservice",
+									"protocol": "https",
+									"host": [
+										"api",
+										"netgsm",
+										"com",
+										"tr"
+									],
+									"path": [
+										"autocallservice"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Listeden Numara Çıkar",
+					"item": [
+						{
+							"name": "JSON Listeden Numara Çıkar",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"header\": {\r\n        \"username\": \"kullaniciadi\",\r\n        \"password\": \"sifre\"\r\n    },\r\n    \"body\": {\r\n        \"event\": \"deletenumber\",\r\n        \"list_id\": \"XXXX\",\r\n        \"data\": {\r\n               \"id\": \"XXXXX\"\r\n           }\r\n    }\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://api.netgsm.com.tr/autocallservice",
+									"protocol": "https",
+									"host": [
+										"api",
+										"netgsm",
+										"com",
+										"tr"
+									],
+									"path": [
+										"autocallservice"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Numara Durum Güncelle",
+					"item": [
+						{
+							"name": "JSON Numara Durum Güncelle",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"header\": {\r\n        \"username\": \"kullaniciadi\",\r\n        \"password\": \"sifre\"\r\n    },\r\n    \"body\": {\r\n        \"event\": \"updatenumber\",\r\n        \"list_id\": \"XXXX\",      \r\n        \"data\": {\r\n             \"id\": \"XXXXX\",\r\n             \"nstatus\": \"0\",\r\n             \"calltime\": \"110520211506\",\r\n             \"name\": \"ad\",\r\n             \"trunk\": \"8XXXXXXXXX\"\r\n         }        \r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://api.netgsm.com.tr/autocallservice",
+									"protocol": "https",
+									"host": [
+										"api",
+										"netgsm",
+										"com",
+										"tr"
+									],
+									"path": [
+										"autocallservice"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	]
+}

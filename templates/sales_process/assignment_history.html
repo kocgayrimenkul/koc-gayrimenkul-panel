@@ -1,0 +1,313 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %}Lead Atama Geçmişi{% endblock %}
+
+{% block stylesheets %}
+<style>
+.assignment-card {
+    border-left: 4px solid #007bff;
+    transition: all 0.3s ease;
+}
+
+.assignment-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.assignment-type-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.assignment-type-auto { background-color: #28a745; }
+.assignment-type-manual { background-color: #007bff; }
+.assignment-type-sticky { background-color: #ffc107; color: #000; }
+.assignment-type-geographic { background-color: #17a2b8; }
+.assignment-type-workload { background-color: #6f42c1; }
+.assignment-type-round-robin { background-color: #fd7e14; }
+
+.filter-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    width: 10px;
+    height: 10px;
+    background: #007bff;
+    border-radius: 50%;
+}
+
+.timeline-item::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 1.5rem;
+    width: 2px;
+    height: calc(100% - 1rem);
+    background: #dee2e6;
+}
+
+.timeline-item:last-child::after {
+    display: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Lead Atama Geçmişi</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}">Satış Paneli</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'sales_process:assignment_dashboard' %}">Atama Yönetimi</a></li>
+                        <li class="breadcrumb-item active">Atama Geçmişi</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <h3>{{ total_assignments }}</h3>
+                <p class="mb-0">Toplam Atama</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <h3>{{ active_assignments }}</h3>
+                <p class="mb-0">Aktif Atama</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <h3>{{ sticky_assignments }}</h3>
+                <p class="mb-0">Sticky Atama</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <h3>{{ today_assignments }}</h3>
+                <p class="mb-0">Bugünkü Atama</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="filter-section">
+                        <form method="GET" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Atama Türü</label>
+                                <select name="assignment_type" class="form-select">
+                                    <option value="">Tümü</option>
+                                    <option value="auto" {% if request.GET.assignment_type == 'auto' %}selected{% endif %}>Otomatik</option>
+                                    <option value="manual" {% if request.GET.assignment_type == 'manual' %}selected{% endif %}>Manuel</option>
+                                    <option value="sticky" {% if request.GET.assignment_type == 'sticky' %}selected{% endif %}>Sticky</option>
+                                    <option value="geographic" {% if request.GET.assignment_type == 'geographic' %}selected{% endif %}>Coğrafi</option>
+                                    <option value="workload" {% if request.GET.assignment_type == 'workload' %}selected{% endif %}>İş Yükü</option>
+                                    <option value="round_robin" {% if request.GET.assignment_type == 'round_robin' %}selected{% endif %}>Round Robin</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Durum</label>
+                                <select name="status" class="form-select">
+                                    <option value="">Tümü</option>
+                                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Aktif</option>
+                                    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Tamamlandı</option>
+                                    <option value="reassigned" {% if request.GET.status == 'reassigned' %}selected{% endif %}>Yeniden Atandı</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Başlangıç Tarihi</label>
+                                <input type="date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Bitiş Tarihi</label>
+                                <input type="date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Filtrele</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment History -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Atama Geçmişi</h5>
+                </div>
+                <div class="card-body">
+                    {% if assignments %}
+                        <div class="timeline">
+                            {% for assignment in assignments %}
+                            <div class="timeline-item">
+                                <div class="assignment-card card mb-3">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-3">
+                                                <h6 class="mb-1">
+                                                    <a href="{% url 'sales_process:lead_detail' assignment.lead.id %}" class="text-decoration-none">
+                                                        {{ assignment.lead.first_name }} {{ assignment.lead.last_name }}
+                                                    </a>
+                                                </h6>
+                                                <small class="text-muted">{{ assignment.lead.phone }}</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <span class="badge assignment-type-badge assignment-type-{{ assignment.assignment_type }}">
+                                                    {{ assignment.get_assignment_type_display }}
+                                                </span>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <strong>{{ assignment.assigned_to.get_full_name }}</strong>
+                                                <br><small class="text-muted">{{ assignment.assigned_to.username }}</small>
+                                            </div>
+                                            <div class="col-md-2">
+                                                {% if assignment.status == 'active' %}
+                                                    <span class="badge bg-success">Aktif</span>
+                                                {% elif assignment.status == 'completed' %}
+                                                    <span class="badge bg-primary">Tamamlandı</span>
+                                                {% elif assignment.status == 'reassigned' %}
+                                                    <span class="badge bg-warning">Yeniden Atandı</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-2">
+                                                <small class="text-muted">{{ assignment.assigned_at|date:"d.m.Y H:i" }}</small>
+                                            </div>
+                                            <div class="col-md-1">
+                                                {% if assignment.is_sticky %}
+                                                    <i class="fas fa-thumbtack text-warning" title="Sticky Assignment"></i>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% if assignment.assignment_reason %}
+                                        <div class="row mt-2">
+                                            <div class="col-12">
+                                                <small class="text-muted">
+                                                    <strong>Sebep:</strong> {{ assignment.assignment_reason }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        {% if assignment.notes %}
+                                        <div class="row mt-1">
+                                            <div class="col-12">
+                                                <small class="text-muted">
+                                                    <strong>Not:</strong> {{ assignment.notes }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if is_paginated %}
+                        <nav aria-label="Assignment pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if request.GET.assignment_type %}&assignment_type={{ request.GET.assignment_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">&laquo; İlk</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.assignment_type %}&assignment_type={{ request.GET.assignment_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Önceki</a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if request.GET.assignment_type %}&assignment_type={{ request.GET.assignment_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.assignment_type %}&assignment_type={{ request.GET.assignment_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Sonraki</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.assignment_type %}&assignment_type={{ request.GET.assignment_type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Son &raquo;</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Atama geçmişi bulunamadı</h5>
+                            <p class="text-muted">Henüz hiç lead ataması yapılmamış.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+$(document).ready(function() {
+    // Auto-refresh every 30 seconds
+    setInterval(function() {
+        if (!document.hidden) {
+            location.reload();
+        }
+    }, 30000);
+    
+    // Smooth scroll for timeline
+    $('.timeline-item').each(function(index) {
+        $(this).delay(100 * index).fadeIn(500);
+    });
+});
+</script>
+{% endblock %}

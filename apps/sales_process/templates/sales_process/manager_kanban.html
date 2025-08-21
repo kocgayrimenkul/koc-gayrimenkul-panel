@@ -1,0 +1,931 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %} Müdür Satış Sonrası Akışı {% endblock %}
+
+{% block stylesheets %}
+<style>
+/* Koç Gayrimenkul kurumsal renkleri */
+:root {
+  --koc-red: #9d2235;
+  --koc-red-light: #b82e42;
+  --koc-red-dark: #7a1a29;
+  --koc-black: #212529;
+  --koc-red-rgb: 157, 34, 53;
+  --koc-gray: #f5f5f5;
+}
+
+.bg-gradient-koc-red {
+  background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+}
+
+.kanban-board {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 20px 0;
+    min-height: 70vh;
+}
+
+.kanban-column {
+    min-width: 300px;
+    background: var(--koc-gray);
+    border-radius: 0.75rem;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid rgba(var(--koc-red-rgb), 0.1);
+}
+
+.column-header {
+    background: linear-gradient(45deg, var(--koc-red-dark), var(--koc-red));
+    color: white;
+    padding: 15px 20px;
+    border-radius: 0.5rem;
+    margin: -20px -20px 20px -20px;
+    text-align: center;
+    font-weight: 600;
+    position: relative;
+}
+
+.column-header.contract {
+    background: linear-gradient(45deg, var(--koc-red), var(--koc-red-light));
+}
+
+.column-header.payment {
+    background: linear-gradient(45deg, #11cdef, #1171ef);
+}
+
+.column-header.deed {
+    background: linear-gradient(45deg, #2dce89, #2dcecc);
+}
+
+.column-header.credit {
+    background: linear-gradient(45deg, #fb6340, #fbb140);
+}
+
+.column-header.completed {
+    background: linear-gradient(45deg, #2dce89, #2dcecc);
+    color: white;
+}
+
+.column-header.survey {
+    background: linear-gradient(45deg, #f5365c, #f56036);
+    color: white;
+}
+
+.column-header.closed {
+    background: linear-gradient(45deg, var(--koc-black), #495057);
+}
+
+.lead-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border-left: 4px solid var(--koc-red);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid rgba(var(--koc-red-rgb), 0.1);
+}
+
+.lead-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(var(--koc-red-rgb), 0.15);
+}
+
+.lead-card.high-priority {
+    border-left-color: var(--koc-red);
+}
+
+.lead-card.medium-priority {
+    border-left-color: #fb6340;
+}
+
+.lead-card.low-priority {
+    border-left-color: #2dce89;
+}
+
+.customer-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+.customer-phone {
+    color: #6c757d;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.property-info {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 13px;
+}
+
+.contract-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 13px;
+}
+
+.contract-price {
+    font-weight: 600;
+    color: #28a745;
+}
+
+.payment-type {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.payment-type.cash {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.payment-type.credit {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-call {
+    background: #2dce89;
+    color: white;
+}
+
+.btn-call:hover {
+    background: #24a46d;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-whatsapp {
+    background: #25d366;
+    color: white;
+}
+
+.btn-whatsapp:hover {
+    background: #128c7e;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-complete {
+    background: var(--koc-red);
+    color: white;
+}
+
+.btn-complete:hover {
+    background: var(--koc-red-light);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-survey {
+    background: #fb6340;
+    color: white;
+}
+
+.btn-survey:hover {
+    background: #ea5a36;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-close {
+    background: var(--koc-black);
+    color: white;
+}
+
+.btn-close:hover {
+    background: #495057;
+    color: white;
+    text-decoration: none;
+}
+
+.card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.assigned-staff {
+    font-weight: 600;
+    color: #495057;
+}
+
+.stage-date {
+    font-style: italic;
+}
+
+.column-count {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.empty-column {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 40px 20px;
+}
+
+.refresh-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.refresh-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.task-reminder {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #856404;
+}
+
+.task-reminder i {
+    margin-right: 5px;
+}
+
+@media (max-width: 768px) {
+    .kanban-board {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .kanban-column {
+        min-width: auto;
+    }
+    
+    .card-actions {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col-lg-6 col-7">
+                    <h6 class="h2 text-white d-inline-block mb-0">Müdür Satış Sonrası Akışı</h6>
+                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                        <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                            <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}"><i class="fas fa-tachometer-alt"></i></a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Müdür Akışı</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="col-lg-6 col-5 text-right">
+                    <button class="btn btn-sm btn-neutral" onclick="refreshBoard()">
+                        <i class="fas fa-sync-alt"></i> Yenile
+                    </button>
+                    <a href="{% url 'sales_process:sales_reports' %}" class="btn btn-sm btn-neutral ml-2">
+                        <i class="fas fa-chart-bar"></i> Raporlar
+                    </a>
+                    <a href="{% url 'sales_process:manager_kanban_fullscreen' %}" class="btn btn-sm btn-primary ml-2">
+                        <i class="fas fa-expand"></i> Tam Ekran
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+    <div class="kanban-board" id="managerKanbanBoard">
+        <!-- Sözleşme Yapıldı -->
+        <div class="kanban-column">
+            <div class="column-header contract">
+            <span>{{ sozlesme_yapildi_stage.display_name }}</span>
+            <span class="column-count">{{ contract_leads|length }}</span>
+        </div>
+            <div class="column-content" id="contract-column">
+                {% for lead in contract_leads %}
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                    <div class="customer-name">{{ lead.customer_name }}</div>
+                    <div class="customer-phone">
+                        <i class="fas fa-phone"></i> {{ lead.customer_phone }}
+                    </div>
+                    
+                    <div class="property-info">
+                        <strong>{{ lead.property_type }}</strong><br>
+                        {{ lead.property_location }}
+                    </div>
+                    
+                    <div class="contract-info">
+                        <span class="contract-price">{{ lead.contract_price|floatformat:0 }} TL</span>
+                        <span class="payment-type {{ lead.payment_type }}">{{ lead.get_payment_type_display }}</span>
+                    </div>
+                    
+                    <div class="card-actions">
+                        {% if lead.payment_type == 'cash' %}
+                            <button class="action-btn btn-complete" onclick="moveToDeeds('{{ lead.id }}')">
+                                <i class="fas fa-file-signature"></i> Tapu İşlemi
+                            </button>
+                        {% else %}
+                            <button class="action-btn btn-complete" onclick="moveToCredit('{{ lead.id }}')">
+                                <i class="fas fa-credit-card"></i> Kredi İşlemi
+                            </button>
+                        {% endif %}
+                        <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
+                            <i class="fas fa-phone"></i> Ara
+                        </a>
+                    </div>
+                    
+                    <div class="card-meta">
+                        <span class="assigned-staff">{{ lead.assigned_staff.get_full_name }}</span>
+                        <span class="stage-date">{{ lead.stage_updated_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-column">
+                    <i class="fas fa-inbox fa-2x mb-3"></i><br>
+                    Henüz sözleşme yapılmış müşteri yok
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Kredi İşlemleri -->
+        <div class="kanban-column">
+            <div class="column-header credit">
+            <span>{{ kredi_islemleri_stage.display_name }}</span>
+            <span class="column-count">{{ credit_leads|length }}</span>
+        </div>
+            <div class="column-content" id="credit-column">
+                {% for lead in credit_leads %}
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                    <div class="customer-name">{{ lead.customer_name }}</div>
+                    <div class="customer-phone">
+                        <i class="fas fa-phone"></i> {{ lead.customer_phone }}
+                    </div>
+                    
+                    <div class="property-info">
+                        <strong>{{ lead.property_type }}</strong><br>
+                        {{ lead.property_location }}
+                    </div>
+                    
+                    <div class="contract-info">
+                        <span class="contract-price">{{ lead.contract_price|floatformat:0 }} TL</span>
+                        <span class="payment-type credit">Kredili</span>
+                    </div>
+                    
+                    {% if lead.pending_tasks.exists %}
+                        {% for task in lead.pending_tasks.all %}
+                        <div class="task-reminder">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {{ task.title }} - {{ task.due_date|date:"d.m.Y" }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <div class="card-actions">
+                        <button class="action-btn btn-complete" onclick="completeCreditProcess('{{ lead.id }}')">
+                            <i class="fas fa-check"></i> Kredi Tamamlandı
+                        </button>
+                        <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
+                            <i class="fas fa-phone"></i> Ara
+                        </a>
+                        <button class="action-btn btn-whatsapp" onclick="sendWhatsApp('{{ lead.id }}', 'credit_update')">
+                            <i class="fab fa-whatsapp"></i> Bilgilendir
+                        </button>
+                    </div>
+                    
+                    <div class="card-meta">
+                        <span class="assigned-staff">{{ lead.assigned_staff.get_full_name }}</span>
+                        <span class="stage-date">{{ lead.stage_updated_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-column">
+                    <i class="fas fa-credit-card fa-2x mb-3"></i><br>
+                    Kredi işlemi bekleyen müşteri yok
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Tapu İşlemi -->
+        <div class="kanban-column">
+            <div class="column-header deed">
+            <span>{{ tapu_islemi_stage.display_name }}</span>
+            <span class="column-count">{{ deed_leads|length }}</span>
+        </div>
+            <div class="column-content" id="deed-column">
+                {% for lead in deed_leads %}
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                    <div class="customer-name">{{ lead.customer_name }}</div>
+                    <div class="customer-phone">
+                        <i class="fas fa-phone"></i> {{ lead.customer_phone }}
+                    </div>
+                    
+                    <div class="property-info">
+                        <strong>{{ lead.property_type }}</strong><br>
+                        {{ lead.property_location }}
+                    </div>
+                    
+                    <div class="contract-info">
+                        <span class="contract-price">{{ lead.contract_price|floatformat:0 }} TL</span>
+                        <span class="payment-type cash">Nakit</span>
+                    </div>
+                    
+                    {% if lead.pending_tasks.exists %}
+                        {% for task in lead.pending_tasks.all %}
+                        <div class="task-reminder">
+                            <i class="fas fa-calendar-alt"></i>
+                            {{ task.title }} - {{ task.due_date|date:"d.m.Y" }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <div class="card-actions">
+                        <button class="action-btn btn-complete" onclick="completeDeedProcess('{{ lead.id }}')">
+                            <i class="fas fa-file-signature"></i> Tapu Tamamlandı
+                        </button>
+                        <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
+                            <i class="fas fa-phone"></i> Ara
+                        </a>
+                        <button class="action-btn btn-whatsapp" onclick="sendWhatsApp('{{ lead.id }}', 'deed_update')">
+                            <i class="fab fa-whatsapp"></i> Bilgilendir
+                        </button>
+                    </div>
+                    
+                    <div class="card-meta">
+                        <span class="assigned-staff">{{ lead.assigned_staff.get_full_name }}</span>
+                        <span class="stage-date">{{ lead.stage_updated_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-column">
+                    <i class="fas fa-file-signature fa-2x mb-3"></i><br>
+                    Tapu işlemi bekleyen müşteri yok
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Hizmet Tamamlandı -->
+        <div class="kanban-column">
+            <div class="column-header completed">
+            <span>{{ hizmet_tamamlandi_stage.display_name }}</span>
+            <span class="column-count">{{ completed_leads|length }}</span>
+        </div>
+            <div class="column-content" id="completed-column">
+                {% for lead in completed_leads %}
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                    <div class="customer-name">{{ lead.customer_name }}</div>
+                    <div class="customer-phone">
+                        <i class="fas fa-phone"></i> {{ lead.customer_phone }}
+                    </div>
+                    
+                    <div class="property-info">
+                        <strong>{{ lead.property_type }}</strong><br>
+                        {{ lead.property_location }}
+                    </div>
+                    
+                    <div class="contract-info">
+                        <span class="contract-price">{{ lead.contract_price|floatformat:0 }} TL</span>
+                        <span class="payment-type {{ lead.payment_type }}">{{ lead.get_payment_type_display }}</span>
+                    </div>
+                    
+                    <div class="card-actions">
+                        <button class="action-btn btn-survey" onclick="sendSatisfactionSurvey('{{ lead.id }}')">
+                            <i class="fas fa-star"></i> Anket Gönder
+                        </button>
+                        <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
+                            <i class="fas fa-phone"></i> Ara
+                        </a>
+                    </div>
+                    
+                    <div class="card-meta">
+                        <span class="assigned-staff">{{ lead.assigned_staff.get_full_name }}</span>
+                        <span class="stage-date">{{ lead.stage_updated_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-column">
+                    <i class="fas fa-check-circle fa-2x mb-3"></i><br>
+                    Hizmeti tamamlanan müşteri yok
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Memnuniyet Anketi -->
+        <div class="kanban-column">
+            <div class="column-header survey">
+            <span>{{ memnuniyet_anketi_stage.display_name }}</span>
+            <span class="column-count">{{ survey_leads|length }}</span>
+        </div>
+            <div class="column-content" id="survey-column">
+                {% for lead in survey_leads %}
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                    <div class="customer-name">{{ lead.customer_name }}</div>
+                    <div class="customer-phone">
+                        <i class="fas fa-phone"></i> {{ lead.customer_phone }}
+                    </div>
+                    
+                    <div class="property-info">
+                        <strong>{{ lead.property_type }}</strong><br>
+                        {{ lead.property_location }}
+                    </div>
+                    
+                    <div class="contract-info">
+                        <span class="contract-price">{{ lead.contract_price|floatformat:0 }} TL</span>
+                        <span class="payment-type {{ lead.payment_type }}">{{ lead.get_payment_type_display }}</span>
+                    </div>
+                    
+                    <div class="card-actions">
+                        <button class="action-btn btn-close" onclick="closeCase('{{ lead.id }}')">
+                            <i class="fas fa-folder"></i> Dosya Kapat
+                        </button>
+                        <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
+                            <i class="fas fa-phone"></i> Ara
+                        </a>
+                    </div>
+                    
+                    <div class="card-meta">
+                        <span class="assigned-staff">{{ lead.assigned_staff.get_full_name }}</span>
+                        <span class="stage-date">{{ lead.stage_updated_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-column">
+                    <i class="fas fa-poll fa-2x mb-3"></i><br>
+                    Anket bekleyen müşteri yok
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Dosya Kapandı -->
+        <div class="kanban-column">
+            <div class="column-header closed">
+            <span>{{ dosya_kapandi_stage.display_name }}</span>
+            <span class="column-count">{{ closed_leads|length }}</span>
+        </div>
+            <div class="column-content" id="closed-column">
+                {% for lead in closed_leads %}
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                    <div class="customer-name">{{ lead.customer_name }}</div>
+                    <div class="customer-phone">
+                        <i class="fas fa-phone"></i> {{ lead.customer_phone }}
+                    </div>
+                    
+                    <div class="property-info">
+                        <strong>{{ lead.property_type }}</strong><br>
+                        {{ lead.property_location }}
+                    </div>
+                    
+                    <div class="contract-info">
+                        <span class="contract-price">{{ lead.contract_price|floatformat:0 }} TL</span>
+                        <span class="payment-type {{ lead.payment_type }}">{{ lead.get_payment_type_display }}</span>
+                    </div>
+                    
+                    <div class="card-meta">
+                        <span class="assigned-staff">{{ lead.assigned_staff.get_full_name }}</span>
+                        <span class="stage-date">{{ lead.stage_updated_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-column">
+                    <i class="fas fa-archive fa-2x mb-3"></i><br>
+                    Kapatılan dosya yok
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Yenile Butonu -->
+    <button class="refresh-btn" onclick="refreshBoard()" title="Panoyu Yenile">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+// Panoyu yenile
+function refreshBoard() {
+    location.reload();
+}
+
+// Kredi işlemini tamamla
+function completeCreditProcess(leadId) {
+    if (confirm('Kredi işlemi tamamlandı olarak işaretlensin mi?')) {
+        fetch('/satis-surec/ajax/update-stage/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: leadId,
+                new_stage: 'hizmet_tamamlandi'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                refreshBoard();
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        });
+    }
+}
+
+// Tapu işlemini tamamla
+function completeDeedProcess(leadId) {
+    if (confirm('Tapu devri tamamlandı olarak işaretlensin mi?')) {
+        fetch('/satis-surec/ajax/update-stage/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: leadId,
+                new_stage: 'hizmet_tamamlandi'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                refreshBoard();
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        });
+    }
+}
+
+// Tapu işlemine geç
+function moveToDeeds(leadId) {
+    fetch('/satis-surec/ajax/update-stage/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            new_stage: 'tapu_islemi'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            refreshBoard();
+        } else {
+            alert('Hata: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu.');
+    });
+}
+
+// Kredi işlemine geç
+function moveToCredit(leadId) {
+    fetch('/satis-surec/ajax/update-stage/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            new_stage: 'kredi_islemleri'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            refreshBoard();
+        } else {
+            alert('Hata: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu.');
+    });
+}
+
+// Memnuniyet anketi gönder
+function sendSatisfactionSurvey(leadId) {
+    if (confirm('Müşteriye memnuniyet anketi gönderilsin mi?')) {
+        fetch('/satis-surec/whatsapp/send/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: leadId,
+                message_type: 'satisfaction_survey'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Anketi gönderildikten sonra aşamayı güncelle
+                fetch('/satis-surec/ajax/update-stage/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        lead_id: leadId,
+                        new_stage: 'memnuniyet_anketi'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Memnuniyet anketi gönderildi.');
+                        refreshBoard();
+                    }
+                });
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        });
+    }
+}
+
+// Dosyayı kapat
+function closeCase(leadId) {
+    if (confirm('Dosya kapatılsın mı? Bu işlem geri alınamaz.')) {
+        fetch('/satis-surec/ajax/update-stage/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: leadId,
+                new_stage: 'dosya_kapandi'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Dosya başarıyla kapatıldı.');
+                refreshBoard();
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        });
+    }
+}
+
+// WhatsApp mesajı gönder
+function sendWhatsApp(leadId, messageType) {
+    fetch('/satis-surec/whatsapp/send/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            message_type: messageType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('WhatsApp mesajı gönderildi.');
+        } else {
+            alert('Hata: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu.');
+    });
+}
+
+// CSRF token alma fonksiyonu
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Sayfa yüklendiğinde
+document.addEventListener('DOMContentLoaded', function() {
+    // Kartlara tıklama olayı ekle
+    document.querySelectorAll('.lead-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Butonlara tıklanmışsa kartın detayına gitme
+            if (e.target.closest('.action-btn')) {
+                return;
+            }
+            
+            const leadId = this.dataset.leadId;
+            window.location.href = `/satis-surec/lead/${leadId}/`;
+        });
+    });
+    
+    // Otomatik yenileme (5 dakikada bir)
+    setInterval(refreshBoard, 300000);
+});
+</script>
+{% endblock javascripts %}

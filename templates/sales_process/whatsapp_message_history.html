@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}WhatsApp Mesaj Geçmişi - {{ lead.customer_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.whatsapp-chat {
+    background: linear-gradient(to bottom, #ddd6f3, #faaca8);
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="chat-bg" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23chat-bg)"/></svg>');
+    min-height: 500px;
+    max-height: 600px;
+    overflow-y: auto;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.message-bubble {
+    max-width: 70%;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.message-bubble.outgoing {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.message-bubble.incoming {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.message-content {
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.message-bubble.outgoing .message-content {
+    background-color: #dcf8c6;
+    color: #000;
+}
+
+.message-bubble.incoming .message-content {
+    background-color: #ffffff;
+    color: #000;
+}
+
+.message-time {
+    font-size: 11px;
+    color: #666;
+    margin-top: 5px;
+    text-align: right;
+}
+
+.message-bubble.incoming .message-time {
+    text-align: left;
+}
+
+.message-status {
+    font-size: 10px;
+    color: #999;
+    margin-left: 5px;
+}
+
+.message-status.delivered {
+    color: #4fc3f7;
+}
+
+.message-status.read {
+    color: #4fc3f7;
+}
+
+.message-status.failed {
+    color: #f44336;
+}
+
+.template-message {
+    border-left: 3px solid #25d366;
+    background-color: #f0f8f0 !important;
+}
+
+.media-message {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.media-message img {
+    max-width: 100%;
+    height: auto;
+}
+
+.no-messages {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    margin-top: 50px;
+}
+
+.chat-header {
+    background-color: #25d366;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 10px 10px 0 0;
+    margin-bottom: 0;
+}
+
+.chat-actions {
+    background-color: #f8f9fa;
+    padding: 15px 20px;
+    border-radius: 0 0 10px 10px;
+    border-top: 1px solid #dee2e6;
+}
+
+.typing-indicator {
+    display: none;
+    padding: 10px;
+    font-style: italic;
+    color: #666;
+}
+
+.message-bubble.system {
+    text-align: center;
+    margin: 20px auto;
+    max-width: 80%;
+}
+
+.message-bubble.system .message-content {
+    background-color: rgba(0,0,0,0.1);
+    color: #666;
+    font-size: 12px;
+    border-radius: 15px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Sayfa Başlığı -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="fab fa-whatsapp text-success"></i>
+                        WhatsApp Mesaj Geçmişi
+                    </h2>
+                    <p class="text-muted mb-0">
+                        {{ lead.customer_name }} - {{ lead.customer_phone }}
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'sales_process:lead_detail' lead.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Geri Dön
+                    </a>
+                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#whatsappMessageModal">
+                        <i class="fab fa-whatsapp"></i> Yeni Mesaj
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Arayüzü -->
+            <div class="card">
+                <div class="chat-header">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle bg-white text-success mr-3">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">{{ lead.customer_name }}</h6>
+                            <small class="opacity-75">{{ lead.customer_phone }}</small>
+                        </div>
+                        <div class="ml-auto">
+                            <span class="badge badge-light">
+                                {{ messages|length }} mesaj
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="whatsapp-chat" id="chatContainer">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="message-bubble {% if message.direction == 'outbound' %}outgoing{% else %}incoming{% endif %} {% if message.message_type == 'template' %}template{% endif %}">
+                                <div class="message-content {% if message.message_type == 'template' %}template-message{% endif %}">
+                                    {% if message.message_type == 'template' %}
+                                        <div class="template-header">
+                                            <small class="text-muted">
+                                                <i class="fas fa-file-alt"></i> Şablon Mesajı: {{ message.template_name }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if message.message_type == 'document' and message.media_url %}
+                                        <div class="media-message">
+                                            <div class="p-3">
+                                                <i class="fas fa-file-alt fa-2x text-primary mb-2"></i>
+                                                <div>
+                                                    <strong>Döküman</strong><br>
+                                                    <a href="{{ message.media_url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                                                        <i class="fas fa-download"></i> İndir
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        {{ message.content|linebreaks }}
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="message-time">
+                                    {{ message.created_at|date:"d.m.Y H:i" }}
+                                    {% if message.direction == 'outbound' %}
+                                        <span class="message-status {{ message.status }}">
+                                            {% if message.status == 'sent' %}
+                                                <i class="fas fa-check"></i>
+                                            {% elif message.status == 'delivered' %}
+                                                <i class="fas fa-check-double"></i>
+                                            {% elif message.status == 'read' %}
+                                                <i class="fas fa-check-double text-primary"></i>
+                                            {% elif message.status == 'failed' %}
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-messages">
+                            <i class="fab fa-whatsapp fa-3x text-muted mb-3"></i>
+                            <p>Henüz mesaj geçmişi bulunmuyor.</p>
+                            <p class="small text-muted">İlk mesajınızı göndermek için "Yeni Mesaj" butonunu kullanın.</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="typing-indicator" id="typingIndicator">
+                        <i class="fas fa-circle-notch fa-spin"></i> Yazıyor...
+                    </div>
+                </div>
+                
+                <div class="chat-actions">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#whatsappMessageModal">
+                                    <i class="fas fa-paper-plane"></i> Mesaj Gönder
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="refreshMessages()">
+                                    <i class="fas fa-sync-alt"></i> Yenile
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="exportMessages()">
+                                    <i class="fas fa-download"></i> Dışa Aktar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <small class="text-muted">
+                                Son güncelleme: {{ last_updated|date:"d.m.Y H:i" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WhatsApp Mesaj Gönderme Modal -->
+{% include 'sales_process/whatsapp_message_form.html' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Chat container'ı en alta kaydır
+    scrollToBottom();
+    
+    // Auto-refresh her 30 saniyede bir
+    setInterval(function() {
+        refreshMessages();
+    }, 30000);
+});
+
+function scrollToBottom() {
+    var chatContainer = document.getElementById('chatContainer');
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function refreshMessages() {
+    $.ajax({
+        url: window.location.href,
+        method: 'GET',
+        success: function(response) {
+            // Sadece chat içeriğini güncelle
+            var newContent = $(response).find('#chatContainer').html();
+            $('#chatContainer').html(newContent);
+            scrollToBottom();
+        },
+        error: function() {
+            console.log('Mesajlar yenilenemedi');
+        }
+    });
+}
+
+function exportMessages() {
+    var leadId = '{{ lead.id }}';
+    window.open('/satis-surec/whatsapp/export/' + leadId + '/', '_blank');
+}
+
+function refreshMessageHistory() {
+    refreshMessages();
+}
+
+// WhatsApp mesaj gönderme modal'ı için action URL'sini ayarla
+$('#whatsappMessageModal').on('show.bs.modal', function() {
+    var form = $(this).find('form');
+    form.attr('action', '{% url "sales_process:send_whatsapp_message" lead.id %}');
+});
+</script>
+{% endblock %}

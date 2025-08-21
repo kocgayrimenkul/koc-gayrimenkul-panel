@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Atama Yönetimi - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css">
+<style>
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.stats-card h3 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stats-card p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+.workload-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.workload-item:last-child {
+    border-bottom: none;
+}
+
+.workload-bar {
+    width: 100px;
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.workload-progress {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
+    transition: width 0.3s ease;
+}
+
+.action-btn {
+    margin: 5px;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 20px 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Atama Yönetimi</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}">Satış Süreci</a></li>
+                        <li class="breadcrumb-item active">Atama Yönetimi</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- İstatistik Kartları -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card">
+                <h3>{{ total_leads }}</h3>
+                <p>Toplam Aktif Lead</p>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                <h3>{{ assigned_leads }}</h3>
+                <p>Atanmış Lead</p>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card" style="background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);">
+                <h3>{{ unassigned_leads }}</h3>
+                <p>Atanmamış Lead</p>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <h3>{{ sticky_assignments }}</h3>
+                <p>Sticky Assignment</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Hızlı İşlemler -->
+        <div class="col-xl-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Hızlı İşlemler</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary action-btn" onclick="autoAssignLeads()">
+                            <i class="fas fa-magic"></i> Otomatik Atama Yap
+                        </button>
+                        <button type="button" class="btn btn-warning action-btn" onclick="reassignOverdueLeads()">
+                            <i class="fas fa-clock"></i> Gecikmiş Lead'leri Yeniden Ata
+                        </button>
+                        <button type="button" class="btn btn-info action-btn" onclick="balanceWorkload()">
+                            <i class="fas fa-balance-scale"></i> İş Yükünü Dengele
+                        </button>
+                        <a href="{% url 'sales_process:lead_assignment_list' %}" class="btn btn-secondary action-btn">
+                            <i class="fas fa-list"></i> Atama Geçmişi
+                        </a>
+                        <a href="{% url 'sales_process:assignment_statistics' %}" class="btn btn-success action-btn">
+                            <i class="fas fa-chart-bar"></i> Detaylı İstatistikler
+                        </a>
+                    </div>
+                    
+                    {% if overdue_tasks > 0 %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>{{ overdue_tasks }}</strong> gecikmiş görev bulunuyor!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Personel İş Yükü -->
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Personel İş Yükü Dağılımı</h4>
+                </div>
+                <div class="card-body">
+                    {% for staff in staff_workload %}
+                    <div class="workload-item">
+                        <div>
+                            <strong>{{ staff.get_full_name }}</strong>
+                            <small class="text-muted d-block">{{ staff.active_leads }} aktif lead</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ staff.total_assignments }}</span>
+                            <div class="workload-bar">
+                                {% if staff.active_leads > 0 %}
+                                <div class="workload-progress" style="width: {{ staff.active_leads|floatformat:0 }}%;"></div>
+                                {% else %}
+                                <div class="workload-progress" style="width: 0%;"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">Henüz personel ataması bulunmuyor.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Son Atamalar -->
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Son 7 Günün Atama Türleri</h4>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="assignmentTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Son Atamalar</h4>
+                </div>
+                <div class="card-body">
+                    {% for assignment in recent_assignments %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ assignment.get_assignment_type_display }}</span>
+                        <span class="badge bg-primary">{{ assignment.count }}</span>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">Son 7 günde atama yapılmamış.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
+                </div>
+                <p class="mt-2 mb-0">İşlem yapılıyor...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+$(document).ready(function() {
+    // CSRF token
+    const csrfToken = $('[name=csrfmiddlewaretoken]').val();
+    
+    // Chart.js - Atama Türü Dağılımı
+    const assignmentTypeCtx = document.getElementById('assignmentTypeChart');
+    if (assignmentTypeCtx) {
+        const assignmentLabels = [
+            {% for assignment in recent_assignments %}
+            '{{ assignment.get_assignment_type_display|escapejs }}',
+            {% endfor %}
+        ];
+        const assignmentData = [
+            {% for assignment in recent_assignments %}
+            {{ assignment.count }},
+            {% endfor %}
+        ];
+        
+        new Chart(assignmentTypeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: assignmentLabels,
+                datasets: [{
+                    data: assignmentData,
+                    backgroundColor: [
+                        '#667eea',
+                        '#764ba2',
+                        '#f093fb',
+                        '#f5576c',
+                        '#4facfe',
+                        '#00f2fe'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+});
+
+function getCsrfToken() {
+    return $('[name=csrfmiddlewaretoken]').val();
+}
+
+// Otomatik atama
+function autoAssignLeads() {
+    if (!confirm('Atanmamış tüm leadler otomatik olarak atanacak. Devam etmek istiyor musunuz?')) {
+        return;
+    }
+    
+    showLoading();
+    
+    $.ajax({
+        url: '{% url "sales_process:auto_assign_leads" %}',
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        },
+        success: function(data) {
+            hideLoading();
+            if (data.success) {
+                toastr.success(data.message);
+                setTimeout(function() { location.reload(); }, 1500);
+            } else {
+                toastr.error(data.error || 'İşlem başarısız.');
+            }
+        },
+        error: function() {
+            hideLoading();
+            toastr.error('Bir hata oluştu.');
+        }
+    });
+}
+
+// Gecikmiş leadleri yeniden ata
+function reassignOverdueLeads() {
+    if (!confirm('Gecikmiş leadler yeniden atanacak. Devam etmek istiyor musunuz?')) {
+        return;
+    }
+    
+    showLoading();
+    
+    $.ajax({
+        url: '{% url "sales_process:reassign_overdue_leads" %}',
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        },
+        success: function(data) {
+            hideLoading();
+            if (data.success) {
+                toastr.success(data.message);
+                setTimeout(function() { location.reload(); }, 1500);
+            } else {
+                toastr.error(data.error || 'İşlem başarısız.');
+            }
+        },
+        error: function() {
+            hideLoading();
+            toastr.error('Bir hata oluştu.');
+        }
+    });
+}
+
+// İş yükünü dengele
+function balanceWorkload() {
+    if (!confirm('Personel iş yükü dengelenecek. Bu işlem lead atamalarını değiştirebilir. Devam etmek istiyor musunuz?')) {
+        return;
+    }
+    
+    showLoading();
+    
+    $.ajax({
+        url: '{% url "sales_process:balance_workload" %}',
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken()
+        },
+        success: function(data) {
+            hideLoading();
+            if (data.success) {
+                toastr.success(data.message);
+                setTimeout(function() { location.reload(); }, 1500);
+            } else {
+                toastr.error(data.error || 'İşlem başarısız.');
+            }
+        },
+        error: function() {
+            hideLoading();
+            toastr.error('Bir hata oluştu.');
+        }
+    });
+}
+
+// Loading modal
+function showLoading() {
+    const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    modal.show();
+}
+
+function hideLoading() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('loadingModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,949 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %}Müdür Kanban Paneli{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css">
+<style>
+.manager-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1rem;
+    min-height: 80vh;
+}
+
+.kanban-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.analytics-sidebar {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.kanban-board {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+    min-height: 60vh;
+}
+
+.kanban-column {
+    min-width: 280px;
+    max-width: 320px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.kanban-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.kanban-title {
+    font-weight: bold;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.kanban-count {
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.kanban-cards {
+    min-height: 300px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.lead-card {
+    background: white;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    cursor: move;
+    transition: all 0.3s ease;
+    border-left: 4px solid #007bff;
+    font-size: 0.85rem;
+}
+
+.lead-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.lead-card.dragging {
+    opacity: 0.5;
+    transform: rotate(3deg);
+}
+
+.lead-name {
+    font-weight: bold;
+    color: #333;
+    margin: 0 0 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.lead-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #666;
+}
+
+.lead-agent {
+    font-weight: 500;
+    color: #007bff;
+}
+
+.lead-priority {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.priority-high { background: #dc3545; color: white; }
+.priority-medium { background: #ffc107; color: #000; }
+.priority-low { background: #28a745; color: white; }
+
+.stage-new { border-left-color: #6c757d; }
+.stage-contacted { border-left-color: #17a2b8; }
+.stage-qualified { border-left-color: #ffc107; }
+.stage-proposal { border-left-color: #fd7e14; }
+.stage-negotiation { border-left-color: #e83e8c; }
+.stage-closed-won { border-left-color: #28a745; }
+.stage-closed-lost { border-left-color: #dc3545; }
+
+.analytics-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.analytics-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.analytics-label {
+    font-size: 0.8rem;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.team-performance {
+    margin-bottom: 1.5rem;
+}
+
+.team-member {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.member-name {
+    font-weight: 500;
+}
+
+.member-stats {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.stat-badge {
+    background: #007bff;
+    color: white;
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+}
+
+.chart-container {
+    margin-bottom: 1.5rem;
+}
+
+.chart-title {
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.filters-section {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    padding: 0.25rem 0.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-view { background: #17a2b8; color: white; }
+.btn-assign { background: #ffc107; color: #000; }
+.btn-call { background: #28a745; color: white; }
+.btn-priority { background: #dc3545; color: white; }
+
+.action-btn:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    display: none;
+}
+
+.loading-spinner {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+@media (max-width: 1200px) {
+    .manager-dashboard {
+        grid-template-columns: 1fr;
+    }
+    
+    .analytics-sidebar {
+        max-height: none;
+        order: -1;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Müdür Kanban Paneli</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}">Satış Paneli</a></li>
+                        <li class="breadcrumb-item active">Müdür Kanban</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Quick Actions -->
+    <div class="filters-section">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <select id="agentFilter" class="form-select form-select-sm">
+                            <option value="">Tüm Personel</option>
+                            {% for agent in agents %}
+                            <option value="{{ agent.id }}">{{ agent.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select id="priorityFilter" class="form-select form-select-sm">
+                            <option value="">Tüm Öncelikler</option>
+                            <option value="high">Yüksek</option>
+                            <option value="medium">Orta</option>
+                            <option value="low">Düşük</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select id="sourceFilter" class="form-select form-select-sm">
+                            <option value="">Tüm Kaynaklar</option>
+                            <option value="website">Website</option>
+                            <option value="phone">Telefon</option>
+                            <option value="referral">Referans</option>
+                            <option value="social">Sosyal Medya</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" id="dateFilter" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="searchFilter" class="form-control form-control-sm" placeholder="Lead ara...">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="quick-actions">
+                    <button class="btn btn-primary btn-sm" onclick="refreshKanban()">
+                        <i class="fas fa-sync-alt"></i> Yenile
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="autoAssignLeads()">
+                        <i class="fas fa-magic"></i> Otomatik Ata
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="balanceWorkload()">
+                        <i class="fas fa-balance-scale"></i> İş Yükü Dengele
+                    </button>
+                    <button class="btn btn-info btn-sm" onclick="exportReports()">
+                        <i class="fas fa-chart-bar"></i> Rapor
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manager Dashboard -->
+    <div class="manager-dashboard">
+        <!-- Kanban Section -->
+        <div class="kanban-section">
+            <div class="kanban-board" id="kanbanBoard">
+                {% for stage in stages %}
+                <div class="kanban-column {{ stage.slug }}" data-stage-id="{{ stage.id }}">
+                    <div class="kanban-header">
+                        <h6 class="kanban-title">{{ stage.name }}</h6>
+                        <span class="kanban-count" id="count-{{ stage.id }}">0</span>
+                    </div>
+                    <div class="kanban-cards" id="cards-{{ stage.id }}">
+                        <!-- Cards will be loaded via AJAX -->
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Analytics Sidebar -->
+        <div class="analytics-sidebar">
+            <!-- Key Metrics -->
+            <div class="analytics-card">
+                <p class="analytics-value" id="totalLeads">0</p>
+                <p class="analytics-label">Toplam Lead</p>
+            </div>
+            
+            <div class="analytics-card">
+                <p class="analytics-value" id="conversionRate">0%</p>
+                <p class="analytics-label">Dönüşüm Oranı</p>
+            </div>
+            
+            <div class="analytics-card">
+                <p class="analytics-value" id="avgResponseTime">0h</p>
+                <p class="analytics-label">Ort. Yanıt Süresi</p>
+            </div>
+
+            <!-- Team Performance -->
+            <div class="team-performance">
+                <h6 class="mb-3">Takım Performansı</h6>
+                <div id="teamPerformanceList">
+                    <!-- Team members will be loaded via AJAX -->
+                </div>
+            </div>
+
+            <!-- Stage Distribution Chart -->
+            <div class="chart-container">
+                <h6 class="chart-title">Aşama Dağılımı</h6>
+                <canvas id="stageChart" width="250" height="200"></canvas>
+            </div>
+
+            <!-- Priority Distribution Chart -->
+            <div class="chart-container">
+                <h6 class="chart-title">Öncelik Dağılımı</h6>
+                <canvas id="priorityChart" width="250" height="150"></canvas>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="recent-activities">
+                <h6 class="mb-3">Son Aktiviteler</h6>
+                <div id="recentActivitiesList" style="max-height: 200px; overflow-y: auto;">
+                    <!-- Activities will be loaded via AJAX -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Yükleniyor...</span>
+        </div>
+        <p class="mt-2">İşlem yapılıyor...</p>
+    </div>
+</div>
+
+<!-- Lead Assignment Modal -->
+<div class="modal fade" id="assignLeadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lead Atama</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="assignLeadForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" id="assignLeadId" name="lead_id">
+                    <div class="mb-3">
+                        <label class="form-label">Personel Seçin</label>
+                        <select name="agent_id" class="form-select" required>
+                            <option value="">Personel seçin...</option>
+                            {% for agent in agents %}
+                            <option value="{{ agent.id }}">{{ agent.get_full_name }} ({{ agent.active_leads_count|default:0 }} aktif lead)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Atama Sebebi</label>
+                        <textarea name="reason" class="form-control" rows="3" placeholder="Atama sebebini açıklayın..."></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_sticky" id="isStickyAssignment">
+                        <label class="form-check-label" for="isStickyAssignment">
+                            Sticky Assignment (Bu müşteri her zaman bu personele atansın)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Ata</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Lead Detail Modal -->
+<div class="modal fade" id="leadDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lead Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="leadDetailContent">
+                <!-- Content will be loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+let kanbanData = {};
+let sortableInstances = [];
+let stageChart, priorityChart;
+
+$(document).ready(function() {
+    initializeManagerKanban();
+    setupFilters();
+    setupAutoRefresh();
+    initializeCharts();
+});
+
+function initializeManagerKanban() {
+    loadKanbanData();
+    setupDragAndDrop();
+    loadAnalytics();
+}
+
+function loadKanbanData() {
+    showLoading();
+    
+    $.ajax({
+        url: '{% url "sales_process:get_manager_leads_ajax" %}',
+        method: 'GET',
+        data: {
+            view_type: 'manager',
+            agent: $('#agentFilter').val(),
+            priority: $('#priorityFilter').val(),
+            source: $('#sourceFilter').val(),
+            date: $('#dateFilter').val(),
+            search: $('#searchFilter').val()
+        },
+        success: function(data) {
+            kanbanData = data;
+            renderKanbanCards();
+            updateAnalytics();
+            hideLoading();
+        },
+        error: function() {
+            hideLoading();
+            alert('Kanban verileri yüklenirken hata oluştu.');
+        }
+    });
+}
+
+function renderKanbanCards() {
+    // Clear all columns
+    $('.kanban-cards').each(function() {
+        $(this).find('.lead-card').remove();
+    });
+    
+    // Render leads in their respective stages
+    if (kanbanData.leads) {
+        kanbanData.leads.forEach(function(lead) {
+            const cardHtml = createManagerLeadCard(lead);
+            $(`#cards-${lead.current_stage_id}`).append(cardHtml);
+        });
+    }
+    
+    // Update counts
+    $('.kanban-count').each(function() {
+        const stageId = $(this).attr('id').replace('count-', '');
+        const count = $(`#cards-${stageId} .lead-card`).length;
+        $(this).text(count);
+    });
+}
+
+function createManagerLeadCard(lead) {
+    const priorityClass = `priority-${lead.priority}`;
+    const stageClass = `stage-${lead.current_stage_slug}`;
+    
+    return `
+        <div class="lead-card ${stageClass}" data-lead-id="${lead.id}" draggable="true">
+            <h6 class="lead-name">${lead.first_name} ${lead.last_name}</h6>
+            <div class="lead-info">
+                <span class="lead-agent">${lead.assigned_to_name || 'Atanmamış'}</span>
+                <span class="lead-priority ${priorityClass}">${lead.priority_display}</span>
+            </div>
+            <div class="lead-info mt-1">
+                <small>${lead.phone}</small>
+                <small>${lead.created_at_display}</small>
+            </div>
+            <div class="d-flex gap-1 mt-2">
+                <button class="action-btn btn-view" onclick="viewLead(${lead.id})" title="Görüntüle">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="action-btn btn-assign" onclick="assignLead(${lead.id})" title="Ata">
+                    <i class="fas fa-user-plus"></i>
+                </button>
+                <button class="action-btn btn-call" onclick="makeCall(${lead.id})" title="Ara">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button class="action-btn btn-priority" onclick="changePriority(${lead.id})" title="Öncelik">
+                    <i class="fas fa-exclamation"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function setupDragAndDrop() {
+    // Destroy existing sortable instances
+    sortableInstances.forEach(instance => instance.destroy());
+    sortableInstances = [];
+    
+    $('.kanban-cards').each(function() {
+        const sortable = new Sortable(this, {
+            group: 'manager-kanban',
+            animation: 150,
+            ghostClass: 'dragging',
+            onStart: function(evt) {
+                $(evt.item).addClass('dragging');
+            },
+            onEnd: function(evt) {
+                $(evt.item).removeClass('dragging');
+                
+                const leadId = $(evt.item).data('lead-id');
+                const newStageId = $(evt.to).closest('.kanban-column').data('stage-id');
+                const oldStageId = $(evt.from).closest('.kanban-column').data('stage-id');
+                
+                if (newStageId !== oldStageId) {
+                    moveLeadToStage(leadId, newStageId, oldStageId);
+                }
+            }
+        });
+        
+        sortableInstances.push(sortable);
+    });
+}
+
+function moveLeadToStage(leadId, newStageId, oldStageId) {
+    showLoading();
+    
+    $.ajax({
+        url: '{% url "sales_process:move_stage_ajax" %}',
+        method: 'POST',
+        data: {
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val(),
+            lead_id: leadId,
+            stage_id: newStageId
+        },
+        success: function(data) {
+            if (data.success) {
+                updateCounts();
+                loadAnalytics();
+                showNotification('Lead başarıyla taşındı', 'success');
+            } else {
+                revertLeadMove(leadId, oldStageId);
+                showNotification('Hata: ' + data.message, 'error');
+            }
+            hideLoading();
+        },
+        error: function() {
+            revertLeadMove(leadId, oldStageId);
+            showNotification('Lead taşınırken hata oluştu', 'error');
+            hideLoading();
+        }
+    });
+}
+
+function loadAnalytics() {
+    $.ajax({
+        url: '{% url "sales_process:manager_analytics" %}',
+        method: 'GET',
+        success: function(data) {
+            updateAnalyticsSidebar(data);
+        },
+        error: function() {
+            console.log('Analytics yüklenirken hata oluştu.');
+        }
+    });
+}
+
+function updateAnalytics() {
+    if (kanbanData.statistics) {
+        $('#totalLeads').text(kanbanData.statistics.total_leads || 0);
+        $('#conversionRate').text((kanbanData.statistics.conversion_rate || 0) + '%');
+        $('#avgResponseTime').text((kanbanData.statistics.avg_response_time || 0) + 'h');
+    }
+}
+
+function updateAnalyticsSidebar(data) {
+    // Update team performance
+    if (data.team_performance) {
+        let teamHtml = '';
+        data.team_performance.forEach(function(member) {
+            teamHtml += `
+                <div class="team-member">
+                    <span class="member-name">${member.name}</span>
+                    <div class="member-stats">
+                        <span class="stat-badge">${member.active_leads}</span>
+                        <span class="stat-badge">${member.conversion_rate}%</span>
+                    </div>
+                </div>
+            `;
+        });
+        $('#teamPerformanceList').html(teamHtml);
+    }
+    
+    // Update recent activities
+    if (data.recent_activities) {
+        let activitiesHtml = '';
+        data.recent_activities.forEach(function(activity) {
+            activitiesHtml += `
+                <div class="mb-2 p-2 bg-light rounded">
+                    <small><strong>${activity.user}</strong> ${activity.action}</small>
+                    <br><small class="text-muted">${activity.timestamp}</small>
+                </div>
+            `;
+        });
+        $('#recentActivitiesList').html(activitiesHtml);
+    }
+    
+    // Update charts
+    updateCharts(data);
+}
+
+function initializeCharts() {
+    // Stage Distribution Chart
+    const stageCtx = document.getElementById('stageChart').getContext('2d');
+    stageChart = new Chart(stageCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: ['#6c757d', '#17a2b8', '#ffc107', '#fd7e14', '#e83e8c', '#28a745', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        fontSize: 10
+                    }
+                }
+            }
+        }
+    });
+    
+    // Priority Distribution Chart
+    const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+    priorityChart = new Chart(priorityCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Yüksek', 'Orta', 'Düşük'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: ['#dc3545', '#ffc107', '#28a745']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function updateCharts(data) {
+    if (data.stage_distribution && stageChart) {
+        stageChart.data.labels = data.stage_distribution.labels;
+        stageChart.data.datasets[0].data = data.stage_distribution.data;
+        stageChart.update();
+    }
+    
+    if (data.priority_distribution && priorityChart) {
+        priorityChart.data.datasets[0].data = data.priority_distribution;
+        priorityChart.update();
+    }
+}
+
+function setupFilters() {
+    $('#agentFilter, #priorityFilter, #sourceFilter, #dateFilter').on('change', function() {
+        loadKanbanData();
+    });
+    
+    let searchTimeout;
+    $('#searchFilter').on('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            loadKanbanData();
+        }, 500);
+    });
+}
+
+function setupAutoRefresh() {
+    setInterval(function() {
+        if (!document.hidden) {
+            loadKanbanData();
+            loadAnalytics();
+        }
+    }, 60000); // Refresh every 60 seconds
+}
+
+// Action Functions
+function viewLead(leadId) {
+    $.ajax({
+        url: `/sales-process/lead/${leadId}/`,
+        method: 'GET',
+        success: function(data) {
+            $('#leadDetailContent').html(data);
+            $('#leadDetailModal').modal('show');
+        },
+        error: function() {
+            alert('Lead detayları yüklenirken hata oluştu.');
+        }
+    });
+}
+
+function assignLead(leadId) {
+    $('#assignLeadId').val(leadId);
+    $('#assignLeadModal').modal('show');
+}
+
+function makeCall(leadId) {
+    window.location.href = `/sales-process/make-call/${leadId}/`;
+}
+
+function changePriority(leadId) {
+    // This would open a priority change modal
+    console.log('Change priority for lead:', leadId);
+}
+
+function autoAssignLeads() {
+    if (confirm('Atanmamış leadleri otomatik olarak personele atamak istediğinizden emin misiniz?')) {
+        showLoading();
+        
+        $.ajax({
+            url: '{% url "sales_process:auto_assign_leads" %}',
+            method: 'POST',
+            data: {
+                csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    showNotification(`${data.assigned_count} lead başarıyla atandı`, 'success');
+                    loadKanbanData();
+                } else {
+                    showNotification('Hata: ' + data.message, 'error');
+                }
+                hideLoading();
+            },
+            error: function() {
+                showNotification('Otomatik atama sırasında hata oluştu', 'error');
+                hideLoading();
+            }
+        });
+    }
+}
+
+function balanceWorkload() {
+    if (confirm('Personel iş yüklerini dengelemek istediğinizden emin misiniz?')) {
+        showLoading();
+        
+        $.ajax({
+            url: '{% url "sales_process:balance_workload" %}',
+            method: 'POST',
+            data: {
+                csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    showNotification('İş yükü başarıyla dengelendi', 'success');
+                    loadKanbanData();
+                } else {
+                    showNotification('Hata: ' + data.message, 'error');
+                }
+                hideLoading();
+            },
+            error: function() {
+                showNotification('İş yükü dengeleme sırasında hata oluştu', 'error');
+                hideLoading();
+            }
+        });
+    }
+}
+
+function refreshKanban() {
+    loadKanbanData();
+    loadAnalytics();
+}
+
+function exportReports() {
+    window.location.href = '{% url "sales_process:export_reports" %}?format=excel&view=manager';
+}
+
+// Utility Functions
+function updateCounts() {
+    $('.kanban-count').each(function() {
+        const stageId = $(this).attr('id').replace('count-', '');
+        const count = $(`#cards-${stageId} .lead-card`).length;
+        $(this).text(count);
+    });
+}
+
+function revertLeadMove(leadId, stageId) {
+    const leadCard = $(`.lead-card[data-lead-id="${leadId}"]`);
+    $(`#cards-${stageId}`).append(leadCard);
+    updateCounts();
+}
+
+function showLoading() {
+    $('#loadingOverlay').show();
+}
+
+function hideLoading() {
+    $('#loadingOverlay').hide();
+}
+
+function showNotification(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const notification = `
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 10000;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    $('body').append(notification);
+    
+    setTimeout(function() {
+        $('.alert').alert('close');
+    }, 3000);
+}
+
+// Assign Lead Form
+$('#assignLeadForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    $.ajax({
+        url: '{% url "sales_process:assign_lead_to_staff" 0 %}'.replace('0', $('#assignLeadId').val()),
+        method: 'POST',
+        data: $(this).serialize(),
+        success: function(data) {
+            if (data.success) {
+                $('#assignLeadModal').modal('hide');
+                showNotification('Lead başarıyla atandı', 'success');
+                loadKanbanData();
+                loadAnalytics();
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        },
+        error: function() {
+            alert('Lead atanırken hata oluştu.');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,206 @@
+<!-- WhatsApp Mesaj Gönderme Formu -->
+<div class="modal fade" id="whatsappMessageModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fab fa-whatsapp text-success"></i>
+                    WhatsApp Mesajı Gönder - {{ lead.customer_name }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="whatsappMessageForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="{{ form.message_type.id_for_label }}">Mesaj Tipi</label>
+                                {{ form.message_type }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Metin Mesajı Alanı -->
+                    <div id="textMessageArea" class="message-type-area">
+                        <div class="form-group">
+                            <label for="{{ form.message.id_for_label }}">Mesaj İçeriği</label>
+                            {{ form.message }}
+                            <small class="form-text text-muted">
+                                Müşteriye gönderilecek mesajı yazın.
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Template Mesajı Alanı -->
+                    <div id="templateMessageArea" class="message-type-area" style="display: none;">
+                        <div class="form-group">
+                            <label for="{{ form.template_name.id_for_label }}">Şablon Seçin</label>
+                            {{ form.template_name }}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.template_params.id_for_label }}">Şablon Parametreleri</label>
+                            {{ form.template_params }}
+                            <small class="form-text text-muted">
+                                Şablon için gerekli parametreleri virgülle ayırarak girin.
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Hızlı Mesajlar -->
+                    <div class="form-group">
+                        <label>Hızlı Mesajlar</label>
+                        <div class="btn-group-vertical btn-group-sm w-100" role="group">
+                            <button type="button" class="btn btn-outline-secondary quick-message" 
+                                    data-message="Merhaba {{ lead.customer_name }}, Koç Gayrimenkul'den arıyorum. Size uygun bir gayrimenkul seçeneğimiz var.">
+                                <i class="fas fa-home"></i> Gayrimenkul Teklifi
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary quick-message" 
+                                    data-message="Sayın {{ lead.customer_name }}, randevu talebiniz için teşekkürler. Size uygun bir tarih ayarlayalım.">
+                                <i class="fas fa-calendar"></i> Randevu Ayarlama
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary quick-message" 
+                                    data-message="Merhaba {{ lead.customer_name }}, talebiniz doğrultusunda hazırladığımız teklifi incelemenizi rica ederiz.">
+                                <i class="fas fa-file-alt"></i> Teklif Sunumu
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary quick-message" 
+                                    data-message="Sayın {{ lead.customer_name }}, sorularınız için her zaman ulaşabilirsiniz. Size yardımcı olmaktan memnuniyet duyarız.">
+                                <i class="fas fa-question-circle"></i> Genel Bilgi
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Müşteri Bilgileri -->
+                    <div class="card bg-light">
+                        <div class="card-body p-3">
+                            <h6 class="card-title mb-2">
+                                <i class="fas fa-user"></i> Müşteri Bilgileri
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small><strong>Ad:</strong> {{ lead.customer_name }}</small><br>
+                                    <small><strong>Telefon:</strong> {{ lead.customer_phone }}</small><br>
+                                    <small><strong>E-posta:</strong> {{ lead.customer_email|default:"Belirtilmemiş" }}</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small><strong>Kaynak:</strong> {{ lead.get_source_display }}</small><br>
+                                    <small><strong>Aşama:</strong> {{ lead.current_stage.name }}</small><br>
+                                    <small><strong>Öncelik:</strong> {{ lead.priority }}/5</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> İptal
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fab fa-whatsapp"></i> Gönder
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Mesaj tipi değiştiğinde alanları göster/gizle
+    $('#message_type').change(function() {
+        var messageType = $(this).val();
+        $('.message-type-area').hide();
+        
+        if (messageType === 'text') {
+            $('#textMessageArea').show();
+        } else if (messageType === 'template') {
+            $('#templateMessageArea').show();
+        }
+    });
+    
+    // Hızlı mesaj butonları
+    $('.quick-message').click(function() {
+        var message = $(this).data('message');
+        $('#id_message').val(message);
+        $('#message_type').val('text').trigger('change');
+    });
+    
+    // Form gönderimi
+    $('#whatsappMessageForm').submit(function(e) {
+        e.preventDefault();
+        
+        var formData = $(this).serialize();
+        var submitBtn = $(this).find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        
+        // Loading state
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Gönderiliyor...');
+        
+        $.ajax({
+            url: $(this).attr('action') || window.location.href,
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    // Başarılı mesaj
+                    toastr.success('WhatsApp mesajı başarıyla gönderildi!');
+                    $('#whatsappMessageModal').modal('hide');
+                    
+                    // Mesaj geçmişini güncelle (varsa)
+                    if (typeof refreshMessageHistory === 'function') {
+                        refreshMessageHistory();
+                    }
+                } else {
+                    toastr.error('Mesaj gönderilemedi: ' + response.error);
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'Bir hata oluştu';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                toastr.error(errorMsg);
+            },
+            complete: function() {
+                // Reset button
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.quick-message {
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.quick-message i {
+    width: 20px;
+}
+
+.message-type-area {
+    border-left: 3px solid #28a745;
+    padding-left: 15px;
+    margin-left: 10px;
+}
+
+#whatsappMessageModal .modal-header {
+    background-color: #25d366;
+    color: white;
+}
+
+#whatsappMessageModal .modal-header .close {
+    color: white;
+    opacity: 0.8;
+}
+
+#whatsappMessageModal .modal-header .close:hover {
+    opacity: 1;
+}
+</style>

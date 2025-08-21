@@ -1,0 +1,405 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}WhatsApp İstatistikleri{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card.success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.stat-card.warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card.info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card.danger {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.chart-container {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.message-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.message-item {
+    border-left: 4px solid #25d366;
+    background: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 0 10px 10px 0;
+}
+
+.message-item.failed {
+    border-left-color: #dc3545;
+}
+
+.message-item.pending {
+    border-left-color: #ffc107;
+}
+
+.whatsapp-icon {
+    color: #25d366;
+}
+
+.filter-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Sayfa Başlığı -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="fab fa-whatsapp whatsapp-icon"></i>
+                WhatsApp İstatistikleri
+            </h2>
+            <p class="text-muted mb-0">Mesaj gönderimi ve etkileşim analizi</p>
+        </div>
+        <div>
+            <button class="btn btn-outline-success" onclick="refreshStats()">
+                <i class="fas fa-sync-alt"></i> Yenile
+            </button>
+            <button class="btn btn-success" onclick="exportReport()">
+                <i class="fas fa-download"></i> Rapor İndir
+            </button>
+        </div>
+    </div>
+    
+    <!-- Filtreler -->
+    <div class="filter-card">
+        <form method="get" class="row">
+            <div class="col-md-3">
+                <label for="date_from">Başlangıç Tarihi</label>
+                <input type="date" class="form-control" name="date_from" id="date_from" 
+                       value="{{ request.GET.date_from }}">
+            </div>
+            <div class="col-md-3">
+                <label for="date_to">Bitiş Tarihi</label>
+                <input type="date" class="form-control" name="date_to" id="date_to" 
+                       value="{{ request.GET.date_to }}">
+            </div>
+            <div class="col-md-3">
+                <label for="message_type">Mesaj Tipi</label>
+                <select class="form-control" name="message_type" id="message_type">
+                    <option value="">Tümü</option>
+                    <option value="text" {% if request.GET.message_type == 'text' %}selected{% endif %}>Metin</option>
+                    <option value="template" {% if request.GET.message_type == 'template' %}selected{% endif %}>Şablon</option>
+                    <option value="document" {% if request.GET.message_type == 'document' %}selected{% endif %}>Döküman</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary mr-2">
+                    <i class="fas fa-filter"></i> Filtrele
+                </button>
+                <a href="{% url 'sales_process:whatsapp_statistics' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Temizle
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- İstatistik Kartları -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card success">
+                <div class="stat-number">{{ stats.total_messages }}</div>
+                <div class="stat-label">
+                    <i class="fas fa-paper-plane"></i> Toplam Mesaj
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card info">
+                <div class="stat-number">{{ stats.delivered_messages }}</div>
+                <div class="stat-label">
+                    <i class="fas fa-check-double"></i> Teslim Edilen
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card warning">
+                <div class="stat-number">{{ stats.failed_messages }}</div>
+                <div class="stat-label">
+                    <i class="fas fa-exclamation-triangle"></i> Başarısız
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card danger">
+                <div class="stat-number">{{ stats.delivery_rate }}%</div>
+                <div class="stat-label">
+                    <i class="fas fa-percentage"></i> Teslim Oranı
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Grafikler -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="chart-container">
+                <h5 class="mb-4">
+                    <i class="fas fa-chart-line"></i> Günlük Mesaj Trendi
+                </h5>
+                <canvas id="dailyTrendChart" height="100"></canvas>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h5 class="mb-4">
+                    <i class="fas fa-chart-pie"></i> Mesaj Tipi Dağılımı
+                </h5>
+                <canvas id="messageTypeChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detaylı İstatistikler -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5 class="mb-4">
+                    <i class="fas fa-users"></i> En Aktif Müşteriler
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Müşteri</th>
+                                <th>Telefon</th>
+                                <th>Mesaj Sayısı</th>
+                                <th>Son Mesaj</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in stats.top_customers %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'sales_process:whatsapp_message_history' customer.lead_id %}">
+                                        {{ customer.customer_name }}
+                                    </a>
+                                </td>
+                                <td>{{ customer.customer_phone }}</td>
+                                <td>
+                                    <span class="badge badge-success">{{ customer.message_count }}</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ customer.last_message|date:"d.m H:i" }}</small>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">
+                                    Henüz mesaj geçmişi bulunmuyor
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5 class="mb-4">
+                    <i class="fas fa-clock"></i> Son Mesajlar
+                </h5>
+                <div class="message-list">
+                    {% for message in stats.recent_messages %}
+                    <div class="message-item {{ message.status }}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ message.lead.customer_name }}</strong>
+                                <small class="text-muted d-block">{{ message.lead.customer_phone }}</small>
+                                <p class="mb-1 mt-2">{{ message.content|truncatechars:100 }}</p>
+                            </div>
+                            <div class="text-right">
+                                <small class="text-muted d-block">{{ message.created_at|date:"d.m H:i" }}</small>
+                                <span class="badge badge-{% if message.status == 'delivered' %}success{% elif message.status == 'failed' %}danger{% else %}warning{% endif %}">
+                                    {{ message.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fab fa-whatsapp fa-3x mb-3 opacity-50"></i>
+                        <p>Henüz mesaj bulunmuyor</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Şablon İstatistikleri -->
+    <div class="row">
+        <div class="col-12">
+            <div class="chart-container">
+                <h5 class="mb-4">
+                    <i class="fas fa-file-alt"></i> Şablon Kullanım İstatistikleri
+                </h5>
+                <div class="row">
+                    {% for template in stats.template_usage %}
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-left-success">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            {{ template.template_name }}
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                            {{ template.usage_count }}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-file-alt fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="text-center text-muted py-4">
+                            <p>Henüz şablon kullanımı bulunmuyor</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // Günlük trend grafiği
+    const dailyTrendCtx = document.getElementById('dailyTrendChart');
+    if (dailyTrendCtx) {
+        const ctx = dailyTrendCtx.getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Son 7 Gün'],
+                datasets: [{
+                    label: 'Gönderilen Mesajlar',
+                    data: [10, 15, 8, 20, 12, 18, 25],
+                    borderColor: '#25d366',
+                    backgroundColor: 'rgba(37, 211, 102, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Teslim Edilen',
+                    data: [8, 12, 6, 18, 10, 16, 22],
+                    borderColor: '#17a2b8',
+                    backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // Mesaj tipi dağılımı grafiği
+    const messageTypeCtx = document.getElementById('messageTypeChart');
+    if (messageTypeCtx) {
+        const ctx = messageTypeCtx.getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Metin', 'Şablon', 'Döküman'],
+                datasets: [{
+                    data: [60, 30, 10],
+                    backgroundColor: [
+                        '#25d366',
+                        '#17a2b8',
+                        '#ffc107'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+});
+
+function refreshStats() {
+    location.reload();
+}
+
+function exportReport() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', 'excel');
+    window.open('?' + params.toString(), '_blank');
+}
+
+// Auto-refresh her 5 dakikada bir
+setInterval(function() {
+    refreshStats();
+}, 300000);
+</script>
+{% endblock %}

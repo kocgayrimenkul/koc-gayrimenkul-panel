@@ -1,0 +1,190 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Yeni Müşteri Kaydı{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* Koç Gayrimenkul kurumsal renkleri */
+:root {
+  --koc-red: #9d2235;
+  --koc-red-light: #b82e42;
+  --koc-red-dark: #7a1a29;
+  --koc-black: #212529;
+  --koc-red-rgb: 157, 34, 53;
+  --koc-gray: #f5f5f5;
+}
+
+.bg-gradient-koc-red {
+  background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+}
+
+.btn-koc-red {
+  color: #fff;
+  background-color: var(--koc-red);
+  border-color: var(--koc-red);
+}
+
+.btn-koc-red:hover {
+  color: #fff;
+  background-color: var(--koc-red-light);
+  border-color: var(--koc-red-light);
+}
+
+.card {
+  border-radius: 0.75rem;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  border: none;
+}
+
+.card-header {
+  background: linear-gradient(45deg, var(--koc-red-dark), var(--koc-red));
+  border-bottom: none;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.form-control:focus {
+  border-color: var(--koc-red);
+  box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
+}
+
+.form-group label {
+  font-weight: 600;
+  color: var(--koc-black);
+}
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<!-- Header -->
+<div class="header bg-gradient-koc-red pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col-lg-6 col-7">
+                    <h6 class="h2 text-white d-inline-block mb-0">Yeni Müşteri Kaydı</h6>
+                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                        <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                            <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}">Satış Süreç Yönetimi</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Yeni Müşteri</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="col-lg-6 col-5 text-right">
+                    <a href="{% url 'sales_process:dashboard' %}" class="btn btn-sm btn-neutral">
+                        <i class="fas fa-arrow-left"></i> Geri Dön
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h3 class="card-title text-white mb-0"><i class="fas fa-user-plus mr-2"></i>Yeni Müşteri Bilgileri</h3>
+                </div>
+                <div class="card-body">
+                    <form id="leadCreateForm" method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="customer_name">Müşteri Adı *</label>
+                                    <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="customer_phone">Telefon *</label>
+                                    <input type="tel" class="form-control" id="customer_phone" name="customer_phone" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="customer_email">E-posta</label>
+                                    <input type="email" class="form-control" id="customer_email" name="customer_email">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="property_type">Emlak Tipi</label>
+                                    <select class="form-control" id="property_type" name="property_type">
+                                        <option value="">Seçiniz</option>
+                                        <option value="apartment">Daire</option>
+                                        <option value="villa">Villa</option>
+                                        <option value="office">Ofis</option>
+                                        <option value="land">Arsa</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="property_location">Lokasyon</label>
+                                    <input type="text" class="form-control" id="property_location" name="property_location">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="budget_min">Minimum Bütçe</label>
+                                    <input type="number" class="form-control" id="budget_min" name="budget_min">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="budget_max">Maksimum Bütçe</label>
+                                    <input type="number" class="form-control" id="budget_max" name="budget_max">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-koc-red">
+                                <i class="fas fa-save mr-2"></i>Müşteri Kaydet
+                            </button>
+                            <a href="{% url 'sales_process:dashboard' %}" class="btn btn-outline-secondary ml-2">
+                                <i class="fas fa-times mr-2"></i>İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#leadCreateForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        $.ajax({
+            url: '{% url "sales_process:lead_create" %}',
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                if (response.success) {
+                    alert('Müşteri başarıyla kaydedildi!');
+                    window.location.href = '{% url "sales_process:dashboard" %}';
+                } else {
+                    alert('Hata: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

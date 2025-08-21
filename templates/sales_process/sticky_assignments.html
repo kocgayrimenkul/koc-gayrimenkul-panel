@@ -1,0 +1,470 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %}Sticky Assignments{% endblock %}
+
+{% block stylesheets %}
+<style>
+.sticky-card {
+    border-left: 4px solid #ffc107;
+    transition: all 0.3s ease;
+}
+
+.sticky-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.sticky-badge {
+    background: linear-gradient(45deg, #ffc107, #ffca2c);
+    color: #000;
+    font-weight: bold;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.performance-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.agent-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    margin-right: 1rem;
+}
+
+.success-rate {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.success-rate.high { color: #28a745; }
+.success-rate.medium { color: #ffc107; }
+.success-rate.low { color: #dc3545; }
+
+.filter-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-toggle-sticky {
+    background: linear-gradient(45deg, #ffc107, #ffca2c);
+    border: none;
+    color: #000;
+    font-weight: bold;
+}
+
+.btn-toggle-sticky:hover {
+    background: linear-gradient(45deg, #ffca2c, #ffd43b);
+    color: #000;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Sticky Assignments</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}">Satış Paneli</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'sales_process:assignment_dashboard' %}">Atama Yönetimi</a></li>
+                        <li class="breadcrumb-item active">Sticky Assignments</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="performance-card text-center">
+            <h3>{{ total_sticky }}</h3>
+            <p class="mb-0">Toplam Sticky</p>
+        </div>
+        <div class="performance-card text-center">
+            <h3>{{ active_sticky }}</h3>
+            <p class="mb-0">Aktif Sticky</p>
+        </div>
+        <div class="performance-card text-center">
+            <h3>{{ avg_success_rate|floatformat:1 }}%</h3>
+            <p class="mb-0">Ortalama Başarı</p>
+        </div>
+        <div class="performance-card text-center">
+            <h3>{{ top_performer.assigned_to.get_full_name|default:"N/A" }}</h3>
+            <p class="mb-0">En İyi Performans</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="filter-section">
+                        <form method="GET" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Personel</label>
+                                <select name="staff" class="form-select">
+                                    <option value="">Tüm Personel</option>
+                                    {% for staff in staff_list %}
+                                    <option value="{{ staff.id }}" {% if request.GET.staff == staff.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ staff.get_full_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Durum</label>
+                                <select name="status" class="form-select">
+                                    <option value="">Tümü</option>
+                                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Aktif</option>
+                                    <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Tamamlandı</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Başlangıç Tarihi</label>
+                                <input type="date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Bitiş Tarihi</label>
+                                <input type="date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Filtrele</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Assignments List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Sticky Assignments</h5>
+                    <button class="btn btn-success" onclick="createStickyAssignment()">
+                        <i class="fas fa-plus"></i> Yeni Sticky Assignment
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if assignments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Lead</th>
+                                        <th>Personel</th>
+                                        <th>Atama Tarihi</th>
+                                        <th>Durum</th>
+                                        <th>Başarı Oranı</th>
+                                        <th>Son Aktivite</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in assignments %}
+                                    <tr class="sticky-card">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div>
+                                                    <h6 class="mb-0">
+                                                        <a href="{% url 'sales_process:lead_detail' assignment.lead.id %}" class="text-decoration-none">
+                                                            {{ assignment.lead.first_name }} {{ assignment.lead.last_name }}
+                                                        </a>
+                                                    </h6>
+                                                    <small class="text-muted">{{ assignment.lead.phone }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="agent-avatar">
+                                                    {{ assignment.assigned_to.first_name.0 }}{{ assignment.assigned_to.last_name.0 }}
+                                                </div>
+                                                <div>
+                                                    <strong>{{ assignment.assigned_to.get_full_name }}</strong>
+                                                    <br><small class="text-muted">{{ assignment.assigned_to.username }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="sticky-badge">
+                                                <i class="fas fa-thumbtack"></i> Sticky
+                                            </span>
+                                            <br><small class="text-muted">{{ assignment.assigned_at|date:"d.m.Y H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if assignment.status == 'active' %}
+                                                <span class="badge bg-success">Aktif</span>
+                                            {% elif assignment.status == 'completed' %}
+                                                <span class="badge bg-primary">Tamamlandı</span>
+                                            {% elif assignment.status == 'reassigned' %}
+                                                <span class="badge bg-warning">Yeniden Atandı</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% with success_rate=assignment.success_rate|default:0 %}
+                                                <span class="success-rate {% if success_rate >= 70 %}high{% elif success_rate >= 40 %}medium{% else %}low{% endif %}">
+                                                    {{ success_rate|floatformat:1 }}%
+                                                </span>
+                                            {% endwith %}
+                                        </td>
+                                        <td>
+                                            {% if assignment.last_activity %}
+                                                <small class="text-muted">{{ assignment.last_activity|date:"d.m.Y H:i" }}</small>
+                                            {% else %}
+                                                <small class="text-muted">Aktivite yok</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="viewAssignmentDetails({{ assignment.id }})" title="Detaylar">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-toggle-sticky" onclick="toggleStickyAssignment({{ assignment.id }})" title="Sticky Durumunu Değiştir">
+                                                    <i class="fas fa-thumbtack"></i>
+                                                </button>
+                                                {% if assignment.status == 'active' %}
+                                                <button class="btn btn-sm btn-outline-warning" onclick="reassignLead({{ assignment.lead.id }})" title="Yeniden Ata">
+                                                    <i class="fas fa-exchange-alt"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if is_paginated %}
+                        <nav aria-label="Sticky assignments pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if request.GET.staff %}&staff={{ request.GET.staff }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">&laquo; İlk</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.staff %}&staff={{ request.GET.staff }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Önceki</a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if request.GET.staff %}&staff={{ request.GET.staff }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.staff %}&staff={{ request.GET.staff }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Sonraki</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.staff %}&staff={{ request.GET.staff }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Son &raquo;</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-thumbtack fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Sticky assignment bulunamadı</h5>
+                            <p class="text-muted">Henüz hiç sticky assignment oluşturulmamış.</p>
+                            <button class="btn btn-primary" onclick="createStickyAssignment()">
+                                <i class="fas fa-plus"></i> İlk Sticky Assignment'ı Oluştur
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assignment Details Modal -->
+<div class="modal fade" id="assignmentDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assignment Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="assignmentDetailsContent">
+                <!-- Content will be loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Sticky Assignment Modal -->
+<div class="modal fade" id="createStickyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni Sticky Assignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createStickyForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Lead Seçin</label>
+                        <select name="lead_id" class="form-select" required>
+                            <option value="">Lead seçin...</option>
+                            {% for lead in available_leads %}
+                            <option value="{{ lead.id }}">{{ lead.first_name }} {{ lead.last_name }} - {{ lead.phone }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Personel Seçin</label>
+                        <select name="staff_id" class="form-select" required>
+                            <option value="">Personel seçin...</option>
+                            {% for staff in staff_list %}
+                            <option value="{{ staff.id }}">{{ staff.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sebep</label>
+                        <textarea name="reason" class="form-control" rows="3" placeholder="Sticky assignment sebebini açıklayın..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notlar</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Ek notlar..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-success">Sticky Assignment Oluştur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+$(document).ready(function() {
+    // Auto-refresh every 60 seconds
+    setInterval(function() {
+        if (!document.hidden) {
+            location.reload();
+        }
+    }, 60000);
+});
+
+function viewAssignmentDetails(assignmentId) {
+    $.ajax({
+        url: '/sales-process/assignment/details/' + assignmentId + '/',
+        method: 'GET',
+        success: function(data) {
+            $('#assignmentDetailsContent').html(data);
+            $('#assignmentDetailsModal').modal('show');
+        },
+        error: function() {
+            alert('Assignment detayları yüklenirken hata oluştu.');
+        }
+    });
+}
+
+function toggleStickyAssignment(assignmentId) {
+    if (confirm('Bu assignment\'ın sticky durumunu değiştirmek istediğinizden emin misiniz?')) {
+        $.ajax({
+            url: '{% url "sales_process:toggle_sticky_assignment" 0 %}'.replace('0', assignmentId),
+            method: 'POST',
+            data: {
+                csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Hata: ' + data.message);
+                }
+            },
+            error: function() {
+                alert('İşlem sırasında hata oluştu.');
+            }
+        });
+    }
+}
+
+function createStickyAssignment() {
+    $('#createStickyModal').modal('show');
+}
+
+function reassignLead(leadId) {
+    if (confirm('Bu leadi yeniden atamak istediğinizden emin misiniz?')) {
+        window.location.href = '{% url "sales_process:assign_lead_to_staff" 0 %}'.replace('0', leadId);
+    }
+}
+
+// Create Sticky Assignment Form
+$('#createStickyForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    $.ajax({
+        url: '{% url "sales_process:sticky_assignments" %}',
+        method: 'POST',
+        data: $(this).serialize(),
+        success: function(data) {
+            if (data.success) {
+                $('#createStickyModal').modal('hide');
+                location.reload();
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        },
+        error: function() {
+            alert('Sticky assignment oluşturulurken hata oluştu.');
+        }
+    });
+});
+</script>
+{% endblock %}
