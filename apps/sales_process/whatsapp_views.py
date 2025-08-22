@@ -73,7 +73,7 @@ def send_whatsapp_message(request, lead_id):
     """
     Lead'e WhatsApp mesajı gönderme
     """
-    lead = get_object_or_404(Lead, id=lead_id)
+    lead = get_object_or_404(Lead, lead_id=lead_id)
     
     if request.method == 'POST':
         form = WhatsAppMessageForm(request.POST)
@@ -92,12 +92,20 @@ def send_whatsapp_message(request, lead_id):
                     template_name = form.cleaned_data.get('template_name')
                     template_params = form.cleaned_data.get('template_params', [])
                     
-                    result = whatsapp_service.send_template_message(
-                        to_phone=lead.customer_phone,
-                        template_name=template_name,
-                        template_params=template_params,
-                        lead_id=lead.id
-                    )
+                    # Eğer 'offer_sent' şablonu seçildiyse, özel offer mesajı gönder
+                    if template_name == 'offer_sent':
+                        result = whatsapp_service.send_offer_message(
+                            to_phone=lead.customer_phone,
+                            offer_content=f"Merhaba {lead.customer_name}, size özel hazırladığımız teklifi WhatsApp üzerinden gönderiyoruz. İncelemenizi bekliyoruz.",
+                            lead_id=lead.id
+                        )
+                    else:
+                        result = whatsapp_service.send_template_message(
+                            to_phone=lead.customer_phone,
+                            template_name=template_name,
+                            template_params=template_params,
+                            lead_id=lead.id
+                        )
                 
                 if result['success']:
                     messages.success(request, 'WhatsApp mesajı başarıyla gönderildi!')
@@ -109,6 +117,10 @@ def send_whatsapp_message(request, lead_id):
                             'message': 'Mesaj gönderildi',
                             'message_id': result.get('message_id')
                         })
+                    
+                    # Normal form submission - redirect to staff kanban
+                    from django.shortcuts import redirect
+                    return redirect('sales_process:staff_kanban')
                 else:
                     messages.error(request, f'Mesaj gönderilemedi: {result["error"]}')
                     
@@ -127,6 +139,10 @@ def send_whatsapp_message(request, lead_id):
                         'success': False,
                         'error': str(e)
                     })
+                
+                # Normal form submission - redirect back to form
+                from django.shortcuts import redirect
+                return redirect('sales_process:send_whatsapp_message', lead_id=lead.lead_id)
         else:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
@@ -134,6 +150,9 @@ def send_whatsapp_message(request, lead_id):
                     'error': 'Form geçersiz',
                     'form_errors': form.errors
                 })
+            
+            # Normal form submission - form errors will be displayed on the same page
+            # No redirect needed here, just continue to render the form with errors
     else:
         form = WhatsAppMessageForm()
     
@@ -154,7 +173,7 @@ def whatsapp_message_history(request, lead_id):
     """
     Lead'in WhatsApp mesaj geçmişini gösterir
     """
-    lead = get_object_or_404(Lead, id=lead_id)
+    lead = get_object_or_404(Lead, lead_id=lead_id)
     
     # Mesaj geçmişini al
     messages_data = whatsapp_service.get_message_history(lead_id, limit=100)
@@ -176,7 +195,7 @@ def send_template_message(request, lead_id):
     """
     Template mesajı gönderme
     """
-    lead = get_object_or_404(Lead, id=lead_id)
+    lead = get_object_or_404(Lead, lead_id=lead_id)
     
     if request.method == 'POST':
         template_name = request.POST.get('template_name')

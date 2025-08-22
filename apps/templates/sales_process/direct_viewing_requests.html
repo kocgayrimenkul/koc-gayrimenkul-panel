@@ -1,0 +1,464 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block stylesheets %}
+<link href="{% static 'assets/css/kanban.css' %}" rel="stylesheet" type="text/css" />
+<style>
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 20px;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stats-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.direct-viewing-card {
+    border: 1px solid #e3e6f0;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.direct-viewing-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.customer-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.customer-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.customer-phone {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.stage-badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.stage-direkt-daire-gezme {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.stage-daire-sunumu {
+    background-color: #f39c12;
+    color: white;
+}
+
+.stage-cevap-bekleniyor {
+    background-color: #3498db;
+    color: white;
+}
+
+.stage-sozlesme-yapildi {
+    background-color: #27ae60;
+    color: white;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-action {
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-view {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-view:hover {
+    background-color: #2980b9;
+}
+
+.btn-appointment {
+    background-color: #e67e22;
+    color: white;
+}
+
+.btn-appointment:hover {
+    background-color: #d35400;
+}
+
+.btn-call {
+    background-color: #27ae60;
+    color: white;
+}
+
+.btn-call:hover {
+    background-color: #229954;
+}
+
+.new-request-form {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    flex: 1;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+.btn-submit {
+    background-color: #27ae60;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    background-color: #229954;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Sayfa Başlığı -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <button class="btn btn-primary" data-toggle="modal" data-target="#newRequestModal">
+            <i class="fas fa-plus"></i> Yeni İstek Ekle
+        </button>
+    </div>
+
+    <!-- İstatistik Kartları -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="stats-number">{{ stats.total_requests }}</div>
+                <div class="stats-label">Toplam İstek</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="stats-number">{{ stats.pending_appointments }}</div>
+                <div class="stats-label">Bekleyen Randevu</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="stats-number">{{ stats.completed_viewings }}</div>
+                <div class="stats-label">Tamamlanan Gezme</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="stats-number">{{ stats.today_appointments }}</div>
+                <div class="stats-label">Bugünkü Randevu</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Direkt Daire Gezme İstekleri Listesi -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Direkt Daire Gezme İstekleri</h6>
+        </div>
+        <div class="card-body">
+            {% if leads %}
+                {% for lead in leads %}
+                <div class="direct-viewing-card">
+                    <div class="customer-info">
+                        <div>
+                            <div class="customer-name">{{ lead.customer_name }}</div>
+                            <div class="customer-phone">
+                                <i class="fas fa-phone"></i> {{ lead.customer_phone }}
+                                {% if lead.customer_email %}
+                                    | <i class="fas fa-envelope"></i> {{ lead.customer_email }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <span class="stage-badge stage-{{ lead.current_stage.slug }}">
+                                {{ lead.current_stage.display_name }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> Oluşturulma: {{ lead.created_at|date:"d.m.Y H:i" }}
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-user"></i> Sorumlu: {{ lead.assigned_staff.get_full_name|default:"Atanmamış" }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    {% if lead.notes.first %}
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-sticky-note"></i> {{ lead.notes.first.content|truncatewords:15 }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewLead({{ lead.id }})">
+                            <i class="fas fa-eye"></i> Detay
+                        </button>
+                        <button class="btn-action btn-appointment" onclick="scheduleAppointment({{ lead.id }})">
+                            <i class="fas fa-calendar-plus"></i> Randevu
+                        </button>
+                        <button class="btn-action btn-call" onclick="makeCall({{ lead.id }})">
+                            <i class="fas fa-phone"></i> Ara
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Sayfalama -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo; Önceki</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Sonraki &raquo;</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-home"></i>
+                    <h4>Henüz direkt daire gezme isteği yok</h4>
+                    <p>Yeni bir istek eklemek için yukarıdaki "Yeni İstek Ekle" butonunu kullanın.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Yeni İstek Modal -->
+<div class="modal fade" id="newRequestModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni Direkt Daire Gezme İsteği</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="newRequestForm">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Müşteri Adı *</label>
+                            <input type="text" name="customer_name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Telefon Numarası *</label>
+                            <input type="tel" name="customer_phone" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>E-posta</label>
+                            <input type="email" name="customer_email" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Tercih Edilen Tarih</label>
+                            <input type="datetime-local" name="preferred_date" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>İlgilenilen Emlak</label>
+                        <input type="text" name="property_interest" class="form-control" placeholder="Örn: 3+1 daire, Bahçelievler">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Ek Notlar</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Müşteri hakkında ek bilgiler..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="createDirectViewingRequest()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+// Yeni direkt daire gezme isteği oluştur
+function createDirectViewingRequest() {
+    const form = document.getElementById('newRequestForm');
+    const formData = new FormData(form);
+    
+    fetch('{% url "sales_process:create_direct_viewing_lead" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#newRequestModal').modal('hide');
+            showAlert('Direkt daire gezme isteği başarıyla oluşturuldu!', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert(data.error || 'Bir hata oluştu', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Bir hata oluştu', 'error');
+    });
+}
+
+// Lead detayını görüntüle
+function viewLead(leadId) {
+    window.location.href = `/satis-surec/lead/${leadId}/`;
+}
+
+// Randevu planla
+function scheduleAppointment(leadId) {
+    // Randevu planlama modalını aç
+    window.location.href = `/satis-surec/lead/${leadId}/#appointments`;
+}
+
+// Arama yap
+function makeCall(leadId) {
+    // Arama yapma fonksiyonu
+    window.location.href = `/satis-surec/lead/${leadId}/#call`;
+}
+
+// Alert gösterme fonksiyonu
+function showAlert(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    `;
+    
+    // Alert'i sayfanın üstüne ekle
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // 5 saniye sonra otomatik kapat
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Modal temizleme
+$('#newRequestModal').on('hidden.bs.modal', function () {
+    document.getElementById('newRequestForm').reset();
+});
+</script>
+{% endblock %}

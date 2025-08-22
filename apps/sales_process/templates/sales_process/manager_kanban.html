@@ -868,6 +868,9 @@ function closeCase(leadId) {
 
 // WhatsApp mesajı gönder
 function sendWhatsApp(leadId, messageType) {
+    // Mock mode bilgisini göster
+    alert('📱 WhatsApp Simülasyon Modu Aktif - Mesajlar gerçekte gönderilmeyecek');
+    
     fetch('/satis-surec/whatsapp/send/', {
         method: 'POST',
         headers: {
@@ -882,7 +885,8 @@ function sendWhatsApp(leadId, messageType) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('WhatsApp mesajı gönderildi.');
+            const mockInfo = data.mock_mode ? ' (Simülasyon)' : '';
+            alert(`WhatsApp mesajı gönderildi${mockInfo}.`);
         } else {
             alert('Hata: ' + data.message);
         }

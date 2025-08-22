@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Direkt Daire Gezme İstekleri{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'assets/css/kanban.css' %}" rel="stylesheet">
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .stats-card h3 {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .stats-card p {
+        margin: 0;
+        opacity: 0.9;
+    }
+    .request-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-left: 4px solid #007bff;
+    }
+    .stage-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .btn-action {
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-home"></i> Direkt Daire Gezme İstekleri</h2>
+                <button class="btn btn-primary" data-toggle="modal" data-target="#addRequestModal">
+                    <i class="fas fa-plus"></i> Yeni İstek Ekle
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- İstatistik Kartları -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ stats.total }}</h3>
+                <p>Toplam İstek</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <h3>{{ stats.pending }}</h3>
+                <p>Bekleyen</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <h3>{{ stats.completed }}</h3>
+                <p>Tamamlanan</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <h3>{{ stats.today_appointments }}</h3>
+                <p>Bugünkü Randevular</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- İstek Listesi -->
+    <div class="row">
+        <div class="col-12">
+            {% if leads %}
+                {% for lead in leads %}
+                <div class="request-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h5 class="mb-1">{{ lead.customer_name }}</h5>
+                            <p class="text-muted mb-1">
+                                <i class="fas fa-phone"></i> {{ lead.phone }}
+                            </p>
+                            {% if lead.email %}
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-envelope"></i> {{ lead.email }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-2">
+                            <span class="stage-badge bg-{{ lead.current_stage.color }}">
+                                {{ lead.current_stage.name }}
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> {{ lead.created_at|date:"d.m.Y H:i" }}
+                            </small><br>
+                            {% if lead.assigned_to %}
+                            <small class="text-muted">
+                                <i class="fas fa-user"></i> {{ lead.assigned_to.get_full_name }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <button class="btn btn-sm btn-outline-primary btn-action" onclick="viewLead('{{ lead.id }}')">
+                                <i class="fas fa-eye"></i> Görüntüle
+                            </button>
+                            <button class="btn btn-sm btn-outline-success btn-action" onclick="scheduleAppointment('{{ lead.id }}')">
+                                <i class="fas fa-calendar-plus"></i> Randevu
+                            </button>
+                            <button class="btn btn-sm btn-outline-info btn-action" onclick="makeCall('{{ lead.id }}')">
+                                <i class="fas fa-phone"></i> Ara
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Sayfalama -->
+                {% if is_paginated %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">İlk</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Önceki</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Sonraki</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Son</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-home"></i>
+                    <h4>Henüz direkt daire gezme isteği bulunmuyor</h4>
+                    <p>Yeni bir istek eklemek için yukarıdaki "Yeni İstek Ekle" butonunu kullanın.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Yeni İstek Ekleme Modalı -->
+<div class="modal fade" id="addRequestModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni Direkt Daire Gezme İsteği</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addRequestForm">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="customerName">Müşteri Adı *</label>
+                        <input type="text" class="form-control" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Telefon *</label>
+                        <input type="tel" class="form-control" id="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">E-posta</label>
+                        <input type="email" class="form-control" id="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="preferredDate">Tercih Edilen Tarih</label>
+                        <input type="datetime-local" class="form-control" id="preferredDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="propertyInterest">İlgilenilen Emlak Türü</label>
+                        <select class="form-control" id="propertyInterest">
+                            <option value="">Seçiniz</option>
+                            <option value="daire">Daire</option>
+                            <option value="villa">Villa</option>
+                            <option value="ofis">Ofis</option>
+                            <option value="magaza">Mağaza</option>
+                            <option value="arsa">Arsa</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notlar</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="createRequest()">Oluştur</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function createRequest() {
+        // Form verilerini topla
+        const formData = {
+            customer_name: document.getElementById('customerName').value,
+            phone: document.getElementById('phone').value,
+            email: document.getElementById('email').value,
+            preferred_date: document.getElementById('preferredDate').value,
+            property_interest: document.getElementById('propertyInterest').value,
+            notes: document.getElementById('notes').value
+        };
+
+        // CSRF token'ı al
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // AJAX isteği gönder
+        fetch('{% url "sales_process:create_direct_viewing_lead" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Direkt daire gezme isteği başarıyla oluşturuldu!', 'success');
+                document.getElementById('addRequestForm').reset();
+                $('#addRequestModal').modal('hide');
+                location.reload();
+            } else {
+                showAlert('Hata: ' + (data.error || 'Bilinmeyen hata'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+        });
+    }
+
+    function viewLead(leadId) {
+        window.location.href = `/sales/lead/${leadId}/`;
+    }
+
+    function scheduleAppointment(leadId) {
+        // Randevu planlama modalını aç
+        window.location.href = `/sales/lead/${leadId}/schedule-appointment/`;
+    }
+
+    function makeCall(leadId) {
+        // NetGSM arama başlat
+        window.location.href = `/sales/make-call/${leadId}/`;
+    }
+
+    function showAlert(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        `;
+        
+        // Alert'i sayfanın üstüne ekle
+        const container = document.querySelector('.container-fluid');
+        container.insertAdjacentHTML('afterbegin', alertHtml);
+        
+        // 5 saniye sonra otomatik kapat
+        setTimeout(() => {
+            const alert = container.querySelector('.alert');
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

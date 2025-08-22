@@ -1,0 +1,199 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block title %}WhatsApp Mesajı Gönder{% endblock %}
+
+{% block extra_css %}
+<style>
+.whatsapp-form-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.customer-info {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.whatsapp-icon {
+    color: #25d366;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}">Ana Sayfa</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'sales_process:staff_kanban' %}">Satış Süreci</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">WhatsApp Mesajı Gönder</li>
+                </ol>
+            </nav>
+
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fab fa-whatsapp whatsapp-icon me-2"></i>
+                    WhatsApp Mesajı Gönder
+                </h1>
+                <a href="{% url 'sales_process:staff_kanban' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Geri Dön
+                </a>
+            </div>
+
+            <!-- Form Container -->
+            <div class="whatsapp-form-container">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Mesaj Detayları</h5>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Müşteri Bilgileri -->
+                        <div class="customer-info">
+                            <h6 class="mb-2"><i class="fas fa-user me-2"></i>Müşteri Bilgileri</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Ad Soyad:</strong> {{ lead.customer_name }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Telefon:</strong> {{ lead.customer_phone }}
+                                </div>
+                            </div>
+                            {% if lead.customer_email %}
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <strong>E-posta:</strong> {{ lead.customer_email }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- WhatsApp Form -->
+                        <form method="post" id="whatsappForm">
+                            {% csrf_token %}
+                            
+                            <!-- Mesaj Tipi -->
+                            <div class="mb-3">
+                                <label for="{{ form.message_type.id_for_label }}" class="form-label">Mesaj Tipi</label>
+                                {{ form.message_type }}
+                            </div>
+
+                            <!-- Metin Mesajı Alanı -->
+                            <div class="mb-3" id="text-message-field">
+                                <label for="{{ form.message.id_for_label }}" class="form-label">Mesaj</label>
+                                {{ form.message }}
+                                {% if form.message.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.message.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Şablon Mesajı Alanları -->
+                            <div id="template-message-fields" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="{{ form.template_name.id_for_label }}" class="form-label">Şablon</label>
+                                    {{ form.template_name }}
+                                    {% if form.template_name.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.template_name.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.template_params.id_for_label }}" class="form-label">Şablon Parametreleri</label>
+                                    {{ form.template_params }}
+                                    <div class="form-text">Parametreleri virgülle ayırarak girin (örn: Ahmet, 15:30, Kozyatağı)</div>
+                                    {% if form.template_params.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.template_params.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Form Hataları -->
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger">
+                                    {% for error in form.non_field_errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <!-- Submit Buttons -->
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{% url 'sales_process:staff_kanban' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i>
+                                    İptal
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fab fa-whatsapp me-1"></i>
+                                    Mesaj Gönder
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mesaj tipi değiştiğinde alanları göster/gizle
+document.getElementById('message_type').addEventListener('change', function() {
+    const messageType = this.value;
+    const textField = document.getElementById('text-message-field');
+    const templateFields = document.getElementById('template-message-fields');
+    
+    if (messageType === 'template') {
+        textField.style.display = 'none';
+        templateFields.style.display = 'block';
+        document.getElementById('id_message').required = false;
+        document.getElementById('id_template_name').required = true;
+    } else {
+        textField.style.display = 'block';
+        templateFields.style.display = 'none';
+        document.getElementById('id_message').required = true;
+        document.getElementById('id_template_name').required = false;
+    }
+});
+
+// Form submit işlemi
+document.getElementById('whatsappForm').addEventListener('submit', function(e) {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i>Gönderiliyor...';
+    
+    // Form normal şekilde submit edilecek, loading state'i göstermek için
+    setTimeout(() => {
+        if (submitBtn.disabled) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    }, 10000); // 10 saniye sonra reset et
+});
+</script>
+{% endblock %}

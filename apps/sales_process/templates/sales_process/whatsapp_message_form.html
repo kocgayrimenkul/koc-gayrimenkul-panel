@@ -1,0 +1,173 @@
+<!-- WhatsApp Mesaj Gönderme Modal -->
+<div class="modal fade" id="whatsappMessageModal" tabindex="-1" aria-labelledby="whatsappMessageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="whatsappMessageModalLabel">WhatsApp Mesajı Gönder</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <form id="whatsappMessageForm" method="post">
+                    {% csrf_token %}
+        <!-- Müşteri Bilgileri -->
+        <div class="mb-3">
+            <label class="form-label"><strong>Müşteri:</strong></label>
+            <div class="p-2 bg-light rounded">
+                <div><strong>{{ lead.customer_name }}</strong></div>
+                <div class="text-muted">{{ lead.customer_phone }}</div>
+            </div>
+        </div>
+
+        <!-- Mesaj Tipi -->
+        <div class="mb-3">
+            <label for="{{ form.message_type.id_for_label }}" class="form-label">Mesaj Tipi</label>
+            {{ form.message_type }}
+        </div>
+
+        <!-- Metin Mesajı Alanı -->
+        <div class="mb-3" id="text-message-field">
+            <label for="{{ form.message.id_for_label }}" class="form-label">Mesaj</label>
+            {{ form.message }}
+            {% if form.message.errors %}
+                <div class="text-danger small">
+                    {% for error in form.message.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Şablon Mesajı Alanları -->
+        <div id="template-message-fields" style="display: none;">
+            <div class="mb-3">
+                <label for="{{ form.template_name.id_for_label }}" class="form-label">Şablon</label>
+                {{ form.template_name }}
+                {% if form.template_name.errors %}
+                    <div class="text-danger small">
+                        {% for error in form.template_name.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.template_params.id_for_label }}" class="form-label">Şablon Parametreleri</label>
+                {{ form.template_params }}
+                <div class="form-text">Parametreleri virgülle ayırarak girin (örn: Ahmet, 15:30, Kozyatağı)</div>
+                {% if form.template_params.errors %}
+                    <div class="text-danger small">
+                        {% for error in form.template_params.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Form Hataları -->
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fab fa-whatsapp mr-1"></i>
+                            Mesaj Gönder
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+<script>
+// Mesaj tipi değiştiğinde alanları göster/gizle
+document.getElementById('message_type').addEventListener('change', function() {
+    const messageType = this.value;
+    const textField = document.getElementById('text-message-field');
+    const templateFields = document.getElementById('template-message-fields');
+    
+    if (messageType === 'template') {
+        textField.style.display = 'none';
+        templateFields.style.display = 'block';
+        document.getElementById('id_message').required = false;
+        document.getElementById('id_template_name').required = true;
+    } else {
+        textField.style.display = 'block';
+        templateFields.style.display = 'none';
+        document.getElementById('id_message').required = true;
+        document.getElementById('id_template_name').required = false;
+    }
+});
+
+// Form submit işlemi
+document.getElementById('whatsappMessageForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i>Gönderiliyor...';
+    
+    fetch(this.action || window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Başarılı mesaj
+            showNotification('WhatsApp mesajı başarıyla gönderildi!', 'success');
+            
+            // Modal'ı kapat (Bootstrap 4 syntax)
+            $('#whatsappMessageModal').modal('hide');
+            
+            // Sayfayı yenile (isteğe bağlı)
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            // Hata mesajı
+            showNotification(data.error || 'Mesaj gönderilemedi!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Bir hata oluştu!', 'error');
+    })
+    .finally(() => {
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
+
+// Notification function (eğer yoksa)
+function showNotification(message, type) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            text: message,
+            icon: type === 'success' ? 'success' : 'error',
+            timer: 3000,
+            showConfirmButton: false
+        });
+    } else {
+        alert(message);
+    }
+}
+</script>
+    </div>
+</div>

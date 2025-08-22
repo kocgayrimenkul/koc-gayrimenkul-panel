@@ -26,11 +26,13 @@ class SalesProcessRules:
         """
         current_stage = lead.current_stage
         
-        # Aşama geçiş kuralları
+        # Aşama geçiş kuralları - Osman'ın istediği satış süreci akışı
         stage_flow = {
             'bilgi_verildi': ['ihtiyac_analizi'],
-            'ihtiyac_analizi': ['daire_sunumu'],
-            'daire_sunumu': ['sozlesme_yapildi', 'ihtiyac_analizi'],  # Sözleşme yapıldı veya tekrar ihtiyaç analizine
+            'ihtiyac_analizi': ['teklif_gonderildi'],  # İhtiyaç analizinden teklif gönderilir
+            'teklif_gonderildi': ['daire_sunumu'],  # Teklif sonrası daire sunumu
+            'daire_sunumu': ['cevap_bekleniyor'],  # Daire sunumu sonrası cevap beklenir
+            'cevap_bekleniyor': ['sozlesme_yapildi', 'ihtiyac_analizi'],  # Kabul edilirse sözleşme, reddedilirse tekrar ihtiyaç analizi
             'sozlesme_yapildi': ['kredi_islemleri', 'tapu_islemi'],  # Kredili veya nakit işlem
             'kredi_islemleri': ['tapu_islemi'],
             'tapu_islemi': ['hizmet_tamamlandi'],
@@ -62,6 +64,10 @@ class SalesProcessRules:
             ],
             'daire_sunumu': [
                 {'type': 'appointment', 'title': 'Daire Sunumu Randevusu', 'priority': 'high', 'due_hours': 24}
+            ],
+            'cevap_bekleniyor': [
+                {'type': 'follow_up', 'title': 'Müşteri Cevap Takibi', 'priority': 'medium', 'due_hours': 48},
+                {'type': 'whatsapp', 'title': 'WhatsApp Takip Mesajı', 'priority': 'low', 'due_hours': 72}
             ],
             'sozlesme_yapildi': [
                 {'type': 'document', 'title': 'Kredi Evrakları Toplama', 'priority': 'high', 'due_hours': 24}
@@ -123,7 +129,18 @@ class SalesProcessRules:
                 )
         
         # Özel aşama kontrolleri
-        if to_stage.name == 'sozlesme_yapildi':
+        if to_stage.name == 'teklif_gonderildi':
+            # Teklif gönderildi aşaması için WhatsApp mesajı zorunlu
+            from .models import WhatsAppMessage
+            whatsapp_messages = WhatsAppMessage.objects.filter(
+                lead=lead,
+                message_type='offer_sent',
+                status='sent'
+            )
+            if not whatsapp_messages.exists():
+                errors.append("Teklif gönderildi aşamasına geçmek için WhatsApp üzerinden teklif gönderilmesi zorunludur.")
+        
+        elif to_stage.name == 'sozlesme_yapildi':
             # Sözleşme için gerekli bilgiler var mı?
             if not lead.phone or not lead.email:
                 errors.append("Sözleşme aşaması için telefon ve e-posta bilgileri gereklidir.")

@@ -206,6 +206,31 @@ def stage_transition_handler(sender, instance, created, **kwargs):
                 status='pending'
             )
             
+        elif new_stage.name == 'cevap_bekleniyor':
+            # Cevap bekleniyor aşamasında müşteri takibi
+            Task.objects.create(
+                lead=lead,
+                title=f"{lead.customer_name} - Müşteri Cevap Takibi",
+                description="Daire sunumu sonrası müşterinin kararını öğrenmek için takip yapılması.",
+                task_type='call',
+                priority=4,
+                due_date=timezone.now() + timedelta(days=2),
+                assigned_to=lead.assigned_staff,
+                status='pending'
+            )
+            
+            # WhatsApp takip mesajı görevi
+            Task.objects.create(
+                lead=lead,
+                title=f"{lead.customer_name} - WhatsApp Takip Mesajı",
+                description="Daire sunumu sonrası WhatsApp ile nazik takip mesajı gönderilmesi.",
+                task_type='whatsapp',
+                priority=3,
+                due_date=timezone.now() + timedelta(days=1),
+                assigned_to=lead.assigned_staff,
+                status='pending'
+            )
+            
         elif new_stage.name == 'sozlesme_yapildi':
             # Sözleşme sonrası kredi işlemleri başlatma
             Task.objects.create(

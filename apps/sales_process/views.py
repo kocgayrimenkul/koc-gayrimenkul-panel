@@ -381,7 +381,7 @@ def lead_detail(request, lead_id):
 @login_required
 def lead_update(request, lead_id):
     """Lead güncelleme"""
-    lead = get_object_or_404(Lead, id=lead_id)
+    lead = get_object_or_404(Lead, lead_id=lead_id)
     
     if request.method == 'POST':
         try:
@@ -474,7 +474,7 @@ def move_stage_ajax(request):
         lead_id = data.get('lead_id')
         new_stage_name = data.get('new_stage')
         
-        lead = get_object_or_404(Lead, id=lead_id)
+        lead = get_object_or_404(Lead, lead_id=lead_id)
         new_stage = get_object_or_404(SalesStage, name=new_stage_name)
         
         old_stage = lead.current_stage
@@ -526,7 +526,7 @@ def add_note(request):
         note_text = data.get('note')
         note_type = data.get('note_type', 'general')
         
-        lead = get_object_or_404(Lead, id=lead_id)
+        lead = get_object_or_404(Lead, lead_id=lead_id)
         
         note = LeadNote.objects.create(
             lead=lead,
@@ -565,7 +565,7 @@ def schedule_appointment(request):
         appointment_type = data.get('appointment_type', 'daire_sunumu')
         notes = data.get('notes', '')
         
-        lead = get_object_or_404(Lead, id=lead_id)
+        lead = get_object_or_404(Lead, lead_id=lead_id)
         
         # Tarih ve saati birleştir
         from datetime import datetime
@@ -614,7 +614,7 @@ def send_whatsapp(request):
         message_type = data.get('message_type', 'general')
         custom_message = data.get('message', '')
         
-        lead = get_object_or_404(Lead, id=lead_id)
+        lead = get_object_or_404(Lead, lead_id=lead_id)
         
         # Mesaj şablonları
         message_templates = {
@@ -629,29 +629,56 @@ def send_whatsapp(request):
         
         message_text = message_templates.get(message_type, message_templates['general'])
         
-        # WhatsApp mesajını kaydet (gerçek API entegrasyonu sonrası gönderilecek)
-        from .models import WhatsAppMessage
-        whatsapp_message = WhatsAppMessage.objects.create(
-            lead=lead,
-            phone_number=lead.customer_phone,
-            message_text=message_text,
-            message_type=message_type,
-            sent_by=request.user,
-            status='pending'  # API entegrasyonu sonrası 'sent' olacak
-        )
+        # WhatsApp servisini kullanarak mesaj gönder
+        from .whatsapp_service import whatsapp_service
         
-        # Sistem notu ekle
-        LeadNote.objects.create(
-            lead=lead,
-            note=f"WhatsApp mesajı gönderildi: {message_type}",
-            created_by=request.user,
-            note_type='whatsapp'
-        )
+        if message_type == 'offer':
+            # Teklif mesajı için özel fonksiyon kullan
+            result = whatsapp_service.send_offer_message(
+                to_phone=lead.customer_phone,
+                offer_content=message_text,
+                lead_id=lead.id
+            )
+        else:
+            # Diğer mesajlar için normal fonksiyon
+            result = whatsapp_service.send_text_message(
+                to_phone=lead.customer_phone,
+                message_text=message_text,
+                lead_id=lead.id
+            )
+        
+        if result['success']:
+            # Mock mode bilgisini nota ekle
+            mock_info = " (Simülasyon Modu)" if result.get('mock_mode') else ""
+            
+            # Sistem notu ekle
+            LeadNote.objects.create(
+                lead=lead,
+                title=f"WhatsApp Mesajı - {message_type.title()}{mock_info}",
+                content=f"WhatsApp mesajı başarıyla gönderildi{mock_info}: {message_text[:100]}...",
+                created_by=request.user,
+                note_type='whatsapp'
+            )
+        else:
+            # Hata durumunda not ekle
+            LeadNote.objects.create(
+                lead=lead,
+                title="WhatsApp Mesaj Hatası",
+                content=f"WhatsApp mesajı gönderilemedi: {result.get('error', 'Bilinmeyen hata')}",
+                created_by=request.user,
+                note_type='error'
+            )
+        
+        # Mock mode bilgisini response'a ekle
+        success_message = 'WhatsApp mesajı başarıyla gönderildi.'
+        if result.get('mock_mode'):
+            success_message += ' (Simülasyon Modu - Gerçek mesaj gönderilmedi)'
         
         return JsonResponse({
-            'success': True,
-            'message': 'WhatsApp mesajı gönderildi.',
-            'message_id': whatsapp_message.id
+            'success': result['success'],
+            'message': success_message if result['success'] else f"WhatsApp mesajı gönderilemedi: {result.get('error', 'Bilinmeyen hata')}",
+            'message_id': result.get('db_id') if result['success'] else None,
+            'mock_mode': result.get('mock_mode', False)
         })
         
     except Exception as e:
@@ -787,7 +814,7 @@ def update_stage_ajax(request):
         lead_id = data.get('lead_id')
         new_stage_name = data.get('new_stage')
         
-        lead = get_object_or_404(Lead, id=lead_id)
+        lead = get_object_or_404(Lead, lead_id=lead_id)
         new_stage = get_object_or_404(SalesStage, name=new_stage_name)
         
         old_stage = lead.current_stage
@@ -872,4 +899,127 @@ def lead_detail_ajax(request, lead_id):
         return JsonResponse({
             'success': False,
             'message': f'Lead detayları yüklenirken hata oluştu: {str(e)}'
+        })
+
+
+@login_required
+def direct_viewing_requests(request):
+    """Direkt daire gezme isteyen müşteriler için ayrı sayfa"""
+    # Direkt daire gezme isteği olan lead'leri filtrele
+    # Bu lead'ler özel bir flag ile işaretlenecek veya özel bir aşamada olacak
+    direct_viewing_leads = Lead.objects.filter(
+        Q(lead_source='direct_viewing') | 
+        Q(notes__content__icontains='direkt daire gezme') |
+        Q(notes__content__icontains='direkt gezme')
+    ).distinct().select_related('current_stage', 'assigned_staff').order_by('-created_at')
+    
+    # Sayfalama
+    paginator = Paginator(direct_viewing_leads, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # İstatistikler
+    stats = {
+        'total_requests': direct_viewing_leads.count(),
+        'pending_appointments': direct_viewing_leads.filter(
+            current_stage__name__in=['daire_sunumu', 'randevu_planlandi']
+        ).count(),
+        'completed_viewings': direct_viewing_leads.filter(
+            current_stage__name__in=['cevap_bekleniyor', 'sozlesme_yapildi']
+        ).count(),
+        'today_appointments': direct_viewing_leads.filter(
+            appointments__appointment_date__date=timezone.now().date(),
+            appointments__status='scheduled'
+        ).count(),
+    }
+    
+    context = {
+        'title': 'Direkt Daire Gezme İstekleri',
+        'page_obj': page_obj,
+        'stats': stats,
+        'leads': page_obj,
+    }
+    
+    return render(request, 'sales_process/direct_viewing_requests.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_direct_viewing_lead(request):
+    """Direkt daire gezme isteği için yeni lead oluştur"""
+    try:
+        customer_name = request.POST.get('customer_name')
+        customer_phone = request.POST.get('customer_phone')
+        customer_email = request.POST.get('customer_email', '')
+        property_interest = request.POST.get('property_interest', '')
+        preferred_date = request.POST.get('preferred_date', '')
+        notes = request.POST.get('notes', '')
+        
+        if not customer_name or not customer_phone:
+            return JsonResponse({
+                'success': False,
+                'error': 'Müşteri adı ve telefon numarası gerekli'
+            })
+        
+        # Direkt daire gezme aşamasını bul veya oluştur
+        direct_viewing_stage, created = SalesStage.objects.get_or_create(
+            slug='direkt-daire-gezme',
+            defaults={
+                'name': 'Direkt Daire Gezme',
+                'display_name': 'Direkt Daire Gezme',
+                'order': 15,
+                'color': '#e74c3c'
+            }
+        )
+        
+        # Yeni lead oluştur
+        lead = Lead.objects.create(
+            customer_name=customer_name,
+            customer_phone=customer_phone,
+            customer_email=customer_email,
+            lead_source='direct_viewing',
+            current_stage=direct_viewing_stage,
+            assigned_staff=request.user,
+            stage_updated_at=timezone.now()
+        )
+        
+        # İlk not ekle
+        initial_note = f"Direkt daire gezme isteği\n\n"
+        if property_interest:
+            initial_note += f"İlgilenilen emlak: {property_interest}\n"
+        if preferred_date:
+            initial_note += f"Tercih edilen tarih: {preferred_date}\n"
+        if notes:
+            initial_note += f"Ek notlar: {notes}\n"
+        
+        LeadNote.objects.create(
+            lead=lead,
+            title="Direkt Daire Gezme İsteği",
+            content=initial_note,
+            note_type='initial',
+            created_by=request.user
+        )
+        
+        # Randevu planlama görevi oluştur
+        Task.objects.create(
+            lead=lead,
+            title=f"{customer_name} - Daire Gezme Randevusu",
+            description="Müşteri ile direkt daire gezme randevusu planlanması.",
+            task_type='appointment',
+            priority=4,
+            due_date=timezone.now() + timezone.timedelta(hours=2),
+            assigned_to=request.user,
+            status='pending'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Direkt daire gezme isteği başarıyla oluşturuldu',
+            'lead_id': lead.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
         })

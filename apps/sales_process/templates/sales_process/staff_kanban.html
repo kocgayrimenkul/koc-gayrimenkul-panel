@@ -346,7 +346,7 @@
                                     {% endif %}
                                     
                                     <div class="lead-actions">
-                                        <button class="btn-action btn-call" onclick="makeCall('{{ lead.customer_phone }}', '{{ lead.id }}')
+                                        <button class="btn-action btn-call" onclick="makeCall('{{ lead.customer_phone }}', '{{ lead.lead_id }}')
 " title="Ara">
                                             <i class="fas fa-phone"></i>
                                         </button>
@@ -355,7 +355,7 @@
                                             <i class="fab fa-whatsapp"></i>
                                         </button>
                                         {% if lead.current_stage.name == 'ihtiyac_analizi' %}
-                                        <button class="btn-action btn-next" onclick="moveToDaireSunumu('{{ lead.id }}')
+                                        <button class="btn-action btn-next" onclick="moveToDaireSunumu('{{ lead.lead_id }}')
 " title="Daire Sunumu Yapıldı">
                                             <i class="fas fa-home"></i>
                                         </button>
@@ -509,7 +509,7 @@ function toggleFullscreen() {
 
 function makeCall(phoneNumber, leadId) {
     // Santral entegrasyonu ile arama yapma
-    const makeCallUrl = '{% url "sales_process:make_call" lead_id=0 %}'.replace('0', leadId);
+    const makeCallUrl = '{% url "sales_process:make_call" lead_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', leadId);
     
     // Form data olarak gönder (POST parametresi olarak)
     const formData = new FormData();
@@ -537,9 +537,8 @@ function makeCall(phoneNumber, leadId) {
 }
 
 function sendWhatsApp(leadId) {
-    // WhatsApp mesaj gönderme modal'ı aç
-    // Bu kısım modal oluşturulduktan sonra tamamlanacak
-    showNotification('info', 'WhatsApp özelliği yakında aktif olacak');
+    // Direkt WhatsApp mesaj form sayfasına yönlendir
+    window.location.href = `/satis-surec/whatsapp/send/${leadId}/`;
 }
 
 function moveToNextStage(leadId) {
@@ -738,13 +737,13 @@ function displayLeadDetails(lead) {
         <div class="row mt-3">
             <div class="col-12">
                 <div class="d-flex justify-content-center">
-                    <button class="btn btn-success mr-2" onclick="makeCall('${lead.customer_phone}', ${lead.id})">
+                    <button class="btn btn-success mr-2" onclick="makeCall('${lead.customer_phone}', '${lead.lead_id}')">
                         <i class="fas fa-phone mr-1"></i>Ara
                     </button>
                     <button class="btn btn-success mr-2" onclick="sendWhatsApp('${lead.lead_id}')">
                         <i class="fab fa-whatsapp mr-1"></i>WhatsApp
                     </button>
-                    <button class="btn btn-primary" onclick="moveToNextStage(${lead.id})">
+                    <button class="btn btn-primary" onclick="moveToNextStage('${lead.lead_id}')">
                         <i class="fas fa-arrow-right mr-1"></i>Sonraki Aşama
                     </button>
                 </div>

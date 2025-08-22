@@ -267,6 +267,9 @@ WHATSAPP_WEBHOOK_VERIFY_TOKEN = env('WHATSAPP_WEBHOOK_VERIFY_TOKEN', default='ko
 WHATSAPP_API_VERSION = env('WHATSAPP_API_VERSION', default='v18.0')
 WHATSAPP_API_BASE_URL = f'https://graph.facebook.com/{WHATSAPP_API_VERSION}'
 
+# WhatsApp Mock Mode - Gerçek entegrasyon aktif olmadığında simülasyon için
+WHATSAPP_MOCK_MODE = env('WHATSAPP_MOCK_MODE', default=True)
+
 # Celery Configuration (for async tasks)
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')

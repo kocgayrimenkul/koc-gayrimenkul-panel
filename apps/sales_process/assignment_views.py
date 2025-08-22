@@ -163,7 +163,7 @@ def auto_assign_leads(request):
 def assign_lead_to_staff(request, lead_id):
     """Belirli bir lead'i personele ata"""
     
-    lead = get_object_or_404(Lead, id=lead_id)
+    lead = get_object_or_404(Lead, lead_id=lead_id)
     staff_id = request.POST.get('staff_id')
     assignment_reason = request.POST.get('assignment_reason', '')
     

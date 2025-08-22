@@ -858,6 +858,9 @@
 
         // WhatsApp gönderme
         function sendWhatsApp(leadId, messageType) {
+            // Mock mode bilgisini göster
+            showNotification('info', '📱 WhatsApp Simülasyon Modu Aktif - Mesajlar gerçekte gönderilmeyecek');
+            
             fetch(`{% url 'sales_process:send_whatsapp_message' 0 %}`.replace('0', leadId), {
                 method: 'POST',
                 headers: {
@@ -871,7 +874,8 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showNotification('success', 'WhatsApp mesajı gönderildi!');
+                    const mockInfo = data.mock_mode ? ' (Simülasyon)' : '';
+                    showNotification('success', `WhatsApp mesajı gönderildi${mockInfo}!`);
                 } else {
                     showNotification('error', 'WhatsApp mesajı gönderilemedi!');
                 }

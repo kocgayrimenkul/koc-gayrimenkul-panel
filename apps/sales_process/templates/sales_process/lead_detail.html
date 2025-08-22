@@ -368,7 +368,8 @@ function makeCall(phone) {
 }
 
 function sendWhatsApp(leadId) {
-    showNotification('WhatsApp özelliği yakında aktif olacak', 'info');
+    // Direkt WhatsApp mesaj form sayfasına yönlendir
+    window.location.href = `/satis-surec/whatsapp/send/${leadId}/`;
 }
 
 function addNote(leadId) {

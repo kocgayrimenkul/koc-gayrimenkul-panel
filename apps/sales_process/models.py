@@ -176,6 +176,7 @@ class LeadNote(models.Model):
         ('email', 'E-posta'),
         ('system', 'Sistem Notu'),
         ('reminder', 'Hatırlatma'),
+        ('error', 'Hata'),
     ]
     
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="notes", verbose_name="Lead")
@@ -356,6 +357,7 @@ class WhatsAppMessage(models.Model):
         ('document', 'Belge'),
         ('template', 'Şablon'),
         ('interactive', 'Etkileşimli'),
+        ('offer_sent', 'Teklif Gönderildi'),
     ]
     
     DIRECTION_CHOICES = [

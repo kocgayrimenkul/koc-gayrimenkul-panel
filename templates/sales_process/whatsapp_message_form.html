@@ -146,8 +146,17 @@ $(document).ready(function() {
             data: formData,
             success: function(response) {
                 if (response.success) {
-                    // Başarılı mesaj
-                    toastr.success('WhatsApp mesajı başarıyla gönderildi!');
+                    // Mock mode bilgisini kontrol et
+                    const mockInfo = response.mock_mode ? ' (Simülasyon Modu)' : '';
+                    toastr.success(`WhatsApp mesajı başarıyla gönderildi${mockInfo}!`);
+                    
+                    // Mock mode uyarısı
+                    if (response.mock_mode) {
+                        setTimeout(() => {
+                            toastr.info('📱 Simülasyon modunda - Mesaj gerçekte gönderilmedi');
+                        }, 1000);
+                    }
+                    
                     $('#whatsappMessageModal').modal('hide');
                     
                     // Mesaj geçmişini güncelle (varsa)

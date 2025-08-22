@@ -23,17 +23,22 @@ urlpatterns = [
     # Lead yönetimi
     path('lead/create/', views.lead_create, name='lead_create'),
     path('lead/<uuid:lead_id>/', views.lead_detail, name='lead_detail'),
-    path('lead/<int:lead_id>/update/', views.lead_update, name='lead_update'),
+    path('lead/<uuid:lead_id>/update/', views.lead_update, name='lead_update'),
+    
+    # Direkt Daire Gezme İstekleri
+    path('direct-viewing/', views.direct_viewing_requests, name='direct_viewing_requests'),
+    path('direct-viewing/create/', views.create_direct_viewing_lead, name='create_direct_viewing_lead'),
     
     # Process Flow Actions
-    path('lead/<int:lead_id>/add-note/', views.add_note, name='add_note'),
-    path('lead/<int:lead_id>/schedule-appointment/', views.schedule_appointment, name='schedule_appointment'),
+    path('lead/<uuid:lead_id>/add-note/', views.add_note, name='add_note'),
+    path('lead/<uuid:lead_id>/schedule-appointment/', views.schedule_appointment, name='schedule_appointment'),
     
     # WhatsApp Integration
     path('whatsapp/webhook/', whatsapp_views.whatsapp_webhook, name='whatsapp_webhook'),
-    path('whatsapp/send/<int:lead_id>/', whatsapp_views.send_whatsapp_message, name='send_whatsapp_message'),
-    path('whatsapp/history/<int:lead_id>/', whatsapp_views.whatsapp_message_history, name='whatsapp_message_history'),
-    path('whatsapp/template/<int:lead_id>/', whatsapp_views.send_template_message, name='send_template_message'),
+    path('whatsapp/send/', views.send_whatsapp, name='send_whatsapp'),
+    path('whatsapp/send/<uuid:lead_id>/', whatsapp_views.send_whatsapp_message, name='send_whatsapp_message'),
+    path('whatsapp/history/<uuid:lead_id>/', whatsapp_views.whatsapp_message_history, name='whatsapp_message_history'),
+    path('whatsapp/template/<uuid:lead_id>/', whatsapp_views.send_template_message, name='send_template_message'),
     path('whatsapp/bulk-send/', whatsapp_views.bulk_whatsapp_send, name='bulk_whatsapp_send'),
     path('whatsapp/statistics/', whatsapp_views.whatsapp_statistics, name='whatsapp_statistics'),
     
@@ -41,7 +46,7 @@ urlpatterns = [
     path('netgsm/webhook/', netgsm_views.netgsm_webhook, name='netgsm_webhook'),
     path('call-logs/', netgsm_views.call_logs, name='call_logs'),
     path('call-statistics/', netgsm_views.call_statistics, name='call_statistics'),
-    path('make-call/<int:lead_id>/', netgsm_views.make_call, name='make_call'),
+    path('make-call/<uuid:lead_id>/', netgsm_views.make_call, name='make_call'),
     path('call-detail/<int:call_id>/', netgsm_views.call_detail, name='call_detail'),
     path('agent-dashboard/', netgsm_views.agent_dashboard, name='agent_dashboard'),
     path('update-call-notes/<int:call_id>/', netgsm_views.update_call_notes, name='update_call_notes'),
@@ -63,7 +68,7 @@ urlpatterns = [
     path('assignment/', assignment_views.assignment_dashboard, name='assignment_dashboard'),
     path('assignment/list/', assignment_views.lead_assignment_list, name='lead_assignment_list'),
     path('assignment/auto-assign/', assignment_views.auto_assign_leads, name='auto_assign_leads'),
-    path('assignment/assign/<int:lead_id>/', assignment_views.assign_lead_to_staff, name='assign_lead_to_staff'),
+    path('assignment/assign/<uuid:lead_id>/', assignment_views.assign_lead_to_staff, name='assign_lead_to_staff'),
     path('assignment/reassign-overdue/', assignment_views.reassign_overdue_leads, name='reassign_overdue_leads'),
     path('assignment/balance-workload/', assignment_views.balance_workload, name='balance_workload'),
     path('assignment/statistics/', assignment_views.assignment_statistics, name='assignment_statistics'),

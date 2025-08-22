@@ -437,9 +437,9 @@
                                 <i class="fab fa-whatsapp"></i> WhatsApp
                             </button>
                             {% if stage_data.stage.name == 'ihtiyac_analizi' %}
-                            <button class="btn-action btn-next" onclick="moveToDaireSunumu('{{ lead.id }}')">
-                                <i class="fas fa-home"></i> Daire Sunumu
-                            </button>
+                            <button class="btn-action btn-next" onclick="moveToDaireSunumu('{{ lead.lead_id }}')">
+                                            <i class="fas fa-home"></i>
+                                        </button>
 
                             {% endif %}
                         </div>
@@ -505,9 +505,8 @@
 
         // WhatsApp gönderme
         function sendWhatsApp(leadId) {
-            // WhatsApp mesaj gönderme modal'ı aç
-            // Bu kısım modal oluşturulduktan sonra tamamlanacak
-            showNotification('info', 'WhatsApp özelliği yakında aktif olacak');
+            // Direkt WhatsApp mesaj form sayfasına yönlendir
+            window.location.href = `/satis-surec/whatsapp/send/${leadId}/`;
         }
 
         // Sonraki aşamaya taşıma

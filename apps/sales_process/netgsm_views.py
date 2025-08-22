@@ -221,7 +221,7 @@ def make_call(request, lead_id):
         
         try:
             # Lead'i bul ve mock aşama geçişi yap
-            lead = get_object_or_404(Lead, id=lead_id)
+            lead = get_object_or_404(Lead, lead_id=lead_id)
             print(f"[DEBUG] MOCK: Processing lead {lead.customer_name} for stage transition")
             
             # Mock arama başarılı notu ekle
@@ -297,7 +297,7 @@ def make_call(request, lead_id):
     
     try:
         print(f"[DEBUG] Looking for lead with ID: {lead_id}")
-        lead = get_object_or_404(Lead, id=lead_id)
+        lead = get_object_or_404(Lead, lead_id=lead_id)
         print(f"[DEBUG] Lead found: {lead.customer_name}, phone: {lead.customer_phone}")
         
         agent_extension = request.POST.get('agent_extension')

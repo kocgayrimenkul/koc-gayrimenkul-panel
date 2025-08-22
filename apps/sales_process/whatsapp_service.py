@@ -27,8 +27,12 @@ class WhatsAppService:
         self.verify_token = getattr(settings, 'WHATSAPP_VERIFY_TOKEN', '')
         self.base_url = f"https://graph.facebook.com/v18.0/{self.phone_number_id}/messages"
         
+        # Mock mode - WhatsApp entegrasyonu henüz aktif değilse mock kullan
+        self.mock_mode = getattr(settings, 'WHATSAPP_MOCK_MODE', True)
+        
         if not self.access_token or not self.phone_number_id:
             logger.warning("WhatsApp credentials not configured properly")
+            self.mock_mode = True
     
     def send_text_message(self, to_phone, message_text, lead_id=None):
         """
@@ -37,6 +41,10 @@ class WhatsAppService:
         try:
             # Telefon numarasını temizle
             clean_phone = self._clean_phone_number(to_phone)
+            
+            # Mock mode kontrolü
+            if self.mock_mode:
+                return self._send_mock_message(clean_phone, message_text, 'text', lead_id)
             
             payload = {
                 "messaging_product": "whatsapp",
@@ -110,7 +118,88 @@ class WhatsAppService:
             logger.error(f"WhatsApp service error: {str(e)}")
             return {
                 'success': False,
-                'error': f'Service error: {str(e)}'
+                'error': str(e)
+            }
+    
+    def send_offer_message(self, to_phone, offer_content, lead_id=None):
+        """
+        Teklif mesajı gönderir - Osman'ın istediği zorunlu WhatsApp teklif gönderimi
+        """
+        try:
+            # Telefon numarasını temizle
+            clean_phone = self._clean_phone_number(to_phone)
+            
+            # Mock mode kontrolü
+            if self.mock_mode:
+                return self._send_mock_message(clean_phone, offer_content, 'offer_sent', lead_id)
+            
+            payload = {
+                "messaging_product": "whatsapp",
+                "to": clean_phone,
+                "type": "text",
+                "text": {
+                    "body": offer_content
+                }
+            }
+            
+            headers = {
+                "Authorization": f"Bearer {self.access_token}",
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.post(
+                self.base_url,
+                headers=headers,
+                data=json.dumps(payload),
+                timeout=30
+            )
+            
+            response_data = response.json()
+            
+            if response.status_code == 200:
+                message_id = response_data.get('messages', [{}])[0].get('id')
+                
+                # Veritabanına offer_sent olarak kaydet
+                whatsapp_message = WhatsAppMessage.objects.create(
+                    lead_id=lead_id,
+                    message_id=message_id,
+                    direction='outbound',
+                    message_type='offer_sent',  # Özel teklif mesaj tipi
+                    content=offer_content,
+                    status='sent'
+                )
+                
+                logger.info(f"WhatsApp offer message sent successfully to {clean_phone}")
+                return {
+                    'success': True,
+                    'message_id': message_id,
+                    'db_id': whatsapp_message.id
+                }
+            else:
+                error_msg = response_data.get('error', {}).get('message', 'Unknown error')
+                logger.error(f"WhatsApp API error: {error_msg}")
+                
+                # Hatalı mesajı da kaydet
+                WhatsAppMessage.objects.create(
+                    lead_id=lead_id,
+                    message_id=f"failed_{timezone.now().timestamp()}",
+                    direction='outbound',
+                    message_type='offer_sent',
+                    content=offer_content,
+                    status='failed',
+                    error_message=error_msg
+                )
+                
+                return {
+                    'success': False,
+                    'error': error_msg
+                }
+                
+        except Exception as e:
+            logger.error(f"Error sending WhatsApp offer message: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
             }
     
     def send_template_message(self, to_phone, template_name, template_params=None, lead_id=None):
@@ -391,6 +480,43 @@ class WhatsAppService:
             
         except Exception as e:
             logger.error(f"Auto reply error: {str(e)}")
+    
+    def _send_mock_message(self, to_phone, content, message_type, lead_id=None):
+        """
+        Mock mode için WhatsApp mesajı simülasyonu
+        """
+        try:
+            import uuid
+            
+            # Mock message ID oluştur
+            mock_message_id = f"mock_{uuid.uuid4().hex[:12]}"
+            
+            # Veritabanına kaydet
+            whatsapp_message = WhatsAppMessage.objects.create(
+                lead_id=lead_id,
+                message_id=mock_message_id,
+                direction='outbound',
+                message_type=message_type,
+                content=content,
+                status='sent'
+            )
+            
+            logger.info(f"[MOCK MODE] WhatsApp message simulated to {to_phone}: {content[:50]}...")
+            
+            return {
+                'success': True,
+                'message_id': mock_message_id,
+                'db_id': whatsapp_message.id,
+                'mock_mode': True
+            }
+            
+        except Exception as e:
+            logger.error(f"Mock message error: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'mock_mode': True
+            }
     
     def _clean_phone_number(self, phone):
         """
