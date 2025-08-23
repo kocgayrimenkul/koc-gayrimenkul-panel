@@ -52,6 +52,13 @@ class Presentation(models.Model):
     
     notes = models.TextField(verbose_name="Notlar", blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='bekliyor', verbose_name="Durum")
+    
+    # Sunum tamamlama bilgileri
+    is_completed = models.BooleanField(default=False, verbose_name="Sunum Tamamlandı")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Tamamlanma Tarihi")
+    completion_notes = models.TextField(blank=True, null=True, verbose_name="Tamamlama Notları")
+    shown_properties = models.JSONField(default=list, blank=True, verbose_name="Gösterilen Daireler")
+    
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme Tarihi")
     

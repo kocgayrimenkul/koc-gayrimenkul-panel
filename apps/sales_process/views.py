@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from datetime import datetime
-from .models import Lead, SalesStage, LeadNote, Task, Appointment, StageTransition, WhatsAppMessage, CallLog
+from .models import Lead, SalesStage, LeadNote, Task, Appointment, StageTransition, WhatsAppMessage, CallLog, ActionLog
 from apps.customers.models import Customer
 import json
 
@@ -413,6 +413,7 @@ def lead_detail(request, lead_id):
     notes = LeadNote.objects.filter(lead=lead).order_by('-created_at')
     tasks = Task.objects.filter(lead=lead).order_by('-created_at')
     appointments = Appointment.objects.filter(lead=lead).order_by('-scheduled_date')
+    action_logs = ActionLog.objects.filter(lead=lead).order_by('-created_at')
     
     context = {
         'title': f'{lead.customer_name} - Detay',
@@ -420,6 +421,7 @@ def lead_detail(request, lead_id):
         'notes': notes,
         'tasks': tasks,
         'appointments': appointments,
+        'action_logs': action_logs,
     }
     return render(request, 'sales_process/lead_detail.html', context)
 
@@ -601,6 +603,259 @@ def add_note(request):
 
 @login_required
 @require_http_methods(["POST"])
+def complete_presentation(request):
+    """Sunum tamamlama"""
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        shown_properties = data.get('shown_properties', [])
+        completion_notes = data.get('completion_notes', '')
+        
+        # Validasyon
+        if not lead_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Lead ID gerekli.'
+            })
+            
+        if not shown_properties or len(shown_properties) == 0 or len(shown_properties) > 3:
+            return JsonResponse({
+                'success': False,
+                'message': '1-3 adet daire seçmelisiniz.'
+            })
+            
+        if not completion_notes.strip():
+            return JsonResponse({
+                'success': False,
+                'message': 'Sunum notları zorunludur.'
+            })
+        
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Lead'in daire_sunumu aşamasında olduğunu kontrol et
+        if lead.current_stage.name != 'daire_sunumu':
+            return JsonResponse({
+                'success': False,
+                'message': 'Lead daire sunumu aşamasında değil.'
+            })
+        
+        # Presentation kaydını güncelle veya oluştur
+        from apps.presentation.models import Presentation
+        presentation, created = Presentation.objects.get_or_create(
+            customer_name=lead.customer_name,
+            customer_phone=lead.customer_phone,
+            defaults={
+                'title': f'{lead.customer_name} - Sunum',
+                'presenter': request.user,
+                'presentation_date': timezone.now().date(),
+                'customer_source': lead.source,
+                'status': 'tamamlandi'
+            }
+        )
+        
+        # Sunum tamamlama bilgilerini güncelle
+        presentation.is_completed = True
+        presentation.completed_at = timezone.now()
+        presentation.completion_notes = completion_notes
+        presentation.shown_properties = shown_properties
+        presentation.status = 'tamamlandi'
+        presentation.save()
+        
+        # ActionLog kaydı oluştur
+        from .models import ActionLog
+        ActionLog.objects.create(
+            lead=lead,
+            action_type='SHOW_DONE',
+            title='Sunum Tamamlandı',
+            description=f'Sunum tamamlandı. Gösterilen daireler: {len(shown_properties)} adet. Notlar: {completion_notes[:100]}...',
+            payload={
+                'shown_properties': shown_properties,
+                'completion_notes': completion_notes,
+                'presentation_id': presentation.id
+            },
+            success=True
+        )
+        
+        # Lead'i cevap_bekleniyor aşamasına geçir
+        cevap_bekleniyor_stage = SalesStage.objects.get(name='cevap_bekleniyor')
+        old_stage = lead.current_stage
+        
+        lead.current_stage = cevap_bekleniyor_stage
+        lead.stage_updated_at = timezone.now()
+        lead.save()
+        
+        # StageTransition kaydı oluştur
+        StageTransition.objects.create(
+            lead=lead,
+            from_stage=old_stage,
+            to_stage=cevap_bekleniyor_stage,
+            changed_by=request.user,
+            notes=f'Sunum tamamlandı - {completion_notes[:100]}...'
+        )
+        
+        # Sistem notu ekle
+        property_names = []
+        if shown_properties:
+            from apps.portfolio.models import Property
+            properties = Property.objects.filter(id__in=shown_properties)
+            property_names = [prop.title for prop in properties]
+        
+        note_text = f"Sunum tamamlandı. Gösterilen daireler: {', '.join(property_names) if property_names else 'Belirtilmemiş'}. Notlar: {completion_notes}"
+        
+        LeadNote.objects.create(
+            lead=lead,
+            note=note_text,
+            created_by=request.user,
+            note_type='system'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Sunum başarıyla tamamlandı ve lead "Cevap Bekleniyor" aşamasına geçirildi.',
+            'new_stage': cevap_bekleniyor_stage.display_name
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Randevu planlanırken hata oluştu: {str(e)}'
+        })
+
+
+@login_required
+@require_http_methods(["POST"])
+def accept_offer(request):
+    """Teklif kabul etme"""
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        
+        if not lead_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Lead ID gerekli'
+            })
+        
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Lead'in cevap_bekleniyor aşamasında olduğunu kontrol et
+        if lead.current_stage.name != 'cevap_bekleniyor':
+            return JsonResponse({
+                'success': False,
+                'message': 'Lead cevap bekleniyor aşamasında değil'
+            })
+        
+        # Sözleşme aşamasına geç
+        sozlesme_stage = SalesStage.objects.get(name='sozlesme')
+        lead.current_stage = sozlesme_stage
+        lead.save()
+        
+        # ActionLog kaydı oluştur
+        ActionLog.objects.create(
+            lead=lead,
+            action_type='OFFER_ACCEPTED',
+            description='Teklif kabul edildi',
+            performed_by=request.user,
+            success=True
+        )
+        
+        # Stage transition kaydı oluştur
+        StageTransition.objects.create(
+            lead=lead,
+            from_stage_id=SalesStage.objects.get(name='cevap_bekleniyor').id,
+            to_stage=sozlesme_stage,
+            changed_by=request.user,
+            notes='Teklif kabul edildi'
+        )
+        
+        # Sistem notu ekle
+        LeadNote.objects.create(
+            lead=lead,
+            note_type='system',
+            content=f'Teklif kabul edildi. Lead sözleşme aşamasına geçti.',
+            created_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Teklif başarıyla kabul edildi'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Teklif kabul edilirken hata oluştu: {str(e)}'
+        })
+
+
+@login_required
+@require_http_methods(["POST"])
+def reject_offer(request):
+    """Teklif reddetme"""
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        
+        if not lead_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Lead ID gerekli'
+            })
+        
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Lead'in cevap_bekleniyor aşamasında olduğunu kontrol et
+        if lead.current_stage.name != 'cevap_bekleniyor':
+            return JsonResponse({
+                'success': False,
+                'message': 'Lead cevap bekleniyor aşamasında değil'
+            })
+        
+        # İhtiyaç analizi aşamasına geri döndür
+        ihtiyac_analizi_stage = SalesStage.objects.get(name='ihtiyac_analizi')
+        lead.current_stage = ihtiyac_analizi_stage
+        lead.save()
+        
+        # ActionLog kaydı oluştur
+        ActionLog.objects.create(
+            lead=lead,
+            action_type='OFFER_REJECTED',
+            description='Teklif reddedildi',
+            performed_by=request.user,
+            success=True
+        )
+        
+        # Stage transition kaydı oluştur
+        StageTransition.objects.create(
+            lead=lead,
+            from_stage_id=SalesStage.objects.get(name='cevap_bekleniyor').id,
+            to_stage=ihtiyac_analizi_stage,
+            changed_by=request.user,
+            notes='Teklif reddedildi, ihtiyaç analizi aşamasına geri döndü'
+        )
+        
+        # Sistem notu ekle
+        LeadNote.objects.create(
+            lead=lead,
+            note_type='system',
+            content=f'Teklif reddedildi. Lead ihtiyaç analizi aşamasına geri döndü.',
+            created_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Teklif başarıyla reddedildi'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Teklif reddedilirken hata oluştu: {str(e)}'
+        })
+
+
+@login_required
+@require_http_methods(["POST"])
 def schedule_appointment(request):
     """Randevu planlama"""
     try:
@@ -624,9 +879,9 @@ def schedule_appointment(request):
             lead=lead,
             scheduled_date=appointment_datetime,
             appointment_type=appointment_type,
-            notes=notes,
-            created_by=request.user,
-            assigned_staff=lead.assigned_staff
+            title=f"{appointment_type} - {lead.customer_name}",
+            description=notes,
+            assigned_staff=lead.assigned_staff or request.user
         )
         
         # Sistem notu ekle

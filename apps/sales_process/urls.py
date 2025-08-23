@@ -33,6 +33,9 @@ urlpatterns = [
     # Process Flow Actions
     path('lead/<uuid:lead_id>/add-note/', views.add_note, name='add_note'),
     path('lead/<uuid:lead_id>/schedule-appointment/', views.schedule_appointment, name='schedule_appointment'),
+    path('complete-presentation/', views.complete_presentation, name='complete_presentation'),
+    path('accept-offer/', views.accept_offer, name='accept_offer'),
+    path('reject-offer/', views.reject_offer, name='reject_offer'),
     
     # WhatsApp Integration
     path('whatsapp/webhook/', whatsapp_views.whatsapp_webhook, name='whatsapp_webhook'),

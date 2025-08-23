@@ -317,6 +317,26 @@
     box-shadow: 0 0 0 2px var(--info-color);
 }
 
+.timeline-item.presentation::before {
+    background: #8e44ad;
+    box-shadow: 0 0 0 2px #8e44ad;
+}
+
+.timeline-item.offer::before {
+    background: #3498db;
+    box-shadow: 0 0 0 2px #3498db;
+}
+
+.timeline-item.call::before {
+    background: #2ecc71;
+    box-shadow: 0 0 0 2px #2ecc71;
+}
+
+.timeline-item.action::before {
+    background: #95a5a6;
+    box-shadow: 0 0 0 2px #95a5a6;
+}
+
 .timeline-item h6 {
     color: var(--koc-red);
     font-weight: 600;
@@ -642,14 +662,38 @@
                             </span>
                         </div>
                         <div class="timeline-meta">
-                            <span><i class="fas fa-user"></i> {{ appointment.created_by.get_full_name|default:"Sistem" }}</span>
+                            <span><i class="fas fa-user"></i> {{ appointment.assigned_staff.get_full_name|default:"Sistem" }}</span>
                             <span><i class="fas fa-clock"></i> {{ appointment.created_at|date:"d.m.Y H:i" }}</span>
                         </div>
                     </div>
                     {% endfor %}
                     
+                    <!-- Aksiyon Logları -->
+                    {% for action_log in action_logs %}
+                    <div class="timeline-item {% if action_log.action_type == 'SHOW_DONE' %}presentation{% elif action_log.action_type == 'OFFER_SENT' %}offer{% elif action_log.action_type == 'OFFER_ACCEPTED' %}offer{% elif action_log.action_type == 'OFFER_REJECTED' %}offer{% elif action_log.action_type == 'CALL_OK' %}call{% else %}action{% endif %}">
+                        <h6>{{ action_log.get_action_type_display }}</h6>
+                        <p>{{ action_log.description }}</p>
+                        {% if action_log.action_type == 'SHOW_DONE' and action_log.payload.shown_properties %}
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <i class="fas fa-home"></i> Gösterilen Daireler: {{ action_log.payload.shown_properties|length }} adet
+                            </small>
+                        </div>
+                        {% endif %}
+                        <div class="mb-2">
+                            <span class="status-badge {% if action_log.is_successful %}status-success{% else %}status-danger{% endif %}">
+                                {% if action_log.is_successful %}Başarılı{% else %}Başarısız{% endif %}
+                            </span>
+                        </div>
+                        <div class="timeline-meta">
+                            <span><i class="fas fa-user"></i> {{ action_log.performed_by.get_full_name|default:"Sistem" }}</span>
+                            <span><i class="fas fa-clock"></i> {{ action_log.created_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
                     <!-- Eğer hiç aktivite yoksa -->
-                    {% if not notes and not tasks and not appointments %}
+                    {% if not notes and not tasks and not appointments and not action_logs %}
                     <div class="text-center py-5">
                         <i class="fas fa-history fa-3x text-muted mb-3"></i>
                         <h5 class="text-muted">Henüz aktivite bulunmuyor</h5>

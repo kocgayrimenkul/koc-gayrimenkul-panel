@@ -175,6 +175,21 @@
     color: white;
 }
 
+.btn-complete {
+    background: #28a745;
+    color: white;
+}
+
+.btn-accept {
+    background: #28a745;
+    color: white;
+}
+
+.btn-reject {
+    background: #dc3545;
+    color: white;
+}
+
 .btn-action:hover {
     opacity: 0.8;
     transform: scale(1.05);
@@ -359,6 +374,20 @@
 " title="Daire Sunumu Yapıldı">
                                             <i class="fas fa-home"></i>
                                         </button>
+                                        {% elif lead.current_stage.name == 'daire_sunumu' %}
+                                        <button class="btn-action btn-complete" onclick="completePresentation('{{ lead.lead_id }}')
+" title="Sunumu Tamamla">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                        {% elif lead.current_stage.name == 'cevap_bekleniyor' %}
+                                        <button class="btn-action btn-accept" onclick="acceptOffer('{{ lead.lead_id }}')
+" title="Kabul Edildi">
+                                            <i class="fas fa-thumbs-up"></i>
+                                        </button>
+                                        <button class="btn-action btn-reject" onclick="rejectOffer('{{ lead.lead_id }}')
+" title="Red Edildi">
+                                            <i class="fas fa-thumbs-down"></i>
+                                        </button>
                                         {% endif %}
                                     </div>
                                     
@@ -389,15 +418,199 @@
     </div>
 </div>
 
-
+<!-- Sunum Tamamlama Modal -->
+<div class="modal fade" id="completePresentationModal" tabindex="-1" role="dialog" aria-labelledby="completePresentationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-koc-red text-white">
+                <h5 class="modal-title" id="completePresentationModalLabel">
+                    <i class="fas fa-check-circle mr-2"></i>Sunumu Tamamla
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="completePresentationForm">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label for="shownProperties"><strong>Gösterilen Daireler (1-3 adet seçiniz) *</strong></label>
+                                <div id="propertiesContainer" class="mt-2">
+                                    <!-- Daireler buraya yüklenecek -->
+                                </div>
+                                <div class="invalid-feedback" id="propertiesError"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label for="completionNotes"><strong>Sunum Notları *</strong></label>
+                                <textarea class="form-control" id="completionNotes" rows="4" 
+                                    placeholder="Örn: Müşteri 2. daireye ilgi gösterdi, fiyatı konuştu..." required></textarea>
+                                <div class="invalid-feedback" id="notesError"></div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>İptal
+                </button>
+                <button type="button" class="btn btn-success" onclick="submitPresentationCompletion()">
+                    <i class="fas fa-check mr-1"></i>Sunumu Tamamla
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock content %}
 
 {% block javascripts %}
 <script>
+// Global değişkenler
+let currentLeadId = null;
+let availableProperties = [];
+
 // Kanban işlemleri
 function refreshKanban() {
     location.reload();
+}
+
+// Sunum tamamlama fonksiyonu
+function completePresentation(leadId) {
+    currentLeadId = leadId;
+    loadAvailableProperties();
+    $('#completePresentationModal').modal('show');
+}
+
+// Mevcut daireleri yükle
+function loadAvailableProperties() {
+    fetch('/api/properties/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        availableProperties = data.results || data;
+        renderPropertiesCheckboxes();
+    })
+    .catch(error => {
+        console.error('Daireler yüklenirken hata:', error);
+        showNotification('error', 'Daireler yüklenirken hata oluştu.');
+    });
+}
+
+// Daire checkbox'larını oluştur
+function renderPropertiesCheckboxes() {
+    const container = document.getElementById('propertiesContainer');
+    if (!availableProperties || availableProperties.length === 0) {
+        container.innerHTML = '<p class="text-muted">Gösterilecek daire bulunamadı.</p>';
+        return;
+    }
+    
+    let html = '<div class="row">';
+    availableProperties.forEach((property, index) => {
+        html += `
+            <div class="col-md-6 mb-2">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input property-checkbox" 
+                           id="property_${property.id}" value="${property.id}" 
+                           onchange="validatePropertySelection()">
+                    <label class="custom-control-label" for="property_${property.id}">
+                        <strong>${property.title || property.name}</strong><br>
+                        <small class="text-muted">${property.neighborhood || ''} - ${property.price || 'Fiyat belirtilmemiş'}</small>
+                    </label>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Daire seçimi doğrulama
+function validatePropertySelection() {
+    const checkboxes = document.querySelectorAll('.property-checkbox:checked');
+    const errorDiv = document.getElementById('propertiesError');
+    
+    if (checkboxes.length > 3) {
+        // En son seçileni kaldır
+        const lastChecked = Array.from(document.querySelectorAll('.property-checkbox')).find(cb => 
+            cb.checked && Array.from(checkboxes).indexOf(cb) === checkboxes.length - 1
+        );
+        if (lastChecked) lastChecked.checked = false;
+        
+        errorDiv.textContent = 'En fazla 3 daire seçebilirsiniz.';
+        errorDiv.style.display = 'block';
+        return false;
+    } else {
+        errorDiv.style.display = 'none';
+        return true;
+    }
+}
+
+// Sunum tamamlama formunu gönder
+function submitPresentationCompletion() {
+    const selectedProperties = Array.from(document.querySelectorAll('.property-checkbox:checked')).map(cb => cb.value);
+    const notes = document.getElementById('completionNotes').value.trim();
+    
+    // Validasyon
+    let isValid = true;
+    
+    if (selectedProperties.length === 0 || selectedProperties.length > 3) {
+        document.getElementById('propertiesError').textContent = '1-3 adet daire seçmelisiniz.';
+        document.getElementById('propertiesError').style.display = 'block';
+        isValid = false;
+    } else {
+        document.getElementById('propertiesError').style.display = 'none';
+    }
+    
+    if (!notes) {
+        document.getElementById('notesError').textContent = 'Sunum notları zorunludur.';
+        document.getElementById('notesError').style.display = 'block';
+        isValid = false;
+    } else {
+        document.getElementById('notesError').style.display = 'none';
+    }
+    
+    if (!isValid) return;
+    
+    // AJAX isteği gönder
+    fetch('/satis-surec/complete-presentation/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            lead_id: currentLeadId,
+            shown_properties: selectedProperties,
+            completion_notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#completePresentationModal').modal('hide');
+            showNotification('success', 'Sunum başarıyla tamamlandı!');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showNotification('error', data.message || 'Sunum tamamlanırken hata oluştu.');
+        }
+    })
+    .catch(error => {
+        console.error('Sunum tamamlama hatası:', error);
+        showNotification('error', 'Sunum tamamlanırken hata oluştu.');
+    });
 }
 
 // Kanban tam ekran fonksiyonu
@@ -504,8 +717,8 @@ function makeCall(phoneNumber, leadId) {
 }
 
 function sendWhatsApp(leadId) {
-    // Direkt WhatsApp mesaj form sayfasına yönlendir
-    window.location.href = `/satis-surec/whatsapp/send/${leadId}/`;
+    // Gelişmiş WhatsApp teklif sayfasına yönlendir
+    window.location.href = `/satis-surec/whatsapp/advanced-offer/${leadId}/`;
 }
 
 function openLeadDetail(leadId) {
@@ -769,6 +982,68 @@ function showNotification(type, message) {
             alert.remove();
         }
     }, 5000);
+}
+
+// Teklif kabul etme fonksiyonu
+function acceptOffer(leadId) {
+    if (!confirm('Bu teklifi kabul etmek istediğinizden emin misiniz?')) {
+        return;
+    }
+    
+    fetch('/satis-surec/accept-offer/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Teklif kabul edildi ve lead sözleşme aşamasına geçti!', 'success');
+            refreshKanban();
+        } else {
+            showNotification(data.message || 'Bir hata oluştu!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Bir hata oluştu!', 'error');
+    });
+}
+
+// Teklif reddetme fonksiyonu
+function rejectOffer(leadId) {
+    if (!confirm('Bu teklifi reddetmek istediğinizden emin misiniz? Lead ihtiyaç analizi aşamasına geri dönecektir.')) {
+        return;
+    }
+    
+    fetch('/satis-surec/reject-offer/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Teklif reddedildi ve lead ihtiyaç analizi aşamasına geri döndü!', 'success');
+            refreshKanban();
+        } else {
+            showNotification(data.message || 'Bir hata oluştu!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Bir hata oluştu!', 'error');
+    });
 }
 
 // Sayfa yüklendiğinde

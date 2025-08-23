@@ -384,7 +384,7 @@ def appointment_created_handler(sender, instance, created, **kwargs):
     """Randevu oluşturulduğunda otomatik işlemler"""
     if created:
         # Randevu öncesi hatırlatma görevi oluştur
-        reminder_time = instance.appointment_date - timedelta(hours=2)
+        reminder_time = instance.scheduled_date - timedelta(hours=2)
         
         if reminder_time > timezone.now():
             Task.objects.create(

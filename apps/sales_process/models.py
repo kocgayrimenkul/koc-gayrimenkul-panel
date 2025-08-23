@@ -535,6 +535,8 @@ class ActionLog(models.Model):
         ('CALL_OK', 'Arama Başarılı'),
         ('CALL_FAIL', 'Arama Başarısız'),
         ('OFFER_SENT', 'Teklif Gönderildi'),
+        ('OFFER_ACCEPTED', 'Teklif Kabul Edildi'),
+        ('OFFER_REJECTED', 'Teklif Reddedildi'),
         ('APPT_SET', 'Randevu Ayarlandı'),
         ('SHOW_DONE', 'Sunum Tamamlandı'),
         ('CONTRACT_CREATED', 'Sözleşme Oluşturuldu'),
