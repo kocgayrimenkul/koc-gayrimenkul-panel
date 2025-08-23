@@ -42,6 +42,10 @@ urlpatterns = [
     path('whatsapp/bulk-send/', whatsapp_views.bulk_whatsapp_send, name='bulk_whatsapp_send'),
     path('whatsapp/statistics/', whatsapp_views.whatsapp_statistics, name='whatsapp_statistics'),
     
+    # Offer Sending API
+    path('actions/offer_sent/<uuid:lead_id>/', whatsapp_views.send_offer, name='send_offer'),
+    path('whatsapp/offer-history/<uuid:lead_id>/', whatsapp_views.get_offer_history, name='get_offer_history'),
+    
     # Netgsm Call Center Integration
     path('netgsm/webhook/', netgsm_views.netgsm_webhook, name='netgsm_webhook'),
     path('call-logs/', netgsm_views.call_logs, name='call_logs'),

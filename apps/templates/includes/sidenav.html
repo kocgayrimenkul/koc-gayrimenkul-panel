@@ -12,122 +12,163 @@
       <div class="collapse navbar-collapse" id="sidenav-collapse-main">
         <!-- Nav items -->
         <ul class="navbar-nav">
-          <!-- Ana Sayfa (Ajenda) -->
+          <!-- ANA İŞLEMLER -->
           <li class="nav-item">
-            <a class="nav-link {% if 'calendar' in segment or 'ajenda' in segment or segment == 'home' or request.resolver_match.url_name == 'home' %} active {% endif %}" href="/">
-              <i class="ni ni-calendar-grid-58 text-primary"></i>
-              <span class="nav-link-text">Ajenda</span>
+            <a class="nav-link collapsed" href="#ana-islemler" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="ana-islemler">
+              <i class="ni ni-bullet-list-67 text-primary"></i>
+              <span class="nav-link-text">Ana İşlemler</span>
+              <i class="fas fa-chevron-down float-right" style="font-size: 0.8rem; margin-top: 2px;"></i>
             </a>
+            <div class="collapse" id="ana-islemler">
+              <ul class="nav nav-sm flex-column">
+                <!-- Ana Sayfa (Ajenda) -->
+                <li class="nav-item">
+                  <a class="nav-link {% if 'calendar' in segment or 'ajenda' in segment or segment == 'home' or request.resolver_match.url_name == 'home' %} active {% endif %}" href="/">
+                    <i class="ni ni-calendar-grid-58 text-primary"></i>
+                    <span class="nav-link-text">Ajenda</span>
+                  </a>
+                </li>
+                
+                <!-- Genel Bakış -->
+                <li class="nav-item">
+                  <a class="nav-link {% if 'dashboard' in segment or 'genel-bakis' in segment %} active {% endif %}" href="/genel-bakis/">
+                    <i class="ni ni-chart-pie-35 text-success"></i>
+                    <span class="nav-link-text">Genel Bakış</span>
+                  </a>
+                </li>
+                
+                <li class="nav-item">
+                  <a class="nav-link {% if 'map' in segment %} active {% endif %}" href="/genel-bakis/map/">
+                    <i class="ni ni-pin-3 text-primary"></i>
+                    <span class="nav-link-text">Harita</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
           </li>
           
-          <!-- Genel Bakış -->
+          <!-- MÜŞTERİ YÖNETİMİ -->
           <li class="nav-item">
-            <a class="nav-link {% if 'dashboard' in segment or 'genel-bakis' in segment %} active {% endif %}" href="/genel-bakis/">
-              <i class="ni ni-chart-pie-35 text-success"></i>
-              <span class="nav-link-text">Genel Bakış</span>
-            </a>
-          </li>
-          
-          {% if user|can_view_portfolio %}
-          <li class="nav-item">
-            <a class="nav-link {% if 'gayrimenkul' in segment %} active {% endif %}" href="{% url 'property_list' %}">
-              <i class="ni ni-building text-orange"></i>
-              <span class="nav-link-text">Gayrimenkuller</span>
-            </a>
-          </li>
-          {% endif %}
-          
-          {% if user|can_view_customers %}
-          <li class="nav-item">
-            <a class="nav-link {% if 'musteri' in segment %} active {% endif %}" href="{% url 'customer_list' %}">
+            <a class="nav-link collapsed" href="#musteri-yonetimi" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="musteri-yonetimi">
               <i class="ni ni-satisfied text-info"></i>
-              <span class="nav-link-text">Müşteriler</span>
+              <span class="nav-link-text">Müşteri Yönetimi</span>
+              <i class="fas fa-chevron-down float-right" style="font-size: 0.8rem; margin-top: 2px;"></i>
             </a>
-          </li>
-          {% endif %}
-          
-          {% if user|can_view_customers or user.employee_profile.role == 'consultant' %}
-          <li class="nav-item">
-            <a class="nav-link {% if 'musteri_hatirlatmalari' in segment %} active {% endif %}" href="{% url 'customer_reminders' %}">
-              <i class="ni ni-bell-55 text-danger"></i>
-              <span class="nav-link-text">Hatırlatmalar</span>
-              {% if customer_reminders %}
-              <span class="badge badge-danger badge-pill">{{ customer_reminders|length }}</span>
-              {% endif %}
-            </a>
-          </li>
-          {% endif %}
-          
-          <!-- İletişim Yönetimi -->
-          <li class="nav-item">
-            <a class="nav-link {% if 'contact' in segment or 'iletisim' in segment %} active {% endif %}" href="{% url 'contact-views:contact_list' %}">
-              <i class="ni ni-chat-round text-warning"></i>
-              <span class="nav-link-text">İletişim Yönetimi</span>
-            </a>
-          </li>
-          
-          <!-- Kariyer Yönetimi -->
-          <li class="nav-item">
-            <a class="nav-link {% if 'careers' in segment or 'kariyer' in segment %} active {% endif %}" href="{% url 'careers-views:application_list' %}">
-              <i class="ni ni-briefcase-24 text-purple"></i>
-              <span class="nav-link-text">Kariyer Yönetimi</span>
-            </a>
-          </li>
-          
-          <!-- Ekip Yönetimi -->
-          <li class="nav-item">
-            <a class="nav-link {% if 'team' in segment or 'ekip' in segment %} active {% endif %}" href="{% url 'team:team_list' %}">
-              <i class="ni ni-circle-08 text-success"></i>
-              <span class="nav-link-text">Ekip Yönetimi</span>
-            </a>
-          </li>
-          
-          {% if user|can_view_presentation %}
-          <li class="nav-item">
-            <a class="nav-link {% if 'presentation' in segment %} active {% endif %}" href="{% url 'presentation_list' %}">
-              <i class="ni ni-books text-info"></i>
-              <span class="nav-link-text">Daire Sunumu</span>
-            </a>
-          </li>
-          {% endif %}
-          
-          {% if user|can_view_fsbo %}
-          <li class="nav-item">
-            <a class="nav-link {% if 'fsbo' in segment %} active {% endif %}" href="{% url 'fsbo_list' %}">
-              <i class="ni ni-mobile-button text-danger"></i>
-              <span class="nav-link-text">FSBO Aramaları</span>
-            </a>
-          </li>
-          {% endif %}
-          
-          <li class="nav-item">
-            <a class="nav-link {% if 'map' in segment %} active {% endif %}" href="/genel-bakis/map/">
-              <i class="ni ni-pin-3 text-primary"></i>
-              <span class="nav-link-text">Harita</span>
-            </a>
+            <div class="collapse" id="musteri-yonetimi">
+              <ul class="nav nav-sm flex-column">
+                {% if user|can_view_portfolio %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'gayrimenkul' in segment %} active {% endif %}" href="{% url 'property_list' %}">
+                    <i class="ni ni-building text-orange"></i>
+                    <span class="nav-link-text">Gayrimenkuller</span>
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if user|can_view_customers %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'musteri' in segment %} active {% endif %}" href="{% url 'customer_list' %}">
+                    <i class="ni ni-satisfied text-info"></i>
+                    <span class="nav-link-text">Müşteriler</span>
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if user|can_view_customers or user.employee_profile.role == 'consultant' %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'musteri_hatirlatmalari' in segment %} active {% endif %}" href="{% url 'customer_reminders' %}">
+                    <i class="ni ni-bell-55 text-danger"></i>
+                    <span class="nav-link-text">Hatırlatmalar</span>
+                    {% if customer_reminders %}
+                    <span class="badge badge-danger badge-pill">{{ customer_reminders|length }}</span>
+                    {% endif %}
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if user|can_view_presentation %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'presentation' in segment %} active {% endif %}" href="{% url 'presentation_list' %}">
+                    <i class="ni ni-books text-info"></i>
+                    <span class="nav-link-text">Daire Sunumu</span>
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if user|can_view_fsbo %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'fsbo' in segment %} active {% endif %}" href="{% url 'fsbo_list' %}">
+                    <i class="ni ni-mobile-button text-danger"></i>
+                    <span class="nav-link-text">FSBO Aramaları</span>
+                  </a>
+                </li>
+                {% endif %}
+              </ul>
+            </div>
           </li>
           
-          {% if user|can_view_employees %}
+          <!-- SİSTEM YÖNETİMİ -->
           <li class="nav-item">
-            <a class="nav-link {% if 'employee' in segment %} active {% endif %}" href="{% url 'employee_list' %}">
-              <i class="ni ni-circle-08 text-purple"></i>
-              <span class="nav-link-text">Çalışan Yönetimi</span>
+            <a class="nav-link collapsed" href="#sistem-yonetimi" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="sistem-yonetimi">
+              <i class="ni ni-settings-gear-65 text-dark"></i>
+              <span class="nav-link-text">Sistem Yönetimi</span>
+              <i class="fas fa-chevron-down float-right" style="font-size: 0.8rem; margin-top: 2px;"></i>
             </a>
+            <div class="collapse" id="sistem-yonetimi">
+              <ul class="nav nav-sm flex-column">
+                <!-- İletişim Yönetimi -->
+                <li class="nav-item">
+                  <a class="nav-link {% if 'contact' in segment or 'iletisim' in segment %} active {% endif %}" href="{% url 'contact-views:contact_list' %}">
+                    <i class="ni ni-chat-round text-warning"></i>
+                    <span class="nav-link-text">İletişim Yönetimi</span>
+                  </a>
+                </li>
+                
+                <!-- Kariyer Yönetimi -->
+                <li class="nav-item">
+                  <a class="nav-link {% if 'careers' in segment or 'kariyer' in segment %} active {% endif %}" href="{% url 'careers-views:application_list' %}">
+                    <i class="ni ni-briefcase-24 text-purple"></i>
+                    <span class="nav-link-text">Kariyer Yönetimi</span>
+                  </a>
+                </li>
+                
+                <!-- Ekip Yönetimi -->
+                <li class="nav-item">
+                  <a class="nav-link {% if 'team' in segment or 'ekip' in segment %} active {% endif %}" href="{% url 'team:team_list' %}">
+                    <i class="ni ni-circle-08 text-success"></i>
+                    <span class="nav-link-text">Ekip Yönetimi</span>
+                  </a>
+                </li>
+                
+                {% if user|can_view_employees %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'employee' in segment %} active {% endif %}" href="{% url 'employee_list' %}">
+                    <i class="ni ni-circle-08 text-purple"></i>
+                    <span class="nav-link-text">Çalışan Yönetimi</span>
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if user|can_manage_settings %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'mahalleler' in segment %} active {% endif %}" href="{% url 'neighborhood_list' %}">
+                    <i class="ni ni-map-big text-warning"></i>
+                    <span class="nav-link-text">Mahalle Yönetimi</span>
+                  </a>
+                </li>
+                {% endif %}
+              </ul>
+            </div>
           </li>
-          {% endif %}
           
-          {% if user|can_manage_settings %}
+          <!-- ÇIKIŞ -->
           <li class="nav-item">
-            <a class="nav-link {% if 'mahalleler' in segment %} active {% endif %}" href="{% url 'neighborhood_list' %}">
-              <i class="ni ni-map-big text-warning"></i>
-              <span class="nav-link-text">Mahalle Yönetimi</span>
-            </a>
+            <hr class="my-3">
           </li>
-          {% endif %}
           
           <li class="nav-item">
             <a class="nav-link" href="{% url 'logout' %}">
-              <i class="ni ni-user-run text-red"></i>
+              <i class="ni ni-user-run text-danger"></i>
               <span class="nav-link-text">Çıkış</span>
             </a>
           </li>            

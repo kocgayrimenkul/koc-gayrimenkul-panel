@@ -420,16 +420,17 @@ Koç Gayrimenkul
             
             # Postman collection'daki endpoint
             url = f"{self.crm_base_url}/{self.pbx_number}/originate"
-            print(f"[DEBUG] Full URL: {url}")
+            print(f"[DEBUG] Full URL: `{url}`")
             
-            # Postman collection'daki parametreler
+            # Postman collection'a göre doğru parametreler
+            # username parametresi santral numarası değil, kullanıcı adı olmalı
             params = {
-                'username': self.username,
-                'password': quote_plus(self.password),  # URL encode şifre
+                'username': self.pbx_number,  # Postman'de username = santral numarası
+                'password': self.password,    # Şifre (URL encode edilmemeli)
                 'customer_num': clean_phone,  # Arama yapılacak dış numara
                 'pbxnum': self.pbx_number,    # Santral numarası
-                'internal_num': agent_extension or '100',  # İç dahili numarası
-                'ring_timeout': ring_timeout,  # Çaldırma süresi
+                'internal_num': str(agent_extension or '100'),  # İç dahili numarası
+                'ring_timeout': str(ring_timeout),  # Çaldırma süresi
                 'crm_id': crm_id,             # CRM ID
                 'wait_response': '1',         # Response bekle
                 'originate_order': 'of',      # Önce dış numara çalsın
@@ -443,8 +444,22 @@ Koç Gayrimenkul
             print(f"[DEBUG] Request parameters: {params_for_log}")
             logger.info(f"Making outbound call to {clean_phone} with params: {params_for_log}")
             
+            # Manuel URL oluştur - şifrenin URL encode edilmemesi için
+            query_parts = []
+            for key, value in params.items():
+                if key == 'password':
+                    # Şifreyi URL encode etme
+                    query_parts.append(f"{key}={value}")
+                else:
+                    # Diğer parametreleri normal encode et
+                    query_parts.append(f"{key}={quote_plus(str(value))}")
+            
+            query_string = '&'.join(query_parts)
+            final_url = f"{url}?{query_string}"
+            print(f"[DEBUG] Final manual URL: {final_url}")
+            
             print(f"[DEBUG] Sending GET request with timeout: 30")
-            response = requests.get(url, params=params, timeout=30)
+            response = requests.get(final_url, timeout=30)
             response.raise_for_status()
             
             print(f"[DEBUG] Response status code: {response.status_code}")

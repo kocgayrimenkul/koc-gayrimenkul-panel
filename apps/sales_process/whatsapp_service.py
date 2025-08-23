@@ -121,86 +121,119 @@ class WhatsAppService:
                 'error': str(e)
             }
     
-    def send_offer_message(self, to_phone, offer_content, lead_id=None):
+    def send_comprehensive_offer(self, to_phone, offer_data, lead_id=None, sent_by=None):
         """
-        Teklif mesajı gönderir - Osman'ın istediği zorunlu WhatsApp teklif gönderimi
+        Kapsamlı teklif mesajı gönderir - Metin, resimler, linkler ve fiyat bilgisi ile
+        
+        Args:
+            to_phone: Hedef telefon numarası
+            offer_data: {
+                'text': 'Mesaj metni (opsiyonel)',
+                'images': [{'url': 'image_url', 'caption': 'caption'}],
+                'links': ['link1', 'link2'],
+                'price': 'Fiyat bilgisi (opsiyonel)'
+            }
+            lead_id: Lead ID
+            sent_by: Mesajı gönderen kullanıcı
         """
         try:
-            # Telefon numarasını temizle
             clean_phone = self._clean_phone_number(to_phone)
             
             # Mock mode kontrolü
             if self.mock_mode:
-                return self._send_mock_message(clean_phone, offer_content, 'offer_sent', lead_id)
+                return self._send_mock_comprehensive_offer(clean_phone, offer_data, lead_id, sent_by)
             
-            payload = {
-                "messaging_product": "whatsapp",
-                "to": clean_phone,
-                "type": "text",
-                "text": {
-                    "body": offer_content
-                }
-            }
+            # Mesaj içeriğini hazırla
+            message_parts = []
             
-            headers = {
-                "Authorization": f"Bearer {self.access_token}",
-                "Content-Type": "application/json"
-            }
+            # Ana mesaj metni
+            if offer_data.get('text'):
+                message_parts.append(offer_data['text'])
             
-            response = requests.post(
-                self.base_url,
-                headers=headers,
-                data=json.dumps(payload),
-                timeout=30
+            # Fiyat bilgisi
+            if offer_data.get('price'):
+                message_parts.append(f"💰 Fiyat: {offer_data['price']} TL")
+            
+            # Linkler
+            if offer_data.get('links'):
+                message_parts.append("🔗 İlan Linkleri:")
+                for i, link in enumerate(offer_data['links'], 1):
+                    message_parts.append(f"{i}. {link}")
+            
+            full_message = "\n\n".join(message_parts)
+            
+            # Önce metin mesajını gönder
+            text_result = None
+            if full_message.strip():
+                text_result = self.send_text_message(clean_phone, full_message, lead_id)
+            
+            # Resimleri gönder
+            image_results = []
+            if offer_data.get('images'):
+                for image_data in offer_data['images']:
+                    image_result = self.send_image(
+                        clean_phone, 
+                        image_data['url'], 
+                        caption=image_data.get('caption', ''),
+                        lead_id=lead_id
+                    )
+                    image_results.append(image_result)
+            
+            # Sonuçları değerlendir
+            all_successful = True
+            error_messages = []
+            
+            if text_result and not text_result.get('success'):
+                all_successful = False
+                error_messages.append(f"Metin: {text_result.get('error')}")
+            
+            for i, img_result in enumerate(image_results):
+                if not img_result.get('success'):
+                    all_successful = False
+                    error_messages.append(f"Resim {i+1}: {img_result.get('error')}")
+            
+            # Kapsamlı mesaj kaydı oluştur
+            whatsapp_message = WhatsAppMessage.objects.create(
+                lead_id=lead_id,
+                message_id=f"offer_{timezone.now().timestamp()}",
+                direction='outbound',
+                message_type='offer_sent',
+                content=json.dumps(offer_data, ensure_ascii=False),
+                status='sent' if all_successful else 'failed',
+                error_message='; '.join(error_messages) if error_messages else '',
+                sent_by=sent_by
             )
             
-            response_data = response.json()
-            
-            if response.status_code == 200:
-                message_id = response_data.get('messages', [{}])[0].get('id')
-                
-                # Veritabanına offer_sent olarak kaydet
-                whatsapp_message = WhatsAppMessage.objects.create(
-                    lead_id=lead_id,
-                    message_id=message_id,
-                    direction='outbound',
-                    message_type='offer_sent',  # Özel teklif mesaj tipi
-                    content=offer_content,
-                    status='sent'
-                )
-                
-                logger.info(f"WhatsApp offer message sent successfully to {clean_phone}")
+            if all_successful:
+                logger.info(f"Comprehensive WhatsApp offer sent successfully to {clean_phone}")
                 return {
                     'success': True,
-                    'message_id': message_id,
-                    'db_id': whatsapp_message.id
+                    'message_id': whatsapp_message.message_id,
+                    'db_id': whatsapp_message.id,
+                    'text_result': text_result,
+                    'image_results': image_results
                 }
             else:
-                error_msg = response_data.get('error', {}).get('message', 'Unknown error')
-                logger.error(f"WhatsApp API error: {error_msg}")
-                
-                # Hatalı mesajı da kaydet
-                WhatsAppMessage.objects.create(
-                    lead_id=lead_id,
-                    message_id=f"failed_{timezone.now().timestamp()}",
-                    direction='outbound',
-                    message_type='offer_sent',
-                    content=offer_content,
-                    status='failed',
-                    error_message=error_msg
-                )
-                
+                logger.error(f"Partial/failed offer send to {clean_phone}: {'; '.join(error_messages)}")
                 return {
                     'success': False,
-                    'error': error_msg
+                    'error': '; '.join(error_messages),
+                    'partial_success': len([r for r in [text_result] + image_results if r and r.get('success')]) > 0
                 }
                 
         except Exception as e:
-            logger.error(f"Error sending WhatsApp offer message: {str(e)}")
+            logger.error(f"Error sending comprehensive WhatsApp offer: {str(e)}")
             return {
                 'success': False,
                 'error': str(e)
             }
+    
+    def send_offer_message(self, to_phone, offer_content, lead_id=None):
+        """
+        Basit teklif mesajı gönderir - Geriye uyumluluk için korundu
+        """
+        offer_data = {'text': offer_content}
+        return self.send_comprehensive_offer(to_phone, offer_data, lead_id)
     
     def send_template_message(self, to_phone, template_name, template_params=None, lead_id=None):
         """
@@ -480,6 +513,112 @@ class WhatsAppService:
             
         except Exception as e:
             logger.error(f"Auto reply error: {str(e)}")
+    
+    def send_image(self, to_phone, image_url, caption=None, lead_id=None):
+        """
+        Resim mesajı gönderir
+        """
+        try:
+            clean_phone = self._clean_phone_number(to_phone)
+            
+            # Mock mode kontrolü
+            if self.mock_mode:
+                return self._send_mock_message(clean_phone, f"Image: {image_url}", 'image', lead_id)
+            
+            payload = {
+                "messaging_product": "whatsapp",
+                "to": clean_phone,
+                "type": "image",
+                "image": {
+                    "link": image_url
+                }
+            }
+            
+            if caption:
+                payload["image"]["caption"] = caption
+            
+            headers = {
+                "Authorization": f"Bearer {self.access_token}",
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.post(
+                self.base_url,
+                headers=headers,
+                data=json.dumps(payload),
+                timeout=30
+            )
+            
+            response_data = response.json()
+            
+            if response.status_code == 200:
+                message_id = response_data.get('messages', [{}])[0].get('id')
+                
+                # Veritabanına kaydet
+                whatsapp_message = WhatsAppMessage.objects.create(
+                    lead_id=lead_id,
+                    message_id=message_id,
+                    direction='outbound',
+                    message_type='image',
+                    content=caption or f"Image: {image_url}",
+                    media_url=image_url,
+                    status='sent'
+                )
+                
+                logger.info(f"WhatsApp image sent successfully to {clean_phone}")
+                return {
+                    'success': True,
+                    'message_id': message_id,
+                    'db_id': whatsapp_message.id
+                }
+            else:
+                error_msg = response_data.get('error', {}).get('message', 'Unknown error')
+                logger.error(f"WhatsApp image send error: {error_msg}")
+                return {
+                    'success': False,
+                    'error': error_msg
+                }
+                
+        except Exception as e:
+            logger.error(f"Error sending WhatsApp image: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    def _send_mock_comprehensive_offer(self, to_phone, offer_data, lead_id=None, sent_by=None):
+        """
+        Mock mode için kapsamlı teklif mesajı simülasyonu
+        """
+        try:
+            # Mock mesaj ID oluştur
+            mock_message_id = f"mock_offer_{timezone.now().timestamp()}"
+            
+            # Veritabanına kaydet
+            whatsapp_message = WhatsAppMessage.objects.create(
+                lead_id=lead_id,
+                message_id=mock_message_id,
+                direction='outbound',
+                message_type='offer_sent',
+                content=json.dumps(offer_data, ensure_ascii=False),
+                status='sent',
+                sent_by=sent_by
+            )
+            
+            logger.info(f"Mock comprehensive offer sent to {to_phone}")
+            return {
+                'success': True,
+                'message_id': mock_message_id,
+                'db_id': whatsapp_message.id,
+                'mock': True
+            }
+            
+        except Exception as e:
+            logger.error(f"Mock comprehensive offer error: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
     
     def _send_mock_message(self, to_phone, content, message_type, lead_id=None):
         """

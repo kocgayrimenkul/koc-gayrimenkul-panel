@@ -19,8 +19,12 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 
 from .whatsapp_service import whatsapp_service
-from .models import Lead, WhatsAppMessage
+from .models import Lead, WhatsAppMessage, SalesStage, StageTransition, ActionLog
 from .forms import WhatsAppMessageForm
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+import os
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -422,3 +426,249 @@ def bulk_whatsapp_send(request):
     }
     
     return render(request, 'sales_process/bulk_whatsapp_send.html', context)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def send_offer(request, lead_id):
+    """
+    Kapsamlı teklif gönderme API endpoint'i
+    POST /actions/offer_sent
+    
+    Payload: {
+        'text': 'Mesaj metni (opsiyonel)',
+        'images': [MultipartFile objects],
+        'links': ['link1', 'link2'],
+        'price': 'Fiyat bilgisi (opsiyonel)'
+    }
+    """
+    try:
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Form verilerini al
+        offer_text = request.POST.get('text', '').strip()
+        offer_price = request.POST.get('price', '').strip()
+        
+        # Linkleri al (birden fazla link olabilir)
+        links = []
+        link_count = 1
+        while f'link_{link_count}' in request.POST:
+            link = request.POST.get(f'link_{link_count}', '').strip()
+            if link:
+                links.append(link)
+            link_count += 1
+        
+        # Tek link alanı da kontrol et (geriye uyumluluk)
+        single_link = request.POST.get('links', '').strip()
+        if single_link:
+            links.append(single_link)
+        
+        # Resimleri işle
+        images = []
+        uploaded_files = request.FILES.getlist('images')
+        
+        for uploaded_file in uploaded_files:
+            try:
+                # Dosya adını güvenli hale getir
+                file_extension = os.path.splitext(uploaded_file.name)[1]
+                safe_filename = f"offer_{uuid.uuid4().hex}{file_extension}"
+                
+                # Dosyayı kaydet
+                file_path = f"whatsapp_offers/{safe_filename}"
+                saved_path = default_storage.save(file_path, ContentFile(uploaded_file.read()))
+                
+                # URL oluştur
+                file_url = request.build_absolute_uri(default_storage.url(saved_path))
+                
+                images.append({
+                    'url': file_url,
+                    'caption': f"Teklif - {lead.customer_name}"
+                })
+                
+            except Exception as e:
+                logger.error(f"Image upload error: {str(e)}")
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Resim yükleme hatası: {str(e)}'
+                })
+        
+        # Offer data hazırla
+        offer_data = {}
+        if offer_text:
+            offer_data['text'] = offer_text
+        if offer_price:
+            offer_data['price'] = offer_price
+        if links:
+            offer_data['links'] = links
+        if images:
+            offer_data['images'] = images
+        
+        # En az bir içerik olmalı
+        if not any([offer_text, offer_price, links, images]):
+            return JsonResponse({
+                'success': False,
+                'error': 'En az bir teklif içeriği (metin, fiyat, link veya resim) gereklidir.'
+            })
+        
+        # WhatsApp mesajını gönder
+        result = whatsapp_service.send_comprehensive_offer(
+            to_phone=lead.customer_phone,
+            offer_data=offer_data,
+            lead_id=lead.lead_id,
+            sent_by=request.user
+        )
+        
+        if result.get('success'):
+            # ActionLog kaydı oluştur - Başarılı
+            ActionLog.objects.create(
+                lead=lead,
+                action_type='OFFER_SENT',
+                title='WhatsApp Teklifi Gönderildi',
+                description=f'Müşteriye kapsamlı teklif gönderildi. İçerik: {offer_data.get("text", "Resim/Link içeriği")[:100]}...' if len(str(offer_data.get("text", ""))) > 100 else f'Müşteriye kapsamlı teklif gönderildi. İçerik: {offer_data.get("text", "Resim/Link içeriği")}',
+                payload={
+                    'offer_data': offer_data,
+                    'message_id': result.get('message_id')
+                },
+                is_successful=True,
+                performed_by=request.user
+            )
+            
+            # Başarılı gönderim - otomatik stage geçişi
+            try:
+                # "Teklif Gönderildi" stage'ini bul
+                teklif_stage = SalesStage.objects.filter(
+                    slug='teklif_gonderildi',
+                    is_active=True
+                ).first()
+                
+                if teklif_stage and lead.current_stage != teklif_stage:
+                    # Stage geçişi kaydet
+                    StageTransition.objects.create(
+                        lead=lead,
+                        from_stage=lead.current_stage,
+                        to_stage=teklif_stage,
+                        transition_type='automatic',
+                        reason='WhatsApp teklif gönderimi başarılı',
+                        performed_by=request.user
+                    )
+                    
+                    # Lead'in stage'ini güncelle
+                    lead.current_stage = teklif_stage
+                    lead.stage_updated_at = timezone.now()
+                    lead.last_contact_date = timezone.now()
+                    lead.save()
+                    
+                    logger.info(f"Lead {lead.lead_id} automatically moved to 'Teklif Gönderildi' stage")
+                
+            except Exception as e:
+                logger.error(f"Stage transition error: {str(e)}")
+                # Stage geçişi başarısız olsa da mesaj gönderimi başarılı
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Teklif başarıyla gönderildi!',
+                'message_id': result.get('message_id'),
+                'stage_changed': teklif_stage is not None,
+                'new_stage': teklif_stage.display_name if teklif_stage else None
+            })
+        else:
+            # ActionLog kaydı oluştur - Başarısız
+            ActionLog.objects.create(
+                lead=lead,
+                action_type='OFFER_SENT',
+                title='WhatsApp Teklifi Gönderilemedi',
+                description=f'Teklif gönderimi başarısız oldu: {result.get("error", "Bilinmeyen hata")}',
+                payload={
+                    'offer_data': offer_data,
+                    'error': result.get('error')
+                },
+                is_successful=False,
+                error_message=result.get('error', 'Bilinmeyen hata'),
+                performed_by=request.user
+            )
+            
+            return JsonResponse({
+                'success': False,
+                'error': result.get('error', 'Bilinmeyen hata'),
+                'partial_success': result.get('partial_success', False)
+            })
+            
+    except Lead.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Lead bulunamadı'
+        })
+    except Exception as e:
+        logger.error(f"Offer sending error: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': f'Sistem hatası: {str(e)}'
+        })
+
+
+@login_required
+def get_offer_history(request, lead_id):
+    """
+    Lead'in teklif geçmişini getir
+    """
+    try:
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Teklif mesajlarını getir
+        offer_messages = WhatsAppMessage.objects.filter(
+            lead=lead,
+            message_type='offer_sent',
+            direction='outbound'
+        ).order_by('-created_at')
+        
+        offers_data = []
+        for msg in offer_messages:
+            try:
+                # JSON içeriği parse et
+                if msg.content.startswith('{'):
+                    content_data = json.loads(msg.content)
+                else:
+                    content_data = {'text': msg.content}
+            except:
+                content_data = {'text': msg.content}
+            
+            # Format the offer data for frontend
+            offer_item = {
+                'id': msg.id,
+                'message_id': msg.message_id,
+                'text': content_data.get('text', ''),
+                'price': content_data.get('price'),
+                'images': [],
+                'links': content_data.get('links', []),
+                'status': msg.status,
+                'sent_by': msg.sent_by.get_full_name() if msg.sent_by else 'Sistem',
+                'created_at': msg.created_at.strftime('%d.%m.%Y %H:%M'),
+                'error_message': msg.error_message
+            }
+            
+            # Process images if they exist
+            if 'images' in content_data and content_data['images']:
+                for img_data in content_data['images']:
+                    if isinstance(img_data, dict) and 'url' in img_data:
+                        offer_item['images'].append(img_data['url'])
+                    elif isinstance(img_data, str):
+                        offer_item['images'].append(img_data)
+            
+            # Ensure links is always a list
+            if not isinstance(offer_item['links'], list):
+                offer_item['links'] = [offer_item['links']] if offer_item['links'] else []
+            
+            offers_data.append(offer_item)
+        
+        return JsonResponse({
+            'success': True,
+            'offers': offers_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Offer history error: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })

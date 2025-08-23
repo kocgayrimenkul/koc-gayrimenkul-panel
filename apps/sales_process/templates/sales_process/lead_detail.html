@@ -1,121 +1,510 @@
-{% extends 'layouts/base.html' %}
+{% extends "layouts/base.html" %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block extra_css %}
+{% block stylesheets %}
 <style>
+/* Koç Gayrimenkul kurumsal renkleri */
+:root {
+  --koc-red: #9d2235;
+  --koc-red-light: #b82e42;
+  --koc-red-dark: #7a1a29;
+  --koc-black: #212529;
+  --koc-red-rgb: 157, 34, 53;
+  --koc-gray: #f5f5f5;
+  --success-color: #2dce89;
+  --warning-color: #fb6340;
+  --info-color: #11cdef;
+  --danger-color: #f5365c;
+}
+
+.lead-header {
+    background: linear-gradient(135deg, var(--koc-red-dark) 0%, var(--koc-red) 100%);
+    color: white;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(157, 34, 53, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.lead-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: rotate(45deg);
+}
+
+.lead-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.lead-header .lead-meta {
+    position: relative;
+    z-index: 2;
+    opacity: 0.9;
+}
+
+.lead-header .lead-meta i {
+    margin-right: 0.5rem;
+    width: 20px;
+}
+
+.info-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.info-card h5 {
+    color: var(--koc-red);
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.info-card h5 i {
+    color: var(--koc-red);
+    font-size: 1.25rem;
+    width: 24px;
+    text-align: center;
+}
+
+.info-item {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--koc-red);
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.info-value {
+    color: #212529;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-active {
+    background: linear-gradient(135deg, #2dce89, #2dce89);
+    color: white;
+    box-shadow: 0 4px 15px rgba(45, 206, 137, 0.3);
+}
+
+.status-completed {
+    background: linear-gradient(135deg, #11cdef, #11cdef);
+    color: white;
+    box-shadow: 0 4px 15px rgba(17, 205, 239, 0.3);
+}
+
+.status-cancelled {
+    background: linear-gradient(135deg, #f5365c, #f5365c);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 54, 92, 0.3);
+}
+
+.status-pending {
+    background: linear-gradient(135deg, #fb6340, #fb6340);
+    color: white;
+    box-shadow: 0 4px 15px rgba(251, 99, 64, 0.3);
+}
+
+.priority-high {
+    color: var(--danger-color);
+    font-weight: 700;
+}
+
+.priority-medium {
+    color: var(--warning-color);
+    font-weight: 600;
+}
+
+.priority-low {
+    color: var(--success-color);
+    font-weight: 500;
+}
+
+.action-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn-action {
+    padding: 0.875rem 1.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-action::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-action:hover::before {
+    left: 100%;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--koc-red), var(--koc-red-light));
+    color: white;
+    box-shadow: 0 4px 15px rgba(157, 34, 53, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(157, 34, 53, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #2dce89, #2dce89);
+    color: white;
+    box-shadow: 0 4px 15px rgba(45, 206, 137, 0.3);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(45, 206, 137, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #fb6340, #fb6340);
+    color: white;
+    box-shadow: 0 4px 15px rgba(251, 99, 64, 0.3);
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(251, 99, 64, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #11cdef, #11cdef);
+    color: white;
+    box-shadow: 0 4px 15px rgba(17, 205, 239, 0.3);
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(17, 205, 239, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--koc-red), var(--koc-red-light));
+}
+
+.timeline-item {
+    position: relative;
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    margin-left: 1rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -2.25rem;
+    top: 1.5rem;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--koc-red);
+    border: 4px solid white;
+    box-shadow: 0 0 0 2px var(--koc-red);
+}
+
+.timeline-item.note::before {
+    background: var(--success-color);
+    box-shadow: 0 0 0 2px var(--success-color);
+}
+
+.timeline-item.task::before {
+    background: var(--warning-color);
+    box-shadow: 0 0 0 2px var(--warning-color);
+}
+
+.timeline-item.appointment::before {
+    background: var(--info-color);
+    box-shadow: 0 0 0 2px var(--info-color);
+}
+
+.timeline-item h6 {
+    color: var(--koc-red);
+    font-weight: 600;
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+}
+
+.timeline-item p {
+    color: #495057;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+}
+
+.timeline-item .timeline-meta {
+    color: #6c757d;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.whatsapp-offers {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.whatsapp-offer-item {
+    background: #f8f9fa;
+    border-left: 4px solid #25d366;
+    border-radius: 0 0.5rem 0.5rem 0;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.whatsapp-offer-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.whatsapp-offer-item.failed {
+    border-left-color: var(--danger-color);
+    background: #fff5f5;
+}
+
+.offer-content {
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
+.offer-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.offer-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.offer-status.sent {
+    background: #d4edda;
+    color: #155724;
+}
+
+.offer-status.failed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.loading-spinner i {
+    margin-right: 0.5rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
     .lead-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
+        padding: 1.5rem;
     }
     
-    .info-card {
-        background: white;
-        border-radius: 10px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-bottom: 1.5rem;
+    .lead-header h1 {
+        font-size: 2rem;
+    }
+    
+    .action-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeline {
+        padding-left: 1rem;
     }
     
     .timeline-item {
-        border-left: 3px solid #e9ecef;
-        padding-left: 1rem;
-        margin-bottom: 1rem;
-        position: relative;
+        margin-left: 0.5rem;
     }
     
     .timeline-item::before {
-        content: '';
-        position: absolute;
-        left: -6px;
-        top: 0;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #007bff;
+        left: -1.75rem;
     }
-    
-    .timeline-item.note::before {
-        background: #28a745;
-    }
-    
-    .timeline-item.task::before {
-        background: #ffc107;
-    }
-    
-    .timeline-item.appointment::before {
-        background: #dc3545;
-    }
-    
-    .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-    
-    .status-active { background: #d4edda; color: #155724; }
-    .status-completed { background: #cce5ff; color: #004085; }
-    .status-cancelled { background: #f8d7da; color: #721c24; }
-    
-    .priority-high { color: #dc3545; }
-    .priority-medium { color: #ffc107; }
-    .priority-low { color: #28a745; }
-    
-    .action-buttons {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-    
-    .btn-action {
-        padding: 0.5rem 1rem;
-        border-radius: 5px;
-        border: none;
-        cursor: pointer;
-        font-size: 0.875rem;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-primary { background: #007bff; color: white; }
-    .btn-success { background: #28a745; color: white; }
-    .btn-warning { background: #ffc107; color: #212529; }
-    .btn-info { background: #17a2b8; color: white; }
-    
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
+}
 </style>
-{% endblock %}
+{% endblock stylesheets %}
 
 {% block content %}
-<div class="container-fluid">
+<!-- Header -->
+<div class="header bg-gradient-koc-red pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col-lg-6 col-7">
+                    <h6 class="h2 text-white d-inline-block mb-0">Müşteri Detayı</h6>
+                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                        <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                            <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}">Satış Süreç</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Müşteri Detayı</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="col-lg-6 col-5 text-right">
+                    <a href="{% url 'sales_process:staff_kanban' %}" class="btn btn-sm btn-neutral">
+                        <i class="fas fa-arrow-left"></i> Geri Dön
+                    </a>
+                    <a href="{% url 'sales_process:lead_create' %}" class="btn btn-sm btn-neutral">
+                        <i class="fas fa-plus"></i> Yeni Müşteri
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
     <!-- Lead Header -->
     <div class="lead-header">
         <div class="row align-items-center">
-            <div class="col-md-8">
-                <h2 class="mb-2">{{ lead.customer_name }}</h2>
-                <p class="mb-1"><i class="fas fa-phone"></i> {{ lead.customer_phone }}</p>
-                {% if lead.customer_email %}
-                <p class="mb-1"><i class="fas fa-envelope"></i> {{ lead.customer_email }}</p>
-                {% endif %}
-                <p class="mb-0"><i class="fas fa-calendar"></i> {{ lead.created_at|date:"d.m.Y H:i" }}</p>
+            <div class="col-lg-8">
+                <h1 class="mb-3">{{ lead.customer_name }}</h1>
+                <div class="lead-meta">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2"><i class="fas fa-phone"></i> {{ lead.customer_phone }}</p>
+                            {% if lead.customer_email %}
+                            <p class="mb-2"><i class="fas fa-envelope"></i> {{ lead.customer_email }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><i class="fas fa-calendar"></i> {{ lead.created_at|date:"d.m.Y H:i" }}</p>
+                            <p class="mb-0"><i class="fas fa-id-card"></i> {{ lead.lead_id }}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-4 text-md-end">
-                <div class="mb-2">
+            <div class="col-lg-4 text-lg-right">
+                <div class="mb-3">
                     <span class="status-badge status-{{ lead.status }}">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
                         {{ lead.get_status_display }}
                     </span>
                 </div>
-                <div class="mb-2">
+                <div class="mb-2" style="opacity: 0.9;">
                     <strong>Aşama:</strong> {{ lead.current_stage.name|default:"Belirtilmemiş" }}
                 </div>
-                <div>
+                <div style="opacity: 0.9;">
                     <strong>Sorumlu:</strong> {{ lead.assigned_staff.get_full_name|default:"Atanmamış" }}
                 </div>
             </div>
@@ -123,83 +512,96 @@
     </div>
 
     <div class="row">
-        <!-- Lead Bilgileri -->
+        <!-- Sol Sütun - Lead Bilgileri ve Hızlı İşlemler -->
         <div class="col-lg-4">
+            <!-- Lead Bilgileri -->
             <div class="info-card">
-                <h5 class="mb-3"><i class="fas fa-info-circle"></i> Lead Bilgileri</h5>
+                <h5><i class="fas fa-info-circle"></i> Lead Bilgileri</h5>
                 
-                <div class="mb-3">
-                    <strong>Lead ID:</strong><br>
-                    <code>{{ lead.lead_id }}</code>
+                <div class="info-item">
+                    <span class="info-label">Kaynak</span>
+                    <div class="info-value">{{ lead.get_source_display }}</div>
                 </div>
                 
-                <div class="mb-3">
-                    <strong>Kaynak:</strong><br>
-                    {{ lead.get_source_display }}
-                </div>
-                
-                <div class="mb-3">
-                    <strong>Emlak Türü:</strong><br>
-                    {{ lead.get_property_type_display }}
+                <div class="info-item">
+                    <span class="info-label">Emlak Türü</span>
+                    <div class="info-value">{{ lead.get_property_type_display }}</div>
                 </div>
                 
                 {% if lead.budget_min or lead.budget_max %}
-                <div class="mb-3">
-                    <strong>Bütçe:</strong><br>
-                    {% if lead.budget_min and lead.budget_max %}
-                        {{ lead.budget_min|floatformat:0 }} - {{ lead.budget_max|floatformat:0 }} TL
-                    {% elif lead.budget_min %}
-                        {{ lead.budget_min|floatformat:0 }} TL+
-                    {% elif lead.budget_max %}
-                        Max {{ lead.budget_max|floatformat:0 }} TL
-                    {% endif %}
+                <div class="info-item">
+                    <span class="info-label">Bütçe</span>
+                    <div class="info-value">
+                        {% if lead.budget_min and lead.budget_max %}
+                            {{ lead.budget_min|floatformat:0 }} - {{ lead.budget_max|floatformat:0 }} TL
+                        {% elif lead.budget_min %}
+                            {{ lead.budget_min|floatformat:0 }} TL+
+                        {% elif lead.budget_max %}
+                            Max {{ lead.budget_max|floatformat:0 }} TL
+                        {% endif %}
+                    </div>
                 </div>
                 {% endif %}
                 
                 {% if lead.property_location %}
-                <div class="mb-3">
-                    <strong>Lokasyon:</strong><br>
-                    {{ lead.property_location }}
+                <div class="info-item">
+                    <span class="info-label">Lokasyon</span>
+                    <div class="info-value">{{ lead.property_location }}</div>
                 </div>
                 {% endif %}
                 
-                <div class="mb-3">
-                    <strong>Öncelik:</strong><br>
-                    <span class="priority-{{ lead.priority }}">
+                <div class="info-item">
+                    <span class="info-label">Öncelik</span>
+                    <div class="info-value priority-{{ lead.priority }}">
                         <i class="fas fa-flag"></i> {{ lead.get_priority_display }}
-                    </span>
+                    </div>
                 </div>
             </div>
             
             <!-- Hızlı İşlemler -->
             <div class="info-card">
-                <h5 class="mb-3"><i class="fas fa-bolt"></i> Hızlı İşlemler</h5>
+                <h5><i class="fas fa-bolt"></i> Hızlı İşlemler</h5>
                 <div class="action-buttons">
-                    <button class="btn-action btn-primary" onclick="makeCall('{{ lead.customer_phone }}')">Ara</button>
-                    <button class="btn-action btn-success" onclick="sendWhatsApp('{{ lead.lead_id }}')">WhatsApp</button>
-                    <button class="btn-action btn-warning" onclick="addNote('{{ lead.lead_id }}')">Not Ekle</button>
-                    <button class="btn-action btn-info" onclick="scheduleAppointment('{{ lead.lead_id }}')">Randevu</button>
+                    <button class="btn-action btn-primary" onclick="makeCall('{{ lead.customer_phone }}')">
+                        <i class="fas fa-phone"></i> Ara
+                    </button>
+                    <button class="btn-action btn-success" onclick="openOfferModal('{{ lead.lead_id }}')">
+                        <i class="fab fa-whatsapp"></i> Teklif Gönder
+                    </button>
+                    <button class="btn-action btn-warning" onclick="addNote('{{ lead.lead_id }}')">
+                        <i class="fas fa-sticky-note"></i> Not Ekle
+                    </button>
+                    <button class="btn-action btn-info" onclick="scheduleAppointment('{{ lead.lead_id }}')">
+                        <i class="fas fa-calendar-plus"></i> Randevu
+                    </button>
+                </div>
+            </div>
+            
+            <!-- WhatsApp Teklif Geçmişi -->
+            <div class="info-card">
+                <h5><i class="fab fa-whatsapp"></i> WhatsApp Teklifleri</h5>
+                <div id="whatsapp-offers-timeline" class="whatsapp-offers">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
+                    </div>
                 </div>
             </div>
         </div>
         
-        <!-- Timeline -->
+        <!-- Sağ Sütun - Timeline -->
         <div class="col-lg-8">
             <div class="info-card">
-                <h5 class="mb-3"><i class="fas fa-history"></i> Aktivite Timeline</h5>
+                <h5><i class="fas fa-history"></i> Aktivite Timeline</h5>
                 
                 <div class="timeline">
                     <!-- Notlar -->
                     {% for note in notes %}
                     <div class="timeline-item note">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Not</h6>
-                                <p class="mb-1">{{ note.content }}</p>
-                                <small class="text-muted">
-                                    {{ note.created_by.get_full_name }} - {{ note.created_at|date:"d.m.Y H:i" }}
-                                </small>
-                            </div>
+                        <h6>Not</h6>
+                        <p>{{ note.content }}</p>
+                        <div class="timeline-meta">
+                            <span><i class="fas fa-user"></i> {{ note.created_by.get_full_name }}</span>
+                            <span><i class="fas fa-clock"></i> {{ note.created_at|date:"d.m.Y H:i" }}</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -207,24 +609,21 @@
                     <!-- Görevler -->
                     {% for task in tasks %}
                     <div class="timeline-item task">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Görev: {{ task.title }}</h6>
-                                <p class="mb-1">{{ task.description }}</p>
-                                <div class="mb-1">
-                                    <span class="status-badge status-{{ task.status }}">
-                                        {{ task.get_status_display }}
-                                    </span>
-                                    {% if task.due_date %}
-                                    <span class="ms-2">
-                                        <i class="fas fa-clock"></i> {{ task.due_date|date:"d.m.Y H:i" }}
-                                    </span>
-                                    {% endif %}
-                                </div>
-                                <small class="text-muted">
-                                    {{ task.assigned_to.get_full_name }} - {{ task.created_at|date:"d.m.Y H:i" }}
-                                </small>
-                            </div>
+                        <h6>Görev: {{ task.title }}</h6>
+                        <p>{{ task.description }}</p>
+                        <div class="mb-2">
+                            <span class="status-badge status-{{ task.status }}">
+                                {{ task.get_status_display }}
+                            </span>
+                            {% if task.due_date %}
+                            <span class="ml-2">
+                                <i class="fas fa-clock"></i> {{ task.due_date|date:"d.m.Y H:i" }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="timeline-meta">
+                            <span><i class="fas fa-user"></i> {{ task.assigned_to.get_full_name }}</span>
+                            <span><i class="fas fa-calendar"></i> {{ task.created_at|date:"d.m.Y H:i" }}</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -232,30 +631,29 @@
                     <!-- Randevular -->
                     {% for appointment in appointments %}
                     <div class="timeline-item appointment">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Randevu: {{ appointment.title }}</h6>
-                                <p class="mb-1">{{ appointment.description }}</p>
-                                <div class="mb-1">
-                                    <span class="status-badge status-{{ appointment.status }}">
-                                        {{ appointment.get_status_display }}
-                                    </span>
-                                    <span class="ms-2">
-                                        <i class="fas fa-calendar"></i> {{ appointment.scheduled_date|date:"d.m.Y H:i" }}
-                                    </span>
-                                </div>
-                                <small class="text-muted">
-                                    {{ appointment.created_by.get_full_name }} - {{ appointment.created_at|date:"d.m.Y H:i" }}
-                                </small>
-                            </div>
+                        <h6>Randevu: {{ appointment.title }}</h6>
+                        <p>{{ appointment.description }}</p>
+                        <div class="mb-2">
+                            <span class="status-badge status-{{ appointment.status }}">
+                                {{ appointment.get_status_display }}
+                            </span>
+                            <span class="ml-2">
+                                <i class="fas fa-calendar"></i> {{ appointment.scheduled_date|date:"d.m.Y H:i" }}
+                            </span>
+                        </div>
+                        <div class="timeline-meta">
+                            <span><i class="fas fa-user"></i> {{ appointment.created_by.get_full_name|default:"Sistem" }}</span>
+                            <span><i class="fas fa-clock"></i> {{ appointment.created_at|date:"d.m.Y H:i" }}</span>
                         </div>
                     </div>
                     {% endfor %}
                     
+                    <!-- Eğer hiç aktivite yoksa -->
                     {% if not notes and not tasks and not appointments %}
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-inbox fa-3x mb-3"></i>
-                        <p>Henüz aktivite bulunmuyor.</p>
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Henüz aktivite bulunmuyor</h5>
+                        <p class="text-muted">Bu müşteri için henüz not, görev veya randevu eklenmemiş.</p>
                     </div>
                     {% endif %}
                 </div>
@@ -264,215 +662,83 @@
     </div>
 </div>
 
-<!-- Modals -->
-<!-- Not Ekleme Modal -->
-<div class="modal fade" id="addNoteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Not Ekle</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addNoteForm">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="noteContent" class="form-label">Not İçeriği</label>
-                        <textarea class="form-control" id="noteContent" name="content" rows="4" required></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                <button type="button" class="btn btn-primary" onclick="submitNote()">Kaydet</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Randevu Modal -->
-<div class="modal fade" id="appointmentModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Randevu Oluştur</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="appointmentForm">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="appointmentTitle" class="form-label">Başlık</label>
-                        <input type="text" class="form-control" id="appointmentTitle" name="title" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="appointmentDate" class="form-label">Tarih ve Saat</label>
-                        <input type="datetime-local" class="form-control" id="appointmentDate" name="scheduled_date" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="appointmentDescription" class="form-label">Açıklama</label>
-                        <textarea class="form-control" id="appointmentDescription" name="description" rows="3"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                <button type="button" class="btn btn-primary" onclick="submitAppointment()">Kaydet</button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
+<!-- Modals ve JavaScript -->
 <script>
-let currentLeadId = '{{ lead.lead_id }}';
-
-function makeCall(phone) {
-    if (confirm(`${phone} numarasını aramak istediğinizden emin misiniz?`)) {
-        console.log('Arama başlatılıyor:', {
-            lead_id: currentLeadId,
-            phone: phone
-        });
-        
-        fetch('{% url "sales_process:make_call" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                lead_id: currentLeadId,
-                phone: phone
-            })
-        })
-        .then(response => {
-            console.log('Response status:', response.status);
-            return response.json();
-        })
+// WhatsApp tekliflerini yükle
+function loadWhatsAppOffers() {
+    const leadId = '{{ lead.lead_id }}';
+    const container = document.getElementById('whatsapp-offers-timeline');
+    
+    fetch(`/satis-surec/whatsapp/offer-history/${leadId}/`)
+        .then(response => response.json())
         .then(data => {
-            console.log('Response data:', data);
-            if (data.success) {
-                showNotification(`Arama başlatıldı: ${data.phone_number}`, 'success');
-                // Sayfayı yenile ki yeni call log görünsün
-                setTimeout(() => location.reload(), 1500);
+            if (data.success && data.offers && data.offers.length > 0) {
+                let html = '';
+                data.offers.forEach(offer => {
+                    const statusClass = offer.status === 'sent' ? 'sent' : 'failed';
+                    html += `
+                        <div class="whatsapp-offer-item ${statusClass}">
+                            <div class="offer-content">${offer.content}</div>
+                            <div class="offer-meta">
+                                <span><i class="fas fa-clock"></i> ${offer.created_at}</span>
+                                <span class="offer-status ${statusClass}">${offer.status_display}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
             } else {
-                showNotification(data.message || 'Arama başlatılamadı: undefined', 'error');
+                container.innerHTML = `
+                    <div class="text-center py-3 text-muted">
+                        <i class="fab fa-whatsapp fa-2x mb-2"></i>
+                        <p>Henüz WhatsApp teklifi gönderilmemiş.</p>
+                    </div>
+                `;
             }
         })
         .catch(error => {
-            console.error('Fetch error:', error);
-            showNotification(`Arama başlatılamadı: ${error.message}`, 'error');
+            console.error('WhatsApp teklifleri yüklenirken hata:', error);
+            container.innerHTML = `
+                <div class="text-center py-3 text-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Teklifler yüklenirken hata oluştu.</p>
+                </div>
+            `;
         });
+}
+
+// Telefon arama fonksiyonu
+function makeCall(phoneNumber) {
+    if (confirm(`${phoneNumber} numarasını aramak istiyor musunuz?`)) {
+        // Burada telefon arama sistemi entegrasyonu yapılabilir
+        alert('Arama başlatılıyor...');
     }
 }
 
-function sendWhatsApp(leadId) {
-    // Direkt WhatsApp mesaj form sayfasına yönlendir
-    window.location.href = `/satis-surec/whatsapp/send/${leadId}/`;
+// Teklif gönderme modal'ı
+function openOfferModal(leadId) {
+    // Burada WhatsApp teklif modal'ı açılacak
+    alert('Teklif gönderme modal\'ı açılacak...');
 }
 
+// Not ekleme fonksiyonu
 function addNote(leadId) {
-    const modal = new bootstrap.Modal(document.getElementById('addNoteModal'));
-    modal.show();
-}
-
-function scheduleAppointment(leadId) {
-    const modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
-    modal.show();
-}
-
-function submitNote() {
-    const form = document.getElementById('addNoteForm');
-    const formData = new FormData(form);
-    formData.append('lead_id', currentLeadId);
-    
-    fetch('{% url "sales_process:add_note" %}', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Not başarıyla eklendi', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('addNoteModal')).hide();
-            location.reload();
-        } else {
-            showNotification(data.message || 'Not eklenirken hata oluştu', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Bir hata oluştu', 'error');
-    });
-}
-
-function submitAppointment() {
-    const form = document.getElementById('appointmentForm');
-    const formData = new FormData(form);
-    formData.append('lead_id', currentLeadId);
-    
-    fetch('{% url "sales_process:schedule_appointment" %}', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Randevu başarıyla oluşturuldu', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('appointmentModal')).hide();
-            location.reload();
-        } else {
-            showNotification(data.message || 'Randevu oluşturulurken hata oluştu', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Bir hata oluştu', 'error');
-    });
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
+    const note = prompt('Not içeriğini girin:');
+    if (note && note.trim()) {
+        // AJAX ile not ekleme işlemi
+        alert('Not ekleme işlemi yapılacak...');
     }
-    return cookieValue;
 }
 
-function showNotification(message, type) {
-    // Bootstrap toast veya alert kullanarak bildirim göster
-    const alertClass = type === 'success' ? 'alert-success' : 
-                      type === 'error' ? 'alert-danger' : 'alert-info';
-    
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(alertDiv);
-    
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.parentNode.removeChild(alertDiv);
-        }
-    }, 5000);
+// Randevu planlama fonksiyonu
+function scheduleAppointment(leadId) {
+    // Burada randevu planlama modal'ı açılacak
+    alert('Randevu planlama modal\'ı açılacak...');
 }
+
+// Sayfa yüklendiğinde WhatsApp tekliflerini yükle
+document.addEventListener('DOMContentLoaded', function() {
+    loadWhatsAppOffers();
+});
 </script>
-{% endblock %}
+{% endblock content %}

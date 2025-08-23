@@ -523,3 +523,64 @@ class LeadAssignment(models.Model):
             models.Index(fields=['assigned_to', 'status']),
             models.Index(fields=['is_sticky']),
         ]
+
+
+class ActionLog(models.Model):
+    """Satış süreç aksiyonları için log sistemi"""
+    
+    ACTION_TYPE_CHOICES = [
+        ('CALL_OK', 'Arama Başarılı'),
+        ('CALL_FAIL', 'Arama Başarısız'),
+        ('OFFER_SENT', 'Teklif Gönderildi'),
+        ('APPT_SET', 'Randevu Ayarlandı'),
+        ('SHOW_DONE', 'Sunum Tamamlandı'),
+        ('CONTRACT_CREATED', 'Sözleşme Oluşturuldu'),
+        ('CONTRACT_SIGNED', 'Sözleşme İmzalandı'),
+        ('PAYMENT_RECEIVED', 'Ödeme Alındı'),
+        ('DEED_TRANSFER', 'Tapu Devri'),
+        ('SURVEY_SENT', 'Anket Gönderildi'),
+        ('STAGE_CHANGED', 'Aşama Değişti'),
+        ('NOTE_ADDED', 'Not Eklendi'),
+        ('TASK_CREATED', 'Görev Oluşturuldu'),
+        ('TASK_COMPLETED', 'Görev Tamamlandı'),
+        ('WHATSAPP_SENT', 'WhatsApp Gönderildi'),
+        ('EMAIL_SENT', 'E-posta Gönderildi'),
+        ('DOCUMENT_UPLOADED', 'Belge Yüklendi'),
+        ('PROPERTY_SHOWN', 'Gayrimenkul Gösterildi'),
+        ('FOLLOW_UP', 'Takip Yapıldı'),
+        ('LEAD_CREATED', 'Lead Oluşturuldu'),
+        ('LEAD_ASSIGNED', 'Lead Atandı'),
+        ('CUSTOMER_RESPONSE', 'Müşteri Yanıtı'),
+        ('SYSTEM_ACTION', 'Sistem Aksiyonu'),
+    ]
+    
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="action_logs", verbose_name="Lead")
+    action_type = models.CharField(max_length=20, choices=ACTION_TYPE_CHOICES, verbose_name="Aksiyon Tipi")
+    title = models.CharField(max_length=200, verbose_name="Başlık")
+    description = models.TextField(blank=True, verbose_name="Açıklama")
+    payload = models.JSONField(blank=True, default=dict, verbose_name="Ek Veriler")
+    is_successful = models.BooleanField(default=True, verbose_name="Başarılı")
+    error_message = models.TextField(blank=True, verbose_name="Hata Mesajı")
+    
+    # İlişkiler
+    performed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   verbose_name="Gerçekleştiren")
+    related_appointment = models.ForeignKey(Appointment, on_delete=models.SET_NULL, null=True, blank=True,
+                                          related_name="action_logs", verbose_name="İlgili Randevu")
+    related_task = models.ForeignKey(Task, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name="action_logs", verbose_name="İlgili Görev")
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Aksiyon Tarihi")
+    
+    def __str__(self):
+        return f"{self.lead.customer_name} - {self.get_action_type_display()}: {self.title}"
+    
+    class Meta:
+        verbose_name = "Aksiyon Logu"
+        verbose_name_plural = "Aksiyon Logları"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['lead', 'action_type']),
+            models.Index(fields=['performed_by', 'created_at']),
+            models.Index(fields=['is_successful']),
+        ]

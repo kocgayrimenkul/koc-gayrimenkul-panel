@@ -279,12 +279,12 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
 # Netgsm API Settings (for call center integration)
-NETGSM_ENABLED = env('NETGSM_ENABLED', default=False)  # NetGSM entegrasyonunu aktif/pasif yapmak için
-NETGSM_USERNAME = env('NETGSM_USERNAME', default='')
-NETGSM_PASSWORD = '77D#D92'
+NETGSM_ENABLED = False  # NetGSM entegrasyonunu aktif/pasif yapmak için
+NETGSM_USERNAME = env('NETGSM_USERNAME', default='8508850860')  # Santral numarası
+NETGSM_PASSWORD = '72B5*C8'
 NETGSM_API_KEY = env('NETGSM_API_KEY', default='')
 NETGSM_WEBHOOK_SECRET = env('NETGSM_WEBHOOK_SECRET', default='netgsm_webhook_secret')
-NETGSM_PBX_NUMBER = env('NETGSM_PBX_NUMBER', default='')  # Santral numarası
+NETGSM_PBX_NUMBER = env('NETGSM_PBX_NUMBER', default='8508850860')  # Santral numarası
 NETGSM_CRM_BASE_URL = env('NETGSM_CRM_BASE_URL', default='http://crmsntrl.netgsm.com.tr:9111')  # CRM API Base URL
 NETGSM_API_BASE_URL = env('NETGSM_API_BASE_URL', default='https://api.netgsm.com.tr')  # Main API Base URL
 

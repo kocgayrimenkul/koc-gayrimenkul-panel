@@ -324,7 +324,7 @@
                             
                             <div class="kanban-content">
                                 {% for lead in stage_data.leads %}
-                                <div class="lead-card" data-lead-id="{{ lead.lead_id }}">
+                                <div class="lead-card" data-lead-id="{{ lead.lead_id }}" onclick="openLeadDetail('{{ lead.lead_id }}')" style="cursor: pointer;">
                                     <div class="lead-header">
                                         <div>
                                             <h6 class="lead-name">{{ lead.customer_name }}</h6>
@@ -345,7 +345,7 @@
                                     </div>
                                     {% endif %}
                                     
-                                    <div class="lead-actions">
+                                    <div class="lead-actions" onclick="event.stopPropagation();">
                                         <button class="btn-action btn-call" onclick="makeCall('{{ lead.customer_phone }}', '{{ lead.lead_id }}')
 " title="Ara">
                                             <i class="fas fa-phone"></i>
@@ -389,40 +389,7 @@
     </div>
 </div>
 
-<!-- Lead Detay Modal -->
-<div class="modal fade" id="leadDetailModal" tabindex="-1" role="dialog" aria-labelledby="leadDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="leadDetailModalLabel">
-                    <i class="fas fa-user-circle mr-2"></i>
-                    Lead Detayları
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="leadDetailContent">
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="sr-only">Yükleniyor...</span>
-                    </div>
-                    <p class="mt-2">Lead bilgileri yükleniyor...</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                    <i class="fas fa-times mr-1"></i>
-                    Kapat
-                </button>
-                <button type="button" class="btn btn-primary" id="editLeadBtn" style="display: none;">
-                    <i class="fas fa-edit mr-1"></i>
-                    Düzenle
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 {% endblock content %}
 
@@ -539,6 +506,11 @@ function makeCall(phoneNumber, leadId) {
 function sendWhatsApp(leadId) {
     // Direkt WhatsApp mesaj form sayfasına yönlendir
     window.location.href = `/satis-surec/whatsapp/send/${leadId}/`;
+}
+
+function openLeadDetail(leadId) {
+    // Lead detail sayfasına yönlendir
+    window.location.href = `/satis-surec/lead/${leadId}/`;
 }
 
 function moveToNextStage(leadId) {
