@@ -21,6 +21,7 @@ urlpatterns = [
     path('mudur/fullscreen/', views.manager_kanban_fullscreen, name='manager_kanban_fullscreen'),
     
     # Lead yönetimi
+    path('leads/', views.lead_list, name='lead_list'),
     path('lead/create/', views.lead_create, name='lead_create'),
     path('lead/<uuid:lead_id>/', views.lead_detail, name='lead_detail'),
     path('lead/<uuid:lead_id>/update/', views.lead_update, name='lead_update'),
@@ -44,7 +45,8 @@ urlpatterns = [
     
     # Offer Sending API
     path('actions/offer_sent/<uuid:lead_id>/', whatsapp_views.send_offer, name='send_offer'),
-    path('whatsapp/offer-history/<uuid:lead_id>/', whatsapp_views.get_offer_history, name='get_offer_history'),
+    path('whatsapp/offer-history/<uuid:lead_id>/', whatsapp_views.offer_history, name='get_offer_history'),
+    path('whatsapp/advanced-offer/<uuid:lead_id>/', whatsapp_views.advanced_offer_interface, name='advanced_offer_interface'),
     
     # Netgsm Call Center Integration
     path('netgsm/webhook/', netgsm_views.netgsm_webhook, name='netgsm_webhook'),

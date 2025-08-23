@@ -175,7 +175,11 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     alert('Müşteri başarıyla kaydedildi!');
-                    window.location.href = '{% url "sales_process:dashboard" %}';
+                    if (response.redirect_url) {
+                        window.location.href = response.redirect_url;
+                    } else {
+                        window.location.href = '{% url "sales_process:dashboard" %}';
+                    }
                 } else {
                     alert('Hata: ' + response.message);
                 }

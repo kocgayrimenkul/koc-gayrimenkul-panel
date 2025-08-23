@@ -345,7 +345,8 @@ def lead_create(request):
             return JsonResponse({
                 'success': True,
                 'message': 'Müşteri başarıyla eklendi.',
-                'lead_id': lead.id
+                'lead_id': lead.id,
+                'redirect_url': '/satis-surec/leads/'
             })
             
         except Exception as e:
@@ -358,6 +359,51 @@ def lead_create(request):
         'title': 'Yeni Müşteri Kaydı',
     }
     return render(request, 'sales_process/lead_create.html', context)
+
+
+@login_required
+def lead_list(request):
+    """Lead listesi sayfası"""
+    leads = Lead.objects.select_related('customer', 'current_stage', 'assigned_staff').all().order_by('-created_at')
+    
+    # Filtreleme
+    stage_filter = request.GET.get('stage')
+    status_filter = request.GET.get('status')
+    search_query = request.GET.get('search')
+    
+    if stage_filter:
+        leads = leads.filter(current_stage__name=stage_filter)
+    
+    if status_filter:
+        leads = leads.filter(status=status_filter)
+    
+    if search_query:
+        leads = leads.filter(
+            Q(customer_name__icontains=search_query) |
+            Q(customer_phone__icontains=search_query) |
+            Q(customer_email__icontains=search_query)
+        )
+    
+    # Sayfalama
+    paginator = Paginator(leads, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Filtre seçenekleri
+    stages = SalesStage.objects.filter(is_active=True).order_by('order')
+    
+    context = {
+        'title': 'Müşteri Listesi',
+        'page_obj': page_obj,
+        'stages': stages,
+        'current_filters': {
+            'stage': stage_filter,
+            'status': status_filter,
+            'search': search_query,
+        },
+        'status_choices': Lead.STATUS_CHOICES,
+    }
+    return render(request, 'sales_process/lead_list.html', context)
 
 
 @login_required
@@ -541,7 +587,7 @@ def add_note(request):
             'note': {
                 'id': note.id,
                 'note': note.note,
-                'created_at': note.created_at.strftime('%d.%m.%Y %H:%M'),
+                'created_at': note.created_at.strftime('%d.%m.%Y %H:%M') if note.created_at else 'Tarih Yok',
                 'created_by': note.created_by.get_full_name()
             }
         })
@@ -586,7 +632,7 @@ def schedule_appointment(request):
         # Sistem notu ekle
         LeadNote.objects.create(
             lead=lead,
-            note=f"Randevu planlandı: {appointment_datetime.strftime('%d.%m.%Y %H:%M')} - {appointment.get_appointment_type_display()}",
+            note=f"Randevu planlandı: {appointment_datetime.strftime('%d.%m.%Y %H:%M') if appointment_datetime else 'Tarih Yok'} - {appointment.get_appointment_type_display()}",
             created_by=request.user,
             note_type='appointment'
         )
@@ -886,7 +932,7 @@ def lead_detail_ajax(request, lead_id):
             'status_display': lead.get_status_display(),
             'current_stage_display': lead.current_stage.name if lead.current_stage else 'Belirtilmemiş',
             'assigned_staff': lead.assigned_staff.get_full_name() if lead.assigned_staff else None,
-            'created_at': lead.created_at.strftime('%d.%m.%Y %H:%M'),
+            'created_at': lead.created_at.strftime('%d.%m.%Y %H:%M') if lead.created_at else 'Tarih Yok',
             'priority': lead.priority,
         }
         

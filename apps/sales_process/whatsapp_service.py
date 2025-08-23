@@ -73,8 +73,9 @@ class WhatsAppService:
                 message_id = response_data.get('messages', [{}])[0].get('id')
                 
                 # Veritabanına kaydet
+                lead_instance = Lead.objects.get(lead_id=lead_id) if lead_id else None
                 whatsapp_message = WhatsAppMessage.objects.create(
-                    lead_id=lead_id,
+                    lead=lead_instance,
                     message_id=message_id,
                     direction='outbound',
                     message_type='text',
@@ -93,8 +94,9 @@ class WhatsAppService:
                 logger.error(f"WhatsApp API error: {error_msg}")
                 
                 # Hatalı mesajı da kaydet
+                lead_instance = Lead.objects.get(lead_id=lead_id) if lead_id else None
                 WhatsAppMessage.objects.create(
-                    lead_id=lead_id,
+                    lead=lead_instance,
                     message_id=f"failed_{timezone.now().timestamp()}",
                     direction='outbound',
                     message_type='text',
@@ -193,8 +195,9 @@ class WhatsAppService:
                     error_messages.append(f"Resim {i+1}: {img_result.get('error')}")
             
             # Kapsamlı mesaj kaydı oluştur
+            lead_instance = Lead.objects.get(lead_id=lead_id) if lead_id else None
             whatsapp_message = WhatsAppMessage.objects.create(
-                lead_id=lead_id,
+                lead=lead_instance,
                 message_id=f"offer_{timezone.now().timestamp()}",
                 direction='outbound',
                 message_type='offer_sent',
@@ -283,8 +286,9 @@ class WhatsAppService:
                 message_id = response_data.get('messages', [{}])[0].get('id')
                 
                 # Veritabanına kaydet
+                lead_instance = Lead.objects.get(lead_id=lead_id) if lead_id else None
                 whatsapp_message = WhatsAppMessage.objects.create(
-                    lead_id=lead_id,
+                    lead=lead_instance,
                     message_id=message_id,
                     direction='outbound',
                     message_type='template',
@@ -354,8 +358,9 @@ class WhatsAppService:
                 message_id = response_data.get('messages', [{}])[0].get('id')
                 
                 # Veritabanına kaydet
+                lead_instance = Lead.objects.get(lead_id=lead_id) if lead_id else None
                 whatsapp_message = WhatsAppMessage.objects.create(
-                    lead_id=lead_id,
+                    lead=lead_instance,
                     message_id=message_id,
                     direction='outbound',
                     message_type='document',
@@ -555,8 +560,9 @@ class WhatsAppService:
                 message_id = response_data.get('messages', [{}])[0].get('id')
                 
                 # Veritabanına kaydet
+                lead_instance = Lead.objects.get(lead_id=lead_id) if lead_id else None
                 whatsapp_message = WhatsAppMessage.objects.create(
-                    lead_id=lead_id,
+                    lead=lead_instance,
                     message_id=message_id,
                     direction='outbound',
                     message_type='image',
@@ -595,8 +601,9 @@ class WhatsAppService:
             mock_message_id = f"mock_offer_{timezone.now().timestamp()}"
             
             # Veritabanına kaydet
+            lead_instance = Lead.objects.get(lead_id=lead_id) if lead_id else None
             whatsapp_message = WhatsAppMessage.objects.create(
-                lead_id=lead_id,
+                lead=lead_instance,
                 message_id=mock_message_id,
                 direction='outbound',
                 message_type='offer_sent',
@@ -631,8 +638,9 @@ class WhatsAppService:
             mock_message_id = f"mock_{uuid.uuid4().hex[:12]}"
             
             # Veritabanına kaydet
+            lead_instance = Lead.objects.get(lead_id=lead_id) if lead_id else None
             whatsapp_message = WhatsAppMessage.objects.create(
-                lead_id=lead_id,
+                lead=lead_instance,
                 message_id=mock_message_id,
                 direction='outbound',
                 message_type=message_type,

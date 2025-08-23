@@ -1,0 +1,823 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}WhatsApp Teklif Gönder - {{ lead.customer_name }}{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* Koç Gayrimenkul kurumsal renkleri */
+:root {
+  --koc-red: #9d2235;
+  --koc-red-light: #b82e42;
+  --koc-red-dark: #7a1a29;
+  --koc-black: #212529;
+  --koc-red-rgb: 157, 34, 53;
+  --koc-gray: #f5f5f5;
+  --success-color: #2dce89;
+  --warning-color: #fb6340;
+  --info-color: #11cdef;
+  --danger-color: #f5365c;
+  --whatsapp-green: #25d366;
+  --whatsapp-green-dark: #128c7e;
+}
+
+.whatsapp-header {
+    background: linear-gradient(135deg, var(--whatsapp-green-dark) 0%, var(--whatsapp-green) 100%);
+    color: white;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(37, 211, 102, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.whatsapp-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: rotate(45deg);
+}
+
+.whatsapp-header h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.whatsapp-header .lead-info {
+    position: relative;
+    z-index: 2;
+    opacity: 0.9;
+}
+
+.whatsapp-header .lead-info i {
+    margin-right: 0.5rem;
+    width: 20px;
+}
+
+.main-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 0;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+}
+
+.card-section {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.card-section:last-child {
+    border-bottom: none;
+}
+
+.section-title {
+    color: var(--koc-red);
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.section-title i {
+    color: var(--whatsapp-green);
+    font-size: 1.25rem;
+    width: 24px;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--whatsapp-green);
+    box-shadow: 0 0 0 0.2rem rgba(37, 211, 102, 0.25);
+}
+
+.btn-whatsapp {
+    background: linear-gradient(135deg, var(--whatsapp-green-dark) 0%, var(--whatsapp-green) 100%);
+    border: none;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-whatsapp:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(37, 211, 102, 0.3);
+    color: white;
+}
+
+.btn-whatsapp:disabled {
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+.image-upload-area {
+    border: 2px dashed #e9ecef;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.image-upload-area:hover {
+    border-color: var(--whatsapp-green);
+    background-color: rgba(37, 211, 102, 0.05);
+}
+
+.image-upload-area.dragover {
+    border-color: var(--whatsapp-green);
+    background-color: rgba(37, 211, 102, 0.1);
+}
+
+.image-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.image-item {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 2px solid #e9ecef;
+}
+
+.image-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.link-input-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.link-input-group .form-control {
+    flex: 1;
+}
+
+.btn-remove-link {
+    background: var(--danger-color);
+    border: none;
+    color: white;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.btn-add-link {
+    background: var(--info-color);
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.whatsapp-timeline {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+}
+
+.message-bubble {
+    max-width: 80%;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.message-bubble.outgoing {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.message-bubble.incoming {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.message-content {
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.message-bubble.outgoing .message-content {
+    background-color: var(--whatsapp-green);
+    color: white;
+}
+
+.message-bubble.incoming .message-content {
+    background-color: white;
+    color: #000;
+    border: 1px solid #e9ecef;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 0.25rem;
+    text-align: right;
+}
+
+.message-bubble.incoming .message-time {
+    text-align: left;
+}
+
+.notes-section {
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.note-item {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-left: 4px solid var(--info-color);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.note-item:last-child {
+    margin-bottom: 0;
+}
+
+.note-meta {
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.note-content {
+    color: #495057;
+    line-height: 1.5;
+}
+
+.quick-note-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.quick-note-form .form-control {
+    flex: 1;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+.alert {
+    border-radius: 0.5rem;
+    border: none;
+    padding: 1rem 1.25rem;
+}
+
+.alert-success {
+    background-color: rgba(45, 206, 137, 0.1);
+    color: var(--success-color);
+    border-left: 4px solid var(--success-color);
+}
+
+.alert-danger {
+    background-color: rgba(245, 54, 92, 0.1);
+    color: var(--danger-color);
+    border-left: 4px solid var(--danger-color);
+}
+
+@media (max-width: 768px) {
+    .whatsapp-header {
+        padding: 1.5rem;
+    }
+    
+    .whatsapp-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .card-section {
+        padding: 1rem;
+    }
+    
+    .image-item {
+        width: 80px;
+        height: 80px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="header bg-gradient-koc-red pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col-lg-6 col-7">
+                    <h6 class="h2 text-white d-inline-block mb-0">WhatsApp Teklif Gönder</h6>
+                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                        <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                            <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}">Satış Süreç</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'sales_process:lead_detail' lead.lead_id %}">{{ lead.customer_name }}</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">WhatsApp Teklif</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="col-lg-6 col-5 text-right">
+                    <a href="{% url 'sales_process:lead_detail' lead.lead_id %}" class="btn btn-sm btn-neutral">
+                        <i class="fas fa-arrow-left"></i> Geri Dön
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+    <!-- WhatsApp Header -->
+    <div class="whatsapp-header">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1>
+                    <i class="fab fa-whatsapp"></i>
+                    {{ lead.customer_name }}
+                </h1>
+                <div class="lead-info">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2"><i class="fas fa-phone"></i> {{ lead.customer_phone }}</p>
+                            {% if lead.customer_email %}
+                            <p class="mb-2"><i class="fas fa-envelope"></i> {{ lead.customer_email }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><i class="fas fa-calendar"></i> {{ lead.created_at|date:"d.m.Y H:i" }}</p>
+                            <p class="mb-0"><i class="fas fa-id-card"></i> {{ lead.lead_id }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 text-lg-right">
+                <div class="mb-3">
+                    <span class="status-badge status-{{ lead.status }}">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                        {{ lead.get_status_display }}
+                    </span>
+                </div>
+                <div style="opacity: 0.9;">
+                    <strong>{{ lead.current_stage.display_name }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Ana Teklif Formu -->
+        <div class="col-lg-8">
+            <div class="main-card">
+                <!-- Teklif Formu -->
+                <div class="card-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-paper-plane"></i>
+                        Teklif Gönder
+                    </h5>
+                    
+                    <form id="advancedOfferForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Mesaj -->
+                        <div class="form-group">
+                            <label class="form-label" for="message">
+                                <i class="fas fa-comment"></i> Mesaj
+                            </label>
+                            <textarea class="form-control" id="message" name="message" rows="4" 
+                                placeholder="Müşterinize göndermek istediğiniz mesajı yazın..."></textarea>
+                        </div>
+
+                        <!-- Fiyat -->
+                        <div class="form-group">
+                            <label class="form-label" for="price">
+                                <i class="fas fa-lira-sign"></i> Fiyat
+                            </label>
+                            <input type="text" class="form-control" id="price" name="price" 
+                                placeholder="Örn: 850.000 TL">
+                        </div>
+
+                        <!-- Resim Yükleme -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-images"></i> Resimler
+                            </label>
+                            <div class="image-upload-area" id="imageUploadArea">
+                                <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                                <p class="text-muted mb-2">Resimleri sürükleyip bırakın veya tıklayarak seçin</p>
+                                <input type="file" id="images" name="images" multiple accept="image/*" style="display: none;">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('images').click()">
+                                    <i class="fas fa-plus"></i> Resim Seç
+                                </button>
+                            </div>
+                            <div id="imagePreview" class="image-preview"></div>
+                        </div>
+
+                        <!-- Linkler -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-link"></i> İlan Linkleri
+                            </label>
+                            <div id="linksContainer">
+                                <div class="link-input-group">
+                                    <input type="url" class="form-control" name="links[]" 
+                                        placeholder="https://example.com/ilan-linki">
+                                    <button type="button" class="btn-remove-link" onclick="removeLinkInput(this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-add-link" onclick="addLinkInput()">
+                                <i class="fas fa-plus"></i> Link Ekle
+                            </button>
+                        </div>
+
+                        <!-- Gönder Butonu -->
+                        <div class="text-center">
+                            <button type="submit" class="btn-whatsapp" id="sendOfferBtn">
+                                <i class="fab fa-whatsapp"></i>
+                                <span id="btnText">Teklif Gönder</span>
+                                <div class="spinner-border spinner-border-sm d-none" id="btnSpinner"></div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yan Panel -->
+        <div class="col-lg-4">
+            <!-- WhatsApp Geçmişi -->
+            <div class="main-card">
+                <div class="card-section">
+                    <h5 class="section-title">
+                        <i class="fab fa-whatsapp"></i>
+                        Mesaj Geçmişi
+                    </h5>
+                    <div class="whatsapp-timeline" id="whatsappTimeline">
+                        {% for message in whatsapp_messages %}
+                        <div class="message-bubble {% if message.direction == 'outgoing' %}outgoing{% else %}incoming{% endif %}">
+                            <div class="message-content">
+                                {{ message.content }}
+                                {% if message.media_url %}
+                                <div class="mt-2">
+                                    <img src="{{ message.media_url }}" alt="Medya" style="max-width: 100%; border-radius: 0.5rem;">
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="message-time">
+                                {{ message.created_at|date:"d.m.Y H:i" }}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fab fa-whatsapp fa-2x mb-2"></i>
+                            <p>Henüz mesaj geçmişi yok</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notlar -->
+            <div class="main-card">
+                <div class="card-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-sticky-note"></i>
+                        Notlar
+                    </h5>
+                    <div class="notes-section">
+                        {% for note in notes %}
+                        <div class="note-item">
+                            <div class="note-meta">
+                                <i class="fas fa-user"></i> {{ note.created_by.get_full_name|default:note.created_by.username }}
+                                <span class="float-right">{{ note.created_at|date:"d.m.Y H:i" }}</span>
+                            </div>
+                            <div class="note-content">{{ note.content }}</div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-sticky-note fa-2x mb-2"></i>
+                            <p>Henüz not yok</p>
+                        </div>
+                        {% endfor %}
+                        
+                        <!-- Hızlı Not Ekleme -->
+                        <div class="quick-note-form">
+                            <input type="text" class="form-control" id="quickNoteInput" 
+                                placeholder="Hızlı not ekle...">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addQuickNote()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Container -->
+<div id="alertContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+<script>
+// Form submission
+document.getElementById('advancedOfferForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('sendOfferBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    
+    // Disable button and show loading
+    btn.disabled = true;
+    btnText.textContent = 'Gönderiliyor...';
+    btnSpinner.classList.remove('d-none');
+    
+    const formData = new FormData(this);
+    
+    // Add text field from message field for backend compatibility
+    const messageField = document.getElementById('message');
+    if (messageField && messageField.value) {
+        formData.append('text', messageField.value);
+    }
+    
+    // Collect link data
+    const linkInputs = document.querySelectorAll('input[name="links[]"]');
+    linkInputs.forEach((input, index) => {
+        if (input.value.trim()) {
+            formData.append(`links[${index}]`, input.value.trim());
+        }
+    });
+    
+    fetch(`/satis-surec/actions/offer_sent/{{ lead.lead_id }}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Teklif başarıyla gönderildi!', 'success');
+            // Reset form
+            document.getElementById('advancedOfferForm').reset();
+            document.getElementById('imagePreview').innerHTML = '';
+            // Reload timeline
+            location.reload();
+        } else {
+            showAlert(data.message || 'Teklif gönderilirken bir hata oluştu.', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Bir hata oluştu. Lütfen tekrar deneyin.', 'danger');
+    })
+    .finally(() => {
+        // Reset button
+        btn.disabled = false;
+        btnText.textContent = 'Teklif Gönder';
+        btnSpinner.classList.add('d-none');
+    });
+});
+
+// Image upload handling
+const imageUploadArea = document.getElementById('imageUploadArea');
+const imageInput = document.getElementById('images');
+const imagePreview = document.getElementById('imagePreview');
+
+imageUploadArea.addEventListener('click', () => imageInput.click());
+
+imageUploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    imageUploadArea.classList.add('dragover');
+});
+
+imageUploadArea.addEventListener('dragleave', () => {
+    imageUploadArea.classList.remove('dragover');
+});
+
+imageUploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    imageUploadArea.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    handleImageFiles(files);
+});
+
+imageInput.addEventListener('change', (e) => {
+    handleImageFiles(e.target.files);
+});
+
+function handleImageFiles(files) {
+    imagePreview.innerHTML = '';
+    Array.from(files).forEach((file, index) => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imageItem = document.createElement('div');
+                imageItem.className = 'image-item';
+                imageItem.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview">
+                    <button type="button" class="image-remove" onclick="removeImage(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                imagePreview.appendChild(imageItem);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+function removeImage(index) {
+    const imageItems = document.querySelectorAll('.image-item');
+    if (imageItems[index]) {
+        imageItems[index].remove();
+    }
+}
+
+// Link management
+function addLinkInput() {
+    const container = document.getElementById('linksContainer');
+    const linkGroup = document.createElement('div');
+    linkGroup.className = 'link-input-group';
+    linkGroup.innerHTML = `
+        <input type="url" class="form-control" name="links[]" 
+            placeholder="https://example.com/ilan-linki">
+        <button type="button" class="btn-remove-link" onclick="removeLinkInput(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(linkGroup);
+}
+
+function removeLinkInput(button) {
+    const linkGroups = document.querySelectorAll('.link-input-group');
+    if (linkGroups.length > 1) {
+        button.parentElement.remove();
+    }
+}
+
+// Quick note
+function addQuickNote() {
+    const input = document.getElementById('quickNoteInput');
+    const content = input.value.trim();
+    
+    if (!content) {
+        showAlert('Lütfen bir not girin.', 'danger');
+        return;
+    }
+    
+    fetch(`/satis-surec/lead/{{ lead.lead_id }}/add-note/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Not eklendi!', 'success');
+            input.value = '';
+            location.reload();
+        } else {
+            showAlert(data.message || 'Not eklenirken bir hata oluştu.', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Bir hata oluştu. Lütfen tekrar deneyin.', 'danger');
+    });
+}
+
+// Enter key for quick note
+document.getElementById('quickNoteInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        addQuickNote();
+    }
+});
+
+// Alert function
+function showAlert(message, type) {
+    const alertContainer = document.getElementById('alertContainer');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.appendChild(alert);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Reset button state on page load
+    const btn = document.getElementById('sendOfferBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    
+    btn.disabled = false;
+    btnText.textContent = 'Teklif Gönder';
+    btnSpinner.classList.add('d-none');
+    
+    // Scroll timeline to bottom
+    const timeline = document.getElementById('whatsappTimeline');
+    if (timeline) {
+        timeline.scrollTop = timeline.scrollHeight;
+    }
+});
+</script>
+{% endblock %}

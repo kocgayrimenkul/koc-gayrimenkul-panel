@@ -266,7 +266,7 @@ class NetgsmService:
         Task.objects.create(
             lead=lead,
             title="Kaçırılmış Arama - Geri Arama",
-            description=f"Müşteri {call_log.start_time.strftime('%d.%m.%Y %H:%M')} tarihinde aradı ancak arama cevaplanamadı.",
+            description=f"Müşteri {call_log.start_time.strftime('%d.%m.%Y %H:%M') if call_log.start_time else 'Bilinmeyen tarih'} tarihinde aradı ancak arama cevaplanamadı.",
             task_type='call',
             priority=4,
             due_date=timezone.now() + timedelta(hours=1),
@@ -321,7 +321,7 @@ class NetgsmService:
                 source='phone_call',
                 current_stage=first_stage,
                 priority=3,
-                notes=f"Gelen aramadan otomatik oluşturuldu - {call_log.start_time.strftime('%d.%m.%Y %H:%M')}"
+                notes=f"Gelen aramadan otomatik oluşturuldu - {call_log.start_time.strftime('%d.%m.%Y %H:%M') if call_log.start_time else 'Bilinmeyen tarih'}"
             )
             
             # İlk not ekle

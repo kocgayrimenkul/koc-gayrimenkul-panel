@@ -43,7 +43,7 @@ def lead_created_handler(sender, instance, created, **kwargs):
         LeadNote.objects.create(
             lead=instance,
             title="Tapu Devri Görevleri Oluşturuldu",
-            content=f"Tapu tarihi ({instance.deed_transfer_date.strftime('%d.%m.%Y')}) için otomatik görevler oluşturuldu.",
+            content=f"Tapu tarihi ({instance.deed_transfer_date.strftime('%d.%m.%Y') if instance.deed_transfer_date else 'Tarih Yok'}) için otomatik görevler oluşturuldu.",
             created_by=instance.assigned_staff,
             note_type='system'
         )
@@ -86,7 +86,7 @@ def lead_created_handler(sender, instance, created, **kwargs):
             Task.objects.create(
                 lead=instance,
                 title=f"{instance.customer_name} - Tapu Devri Hatırlatması",
-                description=f"Tapu devri tarihi yaklaşıyor. Tarih: {instance.deed_transfer_date.strftime('%d.%m.%Y')}",
+                description=f"Tapu devri tarihi yaklaşıyor. Tarih: {instance.deed_transfer_date.strftime('%d.%m.%Y') if instance.deed_transfer_date else 'Tarih Yok'}",
                 task_type='reminder',
                 priority=4,
                 due_date=reminder_date,
@@ -101,7 +101,7 @@ def lead_created_handler(sender, instance, created, **kwargs):
             Task.objects.create(
                 lead=instance,
                 title=f"{instance.customer_name} - Tapu Devri Son Kontrol",
-                description=f"Tapu devri için son kontroller yapılmalı. Belgeler hazır mı? Tarih: {instance.deed_transfer_date.strftime('%d.%m.%Y')}",
+                description=f"Tapu devri için son kontroller yapılmalı. Belgeler hazır mı? Tarih: {instance.deed_transfer_date.strftime('%d.%m.%Y') if instance.deed_transfer_date else 'Tarih Yok'}",
                 task_type='deed_transfer',
                 priority=5,
                 due_date=final_check_date,
@@ -373,7 +373,7 @@ def task_created_handler(sender, instance, created, **kwargs):
         LeadNote.objects.create(
             lead=instance.lead,
             title="Görev Oluşturuldu",
-            content=f"Yeni görev oluşturuldu: {instance.title} (Bitiş: {instance.due_date.strftime('%d.%m.%Y %H:%M')})",
+            content=f"Yeni görev oluşturuldu: {instance.title} (Bitiş: {instance.due_date.strftime('%d.%m.%Y %H:%M') if instance.due_date else 'Tarih Yok'})",
             created_by=instance.assigned_to,
             note_type='task'
         )
@@ -448,7 +448,7 @@ def check_overdue_tasks():
         LeadNote.objects.create(
             lead=task.lead,
             title="Geciken Görev",
-            content=f"GECİKEN GÖREV: {task.title} - Bitiş tarihi: {task.due_date.strftime('%d.%m.%Y %H:%M')}",
+            content=f"GECİKEN GÖREV: {task.title} - Bitiş tarihi: {task.due_date.strftime('%d.%m.%Y %H:%M') if task.due_date else 'Tarih Yok'}",
             created_by=task.assigned_to,
             note_type='warning'
         )

@@ -715,10 +715,10 @@ function makeCall(phoneNumber) {
     }
 }
 
-// Teklif gönderme modal'ı
+// Teklif gönderme sayfasına yönlendirme
 function openOfferModal(leadId) {
-    // Burada WhatsApp teklif modal'ı açılacak
-    alert('Teklif gönderme modal\'ı açılacak...');
+    // Gelişmiş teklif gönderme arayüzüne yönlendir
+    window.location.href = `/satis-surec/whatsapp/advanced-offer/${leadId}/`;
 }
 
 // Not ekleme fonksiyonu

@@ -17,12 +17,14 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from django.shortcuts import redirect
 
 from .whatsapp_service import whatsapp_service
 from .models import Lead, WhatsAppMessage, SalesStage, StageTransition, ActionLog
 from .forms import WhatsAppMessageForm
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.utils import timezone
 import os
 import uuid
 
@@ -538,7 +540,7 @@ def send_offer(request, lead_id):
             try:
                 # "Teklif Gönderildi" stage'ini bul
                 teklif_stage = SalesStage.objects.filter(
-                    slug='teklif_gonderildi',
+                    slug='teklif-gonderildi',
                     is_active=True
                 ).first()
                 
@@ -608,10 +610,8 @@ def send_offer(request, lead_id):
 
 
 @login_required
-def get_offer_history(request, lead_id):
-    """
-    Lead'in teklif geçmişini getir
-    """
+def offer_history(request, lead_id):
+    """WhatsApp teklif geçmişini getir"""
     try:
         lead = get_object_or_404(Lead, lead_id=lead_id)
         
@@ -672,3 +672,41 @@ def get_offer_history(request, lead_id):
             'success': False,
             'error': str(e)
         })
+
+
+@login_required
+def advanced_offer_interface(request, lead_id):
+    """
+    Gelişmiş WhatsApp teklif gönderme arayüzü
+    Kart görünümü, çoklu resim, ilan linkleri, fiyat alanı, timeline/chat alanı
+    """
+    try:
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # WhatsApp mesaj geçmişini al
+        whatsapp_messages = WhatsAppMessage.objects.filter(
+            lead=lead
+        ).order_by('created_at')
+        
+        # Arama geçmişini al (Netgsm logları)
+        from .models import CallLog
+        call_logs = CallLog.objects.filter(
+            lead=lead
+        ).order_by('-created_at')[:10]  # Son 10 arama
+        
+        # Lead notlarını al
+        lead_notes = lead.notes.all().order_by('-created_at')[:5]  # Son 5 not
+        
+        context = {
+            'lead': lead,
+            'whatsapp_messages': whatsapp_messages,
+            'call_logs': call_logs,
+            'lead_notes': lead_notes,
+        }
+        
+        return render(request, 'sales_process/advanced_whatsapp_offer.html', context)
+        
+    except Exception as e:
+        logger.error(f"Advanced offer interface error: {str(e)}")
+        messages.error(request, f'Hata oluştu: {str(e)}')
+        return redirect('sales_process:lead_detail', lead_id=lead_id)

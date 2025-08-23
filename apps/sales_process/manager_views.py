@@ -103,8 +103,8 @@ def get_manager_leads_ajax(request):
             'current_stage_id': lead.current_stage.id if lead.current_stage else None,
             'current_stage_slug': lead.current_stage.slug if lead.current_stage else 'new',
             'assigned_to_name': lead.assigned_to.get_full_name() if lead.assigned_to else None,
-            'created_at_display': lead.created_at.strftime('%d.%m.%Y'),
-            'last_activity': lead.updated_at.strftime('%d.%m.%Y %H:%M'),
+            'created_at_display': lead.created_at.strftime('%d.%m.%Y') if lead.created_at else 'Tarih Yok',
+            'last_activity': lead.updated_at.strftime('%d.%m.%Y %H:%M') if lead.updated_at else 'Tarih Yok',
         })
     
     # Calculate statistics

@@ -340,7 +340,8 @@ class Appointment(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme Tarihi")
     
     def __str__(self):
-        return f"{self.lead.customer_name} - {self.title} ({self.scheduled_date.strftime('%d.%m.%Y %H:%M')})"
+        date_str = self.scheduled_date.strftime('%d.%m.%Y %H:%M') if self.scheduled_date else 'Tarih Yok'
+        return f"{self.lead.customer_name} - {self.title} ({date_str})"
     
     class Meta:
         verbose_name = "Randevu"
@@ -397,7 +398,8 @@ class WhatsAppMessage(models.Model):
     read_at = models.DateTimeField(null=True, blank=True, verbose_name="Okunma Tarihi")
     
     def __str__(self):
-        return f"{self.lead.customer_name} - {self.get_direction_display()} ({self.created_at.strftime('%d.%m.%Y %H:%M')})"
+        date_str = self.created_at.strftime('%d.%m.%Y %H:%M') if self.created_at else 'Tarih Yok'
+        return f"{self.lead.customer_name} - {self.get_direction_display()} ({date_str})"
     
     class Meta:
         verbose_name = "WhatsApp Mesajı"
@@ -451,7 +453,8 @@ class CallLog(models.Model):
     notes = models.TextField(blank=True, verbose_name="Notlar")
     
     def __str__(self):
-        return f"{self.lead.customer_name} - {self.get_call_type_display()} ({self.started_at.strftime('%d.%m.%Y %H:%M')})"
+        date_str = self.started_at.strftime('%d.%m.%Y %H:%M') if self.started_at else 'Tarih Yok'
+        return f"{self.lead.customer_name} - {self.get_call_type_display()} ({date_str})"
     
     @property
     def duration_formatted(self):
