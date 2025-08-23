@@ -641,13 +641,33 @@ def complete_presentation(request):
         
         # Presentation kaydını güncelle veya oluştur
         from apps.presentation.models import Presentation
+        from apps.portfolio.models import Property
+        
+        # İlk gösterilen property'yi ana property olarak kullan
+        main_property = None
+        if shown_properties:
+            try:
+                main_property = Property.objects.get(id=shown_properties[0])
+            except Property.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Seçilen daire bulunamadı.'
+                })
+        
+        if not main_property:
+            return JsonResponse({
+                'success': False,
+                'message': 'Ana daire seçimi gerekli.'
+            })
+        
         presentation, created = Presentation.objects.get_or_create(
             customer_name=lead.customer_name,
             customer_phone=lead.customer_phone,
             defaults={
                 'title': f'{lead.customer_name} - Sunum',
+                'property': main_property,
                 'presenter': request.user,
-                'presentation_date': timezone.now().date(),
+                'presentation_date': timezone.now(),
                 'customer_source': lead.source,
                 'status': 'tamamlandi'
             }
@@ -673,7 +693,8 @@ def complete_presentation(request):
                 'completion_notes': completion_notes,
                 'presentation_id': presentation.id
             },
-            success=True
+            is_successful=True,
+            performed_by=request.user
         )
         
         # Lead'i cevap_bekleniyor aşamasına geçir
@@ -689,8 +710,9 @@ def complete_presentation(request):
             lead=lead,
             from_stage=old_stage,
             to_stage=cevap_bekleniyor_stage,
-            changed_by=request.user,
-            notes=f'Sunum tamamlandı - {completion_notes[:100]}...'
+            transition_type='manual',
+            performed_by=request.user,
+            reason=f'Sunum tamamlandı - {completion_notes[:100]}...'
         )
         
         # Sistem notu ekle
@@ -746,7 +768,7 @@ def accept_offer(request):
             })
         
         # Sözleşme aşamasına geç
-        sozlesme_stage = SalesStage.objects.get(name='sozlesme')
+        sozlesme_stage = SalesStage.objects.get(name='sozlesme_yapildi')
         lead.current_stage = sozlesme_stage
         lead.save()
         
@@ -754,18 +776,20 @@ def accept_offer(request):
         ActionLog.objects.create(
             lead=lead,
             action_type='OFFER_ACCEPTED',
+            title='Teklif Kabul Edildi',
             description='Teklif kabul edildi',
             performed_by=request.user,
-            success=True
+            is_successful=True
         )
         
         # Stage transition kaydı oluştur
         StageTransition.objects.create(
             lead=lead,
-            from_stage_id=SalesStage.objects.get(name='cevap_bekleniyor').id,
+            from_stage=SalesStage.objects.get(name='cevap_bekleniyor'),
             to_stage=sozlesme_stage,
-            changed_by=request.user,
-            notes='Teklif kabul edildi'
+            transition_type='manual',
+            performed_by=request.user,
+            reason='Teklif kabul edildi'
         )
         
         # Sistem notu ekle
@@ -820,18 +844,20 @@ def reject_offer(request):
         ActionLog.objects.create(
             lead=lead,
             action_type='OFFER_REJECTED',
+            title='Teklif Reddedildi',
             description='Teklif reddedildi',
             performed_by=request.user,
-            success=True
+            is_successful=True
         )
         
         # Stage transition kaydı oluştur
         StageTransition.objects.create(
             lead=lead,
-            from_stage_id=SalesStage.objects.get(name='cevap_bekleniyor').id,
+            from_stage=SalesStage.objects.get(name='cevap_bekleniyor'),
             to_stage=ihtiyac_analizi_stage,
-            changed_by=request.user,
-            notes='Teklif reddedildi, ihtiyaç analizi aşamasına geri döndü'
+            transition_type='manual',
+            performed_by=request.user,
+            reason='Teklif reddedildi, ihtiyaç analizi aşamasına geri döndü'
         )
         
         # Sistem notu ekle

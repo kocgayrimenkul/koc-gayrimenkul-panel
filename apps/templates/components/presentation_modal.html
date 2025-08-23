@@ -1,0 +1,511 @@
+<!-- Sunum Tamamlama Modal Component -->
+<!-- Kullanım: Bu component'i staff_kanban.html'de kullanın -->
+
+{% load static %}
+
+<!-- Modal HTML -->
+<div class="modal fade" id="{{ modal_id|default:'completePresentationModal' }}" tabindex="-1" role="dialog" aria-labelledby="{{ modal_id|default:'completePresentationModal' }}Label" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <!-- Modal Header -->
+            <div class="modal-header border-0 bg-primary text-white">
+                <h5 class="modal-title d-flex align-items-center mb-0" id="{{ modal_id|default:'completePresentationModal' }}Label">
+                    <i class="fas fa-presentation me-3"></i>
+                    <span class="fw-bold">Sunumu Tamamla</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="modal-body p-4">
+                <form id="{{ modal_id|default:'completePresentationModal' }}Form">
+                    <!-- Gösterilen Daireler Bölümü -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                <i class="fas fa-home text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1 fw-bold text-dark">Gösterilen Daireler</h6>
+                                <small class="text-muted">1-3 adet daire seçiniz veya manuel olarak giriniz</small>
+                            </div>
+                        </div>
+                        
+                        <div class="card border-0 bg-light bg-opacity-50">
+                            <div class="card-body p-3">
+                                <div id="{{ modal_id|default:'completePresentationModal' }}PropertiesContainer">
+                                    <!-- Daireler buraya yüklenecek -->
+                                </div>
+                                <div class="invalid-feedback d-block" id="{{ modal_id|default:'completePresentationModal' }}PropertiesError"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sunum Notları Bölümü -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                                <i class="fas fa-sticky-note text-info"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1 fw-bold text-dark">Sunum Notları</h6>
+                                <small class="text-muted">Sunum sırasında yaşanan gelişmeleri detaylandırın</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <textarea 
+                                class="form-control border-0 bg-light bg-opacity-50" 
+                                id="{{ modal_id|default:'completePresentationModal' }}Notes" 
+                                rows="5" 
+                                placeholder="Örneğin: Müşteri 2+1 daireye çok ilgi gösterdi. Fiyat konusunda pazarlık yapmak istiyor. Kredi kullanmayı planlıyor. Gelecek hafta tekrar görüşme talep etti..." 
+                                required 
+                                style="resize: none; border-radius: 8px;"></textarea>
+                            <div class="invalid-feedback d-block" id="{{ modal_id|default:'completePresentationModal' }}NotesError"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="modal-footer border-0 px-4 pb-4">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>İptal
+                </button>
+                <button type="button" class="btn btn-primary shadow-sm" onclick="PresentationModal.submit('{{ modal_id|default:'completePresentationModal' }}')">
+                    <i class="fas fa-check-circle me-2"></i>Sunumu Tamamla
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal JavaScript -->
+<script>
+// Presentation Modal Component Class
+class PresentationModalComponent {
+    constructor() {
+        this.currentLeadId = null;
+        this.availableProperties = [];
+        this.apiEndpoint = '/api/properties/';
+        this.submitEndpoint = '/satis-surec/complete-presentation/';
+    }
+
+    // Modal açma fonksiyonu
+    open(leadId, modalId = 'completePresentationModal') {
+        console.log('PresentationModal açılıyor, leadId:', leadId);
+        this.currentLeadId = leadId;
+        
+        // jQuery ve modal elementinin varlığını kontrol et
+        if (typeof $ === 'undefined') {
+            console.error('jQuery yüklenmemiş!');
+            alert('jQuery yüklenmemiş! Sayfayı yenileyin.');
+            return;
+        }
+        
+        const modalElement = $(`#${modalId}`);
+        if (modalElement.length === 0) {
+            console.error('Modal elementi bulunamadı:', modalId);
+            alert('Modal elementi bulunamadı!');
+            return;
+        }
+        
+        console.log('Modal açılıyor...');
+        // Modal'ı önce aç, sonra daireleri yükle
+        modalElement.modal('show');
+        this.loadAvailableProperties(modalId);
+    }
+
+    // Mevcut daireleri yükle
+    loadAvailableProperties(modalId = 'completePresentationModal') {
+        const container = document.getElementById(`${modalId}PropertiesContainer`);
+        if (!container) {
+            console.error('Properties container bulunamadı:', `${modalId}PropertiesContainer`);
+            return;
+        }
+        
+        // Loading göstergesi ekle
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
+                </div>
+                <p class="mt-2 text-muted">Daireler yükleniyor...</p>
+            </div>
+        `;
+        
+        fetch(this.apiEndpoint, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': this.getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('API yanıtı başarısız: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            this.availableProperties = data.results || data;
+            this.renderPropertiesCheckboxes(modalId);
+        })
+        .catch(error => {
+            console.error('Daireler yüklenirken hata:', error);
+            // Hata durumunda manuel giriş seçeneği sun
+            container.innerHTML = `
+                <div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-warning">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <div>
+                            <strong>Dikkat!</strong> Daireler yüklenirken hata oluştu. 
+                            Manuel olarak daire bilgilerini girebilirsiniz.
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="${modalId}ManualPropertyInfo" class="form-label fw-bold text-dark">
+                        Gösterilen Daire Bilgileri:
+                    </label>
+                    <textarea 
+                        class="form-control border-0 bg-light bg-opacity-50" 
+                        id="${modalId}ManualPropertyInfo" 
+                        rows="3" 
+                        placeholder="Örn: 2+1 Daire - Merkez Mahallesi - 450.000 TL"
+                        style="border-radius: 8px;"></textarea>
+                </div>
+            `;
+        });
+    }
+
+    // Daire checkbox'larını oluştur
+    renderPropertiesCheckboxes(modalId = 'completePresentationModal') {
+        const container = document.getElementById(`${modalId}PropertiesContainer`);
+        if (!this.availableProperties || this.availableProperties.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center py-3">Gösterilecek daire bulunamadı.</p>';
+            return;
+        }
+        
+        let html = '<div class="row g-3">';
+        this.availableProperties.forEach((property, index) => {
+            html += `
+            <div class="col-md-6">
+                <div class="property-checkbox-item p-3 border rounded-3 bg-white shadow-sm">
+                    <div class="form-check">
+                        <input type="checkbox" 
+                               class="form-check-input property-checkbox" 
+                               id="${modalId}_property_${property.id}" 
+                               value="${property.id}" 
+                               onchange="PresentationModal.validatePropertySelection('${modalId}')">
+                        <label class="form-check-label w-100" for="${modalId}_property_${property.id}">
+                            <div class="d-flex flex-column">
+                                <strong class="text-dark mb-1">${property.title || property.name}</strong>
+                                <small class="text-muted">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    ${property.neighborhood || 'Mahalle belirtilmemiş'}
+                                </small>
+                                <small class="text-primary fw-bold">
+                                    <i class="fas fa-tag me-1"></i>
+                                    ${property.price || 'Fiyat belirtilmemiş'}
+                                </small>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    // Daire seçimi doğrulama
+    validatePropertySelection(modalId = 'completePresentationModal') {
+        const checkboxes = document.querySelectorAll(`#${modalId} .property-checkbox:checked`);
+        const errorDiv = document.getElementById(`${modalId}PropertiesError`);
+        
+        if (checkboxes.length > 3) {
+            // En son seçileni kaldır
+            const lastChecked = Array.from(document.querySelectorAll(`#${modalId} .property-checkbox`)).find(cb => 
+                 cb.checked && Array.from(checkboxes).indexOf(cb) === checkboxes.length - 1
+             );
+            if (lastChecked) lastChecked.checked = false;
+            
+            errorDiv.textContent = 'En fazla 3 daire seçebilirsiniz.';
+            errorDiv.style.display = 'block';
+            return false;
+        } else {
+            errorDiv.style.display = 'none';
+            return true;
+        }
+    }
+
+    // Sunum tamamlama formunu gönder
+    submit(modalId = 'completePresentationModal') {
+        const selectedProperties = Array.from(document.querySelectorAll(`#${modalId} .property-checkbox:checked`)).map(cb => cb.value);
+        const notes = document.getElementById(`${modalId}Notes`).value.trim();
+        const manualPropertyInfo = document.getElementById(`${modalId}ManualPropertyInfo`);
+        
+        // Validasyon
+        let isValid = true;
+        
+        // Manuel giriş varsa onu kullan, yoksa seçili daireleri kontrol et
+        if (manualPropertyInfo && manualPropertyInfo.value.trim()) {
+            // Manuel giriş durumu - daire seçimi zorunlu değil
+            document.getElementById(`${modalId}PropertiesError`).style.display = 'none';
+        } else if (selectedProperties.length === 0 || selectedProperties.length > 3) {
+            document.getElementById(`${modalId}PropertiesError`).textContent = '1-3 adet daire seçmelisiniz veya manuel olarak daire bilgilerini giriniz.';
+            document.getElementById(`${modalId}PropertiesError`).style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById(`${modalId}PropertiesError`).style.display = 'none';
+        }
+        
+        if (!notes) {
+            document.getElementById(`${modalId}NotesError`).textContent = 'Sunum notları zorunludur.';
+            document.getElementById(`${modalId}NotesError`).style.display = 'block';
+            isValid = false;
+        } else {
+            document.getElementById(`${modalId}NotesError`).style.display = 'none';
+        }
+        
+        if (!isValid) return;
+        
+        // AJAX isteği gönder
+        const requestData = {
+            lead_id: this.currentLeadId,
+            completion_notes: notes
+        };
+        
+        // Manuel giriş varsa onu kullan, yoksa seçili daireleri gönder
+        if (manualPropertyInfo && manualPropertyInfo.value.trim()) {
+            requestData.manual_property_info = manualPropertyInfo.value.trim();
+        } else {
+            requestData.shown_properties = selectedProperties;
+        }
+        
+        fetch(this.submitEndpoint, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': this.getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                $(`#${modalId}`).modal('hide');
+                this.showNotification('success', 'Sunum başarıyla tamamlandı!');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                this.showNotification('error', data.message || 'Sunum tamamlanırken hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Sunum tamamlama hatası:', error);
+            this.showNotification('error', 'Sunum tamamlanırken hata oluştu.');
+        });
+    }
+
+    // Cookie alma fonksiyonu
+    getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Bildirim gösterme fonksiyonu
+    showNotification(type, message) {
+        // Eğer global showNotification fonksiyonu varsa onu kullan
+        if (typeof showNotification === 'function') {
+            showNotification(type, message);
+        } else {
+            // Basit alert fallback
+            alert(message);
+        }
+    }
+
+    // API endpoint'lerini ayarlama
+    setEndpoints(apiEndpoint, submitEndpoint) {
+        if (apiEndpoint) this.apiEndpoint = apiEndpoint;
+        if (submitEndpoint) this.submitEndpoint = submitEndpoint;
+    }
+}
+
+// Global instance oluştur
+if (typeof PresentationModal === 'undefined') {
+    window.PresentationModal = new PresentationModalComponent();
+}
+</script>
+
+<!-- CSS Stilleri -->
+<style>
+/* Modal Genel Stilleri */
+.modal-content {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    padding: 1.5rem;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+}
+
+.btn-close-white {
+    filter: brightness(0) invert(1);
+}
+
+/* Form Elemanları */
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    background-color: #fff;
+}
+
+.form-control::placeholder {
+    color: #6c757d;
+    opacity: 0.7;
+}
+
+/* Checkbox Stilleri */
+.property-checkbox-item {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.property-checkbox-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.form-check-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-check-label {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Buton Stilleri */
+.btn {
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.btn-outline-secondary {
+    border: 1px solid #6c757d;
+    color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    transform: translateY(-1px);
+}
+
+/* Icon Stilleri */
+.icon-shape {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Alert Stilleri */
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+/* Loading Spinner */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+}
+
+/* Responsive Düzenlemeler */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 1rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .col-md-6 {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Hover Efektleri */
+.property-checkbox-item:hover .form-check-label {
+    color: #0d6efd;
+}
+
+/* Focus States */
+.form-check-input:focus + .form-check-label {
+    color: #0d6efd;
+}
+
+/* Invalid Feedback */
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #dc3545;
+}
+
+.invalid-feedback[style*="block"] {
+    display: block !important;
+}
+
+/* Smooth Transitions */
+* {
+    transition: all 0.2s ease;
+}
+</style>
