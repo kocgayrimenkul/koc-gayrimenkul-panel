@@ -354,7 +354,7 @@
 " title="WhatsApp">
                                             <i class="fab fa-whatsapp"></i>
                                         </button>
-                                        {% if lead.current_stage.name == 'ihtiyac_analizi' %}
+                                        {% if lead.current_stage.name == 'ihtiyac_analizi' or lead.current_stage.name == 'teklif_gonderildi' %}
                                         <button class="btn-action btn-next" onclick="moveToDaireSunumu('{{ lead.lead_id }}')
 " title="Daire Sunumu Yapıldı">
                                             <i class="fas fa-home"></i>

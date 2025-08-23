@@ -436,7 +436,7 @@
                             <button class="btn-action btn-whatsapp" onclick="sendWhatsApp('{{ lead.id }}')">
                                 <i class="fab fa-whatsapp"></i> WhatsApp
                             </button>
-                            {% if stage_data.stage.name == 'ihtiyac_analizi' %}
+                            {% if stage_data.stage.name == 'ihtiyac_analizi' or stage_data.stage.name == 'teklif_gonderildi' %}
                             <button class="btn-action btn-next" onclick="moveToDaireSunumu('{{ lead.lead_id }}')">
                                             <i class="fas fa-home"></i>
                                         </button>
