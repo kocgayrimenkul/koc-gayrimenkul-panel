@@ -1,0 +1,891 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* Koç Gayrimenkul kurumsal renkleri */
+:root {
+  --koc-red: #9d2235;
+  --koc-red-light: #b82e42;
+  --koc-red-dark: #7a1a29;
+  --koc-black: #212529;
+  --koc-red-rgb: 157, 34, 53;
+  --koc-gray: #f5f5f5;
+  --success-color: #2dce89;
+  --warning-color: #fb6340;
+  --info-color: #11cdef;
+  --danger-color: #f5365c;
+}
+
+.lead-header {
+    background: linear-gradient(135deg, var(--koc-red-dark) 0%, var(--koc-red) 100%);
+    color: white;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(157, 34, 53, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.lead-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: rotate(45deg);
+}
+
+.lead-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.lead-header .lead-meta {
+    position: relative;
+    z-index: 2;
+    opacity: 0.9;
+}
+
+.lead-header .lead-meta i {
+    margin-right: 0.5rem;
+    width: 20px;
+}
+
+.info-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.info-card h5 {
+    color: var(--koc-red);
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.info-card h5 i {
+    color: var(--koc-red);
+    font-size: 1.25rem;
+    width: 24px;
+    text-align: center;
+}
+
+.info-item {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--koc-red);
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.info-value {
+    color: #212529;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-active {
+    background: linear-gradient(135deg, #2dce89, #2dce89);
+    color: white;
+    box-shadow: 0 4px 15px rgba(45, 206, 137, 0.3);
+}
+
+.status-completed {
+    background: linear-gradient(135deg, #11cdef, #11cdef);
+    color: white;
+    box-shadow: 0 4px 15px rgba(17, 205, 239, 0.3);
+}
+
+.status-cancelled {
+    background: linear-gradient(135deg, #f5365c, #f5365c);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 54, 92, 0.3);
+}
+
+.status-pending {
+    background: linear-gradient(135deg, #fb6340, #fb6340);
+    color: white;
+    box-shadow: 0 4px 15px rgba(251, 99, 64, 0.3);
+}
+
+.priority-high {
+    color: var(--danger-color);
+    font-weight: 700;
+}
+
+.priority-medium {
+    color: var(--warning-color);
+    font-weight: 600;
+}
+
+.priority-low {
+    color: var(--success-color);
+    font-weight: 500;
+}
+
+.action-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn-action {
+    padding: 0.875rem 1.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-action::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-action:hover::before {
+    left: 100%;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--koc-red), var(--koc-red-light));
+    color: white;
+    box-shadow: 0 4px 15px rgba(157, 34, 53, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(157, 34, 53, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #2dce89, #2dce89);
+    color: white;
+    box-shadow: 0 4px 15px rgba(45, 206, 137, 0.3);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(45, 206, 137, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #fb6340, #fb6340);
+    color: white;
+    box-shadow: 0 4px 15px rgba(251, 99, 64, 0.3);
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(251, 99, 64, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #11cdef, #11cdef);
+    color: white;
+    box-shadow: 0 4px 15px rgba(17, 205, 239, 0.3);
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(17, 205, 239, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--koc-red), var(--koc-red-light));
+}
+
+.timeline-item {
+    position: relative;
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    margin-left: 1rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -2.25rem;
+    top: 1.5rem;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--koc-red);
+    border: 4px solid white;
+    box-shadow: 0 0 0 2px var(--koc-red);
+}
+
+.timeline-item.note::before {
+    background: var(--success-color);
+    box-shadow: 0 0 0 2px var(--success-color);
+}
+
+.timeline-item.task::before {
+    background: var(--warning-color);
+    box-shadow: 0 0 0 2px var(--warning-color);
+}
+
+.timeline-item.appointment::before {
+    background: var(--info-color);
+    box-shadow: 0 0 0 2px var(--info-color);
+}
+
+.timeline-item.stage-transition::before {
+    background: #8e44ad;
+    box-shadow: 0 0 0 2px #8e44ad;
+}
+
+.timeline-item.action::before {
+    background: #95a5a6;
+    box-shadow: 0 0 0 2px #95a5a6;
+}
+
+.timeline-item h6 {
+    color: var(--koc-red);
+    font-weight: 600;
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+}
+
+.timeline-item p {
+    color: #495057;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+}
+
+.timeline-item .timeline-meta {
+    color: #6c757d;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.manager-actions {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.manager-actions h5 {
+    color: white;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 0.5rem;
+}
+
+.stage-info {
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stage-info .current-stage {
+    font-weight: 600;
+    color: #1976d2;
+    font-size: 1.1rem;
+}
+
+.payment-info {
+    background: #f3e5f5;
+    border: 1px solid #ce93d8;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.contract-details {
+    background: #e8f5e8;
+    border: 1px solid #a5d6a7;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .lead-header {
+        padding: 1.5rem;
+    }
+    
+    .lead-header h1 {
+        font-size: 2rem;
+    }
+    
+    .action-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeline {
+        padding-left: 1rem;
+    }
+    
+    .timeline-item {
+        margin-left: 0.5rem;
+    }
+    
+    .timeline-item::before {
+        left: -1.75rem;
+    }
+}
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<!-- Header -->
+<div class="header bg-gradient-koc-red pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col-lg-6 col-7">
+                    <h6 class="h2 text-white d-inline-block mb-0">Müdür - Müşteri Detayı</h6>
+                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                        <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                            <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'sales_process:manager_kanban' %}">Müdür Akışı</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Müşteri Detayı</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="col-lg-6 col-5 text-right">
+                    <a href="{% url 'sales_process:manager_kanban' %}" class="btn btn-sm btn-neutral">
+                        <i class="fas fa-arrow-left"></i> Müdür Akışına Dön
+                    </a>
+                    <a href="{% url 'sales_process:lead_detail' lead.lead_id %}" class="btn btn-sm btn-neutral">
+                        <i class="fas fa-eye"></i> Standart Görünüm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--6">
+    <!-- Lead Header -->
+    <div class="lead-header">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="mb-3">{{ lead.customer_name }}</h1>
+                <div class="lead-meta">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2"><i class="fas fa-phone"></i> {{ lead.customer_phone }}</p>
+                            {% if lead.customer_email %}
+                            <p class="mb-2"><i class="fas fa-envelope"></i> {{ lead.customer_email }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><i class="fas fa-calendar"></i> {{ lead.created_at|date:"d.m.Y H:i" }}</p>
+                            <p class="mb-0"><i class="fas fa-id-card"></i> {{ lead.lead_id }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 text-lg-right">
+                <div class="mb-3">
+                    <span class="status-badge status-{{ lead.status }}">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                        {{ lead.get_status_display }}
+                    </span>
+                </div>
+                <div class="mb-2" style="opacity: 0.9;">
+                    <strong>Aşama:</strong> {{ lead.current_stage.name|default:"Belirtilmemiş" }}
+                </div>
+                <div style="opacity: 0.9;">
+                    <strong>Sorumlu:</strong> {{ lead.assigned_staff.get_full_name|default:"Atanmamış" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sol Sütun - Lead Bilgileri ve Müdür İşlemleri -->
+        <div class="col-lg-4">
+            <!-- Müdür İşlemleri -->
+            <div class="manager-actions">
+                <h5><i class="fas fa-user-tie"></i> Müdür İşlemleri</h5>
+                <div class="action-buttons">
+                    <button class="btn-action btn-primary" onclick="makeCall('{{ lead.customer_phone }}')">
+                        <i class="fas fa-phone"></i> Müşteriyi Ara
+                    </button>
+                    <button class="btn-action btn-success" onclick="sendManagerMessage('{{ lead.lead_id }}')">
+                        <i class="fab fa-whatsapp"></i> Mesaj Gönder
+                    </button>
+                    <button class="btn-action btn-warning" onclick="addManagerNote('{{ lead.lead_id }}')">
+                        <i class="fas fa-sticky-note"></i> Müdür Notu
+                    </button>
+                    <button class="btn-action btn-info" onclick="reassignLead('{{ lead.lead_id }}')">
+                        <i class="fas fa-user-plus"></i> Yeniden Ata
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Süreç Bilgileri -->
+            <div class="info-card">
+                <h5><i class="fas fa-project-diagram"></i> Süreç Bilgileri</h5>
+                
+                <div class="stage-info">
+                    <div class="current-stage">{{ lead.current_stage.display_name|default:"Belirtilmemiş" }}</div>
+                    <small class="text-muted">Güncel Aşama</small>
+                </div>
+                
+                {% if lead.payment_type %}
+                <div class="payment-info">
+                    <strong>Ödeme Tipi:</strong> {{ lead.get_payment_type_display }}
+                    {% if lead.deed_transfer_date %}
+                    <br><strong>Tapu Tarihi:</strong> {{ lead.deed_transfer_date|date:"d.m.Y" }}
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if lead.contract_price %}
+                <div class="contract-details">
+                    <strong>Sözleşme Tutarı:</strong> {{ lead.contract_price|floatformat:0 }} TL
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Lead Bilgileri -->
+            <div class="info-card">
+                <h5><i class="fas fa-info-circle"></i> Lead Bilgileri</h5>
+                
+                <div class="info-item">
+                    <span class="info-label">Kaynak</span>
+                    <div class="info-value">{{ lead.get_source_display }}</div>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Emlak Türü</span>
+                    <div class="info-value">{{ lead.get_property_type_display }}</div>
+                </div>
+                
+                {% if lead.budget_min or lead.budget_max %}
+                <div class="info-item">
+                    <span class="info-label">Bütçe</span>
+                    <div class="info-value">
+                        {% if lead.budget_min and lead.budget_max %}
+                            {{ lead.budget_min|floatformat:0 }} - {{ lead.budget_max|floatformat:0 }} TL
+                        {% elif lead.budget_min %}
+                            {{ lead.budget_min|floatformat:0 }} TL+
+                        {% elif lead.budget_max %}
+                            Max {{ lead.budget_max|floatformat:0 }} TL
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if lead.property_location %}
+                <div class="info-item">
+                    <span class="info-label">Lokasyon</span>
+                    <div class="info-value">{{ lead.property_location }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="info-item">
+                    <span class="info-label">Öncelik</span>
+                    <div class="info-value priority-{{ lead.priority }}">
+                        <i class="fas fa-flag"></i> {{ lead.get_priority_display }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sağ Sütun - Timeline -->
+        <div class="col-lg-8">
+            <div class="info-card">
+                <h5><i class="fas fa-history"></i> Aktivite Timeline</h5>
+                
+                <div class="timeline">
+                    <!-- Aşama Geçişleri -->
+                    {% for transition in stage_transitions %}
+                    <div class="timeline-item stage-transition">
+                        <h6>Aşama Değişikliği</h6>
+                        <p>
+                            <strong>{{ transition.from_stage.display_name|default:"Başlangıç" }}</strong> 
+                            → 
+                            <strong>{{ transition.to_stage.display_name }}</strong>
+                        </p>
+                        {% if transition.notes %}
+                        <p class="mb-2"><em>{{ transition.notes }}</em></p>
+                        {% endif %}
+                        <div class="timeline-meta">
+                            <span><i class="fas fa-user"></i> {{ transition.changed_by.get_full_name|default:"Sistem" }}</span>
+                            <span><i class="fas fa-clock"></i> {{ transition.created_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Notlar -->
+                    {% for note in notes %}
+                    <div class="timeline-item note">
+                        <h6>Not</h6>
+                        <p>{{ note.content }}</p>
+                        <div class="timeline-meta">
+                            <span><i class="fas fa-user"></i> {{ note.created_by.get_full_name }}</span>
+                            <span><i class="fas fa-clock"></i> {{ note.created_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Görevler -->
+                    {% for task in tasks %}
+                    <div class="timeline-item task">
+                        <h6>Görev: {{ task.title }}</h6>
+                        <p>{{ task.description }}</p>
+                        <div class="mb-2">
+                            <span class="status-badge status-{{ task.status }}">
+                                {{ task.get_status_display }}
+                            </span>
+                            {% if task.due_date %}
+                            <span class="ml-2">
+                                <i class="fas fa-clock"></i> {{ task.due_date|date:"d.m.Y H:i" }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="timeline-meta">
+                            <span><i class="fas fa-user"></i> {{ task.assigned_to.get_full_name }}</span>
+                            <span><i class="fas fa-calendar"></i> {{ task.created_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Randevular -->
+                    {% for appointment in appointments %}
+                    <div class="timeline-item appointment">
+                        <h6>Randevu: {{ appointment.title }}</h6>
+                        <p>{{ appointment.description }}</p>
+                        <div class="mb-2">
+                            <span class="status-badge status-{{ appointment.status }}">
+                                {{ appointment.get_status_display }}
+                            </span>
+                            <span class="ml-2">
+                                <i class="fas fa-calendar"></i> {{ appointment.scheduled_date|date:"d.m.Y H:i" }}
+                            </span>
+                        </div>
+                        <div class="timeline-meta">
+                            <span><i class="fas fa-user"></i> {{ appointment.assigned_staff.get_full_name|default:"Sistem" }}</span>
+                            <span><i class="fas fa-clock"></i> {{ appointment.created_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Aksiyon Logları -->
+                    {% for action_log in action_logs %}
+                    <div class="timeline-item action">
+                        <h6>{{ action_log.get_action_type_display }}</h6>
+                        <p>{{ action_log.description }}</p>
+                        <div class="mb-2">
+                            <span class="status-badge {% if action_log.is_successful %}status-active{% else %}status-cancelled{% endif %}">
+                                {% if action_log.is_successful %}Başarılı{% else %}Başarısız{% endif %}
+                            </span>
+                        </div>
+                        <div class="timeline-meta">
+                            <span><i class="fas fa-user"></i> {{ action_log.performed_by.get_full_name|default:"Sistem" }}</span>
+                            <span><i class="fas fa-clock"></i> {{ action_log.created_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not stage_transitions and not notes and not tasks and not appointments and not action_logs %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Henüz aktivite kaydı bulunmuyor.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manager Action Modals -->
+<div class="modal fade" id="managerNoteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Müdür Notu Ekle</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="managerNoteForm">
+                    <div class="form-group">
+                        <label>Not İçeriği</label>
+                        <textarea class="form-control" id="managerNoteContent" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="isUrgent">
+                            <label class="custom-control-label" for="isUrgent">Acil Not</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="saveManagerNote()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reassignModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lead'i Yeniden Ata</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="reassignForm">
+                    <div class="form-group">
+                        <label>Yeni Sorumlu Seç</label>
+                        <select class="form-control" id="newAssignee" required>
+                            <option value="">Seçiniz...</option>
+                            <!-- AJAX ile doldurulacak -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Atama Nedeni</label>
+                        <textarea class="form-control" id="reassignReason" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="saveReassignment()">Ata</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+// Manager-specific JavaScript functions
+function makeCall(phoneNumber) {
+    // Telefon arama işlemi
+    window.location.href = 'tel:' + phoneNumber;
+}
+
+function sendManagerMessage(leadId) {
+    // WhatsApp mesaj gönderme
+    alert('WhatsApp mesaj gönderme özelliği yakında eklenecek.');
+}
+
+function addManagerNote(leadId) {
+    $('#managerNoteModal').modal('show');
+}
+
+function saveManagerNote() {
+    const content = $('#managerNoteContent').val();
+    const isUrgent = $('#isUrgent').is(':checked');
+    
+    if (!content.trim()) {
+        alert('Not içeriği boş olamaz.');
+        return;
+    }
+    
+    // AJAX ile not kaydetme
+    $.ajax({
+        url: '/satis-surec/lead/{{ lead.lead_id }}/add-note/',
+        method: 'POST',
+        data: {
+            'content': content,
+            'is_urgent': isUrgent,
+            'csrfmiddlewaretoken': getCookie('csrftoken')
+        },
+        success: function(response) {
+            if (response.success) {
+                $('#managerNoteModal').modal('hide');
+                location.reload();
+            } else {
+                alert('Hata: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Bir hata oluştu.');
+        }
+    });
+}
+
+function reassignLead(leadId) {
+    // Önce mevcut personelleri yükle
+    $.ajax({
+        url: '/satis-surec/ajax/get-staff/',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const select = $('#newAssignee');
+                select.empty().append('<option value="">Seçiniz...</option>');
+                
+                response.staff.forEach(function(staff) {
+                    select.append(`<option value="${staff.id}">${staff.name}</option>`);
+                });
+                
+                $('#reassignModal').modal('show');
+            }
+        }
+    });
+}
+
+function saveReassignment() {
+    const newAssignee = $('#newAssignee').val();
+    const reason = $('#reassignReason').val();
+    
+    if (!newAssignee) {
+        alert('Lütfen yeni sorumlu seçin.');
+        return;
+    }
+    
+    // AJAX ile yeniden atama
+    $.ajax({
+        url: '/satis-surec/assignment/assign/{{ lead.lead_id }}/',
+        method: 'POST',
+        data: {
+            'assigned_to': newAssignee,
+            'reason': reason,
+            'csrfmiddlewaretoken': getCookie('csrftoken')
+        },
+        success: function(response) {
+            if (response.success) {
+                $('#reassignModal').modal('hide');
+                location.reload();
+            } else {
+                alert('Hata: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Bir hata oluştu.');
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Sayfa yüklendiğinde
+$(document).ready(function() {
+    // Modal temizleme
+    $('#managerNoteModal').on('hidden.bs.modal', function() {
+        $('#managerNoteContent').val('');
+        $('#isUrgent').prop('checked', false);
+    });
+    
+    $('#reassignModal').on('hidden.bs.modal', function() {
+        $('#newAssignee').val('');
+        $('#reassignReason').val('');
+    });
+});
+</script>
+{% endblock javascripts %}

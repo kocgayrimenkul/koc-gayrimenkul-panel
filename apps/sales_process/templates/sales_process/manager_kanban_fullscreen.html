@@ -844,15 +844,59 @@
 
         // Memnuniyet anketi gönderme
         function sendSatisfactionSurvey(leadId) {
-            if (confirm('Memnuniyet anketi gönderilsin mi?')) {
-                updateLeadStage(leadId, 'memnuniyet_anketi');
+            if (confirm('Müşteriye memnuniyet anketi gönderilsin mi?')) {
+                fetch('/satis-surec/ajax/send-satisfaction-survey/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        lead_id: leadId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', 'Memnuniyet anketi gönderildi.');
+                        refreshBoard();
+                    } else {
+                        showNotification('error', 'Hata: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('error', 'Bir hata oluştu.');
+                });
             }
         }
 
         // Dosya kapatma
         function closeCase(leadId) {
-            if (confirm('Bu dosya kapatılsın mı?')) {
-                updateLeadStage(leadId, 'dosya_kapandi');
+            if (confirm('Dosya kapatılsın mı? Bu işlem geri alınamaz.')) {
+                fetch('/satis-surec/ajax/close-case/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        lead_id: leadId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', 'Dosya başarıyla kapatıldı.');
+                        refreshBoard();
+                    } else {
+                        showNotification('error', 'Hata: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('error', 'Bir hata oluştu.');
+                });
             }
         }
 

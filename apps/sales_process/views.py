@@ -515,6 +515,121 @@ def get_leads_ajax(request):
 @login_required
 @csrf_exempt
 @require_http_methods(["POST"])
+def send_satisfaction_survey(request):
+    """
+    Müşteriye memnuniyet anketi gönderir ve kartı 'Yorum Yapıldı' kolonuna taşır
+    """
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        
+        if not lead_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Lead ID gerekli'
+            })
+        
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Kartı 'Yorum Yapıldı' kolonuna taşı
+        feedback_stage = get_object_or_404(SalesStage, name='Yorum Yapıldı')
+        lead.current_stage = feedback_stage
+        lead.save()
+        
+        # Stage transition kaydı
+        StageTransition.objects.create(
+            lead=lead,
+            from_stage=lead.current_stage,
+            to_stage=feedback_stage,
+            changed_by=request.user,
+            notes="Memnuniyet anketi gönderildi"
+        )
+        
+        # ActionLog kaydı
+        ActionLog.objects.create(
+            lead=lead,
+            action_type='FEEDBACK_SENT',
+            title='Memnuniyet Anketi Gönderildi',
+            description="Müşteriye memnuniyet anketi gönderildi",
+            performed_by=request.user
+        )
+        
+        # WhatsApp mesajı gönder
+        try:
+            from .whatsapp_views import send_automatic_whatsapp
+            send_automatic_whatsapp(lead, 'satisfaction_survey')
+        except Exception as wa_error:
+            print(f"WhatsApp mesajı gönderilemedi: {wa_error}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Memnuniyet anketi gönderildi.'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def close_case(request):
+    """
+    Dosyayı kapatır ve kartı 'Dosya Kapandı' kolonuna taşır
+    """
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        
+        if not lead_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Lead ID gerekli'
+            })
+        
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Kartı 'Dosya Kapandı' kolonuna taşı
+        closed_stage = get_object_or_404(SalesStage, name='Dosya Kapandı')
+        lead.current_stage = closed_stage
+        lead.save()
+        
+        # Stage transition kaydı
+        StageTransition.objects.create(
+            lead=lead,
+            from_stage=lead.current_stage,
+            to_stage=closed_stage,
+            changed_by=request.user,
+            notes="Dosya kapatıldı"
+        )
+        
+        # ActionLog kaydı
+        ActionLog.objects.create(
+            lead=lead,
+            action_type='CASE_CLOSED',
+            title='Dosya Kapatıldı',
+            description="Satış süreci tamamlandı, dosya kapatıldı",
+            performed_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Dosya başarıyla kapatıldı.'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
 def move_stage_ajax(request):
     """AJAX ile aşama değiştirme"""
     try:
@@ -1171,6 +1286,38 @@ def update_stage_ajax(request):
             note_type='system'
         )
         
+        # Hizmet Tamamlandı aşamasına geçişte otomatik WhatsApp mesajı gönder
+        if new_stage_name == 'hizmet_tamamlandi':
+            try:
+                # WhatsApp mesajı oluştur
+                WhatsAppMessage.objects.create(
+                    lead=lead,
+                    message_type='service_completed',
+                    content=f"Sayın {lead.customer_name}, hizmetimiz tamamlanmıştır. Teşekkür ederiz! Memnuniyetinizi öğrenmek için kısa bir anket göndereceğiz.",
+                    sent_by=request.user,
+                    status='sent'
+                )
+                
+                # ActionLog kaydı
+                ActionLog.objects.create(
+                    lead=lead,
+                    action_type='WHATSAPP_SENT',
+                    title='Hizmet Tamamlandı Mesajı',
+                    description='Hizmet tamamlandı mesajı otomatik gönderildi',
+                    performed_by=request.user,
+                    is_successful=True
+                )
+            except Exception as wa_error:
+                # WhatsApp mesajı gönderilemezse log'la ama işlemi durdurma
+                ActionLog.objects.create(
+                    lead=lead,
+                    action_type='WHATSAPP_ERROR',
+                    title='WhatsApp Mesaj Hatası',
+                    description=f'Hizmet tamamlandı mesajı gönderilemedi: {str(wa_error)}',
+                    performed_by=request.user,
+                    is_successful=False
+                )
+        
         return JsonResponse({
             'success': True,
             'message': f'Aşama başarıyla güncellendi: {new_stage.display_name}'
@@ -1349,4 +1496,246 @@ def create_direct_viewing_lead(request):
         return JsonResponse({
             'success': False,
             'error': str(e)
+        })
+
+
+# Manager-specific functions for the workflow
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def set_payment_type(request):
+    """Müdür ödeme tipini belirler (Nakit/Kredili)"""
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        payment_type = data.get('payment_type')  # 'cash' or 'credit'
+        
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Ödeme tipini lead'e kaydet
+        lead.payment_type = payment_type
+        lead.save()
+        
+        # Ödeme tipine göre aşama değiştir
+        if payment_type == 'credit':
+            # Kredili işlem - Kredi İşlemleri aşamasına geçir
+            kredi_stage = SalesStage.objects.get(name='kredi_islemleri')
+            lead.current_stage = kredi_stage
+            lead.stage_updated_at = timezone.now()
+            lead.save()
+            
+            # Sistem notu ekle
+            LeadNote.objects.create(
+                lead=lead,
+                title="Kredili İşlem Seçildi",
+                content="Müdür kredili işlem seçti. Kart Kredi İşlemleri aşamasına taşındı.",
+                created_by=request.user,
+                note_type='system'
+            )
+            
+            message = "Kredili işlem seçildi. Kart Kredi İşlemleri aşamasına taşındı."
+            
+        elif payment_type == 'cash':
+            # Nakit işlem - Tapu İşlemi aşamasına geçir
+            tapu_stage = SalesStage.objects.get(name='tapu_islemi')
+            lead.current_stage = tapu_stage
+            lead.stage_updated_at = timezone.now()
+            lead.save()
+            
+            # Sistem notu ekle
+            LeadNote.objects.create(
+                lead=lead,
+                title="Nakit İşlem Seçildi",
+                content="Müdür nakit işlem seçti. Kart Tapu İşlemi aşamasına taşındı.",
+                created_by=request.user,
+                note_type='system'
+            )
+            
+            message = "Nakit işlem seçildi. Kart Tapu İşlemi aşamasına taşındı."
+        
+        # ActionLog kaydı
+        ActionLog.objects.create(
+            lead=lead,
+            action_type='PAYMENT_RECEIVED',
+            title='Ödeme Tipi Seçildi',
+            description=f"Ödeme tipi seçildi: {payment_type}",
+            performed_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': message,
+            'payment_type': payment_type
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def set_deed_date(request):
+    """Nakit işlem için tapu devri tarihi belirle"""
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        deed_date = data.get('deed_date')
+        
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Tapu devri tarihini kaydet
+        lead.deed_transfer_date = datetime.strptime(deed_date, '%Y-%m-%d').date()
+        lead.save()
+        
+        # Görev oluştur
+        Task.objects.create(
+            lead=lead,
+            title=f"Tapu Devri - {lead.customer_name}",
+            description=f"Belirlenen tarihte tapu devri yapılacak: {deed_date}",
+            task_type='deed_transfer',
+            priority=5,
+            due_date=datetime.strptime(deed_date, '%Y-%m-%d'),
+            assigned_to=request.user,
+            status='pending'
+        )
+        
+        # Sistem notu ekle
+        LeadNote.objects.create(
+            lead=lead,
+            title="Tapu Devri Tarihi Belirlendi",
+            content=f"Tapu devri tarihi belirlendi: {deed_date}. Görev oluşturuldu.",
+            created_by=request.user,
+            note_type='system'
+        )
+        
+        # ActionLog kaydı
+        ActionLog.objects.create(
+            lead=lead,
+            action_type='DEED_TRANSFER',
+            title='Tapu Devri Tarihi Belirlendi',
+            description=f"Tapu devri tarihi belirlendi: {deed_date}",
+            performed_by=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Tapu devri tarihi belirlendi: {deed_date}. Görev oluşturuldu.'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def complete_credit_process(request):
+    """Kredi sürecini tamamla"""
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Hizmet Tamamlandı aşamasına geçir
+        hizmet_stage = SalesStage.objects.get(name='hizmet_tamamlandi')
+        lead.current_stage = hizmet_stage
+        lead.stage_updated_at = timezone.now()
+        lead.save()
+        
+        # Sistem notu ekle
+        LeadNote.objects.create(
+            lead=lead,
+            title="Kredi Süreci Tamamlandı",
+            content="Kredi süreci başarıyla tamamlandı. Kart Hizmet Tamamlandı aşamasına taşındı.",
+            created_by=request.user,
+            note_type='system'
+        )
+        
+        # ActionLog kaydı
+        ActionLog.objects.create(
+            lead=lead,
+            action_type='PAYMENT_RECEIVED',
+            title='Kredi Süreci Tamamlandı',
+            description="Kredi süreci tamamlandı",
+            performed_by=request.user
+        )
+        
+        # Otomatik WhatsApp mesajı gönder
+        try:
+            from .whatsapp_views import send_automatic_whatsapp
+            send_automatic_whatsapp(lead, 'service_completed')
+        except Exception as wa_error:
+            print(f"WhatsApp mesajı gönderilemedi: {wa_error}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Kredi süreci tamamlandı. Müşteriye teşekkür mesajı gönderildi.'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def complete_deed_process(request):
+    """Tapu devri sürecini tamamla"""
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Hizmet Tamamlandı aşamasına geçir
+        hizmet_stage = SalesStage.objects.get(name='hizmet_tamamlandi')
+        lead.current_stage = hizmet_stage
+        lead.stage_updated_at = timezone.now()
+        lead.save()
+        
+        # Sistem notu ekle
+        LeadNote.objects.create(
+            lead=lead,
+            title="Tapu Devri Tamamlandı",
+            content="Tapu devri başarıyla tamamlandı. Kart Hizmet Tamamlandı aşamasına taşındı.",
+            created_by=request.user,
+            note_type='system'
+        )
+        
+        # ActionLog kaydı
+        ActionLog.objects.create(
+            lead=lead,
+            action_type='DEED_TRANSFER',
+            title='Tapu Devri Tamamlandı',
+            description="Tapu devri tamamlandı",
+            performed_by=request.user
+        )
+        
+        # Otomatik WhatsApp mesajı gönder
+        try:
+            from .whatsapp_views import send_automatic_whatsapp
+            send_automatic_whatsapp(lead, 'service_completed')
+        except Exception as wa_error:
+            print(f"WhatsApp mesajı gönderilemedi: {wa_error}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Tapu devri tamamlandı. Müşteriye teşekkür mesajı gönderildi.'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
         })

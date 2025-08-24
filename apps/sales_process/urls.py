@@ -100,6 +100,14 @@ urlpatterns = [
     path('ajax/move-stage/', views.move_stage_ajax, name='move_stage_ajax'),
     path('ajax/lead-detail/<uuid:lead_id>/', views.lead_detail_ajax, name='lead_detail_ajax'),
     
+    # Manager workflow endpoints
+    path('ajax/set-payment-type/', views.set_payment_type, name='set_payment_type'),
+    path('ajax/set-deed-date/', views.set_deed_date, name='set_deed_date'),
+    path('ajax/complete-credit/', views.complete_credit_process, name='complete_credit_process'),
+    path('ajax/complete-deed/', views.complete_deed_process, name='complete_deed_process'),
+    path('ajax/send-satisfaction-survey/', views.send_satisfaction_survey, name='send_satisfaction_survey'),
+    path('ajax/close-case/', views.close_case, name='close_case'),
+    
     # Reports
     path('reports/', views.sales_reports, name='sales_reports'),
     path('reports/export/', views.export_reports, name='export_reports'),

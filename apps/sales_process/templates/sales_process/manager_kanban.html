@@ -201,6 +201,99 @@
     text-decoration: none;
 }
 
+.btn-cash {
+    background: #28a745;
+    color: white;
+}
+
+.btn-cash:hover {
+    background: #218838;
+}
+
+.btn-credit {
+    background: #007bff;
+    color: white;
+}
+
+.btn-credit:hover {
+    background: #0056b3;
+}
+
+.payment-selection {
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+
+.payment-question {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #495057;
+    font-size: 12px;
+}
+
+.payment-selected {
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    text-align: center;
+}
+
+.payment-type.cash {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.payment-type.credit {
+    background: #cce7ff;
+    color: #004085;
+    border: 1px solid #99d6ff;
+}
+
+.deed-date-selection {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.deed-date-selection .payment-question {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.deed-date-selection .form-control {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.deed-info {
+    background: #e8f5e8;
+    border: 1px solid #c3e6c3;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.deed-info .deed-date {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #155724;
+    font-size: 14px;
+}
+
+.deed-info .deed-date::before {
+    content: "📅 ";
+    margin-right: 5px;
+}
+
 .btn-complete {
     background: var(--koc-red);
     color: white;
@@ -367,7 +460,7 @@
         </div>
             <div class="column-content" id="contract-column">
                 {% for lead in contract_leads %}
-                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.lead_id }}">
                     <div class="customer-name">{{ lead.customer_name }}</div>
                     <div class="customer-phone">
                         <i class="fas fa-phone"></i> {{ lead.customer_phone }}
@@ -384,14 +477,39 @@
                     </div>
                     
                     <div class="card-actions">
-                        {% if lead.payment_type == 'cash' %}
-                            <button class="action-btn btn-complete" onclick="moveToDeeds('{{ lead.id }}')">
-                                <i class="fas fa-file-signature"></i> Tapu İşlemi
+                        {% if not lead.payment_type %}
+                        <div class="payment-selection">
+                            <p class="payment-question">Ödeme Tipi Seçin:</p>
+                            <button class="action-btn btn-cash" onclick="setPaymentType('{{ lead.lead_id }}', 'cash')">
+                                <i class="fas fa-money-bill-wave"></i> Nakit
                             </button>
+                            <button class="action-btn btn-credit" onclick="setPaymentType('{{ lead.lead_id }}', 'credit')">
+                                <i class="fas fa-credit-card"></i> Kredili
+                            </button>
+                        </div>
                         {% else %}
-                            <button class="action-btn btn-complete" onclick="moveToCredit('{{ lead.id }}')">
-                                <i class="fas fa-credit-card"></i> Kredi İşlemi
-                            </button>
+                            {% if lead.payment_type == 'cash' %}
+                                {% if not lead.deed_transfer_date %}
+                                <div class="deed-date-selection">
+                                    <p class="payment-question">Tapu Devir Tarihi:</p>
+                                    <input type="date" id="deed-date-{{ lead.lead_id }}" class="form-control mb-2" min="{{ today|date:'Y-m-d' }}">
+                                    <button class="action-btn btn-complete" onclick="setDeedDate('{{ lead.lead_id }}')">
+                                        <i class="fas fa-calendar-check"></i> Tarihi Kaydet
+                                    </button>
+                                </div>
+                                {% else %}
+                                <div class="deed-info">
+                                    <p class="deed-date">Tapu Tarihi: {{ lead.deed_transfer_date|date:"d.m.Y" }}</p>
+                                    <button class="action-btn btn-complete" onclick="moveToDeeds('{{ lead.lead_id }}')">
+                                        <i class="fas fa-file-signature"></i> Tapu İşlemine Geç
+                                    </button>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <button class="action-btn btn-complete" onclick="moveToCredit('{{ lead.lead_id }}')">
+                                    <i class="fas fa-credit-card"></i> Kredi İşlemine Geç
+                                </button>
+                            {% endif %}
                         {% endif %}
                         <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
                             <i class="fas fa-phone"></i> Ara
@@ -420,7 +538,7 @@
         </div>
             <div class="column-content" id="credit-column">
                 {% for lead in credit_leads %}
-                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.lead_id }}">
                     <div class="customer-name">{{ lead.customer_name }}</div>
                     <div class="customer-phone">
                         <i class="fas fa-phone"></i> {{ lead.customer_phone }}
@@ -446,13 +564,13 @@
                     {% endif %}
                     
                     <div class="card-actions">
-                        <button class="action-btn btn-complete" onclick="completeCreditProcess('{{ lead.id }}')">
+                        <button class="action-btn btn-complete" onclick="completeCreditProcess('{{ lead.lead_id }}')">
                             <i class="fas fa-check"></i> Kredi Tamamlandı
                         </button>
                         <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
                             <i class="fas fa-phone"></i> Ara
                         </a>
-                        <button class="action-btn btn-whatsapp" onclick="sendWhatsApp('{{ lead.id }}', 'credit_update')">
+                        <button class="action-btn btn-whatsapp" onclick="sendWhatsApp('{{ lead.lead_id }}', 'credit_update')">
                             <i class="fab fa-whatsapp"></i> Bilgilendir
                         </button>
                     </div>
@@ -479,7 +597,7 @@
         </div>
             <div class="column-content" id="deed-column">
                 {% for lead in deed_leads %}
-                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.lead_id }}">
                     <div class="customer-name">{{ lead.customer_name }}</div>
                     <div class="customer-phone">
                         <i class="fas fa-phone"></i> {{ lead.customer_phone }}
@@ -505,13 +623,13 @@
                     {% endif %}
                     
                     <div class="card-actions">
-                        <button class="action-btn btn-complete" onclick="completeDeedProcess('{{ lead.id }}')">
+                        <button class="action-btn btn-complete" onclick="completeDeedProcess('{{ lead.lead_id }}')">
                             <i class="fas fa-file-signature"></i> Tapu Tamamlandı
                         </button>
                         <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
                             <i class="fas fa-phone"></i> Ara
                         </a>
-                        <button class="action-btn btn-whatsapp" onclick="sendWhatsApp('{{ lead.id }}', 'deed_update')">
+                        <button class="action-btn btn-whatsapp" onclick="sendWhatsApp('{{ lead.lead_id }}', 'deed_update')">
                             <i class="fab fa-whatsapp"></i> Bilgilendir
                         </button>
                     </div>
@@ -538,7 +656,7 @@
         </div>
             <div class="column-content" id="completed-column">
                 {% for lead in completed_leads %}
-                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.lead_id }}">
                     <div class="customer-name">{{ lead.customer_name }}</div>
                     <div class="customer-phone">
                         <i class="fas fa-phone"></i> {{ lead.customer_phone }}
@@ -555,7 +673,7 @@
                     </div>
                     
                     <div class="card-actions">
-                        <button class="action-btn btn-survey" onclick="sendSatisfactionSurvey('{{ lead.id }}')">
+                        <button class="action-btn btn-survey" onclick="sendSatisfactionSurvey('{{ lead.lead_id }}')">
                             <i class="fas fa-star"></i> Anket Gönder
                         </button>
                         <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
@@ -585,7 +703,7 @@
         </div>
             <div class="column-content" id="survey-column">
                 {% for lead in survey_leads %}
-                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.lead_id }}">
                     <div class="customer-name">{{ lead.customer_name }}</div>
                     <div class="customer-phone">
                         <i class="fas fa-phone"></i> {{ lead.customer_phone }}
@@ -602,7 +720,7 @@
                     </div>
                     
                     <div class="card-actions">
-                        <button class="action-btn btn-close" onclick="closeCase('{{ lead.id }}')">
+                        <button class="action-btn btn-close" onclick="closeCase('{{ lead.lead_id }}')">
                             <i class="fas fa-folder"></i> Dosya Kapat
                         </button>
                         <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
@@ -632,7 +750,7 @@
         </div>
             <div class="column-content" id="closed-column">
                 {% for lead in closed_leads %}
-                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.id }}">
+                <div class="lead-card {{ lead.priority_class }}" data-lead-id="{{ lead.lead_id }}">
                     <div class="customer-name">{{ lead.customer_name }}</div>
                     <div class="customer-phone">
                         <i class="fas fa-phone"></i> {{ lead.customer_phone }}
@@ -677,10 +795,11 @@ function refreshBoard() {
     location.reload();
 }
 
-// Kredi işlemini tamamla
-function completeCreditProcess(leadId) {
-    if (confirm('Kredi işlemi tamamlandı olarak işaretlensin mi?')) {
-        fetch('/satis-surec/ajax/update-stage/', {
+// Ödeme tipi belirle
+function setPaymentType(leadId, paymentType) {
+    const paymentText = paymentType === 'cash' ? 'Nakit' : 'Kredili';
+    if (confirm(`Ödeme tipi "${paymentText}" olarak belirlensin mi?`)) {
+        fetch('/satis-surec/ajax/set-payment-type/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -688,12 +807,79 @@ function completeCreditProcess(leadId) {
             },
             body: JSON.stringify({
                 lead_id: leadId,
-                new_stage: 'tapu_islemi'
+                payment_type: paymentType
             })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                alert(data.message);
+                
+                // Nakit işlem seçildiyse tapu devri tarihi sor
+                if (paymentType === 'cash') {
+                    const deedDate = prompt('Tapu devri tarihi (YYYY-MM-DD formatında):');
+                    if (deedDate) {
+                        setDeedDate(leadId, deedDate);
+                    }
+                }
+                
+                refreshBoard();
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        });
+    }
+}
+
+// Tapu devri tarihi belirle
+function setDeedDate(leadId, deedDate) {
+    fetch('/satis-surec/ajax/set-deed-date/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            deed_date: deedDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            refreshBoard();
+        } else {
+            alert('Hata: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu.');
+    });
+}
+
+// Kredi işlemini tamamla
+function completeCreditProcess(leadId) {
+    if (confirm('Kredi süreci tamamlandı mı?')) {
+        fetch('/satis-surec/ajax/complete-credit/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: leadId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
                 refreshBoard();
             } else {
                 alert('Hata: ' + data.message);
@@ -708,21 +894,21 @@ function completeCreditProcess(leadId) {
 
 // Tapu işlemini tamamla
 function completeDeedProcess(leadId) {
-    if (confirm('Tapu devri tamamlandı olarak işaretlensin mi?')) {
-        fetch('/satis-surec/ajax/update-stage/', {
+    if (confirm('Tapu devri tamamlandı mı?')) {
+        fetch('/satis-surec/ajax/complete-deed/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
             body: JSON.stringify({
-                lead_id: leadId,
-                new_stage: 'hizmet_tamamlandi'
+                lead_id: leadId
             })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                alert(data.message);
                 refreshBoard();
             } else {
                 alert('Hata: ' + data.message);
@@ -792,39 +978,21 @@ function moveToCredit(leadId) {
 // Memnuniyet anketi gönder
 function sendSatisfactionSurvey(leadId) {
     if (confirm('Müşteriye memnuniyet anketi gönderilsin mi?')) {
-        fetch('/satis-surec/whatsapp/send/', {
+        fetch('/satis-surec/ajax/send-satisfaction-survey/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
             body: JSON.stringify({
-                lead_id: leadId,
-                message_type: 'satisfaction_survey'
+                lead_id: leadId
             })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Anketi gönderildikten sonra aşamayı güncelle
-                fetch('/satis-surec/ajax/update-stage/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: JSON.stringify({
-                        lead_id: leadId,
-                        new_stage: 'memnuniyet_anketi'
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Memnuniyet anketi gönderildi.');
-                        refreshBoard();
-                    }
-                });
+                alert('Memnuniyet anketi gönderildi.');
+                refreshBoard();
             } else {
                 alert('Hata: ' + data.message);
             }
@@ -839,15 +1007,14 @@ function sendSatisfactionSurvey(leadId) {
 // Dosyayı kapat
 function closeCase(leadId) {
     if (confirm('Dosya kapatılsın mı? Bu işlem geri alınamaz.')) {
-        fetch('/satis-surec/ajax/update-stage/', {
+        fetch('/satis-surec/ajax/close-case/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
             body: JSON.stringify({
-                lead_id: leadId,
-                new_stage: 'dosya_kapandi'
+                lead_id: leadId
             })
         })
         .then(response => response.json())
@@ -897,6 +1064,189 @@ function sendWhatsApp(leadId, messageType) {
     });
 }
 
+// Kredi sürecini tamamla
+function completeCreditProcess(leadId) {
+    if (confirm('Kredi süreci tamamlandı mı?')) {
+        fetch('/satis-surec/ajax/complete-credit/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: leadId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Kredi süreci tamamlandı. Kart "Hizmet Tamamlandı" aşamasına taşındı.');
+                refreshBoard();
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        });
+    }
+}
+
+// Tapu sürecini tamamla
+function completeDeedProcess(leadId) {
+    if (confirm('Tapu devri tamamlandı mı?')) {
+        fetch('/satis-surec/ajax/complete-deed/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: leadId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Tapu devri tamamlandı. Kart "Hizmet Tamamlandı" aşamasına taşındı.');
+                refreshBoard();
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        });
+    }
+}
+
+// Ödeme tipini ayarla
+function setPaymentType(leadId, paymentType) {
+    fetch('/satis-surec/ajax/set-payment-type/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            payment_type: paymentType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Ödeme tipi "${paymentType === 'cash' ? 'Nakit' : 'Kredili'}" olarak ayarlandı.`);
+            refreshBoard();
+        } else {
+            alert('Hata: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu.');
+    });
+}
+
+// Tapu devir tarihini ayarla
+function setDeedDate(leadId) {
+    const dateInput = document.getElementById(`deed-date-${leadId}`);
+    const selectedDate = dateInput.value;
+    
+    if (!selectedDate) {
+        alert('Lütfen tapu devir tarihini seçin.');
+        return;
+    }
+    
+    fetch('/satis-surec/ajax/set-deed-date/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            deed_date: selectedDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Tapu devir tarihi ayarlandı ve görev oluşturuldu.');
+            refreshBoard();
+        } else {
+            alert('Hata: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu.');
+    });
+}
+
+// Kredi işlemine geç
+function moveToCredit(leadId) {
+    fetch('/satis-surec/ajax/update-stage/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            new_stage: 'kredi_islemleri'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Kart "Kredi İşlemleri" aşamasına taşındı.');
+            refreshBoard();
+        } else {
+            alert('Hata: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu.');
+    });
+}
+
+// Tapu işlemine geç
+function moveToDeeds(leadId) {
+    fetch('/satis-surec/ajax/update-stage/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            new_stage: 'tapu_islemi'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Kart "Tapu İşlemi" aşamasına taşındı.');
+            refreshBoard();
+        } else {
+            alert('Hata: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Bir hata oluştu.');
+    });
+}
+
+// Sayfayı yenile
+function refreshBoard() {
+    location.reload();
+}
+
 // CSRF token alma fonksiyonu
 function getCookie(name) {
     let cookieValue = null;
@@ -924,7 +1274,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const leadId = this.dataset.leadId;
-            window.location.href = `/satis-surec/lead/${leadId}/`;
+             window.location.href = `/satis-surec/mudur/lead/${leadId}/`;
         });
     });
     

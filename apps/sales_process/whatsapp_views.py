@@ -710,3 +710,37 @@ def advanced_offer_interface(request, lead_id):
         logger.error(f"Advanced offer interface error: {str(e)}")
         messages.error(request, f'Hata oluştu: {str(e)}')
         return redirect('sales_process:lead_detail', lead_id=lead_id)
+
+
+def send_automatic_whatsapp(lead, message_type):
+    """
+    Otomatik WhatsApp mesajı gönderir
+    """
+    try:
+        from .whatsapp_service import WhatsAppTemplates, whatsapp_service
+        
+        # Mesaj tipine göre template seç
+        if message_type == 'service_completed':
+            message_text = f"Sayın {lead.customer_name}, hizmetimiz tamamlanmıştır. Teşekkür ederiz! Memnuniyetinizi öğrenmek için kısa bir anket göndereceğiz."
+        elif message_type == 'satisfaction_survey':
+            message_text = WhatsAppTemplates.satisfaction_survey(lead.customer_name)
+        else:
+            message_text = f"Merhaba {lead.customer_name}, size nasıl yardımcı olabiliriz?"
+        
+        # WhatsApp mesajını gönder
+        result = whatsapp_service.send_text_message(
+            to_phone=lead.customer_phone,
+            message_text=message_text,
+            lead_id=lead.id
+        )
+        
+        if result['success']:
+            logger.info(f"Otomatik WhatsApp mesajı gönderildi: {lead.customer_name} - {message_type}")
+        else:
+            logger.error(f"Otomatik WhatsApp mesajı gönderilemedi: {result.get('error')}")
+            
+        return result
+        
+    except Exception as e:
+        logger.error(f"Otomatik WhatsApp mesajı hatası: {str(e)}")
+        return {'success': False, 'error': str(e)}

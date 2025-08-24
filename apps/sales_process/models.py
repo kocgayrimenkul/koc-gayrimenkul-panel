@@ -544,6 +544,8 @@ class ActionLog(models.Model):
         ('PAYMENT_RECEIVED', 'Ödeme Alındı'),
         ('DEED_TRANSFER', 'Tapu Devri'),
         ('SURVEY_SENT', 'Anket Gönderildi'),
+        ('FEEDBACK_SENT', 'Memnuniyet Anketi Gönderildi'),
+        ('CASE_CLOSED', 'Dosya Kapatıldı'),
         ('STAGE_CHANGED', 'Aşama Değişti'),
         ('NOTE_ADDED', 'Not Eklendi'),
         ('TASK_CREATED', 'Görev Oluşturuldu'),

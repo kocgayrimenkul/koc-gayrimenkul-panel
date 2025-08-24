@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta
 import json
 
-from .models import Lead, SalesStage, Task, LeadNote, StageTransition, LeadAssignment
+from .models import Lead, SalesStage, Task, LeadNote, StageTransition, LeadAssignment, Appointment, ActionLog
 from .assignment_service import AssignmentService
 from django.contrib.auth import get_user_model
 
@@ -28,24 +28,54 @@ def manager_kanban(request):
     """
     Manager kanban dashboard with analytics and team overview
     """
-    # Get all sales stages
-    stages = SalesStage.objects.filter(is_active=True).order_by('order')
-    
-    # Get all agents (staff users)
-    agents = User.objects.filter(
-        is_active=True,
-        groups__name='Sales_Staff'
-    ).annotate(
-        active_leads_count=Count('assigned_leads', filter=Q(assigned_leads__status='active'))
-    )
-    
-    context = {
-        'stages': stages,
-        'agents': agents,
-        'page_title': 'Müdür Kanban Paneli',
-    }
-    
-    return render(request, 'sales_process/manager_kanban.html', context)
+    try:
+        # Get specific stages for manager workflow
+        sozlesme_yapildi_stage = SalesStage.objects.get(name='sozlesme_yapildi')
+        kredi_islemleri_stage = SalesStage.objects.get(name='kredi_islemleri')
+        tapu_islemi_stage = SalesStage.objects.get(name='tapu_islemi')
+        hizmet_tamamlandi_stage = SalesStage.objects.get(name='hizmet_tamamlandi')
+        memnuniyet_anketi_stage = SalesStage.objects.get(name='memnuniyet_anketi')
+        dosya_kapandi_stage = SalesStage.objects.get(name='dosya_kapandi')
+        
+        # Get leads for each stage
+        contract_leads = Lead.objects.filter(current_stage=sozlesme_yapildi_stage).select_related('assigned_staff')
+        credit_leads = Lead.objects.filter(current_stage=kredi_islemleri_stage).select_related('assigned_staff')
+        deed_leads = Lead.objects.filter(current_stage=tapu_islemi_stage).select_related('assigned_staff')
+        service_completed_leads = Lead.objects.filter(current_stage=hizmet_tamamlandi_stage).select_related('assigned_staff')
+        satisfaction_survey_leads = Lead.objects.filter(current_stage=memnuniyet_anketi_stage).select_related('assigned_staff')
+        closed_leads = Lead.objects.filter(current_stage=dosya_kapandi_stage).select_related('assigned_staff')
+        
+        # Get all agents (staff users)
+        agents = User.objects.filter(
+            is_active=True,
+            groups__name='Sales_Staff'
+        ).annotate(
+            active_leads_count=Count('assigned_leads', filter=Q(assigned_leads__status='active'))
+        )
+        
+        context = {
+            'sozlesme_yapildi_stage': sozlesme_yapildi_stage,
+            'kredi_islemleri_stage': kredi_islemleri_stage,
+            'tapu_islemi_stage': tapu_islemi_stage,
+            'hizmet_tamamlandi_stage': hizmet_tamamlandi_stage,
+            'memnuniyet_anketi_stage': memnuniyet_anketi_stage,
+            'dosya_kapandi_stage': dosya_kapandi_stage,
+            'contract_leads': contract_leads,
+            'credit_leads': credit_leads,
+            'deed_leads': deed_leads,
+            'service_completed_leads': service_completed_leads,
+            'satisfaction_survey_leads': satisfaction_survey_leads,
+            'closed_leads': closed_leads,
+            'agents': agents,
+            'today': timezone.now().date(),
+            'page_title': 'Müdür Satış Sonrası Akışı',
+        }
+        
+        return render(request, 'sales_process/manager_kanban.html', context)
+        
+    except SalesStage.DoesNotExist:
+        messages.error(request, 'Satış aşamaları henüz oluşturulmamış. Lütfen sistem yöneticinizle iletişime geçin.')
+        return redirect('sales_process:dashboard')
 
 
 @login_required
@@ -490,3 +520,34 @@ def manager_dashboard_stats(request):
         },
         'team_workload': list(team_workload)
     })
+
+
+@login_required
+@user_passes_test(is_manager)
+def manager_lead_detail(request, lead_id):
+    """Manager-specific lead detail page with post-sales workflow focus"""
+    lead = get_object_or_404(Lead, lead_id=lead_id)
+    
+    # Get related data
+    notes = LeadNote.objects.filter(lead=lead).order_by('-created_at')
+    tasks = Task.objects.filter(lead=lead).order_by('-created_at')
+    appointments = Appointment.objects.filter(lead=lead).order_by('-scheduled_date')
+    action_logs = ActionLog.objects.filter(lead=lead).order_by('-created_at')
+    
+    # Get stage transitions for this lead
+    stage_transitions = StageTransition.objects.filter(lead=lead).order_by('-created_at')
+    
+    # Manager-specific context
+    context = {
+        'title': f'{lead.customer_name} - Müdür Detayı',
+        'lead': lead,
+        'notes': notes,
+        'tasks': tasks,
+        'appointments': appointments,
+        'action_logs': action_logs,
+        'stage_transitions': stage_transitions,
+        'is_manager_view': True,
+        'today': timezone.now().date(),
+    }
+    
+    return render(request, 'sales_process/manager_lead_detail.html', context)
