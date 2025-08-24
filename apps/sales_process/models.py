@@ -141,6 +141,12 @@ class Lead(models.Model):
     satisfaction_score = models.PositiveIntegerField(null=True, blank=True, verbose_name="Memnuniyet Puanı (1-5)")
     satisfaction_feedback = models.TextField(blank=True, verbose_name="Memnuniyet Geri Bildirimi")
     
+    # OSMAN'IN İSTEĞİ: Dosya kapatma alanları
+    is_closed = models.BooleanField(default=False, verbose_name="Dosya Kapatıldı")
+    closed_at = models.DateTimeField(null=True, blank=True, verbose_name="Kapatılma Tarihi")
+    closed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name="closed_leads", verbose_name="Kapatan Kullanıcı")
+    
     # Sticky assignment için
     original_staff = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                      related_name="original_leads", verbose_name="İlk Atanan Personel")

@@ -478,8 +478,9 @@
                     
                     <div class="card-actions">
                         {% if not lead.payment_type %}
+                        <!-- OSMAN'IN İSTEĞİ: Ödeme tipi ZORUNLU seçilmeli -->
                         <div class="payment-selection">
-                            <p class="payment-question">Ödeme Tipi Seçin:</p>
+                            <p class="payment-question">⚠️ Ödeme Tipi Seçin (ZORUNLU):</p>
                             <button class="action-btn btn-cash" onclick="setPaymentType('{{ lead.lead_id }}', 'cash')">
                                 <i class="fas fa-money-bill-wave"></i> Nakit
                             </button>
@@ -490,14 +491,16 @@
                         {% else %}
                             {% if lead.payment_type == 'cash' %}
                                 {% if not lead.deed_transfer_date %}
+                                <!-- OSMAN'IN İSTEĞİ: Tapu tarihi ZORUNLU girilmeli -->
                                 <div class="deed-date-selection">
-                                    <p class="payment-question">Tapu Devir Tarihi:</p>
+                                    <p class="payment-question">⚠️ Tapu Devir Tarihi (ZORUNLU):</p>
                                     <input type="date" id="deed-date-{{ lead.lead_id }}" class="form-control mb-2" min="{{ today|date:'Y-m-d' }}">
-                                    <button class="action-btn btn-complete" onclick="setDeedDate('{{ lead.lead_id }}')">
-                                        <i class="fas fa-calendar-check"></i> Tarihi Kaydet
+                                    <button class="action-btn btn-complete" onclick="setDeedDateAndMoveToTapu('{{ lead.lead_id }}')">
+                                        <i class="fas fa-calendar-check"></i> Tarihi Kaydet ve Tapu İşlemine Geç
                                     </button>
                                 </div>
                                 {% else %}
+                                <!-- Tapu tarihi belirlendi ama henüz tapu aşamasına geçilmedi -->
                                 <div class="deed-info">
                                     <p class="deed-date">Tapu Tarihi: {{ lead.deed_transfer_date|date:"d.m.Y" }}</p>
                                     <button class="action-btn btn-complete" onclick="moveToDeeds('{{ lead.lead_id }}')">
@@ -506,9 +509,13 @@
                                 </div>
                                 {% endif %}
                             {% else %}
-                                <button class="action-btn btn-complete" onclick="moveToCredit('{{ lead.lead_id }}')">
-                                    <i class="fas fa-credit-card"></i> Kredi İşlemine Geç
-                                </button>
+                                <!-- Kredili işlem seçildi -->
+                                <div class="payment-selected">
+                                    <p class="payment-type credit">Kredili İşlem Seçildi</p>
+                                    <button class="action-btn btn-complete" onclick="moveToCredit('{{ lead.lead_id }}')">
+                                        <i class="fas fa-credit-card"></i> Kredi İşlemine Geç
+                                    </button>
+                                </div>
                             {% endif %}
                         {% endif %}
                         <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
@@ -673,9 +680,12 @@
                     </div>
                     
                     <div class="card-actions">
-                        <button class="action-btn btn-survey" onclick="sendSatisfactionSurvey('{{ lead.lead_id }}')">
-                            <i class="fas fa-star"></i> Anket Gönder
-                        </button>
+                        <!-- OSMAN'IN İSTEĞİ: Manuel anket butonu kaldırıldı - Otomatik anket gönderildi -->
+                        <div style="background: #e8f5e8; padding: 10px; border-radius: 6px; margin-bottom: 10px; text-align: center;">
+                            <i class="fas fa-check-circle" style="color: #28a745; margin-right: 5px;"></i>
+                            <strong>Hizmet Tamamlandı</strong><br>
+                            <small style="color: #666;">Müşteriye otomatik memnuniyet anketi gönderildi</small>
+                        </div>
                         <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
                             <i class="fas fa-phone"></i> Ara
                         </a>
@@ -720,12 +730,17 @@
                     </div>
                     
                     <div class="card-actions">
+                        <!-- OSMAN'IN İSTEĞİ: Tek butonla dosya kapatma -->
                         <button class="action-btn btn-close" onclick="closeCase('{{ lead.lead_id }}')">
                             <i class="fas fa-folder"></i> Dosya Kapat
                         </button>
                         <a href="tel:{{ lead.customer_phone }}" class="action-btn btn-call">
                             <i class="fas fa-phone"></i> Ara
                         </a>
+                        <div style="background: #fff3cd; padding: 8px; border-radius: 4px; margin-top: 10px; font-size: 12px;">
+                            <i class="fas fa-info-circle" style="color: #856404;"></i>
+                            <strong>Müşteri anket doldurduktan sonra dosyayı kapatın</strong>
+                        </div>
                     </div>
                     
                     <div class="card-meta">
@@ -795,10 +810,10 @@ function refreshBoard() {
     location.reload();
 }
 
-// Ödeme tipi belirle
+// OSMAN'IN İSTEĞİ: Ödeme tipi belirleme (validasyonlarla)
 function setPaymentType(leadId, paymentType) {
     const paymentText = paymentType === 'cash' ? 'Nakit' : 'Kredili';
-    if (confirm(`Ödeme tipi "${paymentText}" olarak belirlensin mi?`)) {
+    if (confirm(`⚠️ Ödeme tipi "${paymentText}" olarak belirlensin mi?\n\n${paymentType === 'cash' ? 'Nakit seçerseniz tapu devir tarihi girmeniz gerekecek.' : 'Kredili seçerseniz kart otomatik olarak Kredi İşlemleri aşamasına taşınacak.'}`)) {
         fetch('/satis-surec/ajax/set-payment-type/', {
             method: 'POST',
             headers: {
@@ -813,59 +828,70 @@ function setPaymentType(leadId, paymentType) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert(data.message);
-                
-                // Nakit işlem seçildiyse tapu devri tarihi sor
-                if (paymentType === 'cash') {
-                    const deedDate = prompt('Tapu devri tarihi (YYYY-MM-DD formatında):');
-                    if (deedDate) {
-                        setDeedDate(leadId, deedDate);
-                    }
-                }
-                
+                alert('✅ ' + data.message);
                 refreshBoard();
             } else {
-                alert('Hata: ' + data.message);
+                alert('❌ Hata: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Bir hata oluştu.');
+            alert('❌ Bir hata oluştu.');
         });
     }
 }
 
-// Tapu devri tarihi belirle
-function setDeedDate(leadId, deedDate) {
-    fetch('/satis-surec/ajax/set-deed-date/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            lead_id: leadId,
-            deed_date: deedDate
+// OSMAN'IN İSTEĞİ: Tapu devir tarihi belirleme ve otomatik tapu aşamasına geçiş
+function setDeedDateAndMoveToTapu(leadId) {
+    const dateInput = document.getElementById(`deed-date-${leadId}`);
+    const selectedDate = dateInput.value;
+    
+    if (!selectedDate) {
+        alert('⚠️ Lütfen tapu devir tarihini seçin.');
+        return;
+    }
+    
+    // Tarih kontrolü
+    const selectedDateObj = new Date(selectedDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDateObj < today) {
+        alert('⚠️ Tapu devir tarihi bugünden önce olamaz.');
+        return;
+    }
+    
+    if (confirm(`⚠️ Tapu devir tarihi "${selectedDateObj.toLocaleDateString('tr-TR')}" olarak belirlensin mi?\n\nBu tarih için müdüre otomatik görev oluşturulacak ve kart Tapu İşlemi aşamasına taşınacak.`)) {
+        fetch('/satis-surec/ajax/set-deed-date/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: leadId,
+                deed_date: selectedDate
+            })
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            refreshBoard();
-        } else {
-            alert('Hata: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Bir hata oluştu.');
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+                refreshBoard();
+            } else {
+                alert('❌ Hata: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Bir hata oluştu.');
+        });
+    }
 }
 
-// Kredi işlemini tamamla
+// OSMAN'IN İSTEĞİ: Kredi işlemini tamamla - Direkt memnuniyet anketine geçer
 function completeCreditProcess(leadId) {
-    if (confirm('Kredi süreci tamamlandı mı?')) {
+    if (confirm('⚠️ Kredi süreci tamamlandı mı?\n\n✅ Müşteriye otomatik memnuniyet anketi gönderilecek\n📋 Kart direkt "Memnuniyet Anketi" aşamasına taşınacak')) {
         fetch('/satis-surec/ajax/complete-credit/', {
             method: 'POST',
             headers: {
@@ -879,22 +905,22 @@ function completeCreditProcess(leadId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert(data.message);
+                alert('✅ ' + data.message);
                 refreshBoard();
             } else {
-                alert('Hata: ' + data.message);
+                alert('❌ Hata: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Bir hata oluştu.');
+            alert('❌ Bir hata oluştu.');
         });
     }
 }
 
-// Tapu işlemini tamamla
+// OSMAN'IN İSTEĞİ: Tapu işlemini tamamla - Direkt memnuniyet anketine geçer
 function completeDeedProcess(leadId) {
-    if (confirm('Tapu devri tamamlandı mı?')) {
+    if (confirm('⚠️ Tapu devri tamamlandı mı?\n\n✅ Müşteriye otomatik memnuniyet anketi gönderilecek\n📋 Kart direkt "Memnuniyet Anketi" aşamasına taşınacak')) {
         fetch('/satis-surec/ajax/complete-deed/', {
             method: 'POST',
             headers: {
@@ -908,15 +934,15 @@ function completeDeedProcess(leadId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert(data.message);
+                alert('✅ ' + data.message);
                 refreshBoard();
             } else {
-                alert('Hata: ' + data.message);
+                alert('❌ Hata: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Bir hata oluştu.');
+            alert('❌ Bir hata oluştu.');
         });
     }
 }
@@ -975,38 +1001,15 @@ function moveToCredit(leadId) {
     });
 }
 
-// Memnuniyet anketi gönder
+// OSMAN'IN İSTEĞİ: Manuel anket gönderimi kaldırıldı - artık otomatik gönderiliyor
 function sendSatisfactionSurvey(leadId) {
-    if (confirm('Müşteriye memnuniyet anketi gönderilsin mi?')) {
-        fetch('/satis-surec/ajax/send-satisfaction-survey/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                lead_id: leadId
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Memnuniyet anketi gönderildi.');
-                refreshBoard();
-            } else {
-                alert('Hata: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Bir hata oluştu.');
-        });
-    }
+    alert('ℹ️ Memnuniyet anketi artık otomatik gönderiliyor.\n\nKredi veya tapu işlemi tamamlandığında müşteriye otomatik olarak anket gönderilir.');
+    return; // Fonksiyon devre dışı
 }
 
-// Dosyayı kapat
+// OSMAN'IN İSTEĞİ: Memnuniyet anketinden direkt dosya kapatma
 function closeCase(leadId) {
-    if (confirm('Dosya kapatılsın mı? Bu işlem geri alınamaz.')) {
+    if (confirm('⚠️ Dosya kapatılsın mı?\n\n📋 Bu işlem geri alınamaz\n✅ Satış süreci tamamen tamamlanacak')) {
         fetch('/satis-surec/ajax/close-case/', {
             method: 'POST',
             headers: {
@@ -1020,15 +1023,15 @@ function closeCase(leadId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Dosya başarıyla kapatıldı.');
+                alert('✅ ' + data.message);
                 refreshBoard();
             } else {
-                alert('Hata: ' + data.message);
+                alert('❌ Hata: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Bir hata oluştu.');
+            alert('❌ Bir hata oluştu.');
         });
     }
 }
@@ -1150,40 +1153,10 @@ function setPaymentType(leadId, paymentType) {
     });
 }
 
-// Tapu devir tarihini ayarla
+// Tapu devir tarihini ayarla (eski fonksiyon - artık kullanılmıyor)
 function setDeedDate(leadId) {
-    const dateInput = document.getElementById(`deed-date-${leadId}`);
-    const selectedDate = dateInput.value;
-    
-    if (!selectedDate) {
-        alert('Lütfen tapu devir tarihini seçin.');
-        return;
-    }
-    
-    fetch('/satis-surec/ajax/set-deed-date/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            lead_id: leadId,
-            deed_date: selectedDate
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Tapu devir tarihi ayarlandı ve görev oluşturuldu.');
-            refreshBoard();
-        } else {
-            alert('Hata: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Bir hata oluştu.');
-    });
+    // Bu fonksiyon artık setDeedDateAndMoveToTapu() tarafından değiştirildi
+    console.warn('setDeedDate() fonksiyonu deprecated. setDeedDateAndMoveToTapu() kullanın.');
 }
 
 // Kredi işlemine geç
