@@ -303,7 +303,8 @@ Koç Gayrimenkul Ekibi"""
                         # Hata durumunda sistem notu
                         LeadNote.objects.create(
                             lead=lead,
-                            note=f"Memnuniyet anketi gönderiminde hata: {result.get('error', 'Bilinmeyen hata')}",
+                            title="Memnuniyet Anketi Hatası",
+                            content=f"Memnuniyet anketi gönderiminde hata: {result.get('error', 'Bilinmeyen hata')}",
                             note_type='system',
                             created_by=None
                         )
@@ -312,7 +313,8 @@ Koç Gayrimenkul Ekibi"""
                     # Hata durumunda sistem notu
                     LeadNote.objects.create(
                         lead=lead,
-                        note=f"Memnuniyet anketi gönderiminde sistem hatası: {str(e)}",
+                        title="Memnuniyet Anketi Sistem Hatası",
+                        content=f"Memnuniyet anketi gönderiminde sistem hatası: {str(e)}",
                         note_type='system',
                         created_by=None
                     )
@@ -320,7 +322,8 @@ Koç Gayrimenkul Ekibi"""
                 # Zaten gönderilmiş ise bilgi notu
                 LeadNote.objects.create(
                     lead=lead,
-                    note="Memnuniyet anketi daha önce gönderilmiş.",
+                    title="Memnuniyet Anketi Bilgisi",
+                    content="Memnuniyet anketi daha önce gönderilmiş.",
                     note_type='system',
                     created_by=None
                 )

@@ -427,7 +427,8 @@ def update_call_notes(request, call_id):
             from .models import LeadNote
             LeadNote.objects.create(
                 lead=call_log.lead,
-                note=f"Arama notu: {notes}",
+                title="Arama Notu",
+                content=f"Arama notu: {notes}",
                 note_type='call',
                 created_by=request.user
             )

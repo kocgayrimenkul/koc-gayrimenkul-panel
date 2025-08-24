@@ -717,7 +717,8 @@ def add_note(request):
         
         note = LeadNote.objects.create(
             lead=lead,
-            note=note_text,
+            title="Manuel Not",
+            content=note_text,
             created_by=request.user,
             note_type=note_type
         )
@@ -727,7 +728,7 @@ def add_note(request):
             'message': 'Not başarıyla eklendi.',
             'note': {
                 'id': note.id,
-                'note': note.note,
+                'content': note.content,
                 'created_at': note.created_at.strftime('%d.%m.%Y %H:%M') if note.created_at else 'Tarih Yok',
                 'created_by': note.created_by.get_full_name()
             }
