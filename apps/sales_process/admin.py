@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from .models import (
     SalesStage, Lead, LeadNote, StageTransition, Task, 
-    Appointment, WhatsAppMessage, CallLog
+    Appointment, WhatsAppMessage, CallLog, PresentationLocation
 )
 
 
@@ -275,3 +275,47 @@ class CallLogAdmin(admin.ModelAdmin):
     def duration_formatted(self, obj):
         return obj.duration_formatted
     duration_formatted.short_description = 'Süre'
+
+
+@admin.register(PresentationLocation)
+class PresentationLocationAdmin(admin.ModelAdmin):
+    list_display = [
+        'lead', 'completed_by', 'location_display_short', 
+        'manual_location_short', 'completed_at'
+    ]
+    list_filter = ['completed_at', 'completed_by']
+    search_fields = ['lead__customer_name', 'completion_notes', 'manual_location']
+    ordering = ['-completed_at']
+    readonly_fields = ['completed_at']
+    
+    fieldsets = (
+        ('Temel Bilgiler', {
+            'fields': ('lead', 'completed_by', 'completion_notes')
+        }),
+        ('GPS Konum Bilgileri', {
+            'fields': ('latitude', 'longitude', 'accuracy', 'location_timestamp'),
+            'classes': ('collapse',)
+        }),
+        ('Manuel Konum', {
+            'fields': ('manual_location',),
+            'classes': ('collapse',)
+        }),
+        ('Zaman Bilgileri', {
+            'fields': ('completed_at',),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('lead', 'completed_by')
+    
+    def location_display_short(self, obj):
+        display = obj.location_display
+        return display[:50] + '...' if len(display) > 50 else display
+    location_display_short.short_description = 'Konum'
+    
+    def manual_location_short(self, obj):
+        if obj.manual_location:
+            return obj.manual_location[:30] + '...' if len(obj.manual_location) > 30 else obj.manual_location
+        return '-'
+    manual_location_short.short_description = 'Manuel Konum'

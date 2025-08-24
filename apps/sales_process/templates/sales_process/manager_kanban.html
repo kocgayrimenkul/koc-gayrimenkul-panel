@@ -891,7 +891,7 @@ function setDeedDateAndMoveToTapu(leadId) {
 
 // OSMAN'IN İSTEĞİ: Kredi işlemini tamamla - Direkt memnuniyet anketine geçer
 function completeCreditProcess(leadId) {
-    if (confirm('⚠️ Kredi süreci tamamlandı mı?\n\n✅ Müşteriye otomatik memnuniyet anketi gönderilecek\n📋 Kart direkt "Memnuniyet Anketi" aşamasına taşınacak')) {
+    if (confirm('⚠️ Kredi süreci tamamlandı mı?\n\n📋 Kart "Tapu İşlemi" aşamasına taşınacak\n📅 Tapu devir tarihi belirlemeniz gerekecek')) {
         fetch('/satis-surec/ajax/complete-credit/', {
             method: 'POST',
             headers: {

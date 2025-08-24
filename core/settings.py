@@ -38,7 +38,22 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
 # load production server from .env
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', env('SERVER')]
+# Prefer ALLOWED_HOSTS from environment (comma separated). Keep localhost and SERVER by default.
+raw_allowed = env('ALLOWED_HOSTS', default='localhost,127.0.0.1')
+ALLOWED_HOSTS = [h.strip() for h in raw_allowed.split(',') if h.strip()]
+
+# Ensure SERVER is present
+try:
+    server_host = env('SERVER')
+except Exception:
+    server_host = None
+if server_host and server_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(server_host)
+
+# Allow common ngrok domains (use leading dot to permit any subdomain)
+for _p in ['.ngrok.io', '.ngrok-free.app', '.trycloudflare.com']:
+    if _p not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_p)
 
 # Application definition
 

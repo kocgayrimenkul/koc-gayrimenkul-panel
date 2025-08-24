@@ -830,7 +830,7 @@
 
         // Kredi işlemini tamamlama
         function completeCreditProcess(leadId) {
-            if (confirm('Kredi işlemi tamamlandı olarak işaretlensin mi?')) {
+            if (confirm('⚠️ Kredi süreci tamamlandı mı?\n\n📋 Kart "Tapu İşlemi" aşamasına taşınacak\n📅 Tapu devir tarihi belirlemeniz gerekecek')) {
                 updateLeadStage(leadId, 'tapu_islemi');
             }
         }

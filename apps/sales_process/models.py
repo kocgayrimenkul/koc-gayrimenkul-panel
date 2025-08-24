@@ -534,6 +534,48 @@ class LeadAssignment(models.Model):
         ]
 
 
+class PresentationLocation(models.Model):
+    """Sunum konum bilgileri - Sunumların nerede yapıldığını takip eder"""
+    
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, verbose_name="Lead", related_name="presentation_locations")
+    
+    # Otomatik konum bilgileri (GPS)
+    latitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True, verbose_name="Enlem")
+    longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True, verbose_name="Boylam")
+    accuracy = models.FloatField(null=True, blank=True, verbose_name="Doğruluk (metre)")
+    location_timestamp = models.DateTimeField(null=True, blank=True, verbose_name="Konum Zaman Damgası")
+    
+    # Manuel konum bilgisi
+    manual_location = models.CharField(max_length=500, null=True, blank=True, verbose_name="Manuel Konum")
+    
+    # Sunum bilgileri
+    completion_notes = models.TextField(verbose_name="Sunum Notları")
+    completed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Tamamlayan")
+    completed_at = models.DateTimeField(auto_now_add=True, verbose_name="Tamamlanma Tarihi")
+    
+    def __str__(self):
+        location_info = ""
+        if self.latitude and self.longitude:
+            location_info = f"({self.latitude}, {self.longitude})"
+        elif self.manual_location:
+            location_info = self.manual_location[:50]
+        return f"{self.lead.customer_name} - Sunum Konumu {location_info}"
+    
+    @property
+    def location_display(self):
+        """Konum bilgisini görüntüleme için"""
+        if self.latitude and self.longitude:
+            return f"Enlem: {self.latitude}, Boylam: {self.longitude} (±{self.accuracy or 'N/A'} m)"
+        elif self.manual_location:
+            return f"Manuel: {self.manual_location}"
+        return "Konum bilgisi yok"
+    
+    class Meta:
+        verbose_name = "Sunum Konumu"
+        verbose_name_plural = "Sunum Konumları"
+        ordering = ['-completed_at']
+
+
 class ActionLog(models.Model):
     """Satış süreç aksiyonları için log sistemi"""
     

@@ -747,8 +747,9 @@ def complete_presentation(request):
     try:
         data = json.loads(request.body)
         lead_id = data.get('lead_id')
-        shown_properties = data.get('shown_properties', [])
         completion_notes = data.get('completion_notes', '')
+        location_data = data.get('location_data')
+        manual_location = data.get('manual_location', '')
         
         # Validasyon
         if not lead_id:
@@ -757,16 +758,17 @@ def complete_presentation(request):
                 'message': 'Lead ID gerekli.'
             })
             
-        if not shown_properties or len(shown_properties) == 0 or len(shown_properties) > 3:
-            return JsonResponse({
-                'success': False,
-                'message': '1-3 adet daire seçmelisiniz.'
-            })
-            
         if not completion_notes.strip():
             return JsonResponse({
                 'success': False,
                 'message': 'Sunum notları zorunludur.'
+            })
+            
+        # Konum bilgisi kontrolü
+        if not location_data and not manual_location.strip():
+            return JsonResponse({
+                'success': False,
+                'message': 'Konum bilgisi gereklidir.'
             })
         
         lead = get_object_or_404(Lead, lead_id=lead_id)
@@ -778,60 +780,55 @@ def complete_presentation(request):
                 'message': 'Lead daire sunumu aşamasında değil.'
             })
         
-        # Presentation kaydını güncelle veya oluştur
-        from apps.presentation.models import Presentation
-        from apps.portfolio.models import Property
+        # PresentationLocation kaydı oluştur
+        from .models import ActionLog, PresentationLocation
         
-        # İlk gösterilen property'yi ana property olarak kullan
-        main_property = None
-        if shown_properties:
-            try:
-                main_property = Property.objects.get(id=shown_properties[0])
-            except Property.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Seçilen daire bulunamadı.'
-                })
+        # PresentationLocation verilerini hazırla
+        presentation_data = {
+            'lead': lead,
+            'completion_notes': completion_notes,
+            'completed_by': request.user
+        }
         
-        if not main_property:
-            return JsonResponse({
-                'success': False,
-                'message': 'Ana daire seçimi gerekli.'
+        # GPS konum bilgilerini ekle
+        if location_data:
+            presentation_data.update({
+                'latitude': location_data.get('latitude'),
+                'longitude': location_data.get('longitude'),
+                'accuracy': location_data.get('accuracy'),
+                'location_timestamp': location_data.get('timestamp')
             })
         
-        presentation, created = Presentation.objects.get_or_create(
-            customer_name=lead.customer_name,
-            customer_phone=lead.customer_phone,
-            defaults={
-                'title': f'{lead.customer_name} - Sunum',
-                'property': main_property,
-                'presenter': request.user,
-                'presentation_date': timezone.now(),
-                'customer_source': lead.source,
-                'status': 'tamamlandi'
-            }
-        )
+        # Manuel konum bilgisini ekle
+        if manual_location:
+            presentation_data['manual_location'] = manual_location
         
-        # Sunum tamamlama bilgilerini güncelle
-        presentation.is_completed = True
-        presentation.completed_at = timezone.now()
-        presentation.completion_notes = completion_notes
-        presentation.shown_properties = shown_properties
-        presentation.status = 'tamamlandi'
-        presentation.save()
+        # PresentationLocation kaydını oluştur
+        presentation_location = PresentationLocation.objects.create(**presentation_data)
         
         # ActionLog kaydı oluştur
-        from .models import ActionLog
+        payload_data = {
+            'completion_notes': completion_notes,
+            'lead_id': str(lead.lead_id),
+            'customer_name': lead.customer_name,
+            'customer_phone': lead.customer_phone,
+            'presentation_location_id': presentation_location.id
+        }
+        
+        # Konum bilgisini payload'a ekle
+        if location_data:
+            payload_data['location_data'] = location_data
+        if manual_location:
+            payload_data['manual_location'] = manual_location
+        
+        location_info = presentation_location.location_display
+        
         ActionLog.objects.create(
             lead=lead,
             action_type='SHOW_DONE',
             title='Sunum Tamamlandı',
-            description=f'Sunum tamamlandı. Gösterilen daireler: {len(shown_properties)} adet. Notlar: {completion_notes[:100]}...',
-            payload={
-                'shown_properties': shown_properties,
-                'completion_notes': completion_notes,
-                'presentation_id': presentation.id
-            },
+            description=f'Sunum tamamlandı. {location_info} Notlar: {completion_notes[:100]}...',
+            payload=payload_data,
             is_successful=True,
             performed_by=request.user
         )
@@ -855,13 +852,8 @@ def complete_presentation(request):
         )
         
         # Sistem notu ekle
-        property_names = []
-        if shown_properties:
-            from apps.portfolio.models import Property
-            properties = Property.objects.filter(id__in=shown_properties)
-            property_names = [prop.title for prop in properties]
-        
-        note_text = f"Sunum tamamlandı. Gösterilen daireler: {', '.join(property_names) if property_names else 'Belirtilmemiş'}. Notlar: {completion_notes}"
+        location_text = f" {presentation_location.location_display}"
+        note_text = f"Sunum tamamlandı.{location_text} Notlar: {completion_notes}"
         
         LeadNote.objects.create(
             lead=lead,
@@ -1855,10 +1847,10 @@ def complete_credit_process(request):
         
         lead = get_object_or_404(Lead, lead_id=lead_id)
         
-        # OSMAN'IN İSTEĞİ: Direkt "Memnuniyet Anketi" aşamasına geçir (Hizmet Tamamlandı atlanıyor)
-        memnuniyet_stage = SalesStage.objects.get(name='memnuniyet_anketi')
+        # Kredi süreci tamamlandı - Tapu İşlemleri aşamasına geçir
+        tapu_stage = SalesStage.objects.get(name='tapu_islemi')
         old_stage = lead.current_stage
-        lead.current_stage = memnuniyet_stage
+        lead.current_stage = tapu_stage
         lead.stage_updated_at = timezone.now()
         lead.save()
         
@@ -1866,9 +1858,9 @@ def complete_credit_process(request):
         StageTransition.objects.create(
             lead=lead,
             from_stage=old_stage,
-            to_stage=memnuniyet_stage,
+            to_stage=tapu_stage,
             transition_type='manual',
-            reason="Kredi süreci tamamlandı - Otomatik anket gönderildi",
+            reason="Kredi süreci tamamlandı - Tapu işlemleri başlatıldı",
             performed_by=request.user
         )
         
@@ -1876,7 +1868,7 @@ def complete_credit_process(request):
         LeadNote.objects.create(
             lead=lead,
             title="Kredi Süreci Tamamlandı",
-            content="Kredi süreci başarıyla tamamlandı. Müşteriye otomatik memnuniyet anketi gönderildi.",
+            content="Kredi süreci başarıyla tamamlandı. Tapu devir tarihi bekleniyor.",
             created_by=request.user,
             note_type='system'
         )
@@ -1884,47 +1876,17 @@ def complete_credit_process(request):
         # ActionLog kaydı
         ActionLog.objects.create(
             lead=lead,
-            action_type='PAYMENT_RECEIVED',
+            action_type='CREDIT_COMPLETED',
             title='Kredi Süreci Tamamlandı',
-            description="Kredi süreci tamamlandı ve otomatik anket gönderildi",
+            description="Kredi süreci tamamlandı, tapu işlemleri aşamasına geçildi",
             performed_by=request.user,
             is_successful=True
         )
         
-        # OSMAN'IN İSTEĞİ: Otomatik WhatsApp memnuniyet anketi gönder
-        whatsapp_success = False
-        try:
-            from .whatsapp_views import send_automatic_whatsapp
-            result = send_automatic_whatsapp(lead, 'satisfaction_survey')
-            whatsapp_success = result.get('success', False) if isinstance(result, dict) else True
-            
-            # WhatsApp gönderim kaydı
-            ActionLog.objects.create(
-                lead=lead,
-                action_type='WHATSAPP_SENT',
-                title='Memnuniyet Anketi Gönderildi',
-                description='Kredi tamamlandıktan sonra otomatik memnuniyet anketi gönderildi',
-                performed_by=request.user,
-                is_successful=whatsapp_success
-            )
-        except Exception as wa_error:
-            # WhatsApp hatası da log'lanır ama işlem devam eder
-            ActionLog.objects.create(
-                lead=lead,
-                action_type='WHATSAPP_ERROR',
-                title='WhatsApp Memnuniyet Anketi Hatası',
-                description=f'Memnuniyet anketi gönderilemedi: {str(wa_error)}',
-                performed_by=request.user,
-                is_successful=False
-            )
-        
-        success_message = 'Kredi süreci tamamlandı. Müşteriye memnuniyet anketi gönderildi.'
-        if not whatsapp_success:
-            success_message += ' (WhatsApp mesajı gönderilemedi, manuel kontrol gerekli)'
-        
         return JsonResponse({
             'success': True,
-            'message': success_message
+            'message': 'Kredi süreci tamamlandı. Şimdi tapu devir tarihini belirleyin.',
+            'requires_deed_date': True  # Frontend için bilgi
         })
         
     except Exception as e:
