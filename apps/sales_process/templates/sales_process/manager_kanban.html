@@ -1001,10 +1001,33 @@ function moveToCredit(leadId) {
     });
 }
 
-// OSMAN'IN İSTEĞİ: Manuel anket gönderimi kaldırıldı - artık otomatik gönderiliyor
+// OSMAN'IN İSTEĞİ: Memnuniyet anketi gönderimi - WhatsApp ile anket linki gönderir
 function sendSatisfactionSurvey(leadId) {
-    alert('ℹ️ Memnuniyet anketi artık otomatik gönderiliyor.\n\nKredi veya tapu işlemi tamamlandığında müşteriye otomatik olarak anket gönderilir.');
-    return; // Fonksiyon devre dışı
+    if (confirm('📋 Memnuniyet anketi gönderilsin mi?\n\n📱 Müşteriye WhatsApp ile anket linki gönderilecek\n✅ Kart "Memnuniyet Anketi" aşamasına taşınacak')) {
+        fetch('/satis-surec/ajax/send-satisfaction-survey/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: leadId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+                refreshBoard();
+            } else {
+                alert('❌ Hata: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Bir hata oluştu.');
+        });
+    }
 }
 
 // OSMAN'IN İSTEĞİ: Memnuniyet anketinden direkt dosya kapatma

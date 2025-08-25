@@ -9,7 +9,8 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from .models import (
     SalesStage, Lead, LeadNote, StageTransition, Task, 
-    Appointment, WhatsAppMessage, CallLog, PresentationLocation
+    Appointment, WhatsAppMessage, CallLog, PresentationLocation,
+    Survey, SurveyResponse
 )
 
 
@@ -316,6 +317,83 @@ class PresentationLocationAdmin(admin.ModelAdmin):
     
     def manual_location_short(self, obj):
         if obj.manual_location:
-            return obj.manual_location[:30] + '...' if len(obj.manual_location) > 30 else obj.manual_location
+            return obj.manual_location[:50] + '...' if len(obj.manual_location) > 50 else obj.manual_location
         return '-'
     manual_location_short.short_description = 'Manuel Konum'
+
+
+class SurveyResponseInline(admin.TabularInline):
+    model = SurveyResponse
+    extra = 0
+    readonly_fields = ['created_at']
+    fields = ['answer', 'created_at']
+
+
+@admin.register(Survey)
+class SurveyAdmin(admin.ModelAdmin):
+    list_display = [
+        'survey_id', 'lead_name', 'survey_type', 'status', 
+        'overall_satisfaction', 'average_rating_display', 'created_at', 'completed_at'
+    ]
+    list_filter = ['survey_type', 'status', 'created_at', 'completed_at']
+    search_fields = ['survey_id', 'lead__customer_name', 'lead__customer_phone']
+    ordering = ['-created_at']
+    readonly_fields = ['survey_id', 'access_token', 'created_at']
+    
+    inlines = [SurveyResponseInline]
+    
+    fieldsets = (
+        ('Temel Bilgiler', {
+            'fields': ('survey_id', 'lead', 'survey_type', 'status', 'access_token')
+        }),
+        ('Zaman Bilgileri', {
+            'fields': ('created_at', 'sent_at', 'expires_at', 'completed_at')
+        }),
+        ('WhatsApp Bilgileri', {
+            'fields': ('whatsapp_message_id', 'whatsapp_sent'),
+            'classes': ('collapse',)
+        }),
+        ('Değerlendirme Puanları', {
+            'fields': (
+                'overall_satisfaction', 'service_quality_rating', 'staff_performance_rating',
+                'communication_rating', 'process_speed_rating', 'would_recommend'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Geri Bildirim', {
+            'fields': ('positive_feedback', 'improvement_suggestions', 'additional_comments'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('lead')
+    
+    def lead_name(self, obj):
+        return f"{obj.lead.customer_name} ({obj.lead.customer_phone})"
+    lead_name.short_description = 'Müşteri'
+    
+    def average_rating_display(self, obj):
+        avg = obj.average_rating
+        if avg:
+            return f"{avg:.1f}/5.0"
+        return '-'
+    average_rating_display.short_description = 'Ortalama Puan'
+
+
+@admin.register(SurveyResponse)
+class SurveyResponseAdmin(admin.ModelAdmin):
+    list_display = ['survey', 'answer_short', 'created_at']
+    list_filter = ['created_at', 'survey__survey_type']
+    search_fields = ['survey__survey_id', 'answer']
+    ordering = ['-created_at']
+    readonly_fields = ['created_at']
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('survey', 'survey__lead')
+    
+    def answer_short(self, obj):
+        if len(obj.answer) > 50:
+            return obj.answer[:50] + '...'
+        return obj.answer
+    answer_short.short_description = 'Cevap'

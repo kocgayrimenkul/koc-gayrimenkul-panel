@@ -512,65 +512,13 @@ def get_leads_ajax(request):
         })
 
 
-@login_required
-@csrf_exempt
-@require_http_methods(["POST"])
-def send_satisfaction_survey(request):
-    """
-    Müşteriye memnuniyet anketi gönderir ve kartı 'Yorum Yapıldı' kolonuna taşır
-    """
-    try:
-        data = json.loads(request.body)
-        lead_id = data.get('lead_id')
-        
-        if not lead_id:
-            return JsonResponse({
-                'success': False,
-                'message': 'Lead ID gerekli'
-            })
-        
-        lead = get_object_or_404(Lead, lead_id=lead_id)
-        
-        # Kartı 'Yorum Yapıldı' kolonuna taşı
-        feedback_stage = get_object_or_404(SalesStage, name='Yorum Yapıldı')
-        lead.current_stage = feedback_stage
-        lead.save()
-        
-        # Stage transition kaydı
-        StageTransition.objects.create(
-            lead=lead,
-            from_stage=lead.current_stage,
-            to_stage=feedback_stage,
-            changed_by=request.user,
-            notes="Memnuniyet anketi gönderildi"
-        )
-        
-        # ActionLog kaydı
-        ActionLog.objects.create(
-            lead=lead,
-            action_type='FEEDBACK_SENT',
-            title='Memnuniyet Anketi Gönderildi',
-            description="Müşteriye memnuniyet anketi gönderildi",
-            performed_by=request.user
-        )
-        
-        # WhatsApp mesajı gönder
-        try:
-            from .whatsapp_views import send_automatic_whatsapp
-            send_automatic_whatsapp(lead, 'satisfaction_survey')
-        except Exception as wa_error:
-            print(f"WhatsApp mesajı gönderilemedi: {wa_error}")
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Memnuniyet anketi gönderildi.'
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        })
+# Anket fonksiyonları survey_views.py dosyasına taşındı
+
+
+# survey_view fonksiyonu survey_views.py dosyasına taşındı
+
+
+# survey_results ve send_survey_reminder fonksiyonları survey_views.py dosyasına taşındı
 
 
 @login_required
@@ -1947,8 +1895,8 @@ def complete_deed_process(request):
         # OSMAN'IN İSTEĞİ: Otomatik WhatsApp memnuniyet anketi gönder
         whatsapp_success = False
         try:
-            from .whatsapp_views import send_automatic_whatsapp
-            result = send_automatic_whatsapp(lead, 'satisfaction_survey')
+            from .survey_views import send_satisfaction_survey
+            result = send_satisfaction_survey(request, lead_id=str(lead.lead_id))
             whatsapp_success = result.get('success', False) if isinstance(result, dict) else True
             
             # WhatsApp gönderim kaydı

@@ -752,12 +752,43 @@ class WhatsAppTemplates:
     
     @staticmethod
     def satisfaction_survey(customer_name):
-        return (
-            f"Sayın {customer_name}, "
-            "hizmetimizden memnuniyetinizi öğrenmek için kısa bir anket hazırladık. "
-            "Görüşleriniz bizim için çok değerli. "
-            "Koç Gayrimenkul"
-        )
+        return f"""Merhaba {customer_name},
+
+Koç Gayrimenkul olarak size verdiğimiz hizmet hakkında görüşlerinizi almak istiyoruz.
+
+Memnuniyetinizi değerlendirmek için kısa bir anket hazırladık. Görüşleriniz bizim için çok değerli.
+
+Teşekkür ederiz! 🏠✨"""
+    
+    @staticmethod
+    def satisfaction_survey_with_link(customer_name, survey_url):
+        return f"""Merhaba {customer_name},
+
+Koç Gayrimenkul olarak size verdiğimiz hizmet hakkında görüşlerinizi almak istiyoruz.
+
+Memnuniyetinizi değerlendirmek için kısa bir anket hazırladık. Aşağıdaki linke tıklayarak anketi doldurabilirsiniz:
+
+🔗 {survey_url}
+
+Anketin tamamlanması yaklaşık 2-3 dakika sürmektedir. Görüşleriniz bizim için çok değerli ve hizmet kalitemizi artırmamıza yardımcı olacaktır.
+
+Katılımınız için şimdiden teşekkür ederiz! 🏠✨
+
+*Not: Bu anket linki 30 gün boyunca geçerlidir.*"""
+    
+    @staticmethod
+    def survey_reminder(customer_name, survey_url):
+        return f"""Merhaba {customer_name},
+
+Daha önce gönderdiğimiz memnuniyet anketini henüz doldurmadığınızı fark ettik.
+
+Görüşleriniz bizim için gerçekten çok önemli. Anketi doldurmak için aşağıdaki linke tıklayabilirsiniz:
+
+🔗 {survey_url}
+
+Sadece 2-3 dakikanızı alacak ve hizmet kalitemizi geliştirmemize büyük katkı sağlayacaktır.
+
+Teşekkür ederiz! 🙏"""
 
 
 # Singleton instance

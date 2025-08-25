@@ -410,8 +410,11 @@ Koç Gayrimenkul
         print(f"[DEBUG] make_outbound_call called with phone: {phone_number}, extension: {agent_extension}")
         
         try:
-            # Telefon numarasını temizle
-            clean_phone = self._clean_phone_number(phone_number)
+            # Netgsm için telefon numarasını olduğu gibi kullan (destek ekibinin örneğinde 05070775025 formatında)
+            # Sadece boşlukları ve özel karakterleri temizle ama 0 ile başlamasına izin ver
+            clean_phone = ''.join(filter(str.isdigit, phone_number))
+            if not clean_phone.startswith('0') and len(clean_phone) == 10:
+                clean_phone = '0' + clean_phone  # 0 ile başlamıyorsa ekle
             print(f"[DEBUG] Cleaned phone number: {clean_phone}")
             
             # CRM ID oluştur
@@ -422,19 +425,21 @@ Koç Gayrimenkul
             url = f"{self.crm_base_url}/{self.pbx_number}/originate"
             print(f"[DEBUG] Full URL: `{url}`")
             
-            # Postman collection'a göre doğru parametreler
-            # username parametresi santral numarası değil, kullanıcı adı olmalı
+            # Netgsm destek ekibinin verdiği örneğe göre doğru parametreler
+            # username = santral numarası (8508850860)
+            # internal_num = mevcut dahili numaralardan biri (101, 102, 103, 104)
             params = {
-                'username': self.pbx_number,  # Postman'de username = santral numarası
+                'username': self.username,    # Netgsm kullanıcı adı (santral numarası)
                 'password': self.password,    # Şifre (URL encode edilmemeli)
                 'customer_num': clean_phone,  # Arama yapılacak dış numara
                 'pbxnum': self.pbx_number,    # Santral numarası
-                'internal_num': str(agent_extension or '100'),  # İç dahili numarası
+                'internal_num': str(agent_extension or '101'),  # İç dahili numarası (100 yok, 101 var)
                 'ring_timeout': str(ring_timeout),  # Çaldırma süresi
                 'crm_id': crm_id,             # CRM ID
                 'wait_response': '1',         # Response bekle
-                'originate_order': 'of',      # Önce dış numara çalsın
-                'trunk': self.pbx_number      # Aramada görünecek numara
+                'originate_order': 'if',      # Destek ekibinin örneğindeki gibi
+                'trunk': self.pbx_number,     # Aramada görünecek numara
+                'manual_answer': '1'          # Destek ekibinin örneğinde var
             }
             
             # Şifreyi gizleyerek parametreleri yazdır

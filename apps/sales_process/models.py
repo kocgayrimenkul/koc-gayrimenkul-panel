@@ -11,6 +11,9 @@ from apps.customers.models import Customer, Neighborhood
 from apps.portfolio.models import Property
 import uuid
 
+# Survey modelleri import et
+from .survey_models import Survey, SurveyResponse
+
 
 class SalesStage(models.Model):
     """Satış süreç aşamaları"""

@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memnuniyet Anketi - Koç Gayrimenkul</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700">
+    <style>
+        /* Koç Gayrimenkul kurumsal renkleri */
+        :root {
+            --koc-red: #9d2235;
+            --koc-red-light: #b82e42;
+            --koc-red-dark: #7a1a29;
+            --koc-black: #212529;
+            --koc-red-rgb: 157, 34, 53;
+            --koc-gray: #f5f5f5;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--koc-red-dark) 0%, var(--koc-red) 50%, var(--koc-red-light) 100%);
+            min-height: 100vh;
+            font-family: 'Open Sans', sans-serif;
+            padding: 2rem 0;
+        }
+        
+        .survey-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .survey-header {
+            background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%);
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .survey-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 30%;
+            background: rgba(255, 255, 255, 0.05);
+            transform: skewX(-15deg) translateX(10%);
+        }
+        
+        .survey-header h1 {
+            color: white;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .survey-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            margin-bottom: 0;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .survey-body {
+            padding: 3rem 2rem;
+        }
+        
+        .rating-group {
+            margin-bottom: 2.5rem;
+            padding: 1.5rem;
+            background-color: #f8f9fe;
+            border-radius: 0.75rem;
+            border-left: 4px solid var(--koc-red);
+        }
+        
+        .rating-group:last-of-type {
+            margin-bottom: 2rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--koc-black);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-label i {
+            color: var(--koc-red);
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .rating-stars {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 1.5rem 0;
+        }
+        
+        .rating-stars input[type="radio"] {
+            display: none;
+        }
+        
+        .rating-stars label {
+            font-size: 2.5rem;
+            color: #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0.5rem;
+            border-radius: 50%;
+        }
+        
+        .rating-stars label:hover {
+            color: var(--koc-red-light);
+            transform: scale(1.1);
+        }
+        
+        .rating-stars input[type="radio"]:checked + label {
+            color: var(--koc-red);
+            transform: scale(1.2);
+        }
+        
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--koc-red);
+            box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
+        }
+        
+        .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-select:focus {
+            border-color: var(--koc-red);
+            box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
+        }
+        
+        .btn-koc-red {
+            color: #fff;
+            background-color: var(--koc-red);
+            border-color: var(--koc-red);
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-koc-red:hover {
+            color: #fff;
+            background-color: var(--koc-red-light);
+            border-color: var(--koc-red-light);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(var(--koc-red-rgb), 0.3);
+        }
+        
+        .success-message {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        
+        .success-icon {
+            font-size: 5rem;
+            color: var(--koc-red);
+            margin-bottom: 1.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        .success-message h3 {
+            color: var(--koc-black);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+        
+        .success-message p {
+            color: #6c757d;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .rating-description {
+            text-align: center;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .form-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        .section-title {
+            color: var(--koc-red);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="survey-container">
+            {% if survey.status == 'completed' %}
+                <div class="success-message">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3>Teşekkür Ederiz!</h3>
+                    <p>Anketiniz başarıyla kaydedildi. Görüşleriniz bizim için çok değerli ve hizmet kalitemizi artırmamızda bize yardımcı oluyor.</p>
+                    <div class="mt-4">
+                        <p class="text-muted"><strong>Koç Gayrimenkul</strong> olarak size en iyi hizmeti sunmak için çalışmaya devam ediyoruz.</p>
+                    </div>
+                </div>
+            {% else %}
+                <div class="survey-header">
+                    <h1><i class="fas fa-building"></i> Koç Gayrimenkul</h1>
+                    <p>Memnuniyet Anketi</p>
+                </div>
+                
+                <div class="survey-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="rating-group">
+                            <label class="form-label">
+                                <i class="fas fa-heart"></i>
+                                Genel Memnuniyet Düzeyiniz
+                            </label>
+                            <div class="rating-stars">
+                                {% for i in "12345" %}
+                                    <input type="radio" name="overall_satisfaction" value="{{ i }}" id="overall_{{ i }}">
+                                    <label for="overall_{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                            <div class="rating-description">
+                                1: Çok Memnun Değilim - 5: Çok Memnunum
+                            </div>
+                        </div>
+
+                        <div class="rating-group">
+                            <label class="form-label">
+                                <i class="fas fa-users"></i>
+                                Personel Hizmet Kalitesi
+                            </label>
+                            <div class="rating-stars">
+                                {% for i in "12345" %}
+                                    <input type="radio" name="staff_service" value="{{ i }}" id="staff_{{ i }}">
+                                    <label for="staff_{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                            <div class="rating-description">
+                                Personelimizin size sunduğu hizmet kalitesini değerlendirin
+                            </div>
+                        </div>
+
+                        <div class="rating-group">
+                            <label class="form-label">
+                                <i class="fas fa-comments"></i>
+                                İletişim Kalitesi
+                            </label>
+                            <div class="rating-stars">
+                                {% for i in "12345" %}
+                                    <input type="radio" name="communication_quality" value="{{ i }}" id="comm_{{ i }}">
+                                    <label for="comm_{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                            <div class="rating-description">
+                                Süreç boyunca iletişim kalitemizi değerlendirin
+                            </div>
+                        </div>
+
+                        <div class="rating-group">
+                            <label class="form-label">
+                                <i class="fas fa-clock"></i>
+                                Süreç Hızı
+                            </label>
+                            <div class="rating-stars">
+                                {% for i in "12345" %}
+                                    <input type="radio" name="process_speed" value="{{ i }}" id="speed_{{ i }}">
+                                    <label for="speed_{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                            <div class="rating-description">
+                                İşlemlerinizin tamamlanma hızını değerlendirin
+                            </div>
+                        </div>
+
+                        <div class="rating-group">
+                            <label class="form-label">
+                                <i class="fas fa-award"></i>
+                                Profesyonellik
+                            </label>
+                            <div class="rating-stars">
+                                {% for i in "12345" %}
+                                    <input type="radio" name="professionalism" value="{{ i }}" id="prof_{{ i }}">
+                                    <label for="prof_{{ i }}"><i class="fas fa-star"></i></label>
+                                {% endfor %}
+                            </div>
+                            <div class="rating-description">
+                                Ekibimizin profesyonellik düzeyini değerlendirin
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-comment-alt"></i>
+                                Ek Görüş ve Önerileriniz
+                            </div>
+                            <textarea class="form-control" id="feedback" name="feedback" rows="4" 
+                                    placeholder="Deneyiminiz hakkında detaylı görüşlerinizi paylaşabilirsiniz. Önerileriniz bizim için çok değerli..."></textarea>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-thumbs-up"></i>
+                                Bizi Tavsiye Eder misiniz?
+                            </div>
+                            <select class="form-select" name="recommendation" id="recommendation">
+                                <option value="">Lütfen seçiniz...</option>
+                                <option value="5">Kesinlikle Evet - Herkese tavsiye ederim</option>
+                                <option value="4">Evet - Tavsiye ederim</option>
+                                <option value="3">Kararsızım</option>
+                                <option value="2">Hayır - Tavsiye etmem</option>
+                                <option value="1">Kesinlikle Hayır</option>
+                            </select>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-koc-red btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i> Anketi Gönder
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Rating stars functionality with Koç Gayrimenkul styling
+        document.querySelectorAll('.rating-stars').forEach(group => {
+            const inputs = group.querySelectorAll('input[type="radio"]');
+            const labels = group.querySelectorAll('label');
+            
+            labels.forEach((label, index) => {
+                label.addEventListener('click', () => {
+                    inputs[index].checked = true;
+                    updateStars(group, index + 1);
+                });
+                
+                label.addEventListener('mouseenter', () => {
+                    highlightStars(group, index + 1);
+                });
+            });
+            
+            group.addEventListener('mouseleave', () => {
+                const checkedInput = group.querySelector('input[type="radio"]:checked');
+                if (checkedInput) {
+                    const checkedIndex = Array.from(inputs).indexOf(checkedInput);
+                    updateStars(group, checkedIndex + 1);
+                } else {
+                    resetStars(group);
+                }
+            });
+        });
+        
+        function updateStars(group, rating) {
+            const labels = group.querySelectorAll('label');
+            labels.forEach((label, index) => {
+                if (index < rating) {
+                    label.style.color = 'var(--koc-red)';
+                    label.style.transform = 'scale(1.1)';
+                } else {
+                    label.style.color = '#e9ecef';
+                    label.style.transform = 'scale(1)';
+                }
+            });
+        }
+        
+        function highlightStars(group, rating) {
+            const labels = group.querySelectorAll('label');
+            labels.forEach((label, index) => {
+                if (index < rating) {
+                    label.style.color = 'var(--koc-red-light)';
+                    label.style.transform = 'scale(1.15)';
+                } else {
+                    label.style.color = '#e9ecef';
+                    label.style.transform = 'scale(1)';
+                }
+            });
+        }
+        
+        function resetStars(group) {
+            const labels = group.querySelectorAll('label');
+            labels.forEach(label => {
+                label.style.color = '#e9ecef';
+                label.style.transform = 'scale(1)';
+            });
+        }
+        
+        // Enhanced form validation with better UX
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const requiredRatings = ['overall_satisfaction', 'staff_service', 'communication_quality', 'process_speed', 'professionalism'];
+            let isValid = true;
+            let firstMissing = null;
+            
+            requiredRatings.forEach(name => {
+                const checked = document.querySelector(`input[name="${name}"]:checked`);
+                const group = document.querySelector(`input[name="${name}"]`).closest('.rating-group');
+                
+                if (!checked) {
+                    isValid = false;
+                    if (!firstMissing) firstMissing = group;
+                    group.style.borderLeft = '4px solid #dc3545';
+                    group.style.backgroundColor = '#fff5f5';
+                } else {
+                    group.style.borderLeft = '4px solid var(--koc-red)';
+                    group.style.backgroundColor = '#f8f9fe';
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                
+                // Scroll to first missing field
+                if (firstMissing) {
+                    firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+                // Show custom alert with Koç Gayrimenkul styling
+                showCustomAlert('Lütfen tüm değerlendirme sorularını cevaplayınız.', 'warning');
+                
+                // Reset border colors after 3 seconds
+                setTimeout(() => {
+                    document.querySelectorAll('.rating-group').forEach(group => {
+                        group.style.borderLeft = '4px solid var(--koc-red)';
+                        group.style.backgroundColor = '#f8f9fe';
+                    });
+                }, 3000);
+            } else {
+                // Show success message
+                showCustomAlert('Anketiniz gönderiliyor...', 'success');
+            }
+        });
+        
+        // Custom alert function
+        function showCustomAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'warning'} alert-dismissible fade show`;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.style.minWidth = '300px';
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        // Initialize stars on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.rating-stars').forEach(group => {
+                const checkedInput = group.querySelector('input[type="radio"]:checked');
+                if (checkedInput) {
+                    const inputs = group.querySelectorAll('input[type="radio"]');
+                    const checkedIndex = Array.from(inputs).indexOf(checkedInput);
+                    updateStars(group, checkedIndex + 1);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

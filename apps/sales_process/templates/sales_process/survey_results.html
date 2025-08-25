@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Anket Sonuçları - Koç Gayrimenkul Panel{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css" rel="stylesheet">
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .survey-table {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .rating-stars {
+        color: #ffc107;
+    }
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-expired {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-bar"></i> Anket Sonuçları</h2>
+                <div>
+                    <button class="btn btn-outline-primary" onclick="exportResults()">
+                        <i class="fas fa-download"></i> Excel'e Aktar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- İstatistik Kartları -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="stats-number">{{ total_surveys }}</div>
+                <div>Toplam Anket</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="stats-number">{{ completed_surveys }}</div>
+                <div>Tamamlanan</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="stats-number">{{ completion_rate|floatformat:1 }}%</div>
+                <div>Tamamlanma Oranı</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="stats-number">{{ average_rating|floatformat:1 }}</div>
+                <div>Ortalama Puan</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafikler -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5 class="mb-3">Anket Durumu Dağılımı</h5>
+                <canvas id="statusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5 class="mb-3">Ortalama Puanlar</h5>
+                <canvas id="ratingsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detaylı Sonuçlar Tablosu -->
+    <div class="row">
+        <div class="col-12">
+            <div class="survey-table">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Müşteri</th>
+                                <th>Gönderim Tarihi</th>
+                                <th>Durum</th>
+                                <th>Genel Memnuniyet</th>
+                                <th>Personel Hizmeti</th>
+                                <th>İletişim</th>
+                                <th>Süreç Hızı</th>
+                                <th>Profesyonellik</th>
+                                <th>Tavsiye</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for survey in surveys %}
+                            <tr>
+                                <td>
+                                    <strong>{{ survey.lead.first_name }} {{ survey.lead.last_name }}</strong><br>
+                                    <small class="text-muted">{{ survey.lead.phone }}</small>
+                                </td>
+                                <td>{{ survey.created_at|date:"d.m.Y H:i" }}</td>
+                                <td>
+                                    {% if survey.status == 'completed' %}
+                                        <span class="status-badge status-completed">Tamamlandı</span>
+                                    {% elif survey.status == 'sent' %}
+                                        <span class="status-badge status-pending">Bekliyor</span>
+                                    {% else %}
+                                        <span class="status-badge status-expired">Süresi Doldu</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if survey.overall_satisfaction %}
+                                        <div class="rating-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= survey.overall_satisfaction %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if survey.staff_service %}
+                                        <div class="rating-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= survey.staff_service %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if survey.communication_quality %}
+                                        <div class="rating-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= survey.communication_quality %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if survey.process_speed %}
+                                        <div class="rating-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= survey.process_speed %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if survey.professionalism %}
+                                        <div class="rating-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= survey.professionalism %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if survey.recommendation %}
+                                        <div class="rating-stars">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= survey.recommendation %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if survey.status == 'sent' %}
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="sendReminder('{{ survey.survey_id }}')"
+                                                title="Hatırlatma Gönder">
+                                            <i class="fas fa-bell"></i>
+                                        </button>
+                                    {% endif %}
+                                    {% if survey.feedback %}
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                onclick="showFeedback('{{ survey.feedback|escapejs }}')"
+                                                title="Geri Bildirimi Görüntüle">
+                                            <i class="fas fa-comment"></i>
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center py-4">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Henüz anket sonucu bulunmuyor.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Müşteri Geri Bildirimi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="feedbackContent"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Tamamlanan', 'Bekleyen', 'Süresi Dolan'],
+            datasets: [{
+                data: [{{ completed_surveys|default:0 }}, {{ pending_surveys|default:0 }}, {{ expired_surveys|default:0 }}],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Ratings Chart
+    const ratingsCtx = document.getElementById('ratingsChart').getContext('2d');
+    new Chart(ratingsCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Genel', 'Personel', 'İletişim', 'Hız', 'Profesyonellik'],
+            datasets: [{
+                label: 'Ortalama Puan',
+                data: [{{ avg_overall|default:0 }}, {{ avg_staff|default:0 }}, {{ avg_communication|default:0 }}, {{ avg_speed|default:0 }}, {{ avg_professionalism|default:0 }}],
+                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
+        }
+    });
+
+    function sendReminder(surveyId) {
+        if (confirm('Bu müşteriye anket hatırlatması göndermek istediğinizden emin misiniz?')) {
+            fetch('{% url "sales_process:send_survey_reminder" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({survey_id: surveyId})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Hatırlatma başarıyla gönderildi!');
+                } else {
+                    alert('Hatırlatma gönderilirken hata oluştu: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Bir hata oluştu: ' + error);
+            });
+        }
+    }
+
+    function showFeedback(feedback) {
+        document.getElementById('feedbackContent').textContent = feedback;
+        new bootstrap.Modal(document.getElementById('feedbackModal')).show();
+    }
+
+    function exportResults() {
+        window.location.href = '{% url "sales_process:survey_results" %}?export=excel';
+    }
+</script>
+{% endblock %}

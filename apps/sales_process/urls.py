@@ -9,6 +9,7 @@ from . import whatsapp_views
 from . import netgsm_views
 from . import assignment_views
 from . import manager_views
+from . import survey_views
 
 app_name = 'sales_process'
 
@@ -100,13 +101,18 @@ urlpatterns = [
     path('ajax/move-stage/', views.move_stage_ajax, name='move_stage_ajax'),
     path('ajax/lead-detail/<uuid:lead_id>/', views.lead_detail_ajax, name='lead_detail_ajax'),
     
-    # Manager workflow endpoints
+    # Process completion endpoints
     path('ajax/set-payment-type/', views.set_payment_type, name='set_payment_type'),
     path('ajax/set-deed-date/', views.set_deed_date, name='set_deed_date'),
     path('ajax/complete-credit/', views.complete_credit_process, name='complete_credit_process'),
     path('ajax/complete-deed/', views.complete_deed_process, name='complete_deed_process'),
-    path('ajax/send-satisfaction-survey/', views.send_satisfaction_survey, name='send_satisfaction_survey'),
+    path('ajax/send-satisfaction-survey/', survey_views.send_satisfaction_survey, name='send_satisfaction_survey'),
     path('ajax/close-case/', views.close_case, name='close_case'),
+    
+    # Survey URLs
+    path('survey/<str:access_token>/', survey_views.survey_view, name='survey_view'),
+    path('survey-results/<str:survey_id>/', survey_views.survey_results, name='survey_results'),
+    path('ajax/send-survey-reminder/', survey_views.send_survey_reminder, name='send_survey_reminder'),
     
     # Reports
     path('reports/', views.sales_reports, name='sales_reports'),
