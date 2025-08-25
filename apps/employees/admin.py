@@ -13,9 +13,19 @@ class PositionAdmin(admin.ModelAdmin):
 
 @admin.register(EmployeeProfile)
 class EmployeeProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'role', 'position', 'phone', 'is_active')
+    list_display = ('user', 'role', 'position', 'phone', 'extension_number', 'is_active')
     list_filter = ('role', 'is_active')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'user__email', 'phone')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'user__email', 'phone', 'extension_number')
+    
+    fieldsets = (
+        ('Temel Bilgiler', {
+            'fields': ('user', 'phone', 'position', 'role', 'is_active')
+        }),
+        ('Santral Ayarları', {
+            'fields': ('extension_number',),
+            'description': 'Netgsm santral dahili numarası (örn: 101, 102, 103, 104)'
+        }),
+    )
 
 @admin.register(Permission)
 class PermissionAdmin(admin.ModelAdmin):

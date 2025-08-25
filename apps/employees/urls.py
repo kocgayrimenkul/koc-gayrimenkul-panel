@@ -33,4 +33,10 @@ urlpatterns = [
     
     # Aktivite kayıtları
     path('aktivite/', views.activity_log, name='activity_log'),
+    
+    # Extension Management API Endpoints
+    path('api/extensions/', views.employee_extensions_api, name='employee_extensions_api'),
+    path('api/extensions/available/', views.available_extensions_api, name='available_extensions_api'),
+    path('api/extensions/<int:employee_id>/assign/', views.assign_extension_api, name='assign_extension_api'),
+    path('api/extensions/<int:employee_id>/remove/', views.remove_extension_api, name='remove_extension_api'),
 ]

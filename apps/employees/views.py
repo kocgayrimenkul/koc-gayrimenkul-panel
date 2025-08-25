@@ -15,11 +15,16 @@ from django.contrib.auth.models import Group
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 
 from .models import (
     Position, EmployeeProfile, 
     Permission, ActivityLog
 )
+from .serializers import EmployeeProfileSerializer, ExtensionUpdateSerializer
 
 User = get_user_model()
 
@@ -922,3 +927,176 @@ def employee_status_toggle(request, employee_id):
         return redirect('employee_list')
     
     return JsonResponse({'success': False, 'message': 'Geçersiz istek'})
+
+
+# API Endpoints for Extension Management
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def employee_extensions_api(request):
+    """Tüm çalışanların extension bilgilerini getir"""
+    try:
+        employees = EmployeeProfile.objects.select_related('user', 'position').filter(is_active=True)
+        serializer = EmployeeProfileSerializer(employees, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data,
+            'message': 'Çalışan extension bilgileri başarıyla getirildi.'
+        })
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Hata oluştu: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def assign_extension_api(request, employee_id):
+    """Çalışana extension numarası ata"""
+    try:
+        # Sadece admin veya manager extension atayabilir
+        if not is_admin_or_manager(request.user):
+            return Response({
+                'success': False,
+                'message': 'Bu işlem için yetkiniz bulunmamaktadır.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        employee = get_object_or_404(EmployeeProfile, id=employee_id)
+        serializer = ExtensionUpdateSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            extension_number = serializer.validated_data['extension_number']
+            
+            # Mevcut extension kontrolü (kendisi hariç)
+            existing = EmployeeProfile.objects.filter(
+                extension_number=extension_number
+            ).exclude(id=employee_id)
+            
+            if existing.exists():
+                return Response({
+                    'success': False,
+                    'message': f'Bu dahili numara ({extension_number}) zaten kullanılıyor.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Extension ata
+            old_extension = employee.extension_number
+            employee.extension_number = extension_number
+            employee.save()
+            
+            # Activity log
+            ActivityLog.objects.create(
+                user=request.user,
+                action='extension_assigned',
+                description=f'{employee.user.get_full_name()} kullanıcısına {extension_number} dahili numarası atandı. (Eski: {old_extension or "Yok"})'
+            )
+            
+            return Response({
+                'success': True,
+                'message': f'{employee.user.get_full_name()} kullanıcısına {extension_number} dahili numarası başarıyla atandı.',
+                'data': {
+                    'employee_id': employee.id,
+                    'employee_name': employee.user.get_full_name(),
+                    'extension_number': extension_number,
+                    'old_extension': old_extension
+                }
+            })
+        else:
+            return Response({
+                'success': False,
+                'message': 'Geçersiz veri.',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Hata oluştu: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def remove_extension_api(request, employee_id):
+    """Çalışanın extension numarasını kaldır"""
+    try:
+        # Sadece admin veya manager extension kaldırabilir
+        if not is_admin_or_manager(request.user):
+            return Response({
+                'success': False,
+                'message': 'Bu işlem için yetkiniz bulunmamaktadır.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        employee = get_object_or_404(EmployeeProfile, id=employee_id)
+        
+        if not employee.extension_number:
+            return Response({
+                'success': False,
+                'message': 'Bu çalışanın zaten dahili numarası bulunmamaktadır.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        old_extension = employee.extension_number
+        employee.extension_number = None
+        employee.save()
+        
+        # Activity log
+        ActivityLog.objects.create(
+            user=request.user,
+            action='extension_removed',
+            description=f'{employee.user.get_full_name()} kullanıcısının {old_extension} dahili numarası kaldırıldı.'
+        )
+        
+        return Response({
+            'success': True,
+            'message': f'{employee.user.get_full_name()} kullanıcısının dahili numarası başarıyla kaldırıldı.',
+            'data': {
+                'employee_id': employee.id,
+                'employee_name': employee.user.get_full_name(),
+                'removed_extension': old_extension
+            }
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Hata oluştu: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def available_extensions_api(request):
+    """Kullanılabilir extension numaralarını getir"""
+    try:
+        # Kullanılan extension'ları al
+        used_extensions = set(
+            EmployeeProfile.objects.filter(
+                extension_number__isnull=False
+            ).values_list('extension_number', flat=True)
+        )
+        
+        # 101-199 arası önerilen extension'lar
+        suggested_extensions = []
+        for i in range(101, 200):
+            ext_str = str(i)
+            if ext_str not in used_extensions:
+                suggested_extensions.append(ext_str)
+                if len(suggested_extensions) >= 20:  # İlk 20 tanesini göster
+                    break
+        
+        return Response({
+            'success': True,
+            'data': {
+                'used_extensions': sorted(list(used_extensions)),
+                'available_extensions': suggested_extensions,
+                'total_used': len(used_extensions),
+                'total_available': len(suggested_extensions)
+            },
+            'message': 'Kullanılabilir extension numaraları başarıyla getirildi.'
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Hata oluştu: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

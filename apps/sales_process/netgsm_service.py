@@ -401,13 +401,13 @@ Koç Gayrimenkul
         
         return stats
     
-    def make_outbound_call(self, phone_number, agent_extension=None, ring_timeout=20):
+    def make_outbound_call(self, phone_number, user=None, agent_extension=None, ring_timeout=20):
         """
         Dışarı arama başlat (Postman Collection - HTTP GET Çağrı Başlatma)
         URL: http://crmsntrl.netgsm.com.tr:9111/{pbx_number}/originate
         """
         
-        print(f"[DEBUG] make_outbound_call called with phone: {phone_number}, extension: {agent_extension}")
+        print(f"[DEBUG] make_outbound_call called with phone: {phone_number}, user: {user}, extension: {agent_extension}")
         
         try:
             # Netgsm için telefon numarasını olduğu gibi kullan (destek ekibinin örneğinde 05070775025 formatında)
@@ -425,6 +425,19 @@ Koç Gayrimenkul
             url = f"{self.crm_base_url}/{self.pbx_number}/originate"
             print(f"[DEBUG] Full URL: `{url}`")
             
+            # Kullanıcının extension numarasını al
+            user_extension = None
+            if user and hasattr(user, 'employee_profile'):
+                try:
+                    user_extension = user.employee_profile.extension_number
+                    print(f"[DEBUG] User extension from profile: {user_extension}")
+                except Exception as e:
+                    print(f"[DEBUG] Error getting user extension: {e}")
+            
+            # Extension öncelik sırası: agent_extension > user_extension > default '101'
+            final_extension = str(agent_extension or user_extension or '101')
+            print(f"[DEBUG] Final extension to use: {final_extension}")
+            
             # Netgsm destek ekibinin verdiği örneğe göre doğru parametreler
             # username = santral numarası (8508850860)
             # internal_num = mevcut dahili numaralardan biri (101, 102, 103, 104)
@@ -433,7 +446,7 @@ Koç Gayrimenkul
                 'password': self.password,    # Şifre (URL encode edilmemeli)
                 'customer_num': clean_phone,  # Arama yapılacak dış numara
                 'pbxnum': self.pbx_number,    # Santral numarası
-                'internal_num': str(agent_extension or '101'),  # İç dahili numarası (100 yok, 101 var)
+                'internal_num': final_extension,  # Kullanıcının dahili numarası
                 'ring_timeout': str(ring_timeout),  # Çaldırma süresi
                 'crm_id': crm_id,             # CRM ID
                 'wait_response': '1',         # Response bekle

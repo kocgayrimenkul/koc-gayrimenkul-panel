@@ -36,6 +36,9 @@ class EmployeeProfile(models.Model):
     position = models.ForeignKey(Position, on_delete=models.SET_NULL, null=True, blank=True, 
                                 related_name="employees", verbose_name="Pozisyon")
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='employee', verbose_name="Rol")
+    extension_number = models.CharField(max_length=10, blank=True, null=True, unique=True, 
+                                      verbose_name="Dahili Numara", 
+                                      help_text="Netgsm santral dahili numarası (örn: 101, 102, 103)")
     is_active = models.BooleanField(default=True, verbose_name="Aktif mi?")
     
     def save(self, *args, **kwargs):
