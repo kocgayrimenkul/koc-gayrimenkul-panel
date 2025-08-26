@@ -74,6 +74,7 @@ def employee_create(request):
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         phone = request.POST.get('phone', '')
+        extension_number = request.POST.get('extension_number', '')
         role = request.POST.get('role')
         password = request.POST.get('password')
         
@@ -103,10 +104,25 @@ def employee_create(request):
                 last_name=last_name
             )
             
+            # Extension number validasyonu
+            if extension_number:
+                extension_number = int(extension_number) if extension_number.isdigit() else None
+                if extension_number and (extension_number < 101 or extension_number > 999):
+                    messages.error(request, "Dahili numara 101-999 arasında olmalıdır.")
+                    return redirect('employee_create')
+                
+                # Extension number benzersizlik kontrolü
+                if extension_number and EmployeeProfile.objects.filter(extension_number=extension_number).exists():
+                    messages.error(request, f"Dahili numara {extension_number} zaten kullanılıyor.")
+                    return redirect('employee_create')
+            else:
+                extension_number = None
+            
             # Çalışan profili oluştur
             employee = EmployeeProfile.objects.create(
                 user=user,
                 phone=phone,
+                extension_number=extension_number,
                 role=role
             )
             
@@ -171,6 +187,7 @@ def employee_edit(request, employee_id):
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         phone = request.POST.get('phone', '')
+        extension_number = request.POST.get('extension_number', '')
         role = request.POST.get('role')
         is_active = request.POST.get('is_active') == 'on'
         
@@ -180,6 +197,20 @@ def employee_edit(request, employee_id):
             return redirect('employee_edit', employee_id=employee_id)
         
         try:
+            # Extension number validasyonu
+            if extension_number:
+                extension_number = int(extension_number) if extension_number.isdigit() else None
+                if extension_number and (extension_number < 101 or extension_number > 999):
+                    messages.error(request, "Dahili numara 101-999 arasında olmalıdır.")
+                    return redirect('employee_edit', employee_id=employee_id)
+                
+                # Extension number benzersizlik kontrolü (mevcut çalışan hariç)
+                if extension_number and EmployeeProfile.objects.filter(extension_number=extension_number).exclude(id=employee.id).exists():
+                    messages.error(request, f"Dahili numara {extension_number} zaten kullanılıyor.")
+                    return redirect('employee_edit', employee_id=employee_id)
+            else:
+                extension_number = None
+            
             # Kullanıcı bilgilerini güncelle
             user = employee.user
             user.first_name = first_name
@@ -197,8 +228,10 @@ def employee_edit(request, employee_id):
             # Çalışan profilini güncelle
             old_role = employee.role
             old_active_status = employee.is_active
+            old_extension = employee.extension_number
             
             employee.phone = phone
+            employee.extension_number = extension_number
             employee.role = role
             employee.is_active = is_active
             
@@ -211,6 +244,11 @@ def employee_edit(request, employee_id):
                 
             if old_active_status != is_active:
                 changes.append(f"Durum değiştirildi: {'aktif' if old_active_status else 'pasif'} → {'aktif' if is_active else 'pasif'}")
+            
+            if old_extension != extension_number:
+                old_ext_text = str(old_extension) if old_extension else 'Yok'
+                new_ext_text = str(extension_number) if extension_number else 'Yok'
+                changes.append(f"Dahili numara değiştirildi: {old_ext_text} → {new_ext_text}")
             
             if changes:
                 ActivityLog.objects.create(

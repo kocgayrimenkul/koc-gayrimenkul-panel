@@ -138,6 +138,15 @@
                   </div>
                 </div>
               </div>
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="form-group">
+                    <label class="form-control-label" for="extension_number">Dahili Numara</label>
+                    <input type="number" id="extension_number" name="extension_number" class="form-control" min="101" max="999" placeholder="Örn: 101" value="{{ employee.extension_number|default:'' }}">
+                    <small class="form-text text-muted">Çalışanın dahili telefon numarası (101-999 arası).</small>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <hr class="my-4" />
@@ -281,4 +290,4 @@
     });
   });
 </script>
-{% endblock javascripts %} 
+{% endblock javascripts %}

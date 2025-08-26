@@ -434,6 +434,7 @@
                   <th scope="col">Çalışan</th>
                   <th scope="col">Rol</th>
                   <th scope="col">Telefon</th>
+                  <th scope="col">Dahili</th>
                   <th scope="col">Durum</th>
                   <th scope="col" class="text-right">İşlemler</th>
                 </tr>
@@ -469,6 +470,16 @@
                     <div class="d-flex align-items-center">
                       <i class="fas fa-phone text-muted mr-2"></i>
                       <span>{{ employee.phone }}</span>
+                    </div>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if employee.extension_number %}
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-phone-alt text-muted mr-2"></i>
+                      <span class="badge badge-light">{{ employee.extension_number }}</span>
                     </div>
                     {% else %}
                     <span class="text-muted">-</span>
@@ -842,4 +853,4 @@
     }, 500);
   });
 </script>
-{% endblock javascripts %} 
+{% endblock javascripts %}
