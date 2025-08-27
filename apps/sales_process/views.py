@@ -289,49 +289,116 @@ def lead_create(request):
             customer_name = request.POST.get('customer_name')
             customer_phone = request.POST.get('customer_phone')
             customer_email = request.POST.get('customer_email', '')
+            source = request.POST.get('source', 'manuel')
+            contact_type = request.POST.get('contact_type', 'bilgi_alma')
+            neighborhood_id = request.POST.get('neighborhood')
+            property_id = request.POST.get('property_id')
             property_type = request.POST.get('property_type')
             property_location = request.POST.get('property_location')
             budget_min = request.POST.get('budget_min', 0)
             budget_max = request.POST.get('budget_max', 0)
+            meeting_result = request.POST.get('meeting_result', '')
+            meeting_status = request.POST.get('meeting_status', 'bekliyor')
+            response_date = request.POST.get('response_date')
+            reminder_date = request.POST.get('reminder_date')
+            lead_notes = request.POST.get('lead_notes', '')
             
             # İlk aşamayı getir
             initial_stage = SalesStage.objects.get(name='bilgi_verildi')
             
             # Önce Customer objesi oluştur
             from apps.customers.models import Customer, Neighborhood
+            from apps.portfolio.models import Property
             
-            # Default neighborhood al (ilk neighborhood'u kullan)
-            default_neighborhood = Neighborhood.objects.first()
-            if not default_neighborhood:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Sistem hatası: Mahalle bulunamadı. Lütfen yöneticinize başvurun.'
-                })
+            # Neighborhood seçimini işle
+            selected_neighborhood = None
+            if neighborhood_id:
+                try:
+                    selected_neighborhood = Neighborhood.objects.get(id=neighborhood_id)
+                except Neighborhood.DoesNotExist:
+                    pass
+            
+            # Eğer neighborhood seçilmemişse default al
+            if not selected_neighborhood:
+                selected_neighborhood = Neighborhood.objects.first()
+                if not selected_neighborhood:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Sistem hatası: Mahalle bulunamadı. Lütfen yöneticinize başvurun.'
+                    })
+            
+            # Property seçimini işle
+            selected_property = None
+            if property_id:
+                try:
+                    selected_property = Property.objects.get(id=property_id, is_active=True)
+                except Property.DoesNotExist:
+                    pass
             
             # Customer oluştur
-            customer = Customer.objects.create(
-                full_name=customer_name,
-                phone=customer_phone,
-                neighborhood=default_neighborhood,
-                consultant=request.user,
-                source='manuel',
-                contact_type='bilgi_alma'
-            )
+            customer_data = {
+                'full_name': customer_name,
+                'phone': customer_phone,
+                'neighborhood': selected_neighborhood,
+                'consultant': request.user,
+                'source': source,
+                'contact_type': contact_type,
+                'meeting_result': meeting_result,
+                'notes': lead_notes
+            }
+            
+            # Eğer property seçilmişse ekle
+            if selected_property:
+                customer_data['property'] = selected_property
+            
+            # Tarih alanlarını kontrol et ve ekle
+            if response_date:
+                try:
+                    customer_data['response_date'] = datetime.strptime(response_date, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            
+            if reminder_date:
+                try:
+                    customer_data['reminder_date'] = datetime.strptime(reminder_date, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            
+            customer = Customer.objects.create(**customer_data)
             
             # Lead oluştur ve Customer'ı referans al
-            lead = Lead.objects.create(
-                customer=customer,
-                customer_name=customer_name,
-                customer_phone=customer_phone,
-                customer_email=customer_email,
-                property_type=property_type,
-                property_location=property_location,
-                budget_min=budget_min,
-                budget_max=budget_max,
-                current_stage=initial_stage,
-                assigned_staff=request.user,
-                source='manuel'
-            )
+            lead_data = {
+                'customer': customer,
+                'customer_name': customer_name,
+                'customer_phone': customer_phone,
+                'customer_email': customer_email,
+                'source': source,
+                'contact_type': contact_type,
+                'property_type': property_type,
+                'property_location': property_location,
+                'budget_min': budget_min,
+                'budget_max': budget_max,
+                'current_stage': initial_stage,
+                'assigned_staff': request.user,
+                'meeting_result': meeting_result,
+                'meeting_status': meeting_status,
+                'lead_notes': lead_notes
+            }
+            
+            # Tarih alanlarını kontrol et ve ekle
+            if response_date:
+                try:
+                    lead_data['response_date'] = datetime.strptime(response_date, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            
+            if reminder_date:
+                try:
+                    lead_data['reminder_date'] = datetime.strptime(reminder_date, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            
+            lead = Lead.objects.create(**lead_data)
             
             # İlk not ekle
             LeadNote.objects.create(
@@ -355,8 +422,17 @@ def lead_create(request):
                 'message': f'Hata: {str(e)}'
             })
     
+    # GET request için gerekli verileri hazırla
+    from apps.customers.models import Neighborhood
+    from apps.portfolio.models import Property
+    
+    neighborhoods = Neighborhood.objects.all().order_by('name')
+    properties = Property.objects.filter(is_active=True).order_by('apartment_name')
+    
     context = {
         'title': 'Yeni Müşteri Kaydı',
+        'neighborhoods': neighborhoods,
+        'properties': properties,
     }
     return render(request, 'sales_process/lead_create.html', context)
 

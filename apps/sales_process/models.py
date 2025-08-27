@@ -91,6 +91,18 @@ class Lead(models.Model):
         ('diger', 'Diğer'),
     ]
     
+    CONTACT_TYPE_CHOICES = [
+        ('bilgi_alma', 'Bilgi Alma'),
+        ('daire_sunumu', 'Daire Sunumu'),
+        ('sikayet', 'Şikayet'),
+    ]
+    
+    MEETING_STATUS_CHOICES = [
+        ('bekliyor', 'Bekliyor'),
+        ('olumlu', 'Olumlu'),
+        ('olumsuz', 'Olumsuz'),
+    ]
+    
     PROPERTY_TYPE_CHOICES = [
         ('apartment', 'Daire'),
         ('villa', 'Villa'),
@@ -113,6 +125,7 @@ class Lead(models.Model):
                                     validators=[RegexValidator(regex=r'^\+?1?\d{9,15}$')])
     customer_email = models.EmailField(blank=True, verbose_name="E-posta")
     source = models.CharField(max_length=50, choices=SOURCE_CHOICES, verbose_name="Kaynak")
+    contact_type = models.CharField(max_length=50, choices=CONTACT_TYPE_CHOICES, default='bilgi_alma', verbose_name="İletişim Türü")
     property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, blank=True, verbose_name="Gayrimenkul Tipi")
     property_location = models.CharField(max_length=200, blank=True, verbose_name="Gayrimenkul Lokasyonu")
     
@@ -138,6 +151,16 @@ class Lead(models.Model):
     # Tapu işlemleri
     deed_transfer_date = models.DateField(null=True, blank=True, verbose_name="Tapu Devir Tarihi")
     deed_completed = models.BooleanField(default=False, verbose_name="Tapu Devri Tamamlandı")
+    
+    # Customer modelinden eklenen alanlar
+    meeting_result = models.TextField(verbose_name="Görüşme Sonucu", blank=True)
+    meeting_status = models.CharField(max_length=20, choices=MEETING_STATUS_CHOICES, 
+                                     default='bekliyor', verbose_name="Görüşme Durumu")
+    response_date = models.DateField(verbose_name="Geri Dönüş Tarihi", null=True, blank=True, 
+                                    help_text="Danışmanın müşteriye geri dönüş yaptığı tarih")
+    reminder_date = models.DateField(verbose_name="Hatırlatma Tarihi", null=True, blank=True, 
+                                    help_text="Bu tarihte sistem otomatik olarak hatırlatma bildirecek")
+    lead_notes = models.TextField(verbose_name="Notlar", blank=True, null=True)
     
     # Memnuniyet anketi
     satisfaction_survey_sent = models.BooleanField(default=False, verbose_name="Memnuniyet Anketi Gönderildi")

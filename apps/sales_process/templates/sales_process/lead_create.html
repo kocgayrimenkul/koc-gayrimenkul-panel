@@ -53,6 +53,44 @@
   color: var(--koc-black);
 }
 </style>
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+  /* Select2 özel stilleri */
+  .select2-container--default .select2-selection--single {
+    height: calc(2.75rem + 2px);
+    padding: 0.625rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.375rem;
+    border: 1px solid #cad1d7;
+  }
+  
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.5;
+    padding-left: 0;
+    color: #8898aa;
+  }
+  
+  .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: calc(2.75rem + 2px);
+  }
+  
+  .input-group .select2-container {
+    width: auto !important;
+    flex: 1 1 auto;
+  }
+  
+  .select2-dropdown {
+    border-color: #cad1d7;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px rgba(50, 50, 93, 0.15), 0 1px 0 rgba(0, 0, 0, 0.02);
+  }
+  
+  .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--koc-red);
+  }
+</style>
 {% endblock stylesheets %}
 
 {% block content %}
@@ -115,6 +153,48 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
+                                    <label for="source">Müşteri Kaynağı *</label>
+                                    <select class="form-control" id="source" name="source" required>
+                                        <option value="">Kaynak Seçiniz</option>
+                                        <option value="branda">Branda</option>
+                                        <option value="sahibinden">Sahibinden</option>
+                                        <option value="referans">Referans</option>
+                                        <option value="emlakjet">Emlakjet</option>
+                                        <option value="hepsi_emlak">Hepsi Emlak</option>
+                                        <option value="sosyal_medya">Sosyal Medya</option>
+                                        <option value="diger">Diğer</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="neighborhood">Mahalle *</label>
+                                    <select class="form-control" id="neighborhood" name="neighborhood" required>
+                                        <option value="">Mahalle Seçiniz</option>
+                                        {% for neighborhood in neighborhoods %}
+                                          <option value="{{ neighborhood.id }}">
+                                            {{ neighborhood.name }}
+                                          </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="contact_type">İletişim Türü *</label>
+                                    <select class="form-control" id="contact_type" name="contact_type" required>
+                                        <option value="bilgi_alma" selected>Bilgi Alma</option>
+                                        <option value="daire_sunumu">Daire Sunumu</option>
+                                        <option value="sikayet">Şikayet</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
                                     <label for="property_type">Emlak Tipi</label>
                                     <select class="form-control" id="property_type" name="property_type">
                                         <option value="">Seçiniz</option>
@@ -127,10 +207,34 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="property_location">Lokasyon</label>
                                     <input type="text" class="form-control" id="property_location" name="property_location">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="property_id">Portföydeki Emlak</label>
+                                    <div class="input-group input-group-merge">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-home"></i></span>
+                                        </div>
+                                        <select id="property_id" name="property_id" class="form-control select2-property">
+                                            <option value="">Emlak Seçiniz (Opsiyonel)</option>
+                                            {% for property in properties %}
+                                              <option value="{{ property.id }}">
+                                                [{{ property.property_type|upper }}] 
+                                                {% if property.web_title %}
+                                                  {{ property.web_title }} - {{ property.apartment_name }}
+                                                {% else %}
+                                                  {{ property.apartment_name }}
+                                                {% endif %}
+                                                - {{ property.neighborhood.name }} ({{ property.price|floatformat:0 }} ₺)
+                                              </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -145,6 +249,53 @@
                                 <div class="form-group">
                                     <label for="budget_max">Maksimum Bütçe</label>
                                     <input type="number" class="form-control" id="budget_max" name="budget_max">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="meeting_result">Görüşme Sonucu</label>
+                                    <select class="form-control" id="meeting_result" name="meeting_result">
+                                        <option value="">Seçiniz</option>
+                                        <option value="olumlu">Olumlu</option>
+                                        <option value="olumsuz">Olumsuz</option>
+                                        <option value="kararsiz">Kararsız</option>
+                                        <option value="tekrar_gorusme">Tekrar Görüşme</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="meeting_status">Görüşme Durumu</label>
+                                    <select class="form-control" id="meeting_status" name="meeting_status">
+                                        <option value="bekliyor" selected>Bekliyor</option>
+                                        <option value="tamamlandi">Tamamlandı</option>
+                                        <option value="iptal">İptal</option>
+                                        <option value="ertelendi">Ertelendi</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="response_date">Yanıt Tarihi</label>
+                                    <input type="date" class="form-control" id="response_date" name="response_date">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="reminder_date">Hatırlatma Tarihi</label>
+                                    <input type="date" class="form-control" id="reminder_date" name="reminder_date">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="lead_notes">Notlar</label>
+                                    <textarea class="form-control" id="lead_notes" name="lead_notes" rows="3" placeholder="Müşteri ile ilgili notlarınızı buraya yazabilirsiniz..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -163,10 +314,85 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
+    // Türkçe karakter normalleştirme fonksiyonu
+    function normalizeText(text) {
+      return text.toLowerCase()
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ı/g, 'i')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/Ğ/g, 'g')
+        .replace(/Ü/g, 'u')
+        .replace(/Ş/g, 's')
+        .replace(/İ/g, 'i')
+        .replace(/Ö/g, 'o')
+        .replace(/Ç/g, 'c');
+    }
+    
+    // Select2 - Portföydeki Daire
+    $('.select2-property').select2({
+      placeholder: "Emlak Seçiniz (Opsiyonel)",
+      allowClear: true,
+      width: '100%',
+      matcher: function(params, data) {
+        // Eğer arama terimi yoksa tüm sonuçları göster
+        if ($.trim(params.term) === '') {
+          return data;
+        }
+        
+        // Arama terimini normalleştir
+        var searchTerm = normalizeText(params.term);
+        var optionText = normalizeText(data.text);
+        
+        // Metin içinde herhangi bir yerde arama yap
+        if (optionText.indexOf(searchTerm) > -1) {
+          return data;
+        }
+        
+        // Sonuç bulunamadı
+        return null;
+      },
+      language: {
+        noResults: function() {
+          return "Sonuç bulunamadı";
+        },
+        searching: function() {
+          return "Aranıyor...";
+        },
+        inputTooShort: function() {
+          return "En az 1 karakter giriniz";
+        }
+      }
+    });
+    
+    // Input group ile uyumlu hale getir
+    $('.select2-property').on('select2:open', function() {
+      document.querySelector('.select2-search__field').focus();
+    });
+    
+    // Telefon için maske
+    $('#customer_phone').on('input', function() {
+      var value = $(this).val().replace(/\D/g, '');
+      if (value.length > 11) {
+        value = value.substring(0, 11);
+      }
+      $(this).val(value);
+    });
+    
+    // Form submit doğrulama
     $('#leadCreateForm').on('submit', function(e) {
         e.preventDefault();
+        
+        var phoneValue = $('#customer_phone').val();
+        if (phoneValue.length < 11) {
+            alert('Lütfen geçerli bir telefon numarası giriniz. (11 hane olmalıdır)');
+            return false;
+        }
         
         $.ajax({
             url: '{% url "sales_process:lead_create" %}',
