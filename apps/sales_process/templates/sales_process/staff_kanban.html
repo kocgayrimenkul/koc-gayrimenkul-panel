@@ -423,9 +423,65 @@
 let currentLeadId = null;
 let availableProperties = [];
 
-// Kanban işlemleri
+// Kanban işlemleri - AJAX ile güncelle
 function refreshKanban() {
-    location.reload();
+    fetch(window.location.href, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        // Yeni HTML'den kanban kolonlarını çıkar
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Her kolonu güncelle
+        const stages = ['yeni_musteri', 'arama_yapildi', 'randevu_alindi', 'daire_sunumu', 'teklif_sunuldu', 'sozlesme_imzalandi', 'tapu_islemi', 'kredi_islemleri', 'hizmet_tamamlandi'];
+        
+        stages.forEach(stage => {
+            const oldColumn = document.querySelector(`[data-stage="${stage}"] .kanban-cards`);
+            const newColumn = tempDiv.querySelector(`[data-stage="${stage}"] .kanban-cards`);
+            
+            if (oldColumn && newColumn) {
+                oldColumn.innerHTML = newColumn.innerHTML;
+                
+                // Yeni kartlara event listener ekle
+                oldColumn.querySelectorAll('.lead-card').forEach(card => {
+                    card.addEventListener('click', function(e) {
+                        if (!e.target.closest('.lead-actions')) {
+                            const leadId = this.dataset.leadId;
+                            openLeadModal(leadId);
+                        }
+                    });
+                });
+            }
+            
+            // Kolon başlığındaki sayıları güncelle
+            const oldHeader = document.querySelector(`[data-stage="${stage}"] .kanban-header h5`);
+            const newHeader = tempDiv.querySelector(`[data-stage="${stage}"] .kanban-header h5`);
+            if (oldHeader && newHeader) {
+                oldHeader.textContent = newHeader.textContent;
+            }
+        });
+        
+        // Üst kısımdaki istatistikleri güncelle
+        const oldStats = document.querySelectorAll('.stat-number');
+        const newStats = tempDiv.querySelectorAll('.stat-number');
+        oldStats.forEach((stat, index) => {
+            if (newStats[index]) {
+                stat.textContent = newStats[index].textContent;
+            }
+        });
+        
+        console.log('Kanban başarıyla güncellendi');
+    })
+    .catch(error => {
+        console.error('Kanban güncelleme hatası:', error);
+        // Hata durumunda sayfa yenileme
+        location.reload();
+    });
 }
 
 // Sunum tamamlama fonksiyonu
@@ -585,7 +641,7 @@ function moveToNextStage(leadId) {
 
 function moveToDaireSunumu(leadId) {
     // Daire sunumu yapıldı onayı
-    if (confirm('Müşteriye daire sunumu yapıldı mı? Bu işlem lead\'i "Daire Sunumu" aşamasına geçirecek.')) {
+    if (confirm('Müşteriye daire sunumu yapmak istiyor musunuz? Bu işlem lead\'i "Daire Sunumu" aşamasına geçirecek.')) {
         const updateStageUrl = '{% url "sales_process:update_stage_ajax" %}';
         fetch(updateStageUrl, {
             method: 'POST',
@@ -678,11 +734,7 @@ function displayLeadDetails(lead) {
                                 <i class="fas fa-phone mr-1"></i>${lead.customer_phone}
                             </a>
                         </p>
-                        <p><strong>E-posta:</strong> 
-                            <a href="mailto:${lead.customer_email}" class="text-primary">
-                                <i class="fas fa-envelope mr-1"></i>${lead.customer_email || 'Belirtilmemiş'}
-                            </a>
-                        </p>
+
                         <p><strong>Kaynak:</strong> 
                             <span class="badge badge-info">${lead.source_display}</span>
                         </p>

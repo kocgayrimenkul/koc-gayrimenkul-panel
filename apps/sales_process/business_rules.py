@@ -345,10 +345,7 @@ class SalesProcessRules:
         if phone and not phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').isdigit():
             warnings.append('Telefon numarası formatı geçersiz olabilir.')
         
-        # E-posta formatı kontrolü
-        email = lead_data.get('email', '')
-        if email and '@' not in email:
-            warnings.append('E-posta formatı geçersiz olabilir.')
+
         
         # Mükerrer kontrol
         if phone:

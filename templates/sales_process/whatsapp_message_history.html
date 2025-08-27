@@ -135,6 +135,56 @@
     font-size: 12px;
     border-radius: 15px;
 }
+
+/* JSON mesaj formatlaması için stiller */
+.message-main-text {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.message-price {
+    background-color: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin: 8px 0;
+    font-size: 14px;
+    color: #2e7d32;
+}
+
+.message-images {
+    margin-top: 10px;
+}
+
+.message-image {
+    border-radius: 8px;
+    overflow: hidden;
+    display: inline-block;
+    margin-right: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.message-image img {
+    transition: transform 0.2s ease;
+}
+
+.message-image img:hover {
+    transform: scale(1.05);
+}
+
+.message-links {
+    margin-top: 10px;
+}
+
+.message-link {
+    margin-bottom: 5px;
+}
+
+.message-link .btn {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 15px;
+}
 </style>
 {% endblock %}
 
@@ -208,7 +258,9 @@
                                             </div>
                                         </div>
                                     {% else %}
-                                        {{ message.content|linebreaks }}
+                                        <div class="message-text" data-content="{{ message.content|escapejs }}">
+                                            {{ message.content|linebreaks }}
+                                        </div>
                                     {% endif %}
                                 </div>
                                 
@@ -278,14 +330,75 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    // Chat container'ı en alta kaydır
+    // Chat container'ı en alta kaydır$(document).ready(function() {
     scrollToBottom();
+    formatJsonMessages();
     
     // Auto-refresh her 30 saniyede bir
     setInterval(function() {
         refreshMessages();
     }, 30000);
 });
+
+function formatJsonMessages() {
+    $('.message-text').each(function() {
+        var content = $(this).data('content');
+        if (content && typeof content === 'string') {
+            try {
+                // JSON formatında mı kontrol et
+                if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+                    var jsonData = JSON.parse(content);
+                    var formattedHtml = formatMessageContent(jsonData);
+                    $(this).html(formattedHtml);
+                }
+            } catch (e) {
+                // JSON değilse orijinal içeriği koru
+                console.log('JSON parse error:', e);
+            }
+        }
+    });
+}
+
+function formatMessageContent(data) {
+    var html = '';
+    
+    // Metin içeriği
+    if (data.text) {
+        html += '<div class="message-main-text">' + data.text + '</div>';
+    }
+    
+    // Fiyat bilgisi
+    if (data.price) {
+        html += '<div class="message-price"><strong>💰 Fiyat:</strong> ' + data.price + '</div>';
+    }
+    
+    // Resimler
+    if (data.images && data.images.length > 0) {
+        html += '<div class="message-images mt-2">';
+        data.images.forEach(function(image, index) {
+            var imageUrl = typeof image === 'string' ? image : (image.url || image);
+            html += '<div class="message-image mb-2">';
+            html += '<img src="' + imageUrl + '" class="img-fluid rounded" style="max-width: 200px; cursor: pointer;" onclick="window.open(this.src, \'_blank\')">';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+    
+    // Linkler
+    if (data.links && data.links.length > 0) {
+        html += '<div class="message-links mt-2">';
+        data.links.forEach(function(link) {
+            html += '<div class="message-link mb-1">';
+            html += '<a href="' + link.url + '" target="_blank" class="btn btn-sm btn-outline-primary">';
+            html += '<i class="fas fa-external-link-alt"></i> ' + (link.title || 'Link');
+            html += '</a>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+    
+    return html;
+}
 
 function scrollToBottom() {
     var chatContainer = document.getElementById('chatContainer');
@@ -300,6 +413,7 @@ function refreshMessages() {
             // Sadece chat içeriğini güncelle
             var newContent = $(response).find('#chatContainer').html();
             $('#chatContainer').html(newContent);
+            formatJsonMessages(); // Yeni mesajları da formatla
             scrollToBottom();
         },
         error: function() {

@@ -16,7 +16,7 @@ class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
         fields = [
-            'customer_name', 'customer_phone', 'customer_email', 'source', 'contact_type',
+            'customer_name', 'customer_phone', 'source', 'contact_type',
             'interested_property', 'neighborhood', 'budget_min', 'budget_max',
             'priority', 'payment_type', 'meeting_result', 'meeting_status',
             'response_date', 'reminder_date', 'lead_notes'
@@ -24,7 +24,7 @@ class LeadForm(forms.ModelForm):
         widgets = {
             'customer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Adı Soyadı'}),
             'customer_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Telefon'}),
-            'customer_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'E-posta'}),
+
             'source': forms.Select(attrs={'class': 'form-control'}),
             'contact_type': forms.Select(attrs={'class': 'form-control'}),
             'interested_property': forms.Select(attrs={'class': 'form-control'}),

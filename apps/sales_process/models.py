@@ -123,7 +123,6 @@ class Lead(models.Model):
     customer_name = models.CharField(max_length=100, verbose_name="Müşteri Adı")
     customer_phone = models.CharField(max_length=20, verbose_name="Telefon", 
                                     validators=[RegexValidator(regex=r'^\+?1?\d{9,15}$')])
-    customer_email = models.EmailField(blank=True, verbose_name="E-posta")
     source = models.CharField(max_length=50, choices=SOURCE_CHOICES, verbose_name="Kaynak")
     contact_type = models.CharField(max_length=50, choices=CONTACT_TYPE_CHOICES, default='bilgi_alma', verbose_name="İletişim Türü")
     property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, blank=True, verbose_name="Gayrimenkul Tipi")

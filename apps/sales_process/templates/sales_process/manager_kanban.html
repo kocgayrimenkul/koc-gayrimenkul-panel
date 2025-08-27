@@ -1238,9 +1238,59 @@ function moveToDeeds(leadId) {
     });
 }
 
-// Sayfayı yenile
+// Kanban kartlarını AJAX ile güncelle
 function refreshBoard() {
-    location.reload();
+    fetch(window.location.href, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        // Yeni HTML'den kanban kolonlarını çıkar
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Her kolonu güncelle
+        const stages = ['yeni_musteri', 'arama_yapildi', 'randevu_alindi', 'daire_sunumu', 'teklif_sunuldu', 'sozlesme_imzalandi', 'tapu_islemi', 'kredi_islemleri', 'hizmet_tamamlandi'];
+        
+        stages.forEach(stage => {
+            const oldColumn = document.querySelector(`[data-stage="${stage}"] .kanban-cards`);
+            const newColumn = tempDiv.querySelector(`[data-stage="${stage}"] .kanban-cards`);
+            
+            if (oldColumn && newColumn) {
+                oldColumn.innerHTML = newColumn.innerHTML;
+                
+                // Yeni kartlara event listener ekle
+                oldColumn.querySelectorAll('.lead-card').forEach(card => {
+                    card.addEventListener('click', function(e) {
+                        if (e.target.closest('.action-btn')) {
+                            return;
+                        }
+                        const leadId = this.dataset.leadId;
+                        window.location.href = `/satis-surec/mudur/lead/${leadId}/`;
+                    });
+                });
+            }
+        });
+        
+        // Kolon başlıklarındaki sayıları güncelle
+        document.querySelectorAll('.kanban-column h5 .badge').forEach(badge => {
+            const stage = badge.closest('.kanban-column').dataset.stage;
+            const newBadge = tempDiv.querySelector(`[data-stage="${stage}"] h5 .badge`);
+            if (newBadge) {
+                badge.textContent = newBadge.textContent;
+            }
+        });
+        
+        console.log('Kanban kartları güncellendi');
+    })
+    .catch(error => {
+        console.error('Kanban güncelleme hatası:', error);
+        // Hata durumunda sayfa yenile
+        location.reload();
+    });
 }
 
 // CSRF token alma fonksiyonu
