@@ -879,7 +879,8 @@ def complete_presentation(request):
         
         LeadNote.objects.create(
             lead=lead,
-            note=note_text,
+            title='Sunum Tamamlandı',
+            content=note_text,
             created_by=request.user,
             note_type='system'
         )
@@ -893,7 +894,7 @@ def complete_presentation(request):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': f'Randevu planlanırken hata oluştu: {str(e)}'
+            'message': f'Sunum tamamlanırken hata oluştu: {str(e)}'
         })
 
 

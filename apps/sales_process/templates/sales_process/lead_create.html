@@ -297,6 +297,9 @@
                             <button type="submit" class="btn btn-koc-red">
                                 <i class="fas fa-save mr-2"></i>Müşteri Kaydet
                             </button>
+                            <button type="button" id="randomFillBtn" class="btn btn-outline-secondary ml-2">
+                                <i class="fas fa-random mr-2"></i>Rastgele Doldur
+                            </button>
                             <a href="{% url 'sales_process:dashboard' %}" class="btn btn-outline-secondary ml-2">
                                 <i class="fas fa-times mr-2"></i>İptal
                             </a>
@@ -308,9 +311,115 @@
     </div>
 </div>
 
+{% endblock content %}
+
+{% block javascripts %}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-$(document).ready(function() {
+$(function() {
+    // Rastgele doldurma yardımcıları
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function randomPhoneTR() {
+      var p = '05';
+      for (var i = 0; i < 9; i++) {
+        p += Math.floor(Math.random() * 10);
+      }
+      return p;
+    }
+
+    function formatDateYYYYMMDD(d) {
+      var year = d.getFullYear();
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    function randomFill() {
+      // İsim
+      var firstNames = ['Ahmet','Ayşe','Mehmet','Elif','Zeynep','Mustafa','Fatma','Can','Selin','Burak','Ece','Hakan'];
+      var lastNames = ['Yılmaz','Demir','Kaya','Şahin','Çelik','Özkan','Aydın','Arslan','Doğan','Koç','Yıldız'];
+      $('#customer_name').val(pick(firstNames) + ' ' + pick(lastNames));
+
+      // Telefon (11 hane)
+      $('#customer_phone').val(randomPhoneTR()).trigger('input');
+
+      // Kaynak
+      var sources = ['branda','sahibinden','referans','emlakjet','hepsi_emlak','sosyal_medya','diger'];
+      $('#source').val(pick(sources)).trigger('change');
+
+      // Mahalle (mevcut seçeneklerden rastgele, boş olmayan)
+      var $nh = $('#neighborhood');
+      var nhOpts = $nh.find('option').filter(function(){ return $(this).val(); });
+      if (nhOpts.length) {
+        var nhVal = $(nhOpts[Math.floor(Math.random() * nhOpts.length)]).val();
+        $nh.val(nhVal).trigger('change');
+      }
+
+      // İletişim türü
+      var contactTypes = ['bilgi_alma','daire_sunumu','sikayet'];
+      $('#contact_type').val(pick(contactTypes)).trigger('change');
+
+      // Emlak tipi
+      var propertyTypes = ['apartment','villa','office','land'];
+      $('#property_type').val(pick(propertyTypes)).trigger('change');
+
+      // Lokasyon
+      var locations = ['Merkez Mahallesi','Sahil','Çarşı','Anayol Caddesi','Park Yanı','Cumhuriyet Mah.'];
+      $('#property_location').val(pick(locations));
+
+      // Portföydeki Emlak (varsa)
+      var $prop = $('#property_id');
+      var propOpts = $prop.find('option').filter(function(){ return $(this).val(); });
+      if (propOpts.length) {
+        var propVal = $(propOpts[Math.floor(Math.random() * propOpts.length)]).val();
+        $prop.val(propVal).trigger('change');
+      }
+
+      // Bütçe
+      var minBudget = randomInt(500000, 3000000);
+      var maxBudget = minBudget + randomInt(100000, 2000000);
+      $('#budget_min').val(minBudget);
+      $('#budget_max').val(maxBudget);
+
+      // Görüşme sonucu ve durumu
+      var results = ['olumlu','olumsuz','kararsiz','tekrar_gorusme'];
+      var statuses = ['bekliyor','tamamlandi','iptal','ertelendi'];
+      $('#meeting_result').val(pick(results)).trigger('change');
+      $('#meeting_status').val(pick(statuses)).trigger('change');
+
+      // Tarihler
+      var today = new Date();
+      var response = new Date();
+      response.setDate(today.getDate() + randomInt(-3, 7));
+      var reminder = new Date(response);
+      reminder.setDate(response.getDate() + randomInt(1, 21));
+      $('#response_date').val(formatDateYYYYMMDD(response));
+      $('#reminder_date').val(formatDateYYYYMMDD(reminder));
+
+      // Notlar
+      var notes = [
+        'Müşteri proje hakkında genel bilgi istedi.',
+        'Yüz yüze görüşme için randevu talep edildi.',
+        'Bütçe aralığı netleştirilecek, tekrar aranacak.',
+        'Site içi 3+1 daire ilgisini çekiyor.',
+        'Hafta sonu daire sunumu planlanacak.'
+      ];
+      $('#lead_notes').val(pick(notes));
+    }
+
+    // Rastgele doldur butonu
+    $('#randomFillBtn').on('click', function(e) {
+      e.preventDefault();
+      randomFill();
+    });
+
     // Türkçe karakter normalleştirme fonksiyonu
     function normalizeText(text) {
       return text.toLowerCase()
@@ -328,47 +437,35 @@ $(document).ready(function() {
         .replace(/Ç/g, 'c');
     }
     
-    // Select2 - Portföydeki Daire
-    $('.select2-property').select2({
-      placeholder: "Emlak Seçiniz (Opsiyonel)",
-      allowClear: true,
-      width: '100%',
-      matcher: function(params, data) {
-        // Eğer arama terimi yoksa tüm sonuçları göster
-        if ($.trim(params.term) === '') {
-          return data;
-        }
-        
-        // Arama terimini normalleştir
-        var searchTerm = normalizeText(params.term);
-        var optionText = normalizeText(data.text);
-        
-        // Metin içinde herhangi bir yerde arama yap
-        if (optionText.indexOf(searchTerm) > -1) {
-          return data;
-        }
-        
-        // Sonuç bulunamadı
-        return null;
-      },
-      language: {
-        noResults: function() {
-          return "Sonuç bulunamadı";
+    // Select2 - Portföydeki Daire (Select2 yüklüyse kur)
+    if ($.fn && $.fn.select2) {
+      $('.select2-property').select2({
+        placeholder: "Emlak Seçiniz (Opsiyonel)",
+        allowClear: true,
+        width: '100%',
+        matcher: function(params, data) {
+          if ($.trim(params.term) === '') { return data; }
+          var searchTerm = normalizeText(params.term);
+          var optionText = normalizeText(data.text);
+          return optionText.indexOf(searchTerm) > -1 ? data : null;
         },
-        searching: function() {
-          return "Aranıyor...";
-        },
-        inputTooShort: function() {
-          return "En az 1 karakter giriniz";
+        language: {
+          noResults: function() { return "Sonuç bulunamadı"; },
+          searching: function() { return "Aranıyor..."; },
+          inputTooShort: function() { return "En az 1 karakter giriniz"; }
         }
-      }
-    });
+      });
+      $('.select2-property').on('select2:open', function() {
+        var el = document.querySelector('.select2-search__field');
+        if (el) el.focus();
+      });
+    } else {
+      console.warn('Select2 yüklenemedi. Select2 başlatma atlandı.');
+    }
     
-    // Input group ile uyumlu hale getir
-    $('.select2-property').on('select2:open', function() {
-      document.querySelector('.select2-search__field').focus();
-    });
-    
+    // Sayfa açıldığında otomatik doldur (görmek için)
+    randomFill();
+
     // Telefon için maske
     $('#customer_phone').on('input', function() {
       var value = $(this).val().replace(/\D/g, '');
@@ -411,4 +508,4 @@ $(document).ready(function() {
     });
 });
 </script>
-{% endblock %}
+{% endblock javascripts %}

@@ -81,7 +81,7 @@ def lead_created_handler(sender, instance, created, **kwargs):
             )
         
         # Tapu tarihinden 7 gün önce hatırlatma görevi
-        reminder_date = timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time()) - timedelta(days=7)
+        reminder_date = timezone.make_aware(timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time())) - timedelta(days=7)
         if reminder_date > timezone.now():
             Task.objects.create(
                 lead=instance,
@@ -96,7 +96,7 @@ def lead_created_handler(sender, instance, created, **kwargs):
             )
         
         # Tapu tarihinden 1 gün önce son kontrol görevi
-        final_check_date = timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time()) - timedelta(days=1)
+        final_check_date = timezone.make_aware(timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time())) - timedelta(days=1)
         if final_check_date > timezone.now():
             Task.objects.create(
                 lead=instance,
@@ -111,7 +111,7 @@ def lead_created_handler(sender, instance, created, **kwargs):
             )
         
         # Tapu tarihi günü görevi
-        deed_day = timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time().replace(hour=9))
+        deed_day = timezone.make_aware(timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time().replace(hour=9)))
         if deed_day > timezone.now():
             Task.objects.create(
                 lead=instance,
@@ -126,7 +126,7 @@ def lead_created_handler(sender, instance, created, **kwargs):
             )
         
         # Tapu tarihinden 1 gün sonra takip görevi
-        follow_up_date = timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time()) + timedelta(days=1)
+        follow_up_date = timezone.make_aware(timezone.datetime.combine(instance.deed_transfer_date, timezone.datetime.min.time())) + timedelta(days=1)
         Task.objects.create(
             lead=instance,
             title=f"{instance.customer_name} - Tapu Devri Takibi",

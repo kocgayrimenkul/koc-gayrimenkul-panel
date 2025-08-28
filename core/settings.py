@@ -283,7 +283,7 @@ WHATSAPP_API_VERSION = env('WHATSAPP_API_VERSION', default='v18.0')
 WHATSAPP_API_BASE_URL = f'https://graph.facebook.com/{WHATSAPP_API_VERSION}'
 
 # WhatsApp Mock Mode - Gerçek entegrasyon aktif olmadığında simülasyon için
-WHATSAPP_MOCK_MODE =False
+WHATSAPP_MOCK_MODE =True
 
 # Celery Configuration (for async tasks)
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
