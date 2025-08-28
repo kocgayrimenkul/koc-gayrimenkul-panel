@@ -301,7 +301,28 @@ def make_call(request, lead_id):
         print(f"[DEBUG] Lead found: {lead.customer_name}, phone: {lead.customer_phone}")
         
         agent_extension = request.POST.get('agent_extension')
-        print(f"[DEBUG] Agent extension: {agent_extension}")
+        print(f"[DEBUG] Agent extension from request: {agent_extension}")
+        
+        # Eğer agent_extension belirtilmemişse, lead'in atanmış personelinin dahili numarasını kullan
+        if not agent_extension and lead.assigned_staff:
+            try:
+                if hasattr(lead.assigned_staff, 'employee_profile') and lead.assigned_staff.employee_profile.extension_number:
+                    agent_extension = lead.assigned_staff.employee_profile.extension_number
+                    print(f"[DEBUG] Using assigned staff extension: {agent_extension}")
+            except Exception as e:
+                print(f"[DEBUG] Error getting assigned staff extension: {e}")
+        
+        # Eğer hala extension yoksa ve lead'in müşterisinin mahallesi varsa, o mahallenin danışmanının extension'ını kullan
+        if not agent_extension and lead.customer and lead.customer.neighborhood and lead.customer.neighborhood.consultant:
+            try:
+                neighborhood_consultant = lead.customer.neighborhood.consultant
+                if hasattr(neighborhood_consultant, 'employee_profile') and neighborhood_consultant.employee_profile.extension_number:
+                    agent_extension = neighborhood_consultant.employee_profile.extension_number
+                    print(f"[DEBUG] Using neighborhood consultant extension: {agent_extension} for consultant: {neighborhood_consultant.get_full_name()}")
+            except Exception as e:
+                print(f"[DEBUG] Error getting neighborhood consultant extension: {e}")
+        
+        print(f"[DEBUG] Final agent extension: {agent_extension}")
         
         print("[DEBUG] Initializing NetGSM service")
         netgsm_service = NetgsmService()
@@ -310,6 +331,7 @@ def make_call(request, lead_id):
         print(f"[DEBUG] Making outbound call to {lead.customer_phone} with extension {agent_extension}")
         result = netgsm_service.make_outbound_call(
             phone_number=lead.customer_phone,
+            user=lead.assigned_staff or (lead.customer.neighborhood.consultant if lead.customer and lead.customer.neighborhood else None),
             agent_extension=agent_extension
         )
         

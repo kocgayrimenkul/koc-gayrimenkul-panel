@@ -75,7 +75,7 @@
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-2"></i>İptal
                 </button>
-                <button type="button" class="btn btn-primary shadow-sm" onclick="PresentationModal.submit('{{ modal_id|default:'completePresentationModal' }}')">
+                <button type="button" class="btn btn-primary shadow-sm" onclick="PresentationModal.submit(&quot;{{ modal_id|default:'completePresentationModal' }}&quot;)">
                     <i class="fas fa-check-circle me-2"></i>Sunumu Tamamla
                 </button>
             </div>
@@ -197,9 +197,9 @@ class PresentationModalComponent {
                     }
                     
                     container.innerHTML = `
-                        <div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-warning">
+                        <div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-dark">
                             <div class="d-flex align-items-center">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
                                 <div>
                                     <strong>Uyarı!</strong> ${errorMessage}
                                 </div>

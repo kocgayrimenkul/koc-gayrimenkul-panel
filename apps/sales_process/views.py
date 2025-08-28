@@ -371,7 +371,6 @@ def lead_create(request):
                 'customer': customer,
                 'customer_name': customer_name,
                 'customer_phone': customer_phone,
-                'customer_email': customer_email,
                 'source': source,
                 'contact_type': contact_type,
                 'property_type': property_type,
@@ -456,8 +455,7 @@ def lead_list(request):
     if search_query:
         leads = leads.filter(
             Q(customer_name__icontains=search_query) |
-            Q(customer_phone__icontains=search_query) |
-            Q(customer_email__icontains=search_query)
+            Q(customer_phone__icontains=search_query)
         )
     
     # Sayfalama
@@ -512,7 +510,6 @@ def lead_update(request, lead_id):
             # Lead bilgilerini güncelle
             lead.customer_name = request.POST.get('customer_name', lead.customer_name)
             lead.customer_phone = request.POST.get('customer_phone', lead.customer_phone)
-            lead.customer_email = request.POST.get('customer_email', lead.customer_email)
             lead.property_type = request.POST.get('property_type', lead.property_type)
             lead.property_location = request.POST.get('property_location', lead.property_location)
             lead.budget_min = request.POST.get('budget_min', lead.budget_min)
@@ -1069,9 +1066,10 @@ def schedule_appointment(request):
         # Sistem notu ekle
         LeadNote.objects.create(
             lead=lead,
-            note=f"Randevu planlandı: {appointment_datetime.strftime('%d.%m.%Y %H:%M') if appointment_datetime else 'Tarih Yok'} - {appointment.get_appointment_type_display()}",
-            created_by=request.user,
-            note_type='appointment'
+            note_type='system',
+            title='Randevu Planlandı',
+            content=f"Randevu planlandı: {appointment_datetime.strftime('%d.%m.%Y %H:%M') if appointment_datetime else 'Tarih Yok'} - {appointment.get_appointment_type_display()}",
+            created_by=request.user
         )
         
         return JsonResponse({
@@ -1488,7 +1486,6 @@ def lead_detail_ajax(request, lead_id):
             'lead_id': str(lead.lead_id),
             'customer_name': lead.customer.full_name if lead.customer else lead.customer_name,
             'customer_phone': lead.customer_phone,
-            'customer_email': lead.customer_email,
             'source_display': lead.get_source_display(),
             'property_type_display': lead.get_property_type_display(),
             'budget_display': budget_display,
@@ -1587,8 +1584,7 @@ def create_direct_viewing_lead(request):
         lead = Lead.objects.create(
             customer_name=customer_name,
             customer_phone=customer_phone,
-            customer_email=customer_email,
-            lead_source='direct_viewing',
+            source='direct_viewing',
             current_stage=direct_viewing_stage,
             assigned_staff=request.user,
             stage_updated_at=timezone.now()
@@ -1722,7 +1718,7 @@ def set_payment_type(request):
         # ActionLog kaydı
         ActionLog.objects.create(
             lead=lead,
-            action_type='PAYMENT_TYPE_SELECTED',
+            action_type='PAYMENT_SET',
             title='Ödeme Tipi Seçildi',
             description=f"Ödeme tipi seçildi: {payment_type}",
             performed_by=request.user,

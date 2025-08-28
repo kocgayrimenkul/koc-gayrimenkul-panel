@@ -64,7 +64,7 @@ class LeadAdmin(admin.ModelAdmin):
         'current_stage', 'status', 'priority', 'source', 'contract_signed', 
         'payment_type', 'deed_completed', 'satisfaction_survey_sent'
     ]
-    search_fields = ['customer_name', 'customer_phone', 'customer_email']
+    search_fields = ['customer_name', 'customer_phone']
     ordering = ['-created_at']
     readonly_fields = ['lead_id', 'created_at', 'updated_at']
     
@@ -75,7 +75,7 @@ class LeadAdmin(admin.ModelAdmin):
             'fields': ('lead_id', 'customer', 'assigned_staff', 'current_stage', 'status', 'priority')
         }),
         ('Müşteri Bilgileri', {
-            'fields': ('customer_name', 'customer_phone', 'customer_email', 'source')
+            'fields': ('customer_name', 'customer_phone', 'source')
         }),
         ('Gayrimenkul İlgisi', {
             'fields': ('interested_property', 'neighborhood', 'budget_min', 'budget_max'),

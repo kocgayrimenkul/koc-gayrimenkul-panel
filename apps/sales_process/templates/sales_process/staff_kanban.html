@@ -4,6 +4,8 @@
 {% block title %} Personel Satış Akışı {% endblock %}
 
 {% block stylesheets %}
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <style>
 /* Koç Gayrimenkul kurumsal renkleri */
 :root {
@@ -608,14 +610,24 @@ function openLeadDetail(leadId) {
 
 function moveToNextStage(leadId) {
     // Sonraki aşamaya geçiş onayı
-    if (confirm('Bu müşteriyi sonraki aşamaya geçirmek istediğinizden emin misiniz?')) {
-        const moveStageUrl = '{% url "sales_process:move_stage_ajax" %}';
-        fetch(moveStageUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
+    Swal.fire({
+        title: 'Emin misiniz?',
+        text: 'Bu müşteriyi sonraki aşamaya geçirmek istediğinizden emin misiniz?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9d2235',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, geçir',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const moveStageUrl = '{% url "sales_process:move_stage_ajax" %}';
+            fetch(moveStageUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
             body: JSON.stringify({
                 'lead_id': leadId,
                 'action': 'next_stage'
@@ -636,19 +648,30 @@ function moveToNextStage(leadId) {
             console.error('Error:', error);
             showNotification('error', 'Bir hata oluştu');
         });
-    }
+        }
+    });
 }
 
 function moveToDaireSunumu(leadId) {
     // Daire sunumu yapıldı onayı
-    if (confirm('Müşteriye daire sunumu yapmak istiyor musunuz? Bu işlem lead\'i "Daire Sunumu" aşamasına geçirecek.')) {
-        const updateStageUrl = '{% url "sales_process:update_stage_ajax" %}';
-        fetch(updateStageUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
+    Swal.fire({
+        title: 'Daire Sunumu',
+        text: 'Müşteriye daire sunumu yapmak istiyor musunuz? Bu işlem lead\'i "Daire Sunumu" aşamasına geçirecek.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9d2235',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, sunum yap',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const updateStageUrl = '{% url "sales_process:update_stage_ajax" %}';
+            fetch(updateStageUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
             body: JSON.stringify({
                 'lead_id': leadId,
                 'new_stage': 'daire_sunumu'
@@ -669,7 +692,8 @@ function moveToDaireSunumu(leadId) {
             console.error('Error:', error);
             showNotification('error', 'Bir hata oluştu');
         });
-    }
+        }
+    });
 }
 
 // Lead detay modal'ını aç
@@ -862,42 +886,63 @@ function showNotification(type, message) {
 
 // Teklif kabul etme fonksiyonu
 function acceptOffer(leadId) {
-    if (!confirm('Bu teklifi kabul etmek istediğinizden emin misiniz?')) {
-        return;
-    }
-    
-    fetch('/satis-surec/accept-offer/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            lead_id: leadId
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification('Teklif kabul edildi ve lead sözleşme aşamasına geçti!', 'success');
-            refreshKanban();
-        } else {
-            showNotification(data.message || 'Bir hata oluştu!', 'error');
+    Swal.fire({
+        title: 'Teklif Kabul',
+        text: 'Müşteri teklifi kabul etti mi? Bu işlemi onaylıyor musunuz?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, kabul edildi',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (!result.isConfirmed) {
+            return;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Bir hata oluştu!', 'error');
+        
+        fetch('/satis-surec/accept-offer/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                lead_id: leadId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Teklif kabul edildi ve lead sözleşme aşamasına geçti!', 'success');
+                refreshKanban();
+            } else {
+                showNotification(data.message || 'Bir hata oluştu!', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Bir hata oluştu!', 'error');
+        });
     });
 }
 
 // Teklif reddetme fonksiyonu
 function rejectOffer(leadId) {
-    if (!confirm('Bu teklifi reddetmek istediğinizden emin misiniz? Lead ihtiyaç analizi aşamasına geri dönecektir.')) {
-        return;
-    }
-    
-    fetch('/satis-surec/reject-offer/', {
+    Swal.fire({
+        title: 'Teklif Reddi',
+        text: 'Müşteri teklifi reddetti mi? Lead ihtiyaç analizi aşamasına geri dönecektir. Bu işlemi onaylıyor musunuz?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, reddedildi',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (!result.isConfirmed) {
+            return;
+        }
+        
+        fetch('/satis-surec/reject-offer/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -919,6 +964,7 @@ function rejectOffer(leadId) {
     .catch(error => {
         console.error('Error:', error);
         showNotification('Bir hata oluştu!', 'error');
+    });
     });
 }
 
@@ -945,4 +991,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 </script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% endblock javascripts %}

@@ -632,6 +632,7 @@ class ActionLog(models.Model):
         ('LEAD_ASSIGNED', 'Lead Atandı'),
         ('CUSTOMER_RESPONSE', 'Müşteri Yanıtı'),
         ('SYSTEM_ACTION', 'Sistem Aksiyonu'),
+        ('PAYMENT_SET', 'Ödeme Tipi Seçildi'),
     ]
     
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="action_logs", verbose_name="Lead")

@@ -253,26 +253,7 @@
     border: 1px solid #99d6ff;
 }
 
-.deed-date-selection {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 10px;
-}
-
-.deed-date-selection .payment-question {
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #495057;
-}
-
-.deed-date-selection .form-control {
-    border-radius: 6px;
-    border: 1px solid #ced4da;
-    padding: 8px 12px;
-    font-size: 14px;
-}
+/* Deed date selection styles removed - now handled by modal */
 
 .deed-info {
     background: #e8f5e8;
@@ -417,6 +398,8 @@
     }
 }
 </style>
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 {% endblock stylesheets %}
 
 {% block content %}
@@ -490,28 +473,15 @@
                         </div>
                         {% else %}
                             {% if lead.payment_type == 'cash' %}
-                                {% if not lead.deed_transfer_date %}
-                                <!-- OSMAN'IN İSTEĞİ: Tapu tarihi ZORUNLU girilmeli -->
-                                <div class="deed-date-selection">
-                                    <p class="payment-question">⚠️ Tapu Devir Tarihi (ZORUNLU):</p>
-                                    <input type="date" id="deed-date-{{ lead.lead_id }}" class="form-control mb-2" min="{{ today|date:'Y-m-d' }}">
-                                    <button class="action-btn btn-complete" onclick="setDeedDateAndMoveToTapu('{{ lead.lead_id }}')">
-                                        <i class="fas fa-calendar-check"></i> Tarihi Kaydet ve Tapu İşlemine Geç
-                                    </button>
+                                <!-- Nakit işlem seçildi - Modal ile tapu tarihi girilecek -->
+                                <div class="payment-selected">
+                                    <p class="payment-type cash">💰 Nakit İşlem Seçildi</p>
+                                    <p class="text-muted small">Tapu tarihi modal ile belirlendi</p>
                                 </div>
-                                {% else %}
-                                <!-- Tapu tarihi belirlendi ama henüz tapu aşamasına geçilmedi -->
-                                <div class="deed-info">
-                                    <p class="deed-date">Tapu Tarihi: {{ lead.deed_transfer_date|date:"d.m.Y" }}</p>
-                                    <button class="action-btn btn-complete" onclick="moveToDeeds('{{ lead.lead_id }}')">
-                                        <i class="fas fa-file-signature"></i> Tapu İşlemine Geç
-                                    </button>
-                                </div>
-                                {% endif %}
                             {% else %}
                                 <!-- Kredili işlem seçildi -->
                                 <div class="payment-selected">
-                                    <p class="payment-type credit">Kredili İşlem Seçildi</p>
+                                    <p class="payment-type credit">💳 Kredili İşlem Seçildi</p>
                                     <button class="action-btn btn-complete" onclick="moveToCredit('{{ lead.lead_id }}')">
                                         <i class="fas fa-credit-card"></i> Kredi İşlemine Geç
                                     </button>
@@ -813,32 +783,151 @@ function refreshBoard() {
 // OSMAN'IN İSTEĞİ: Ödeme tipi belirleme (validasyonlarla)
 function setPaymentType(leadId, paymentType) {
     const paymentText = paymentType === 'cash' ? 'Nakit' : 'Kredili';
-    if (confirm(`⚠️ Ödeme tipi "${paymentText}" olarak belirlensin mi?\n\n${paymentType === 'cash' ? 'Nakit seçerseniz tapu devir tarihi girmeniz gerekecek.' : 'Kredili seçerseniz kart otomatik olarak Kredi İşlemleri aşamasına taşınacak.'}`)) {
-        fetch('/satis-surec/ajax/set-payment-type/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                lead_id: leadId,
-                payment_type: paymentType
+    Swal.fire({
+        title: '⚠️ Ödeme Tipi Belirleme',
+        html: `Ödeme tipi "<strong>${paymentText}</strong>" olarak belirlensin mi?<br><br>${paymentType === 'cash' ? 'Nakit seçerseniz tapu devir tarihi girmeniz gerekecek.' : 'Kredili seçerseniz kart otomatik olarak Kredi İşlemleri aşamasına taşınacak.'}`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9d2235',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, Belirle',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/satis-surec/ajax/set-payment-type/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    lead_id: leadId,
+                    payment_type: paymentType
+                })
             })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.requires_deed_date) {
+                        // Nakit seçildi - Tapu tarihi modalı aç
+                        Swal.fire({
+                            title: '📅 Tapu Devir Tarihi',
+                            html: `
+                                <div style="text-align: left; margin-bottom: 15px;">
+                                    <p><strong>Nakit işlem seçildi!</strong></p>
+                                    <p>Lütfen tapu devir tarihini belirleyin:</p>
+                                </div>
+                                <input type="date" id="swal-deed-date" class="swal2-input" min="${new Date().toISOString().split('T')[0]}" style="width: 80%; font-size: 16px;">
+                            `,
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonColor: '#9d2235',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Tarihi Kaydet',
+                            cancelButtonText: 'İptal',
+                            preConfirm: () => {
+                                const deedDate = document.getElementById('swal-deed-date').value;
+                                if (!deedDate) {
+                                    Swal.showValidationMessage('Lütfen tapu devir tarihini seçin!');
+                                    return false;
+                                }
+                                const selectedDate = new Date(deedDate);
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                if (selectedDate < today) {
+                                    Swal.showValidationMessage('Tapu devir tarihi bugünden önce olamaz!');
+                                    return false;
+                                }
+                                return deedDate;
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Tapu tarihini kaydet ve tapu aşamasına geç
+                                setDeedDateFromModal(leadId, result.value);
+                            } else {
+                                // İptal edildi - sayfayı yenile
+                                refreshBoard();
+                            }
+                        });
+                    } else {
+                        // Kredili seçildi - Normal başarı mesajı
+                        Swal.fire({
+                            title: 'Başarılı!',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonColor: '#9d2235'
+                        }).then(() => {
+                            refreshBoard();
+                        });
+                    }
+                } else {
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonColor: '#9d2235'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Hata!',
+                    text: 'Bir hata oluştu.',
+                    icon: 'error',
+                    confirmButtonColor: '#9d2235'
+                });
+            });
+        }
+    });
+}
+
+// Modal'dan tapu tarihi kaydetme fonksiyonu
+function setDeedDateFromModal(leadId, deedDate) {
+    fetch('/satis-surec/ajax/set-deed-date/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            deed_date: deedDate
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('✅ ' + data.message);
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: '✅ Başarılı!',
+                text: 'Tapu devir tarihi kaydedildi ve müşteri tapu aşamasına geçirildi.',
+                icon: 'success',
+                confirmButtonColor: '#9d2235',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
                 refreshBoard();
-            } else {
-                alert('❌ Hata: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('❌ Bir hata oluştu.');
+            });
+        } else {
+            Swal.fire({
+                title: 'Hata!',
+                text: data.message || 'Tapu tarihi kaydedilirken bir hata oluştu.',
+                icon: 'error',
+                confirmButtonColor: '#9d2235',
+                footer: '<a href="/satis-surec/lead/' + leadId + '/">Detay sayfasından düzenleyin</a>'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Bağlantı Hatası!',
+            text: 'Sunucuya bağlanırken bir hata oluştu.',
+            icon: 'error',
+            confirmButtonColor: '#9d2235',
+            footer: '<a href="/satis-surec/lead/' + leadId + '/">Detay sayfasından düzenleyin</a>'
         });
-    }
+    });
 }
 
 // OSMAN'IN İSTEĞİ: Tapu devir tarihi belirleme ve otomatik tapu aşamasına geçiş
@@ -847,7 +936,12 @@ function setDeedDateAndMoveToTapu(leadId) {
     const selectedDate = dateInput.value;
     
     if (!selectedDate) {
-        alert('⚠️ Lütfen tapu devir tarihini seçin.');
+        Swal.fire({
+            title: 'Uyarı!',
+            text: 'Lütfen tapu devir tarihini seçin.',
+            icon: 'warning',
+            confirmButtonColor: '#9d2235'
+        });
         return;
     }
     
@@ -857,11 +951,26 @@ function setDeedDateAndMoveToTapu(leadId) {
     today.setHours(0, 0, 0, 0);
     
     if (selectedDateObj < today) {
-        alert('⚠️ Tapu devir tarihi bugünden önce olamaz.');
+        Swal.fire({
+            title: 'Uyarı!',
+            text: 'Tapu devir tarihi bugünden önce olamaz.',
+            icon: 'warning',
+            confirmButtonColor: '#9d2235'
+        });
         return;
     }
     
-    if (confirm(`⚠️ Tapu devir tarihi "${selectedDateObj.toLocaleDateString('tr-TR')}" olarak belirlensin mi?\n\nBu tarih için müdüre otomatik görev oluşturulacak ve kart Tapu İşlemi aşamasına taşınacak.`)) {
+    Swal.fire({
+        title: '⚠️ Tapu Devir Tarihi Belirleme',
+        html: `Tapu devir tarihi "<strong>${selectedDateObj.toLocaleDateString('tr-TR')}</strong>" olarak belirlensin mi?<br><br>Bu tarih için müdüre otomatik görev oluşturulacak ve kart Tapu İşlemi aşamasına taşınacak.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9d2235',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, Belirle',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
         fetch('/satis-surec/ajax/set-deed-date/', {
             method: 'POST',
             headers: {
@@ -876,75 +985,146 @@ function setDeedDateAndMoveToTapu(leadId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('✅ ' + data.message);
-                refreshBoard();
+                Swal.fire({
+                    title: 'Başarılı!',
+                    text: data.message,
+                    icon: 'success',
+                    confirmButtonColor: '#9d2235'
+                }).then(() => {
+                    refreshBoard();
+                });
             } else {
-                alert('❌ Hata: ' + data.message);
+                Swal.fire({
+                    title: 'Hata!',
+                    text: data.message,
+                    icon: 'error',
+                    confirmButtonColor: '#9d2235'
+                });
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('❌ Bir hata oluştu.');
+            Swal.fire({
+                title: 'Hata!',
+                text: 'Bir hata oluştu.',
+                icon: 'error',
+                confirmButtonColor: '#9d2235'
+            });
         });
-    }
+        }
+    });
 }
 
 // OSMAN'IN İSTEĞİ: Kredi işlemini tamamla - Direkt memnuniyet anketine geçer
 function completeCreditProcess(leadId) {
-    if (confirm('⚠️ Kredi süreci tamamlandı mı?\n\n📋 Kart "Tapu İşlemi" aşamasına taşınacak\n📅 Tapu devir tarihi belirlemeniz gerekecek')) {
-        fetch('/satis-surec/ajax/complete-credit/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                lead_id: leadId
+    Swal.fire({
+        title: '⚠️ Kredi Süreci Tamamlama',
+        html: 'Kredi süreci tamamlandı mı?<br><br>📋 Kart "Tapu İşlemi" aşamasına taşınacak<br>📅 Tapu devir tarihi belirlemeniz gerekecek',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9d2235',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, Tamamlandı',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/satis-surec/ajax/complete-credit/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    lead_id: leadId
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('✅ ' + data.message);
-                refreshBoard();
-            } else {
-                alert('❌ Hata: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('❌ Bir hata oluştu.');
-        });
-    }
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Başarılı!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonColor: '#9d2235'
+                    }).then(() => {
+                        refreshBoard();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonColor: '#9d2235'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Hata!',
+                    text: 'Bir hata oluştu.',
+                    icon: 'error',
+                    confirmButtonColor: '#9d2235'
+                });
+            });
+        }
+    });
 }
 
 // OSMAN'IN İSTEĞİ: Tapu işlemini tamamla - Direkt memnuniyet anketine geçer
 function completeDeedProcess(leadId) {
-    if (confirm('⚠️ Tapu devri tamamlandı mı?\n\n✅ Müşteriye otomatik memnuniyet anketi gönderilecek\n📋 Kart direkt "Memnuniyet Anketi" aşamasına taşınacak')) {
-        fetch('/satis-surec/ajax/complete-deed/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                lead_id: leadId
+    Swal.fire({
+        title: '⚠️ Tapu Devri Tamamlama',
+        html: 'Tapu devri tamamlandı mı?<br><br>✅ Müşteriye otomatik memnuniyet anketi gönderilecek<br>📋 Kart direkt "Memnuniyet Anketi" aşamasına taşınacak',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9d2235',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, Tamamlandı',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/satis-surec/ajax/complete-deed/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    lead_id: leadId
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('✅ ' + data.message);
-                refreshBoard();
-            } else {
-                alert('❌ Hata: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('❌ Bir hata oluştu.');
-        });
-    }
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Başarılı!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonColor: '#9d2235'
+                    }).then(() => {
+                        refreshBoard();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonColor: '#9d2235'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Hata!',
+                    text: 'Bir hata oluştu.',
+                    icon: 'error',
+                    confirmButtonColor: '#9d2235'
+                });
+            });
+        }
+    });
 }
 
 // Tapu işlemine geç
@@ -1003,60 +1183,114 @@ function moveToCredit(leadId) {
 
 // OSMAN'IN İSTEĞİ: Memnuniyet anketi gönderimi - WhatsApp ile anket linki gönderir
 function sendSatisfactionSurvey(leadId) {
-    if (confirm('📋 Memnuniyet anketi gönderilsin mi?\n\n📱 Müşteriye WhatsApp ile anket linki gönderilecek\n✅ Kart "Memnuniyet Anketi" aşamasına taşınacak')) {
-        fetch('/satis-surec/ajax/send-satisfaction-survey/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                lead_id: leadId
+    Swal.fire({
+        title: '📋 Memnuniyet Anketi Gönderimi',
+        html: 'Memnuniyet anketi gönderilsin mi?<br><br>📱 Müşteriye WhatsApp ile anket linki gönderilecek<br>✅ Kart "Memnuniyet Anketi" aşamasına taşınacak',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9d2235',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, Gönder',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/satis-surec/ajax/send-satisfaction-survey/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    lead_id: leadId
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('✅ ' + data.message);
-                refreshBoard();
-            } else {
-                alert('❌ Hata: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('❌ Bir hata oluştu.');
-        });
-    }
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Başarılı!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonColor: '#9d2235'
+                    }).then(() => {
+                        refreshBoard();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonColor: '#9d2235'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Hata!',
+                    text: 'Bir hata oluştu.',
+                    icon: 'error',
+                    confirmButtonColor: '#9d2235'
+                });
+            });
+        }
+     });
 }
 
 // OSMAN'IN İSTEĞİ: Memnuniyet anketinden direkt dosya kapatma
 function closeCase(leadId) {
-    if (confirm('⚠️ Dosya kapatılsın mı?\n\n📋 Bu işlem geri alınamaz\n✅ Satış süreci tamamen tamamlanacak')) {
-        fetch('/satis-surec/ajax/close-case/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                lead_id: leadId
+    Swal.fire({
+        title: '⚠️ Dosya Kapatma',
+        html: 'Dosya kapatılsın mı?<br><br>📋 Bu işlem geri alınamaz<br>✅ Satış süreci tamamen tamamlanacak',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#9d2235',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, Kapat',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/satis-surec/ajax/close-case/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    lead_id: leadId
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('✅ ' + data.message);
-                refreshBoard();
-            } else {
-                alert('❌ Hata: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('❌ Bir hata oluştu.');
-        });
-    }
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Başarılı!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonColor: '#9d2235'
+                    }).then(() => {
+                        refreshBoard();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonColor: '#9d2235'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Hata!',
+                    text: 'Bir hata oluştu.',
+                    icon: 'error',
+                    confirmButtonColor: '#9d2235'
+                });
+            });
+        }
+    });
 }
 
 // WhatsApp mesajı gönder
@@ -1092,89 +1326,117 @@ function sendWhatsApp(leadId, messageType) {
 
 // Kredi sürecini tamamla
 function completeCreditProcess(leadId) {
-    if (confirm('Kredi süreci tamamlandı mı?')) {
-        fetch('/satis-surec/ajax/complete-credit/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                lead_id: leadId
+    Swal.fire({
+        title: 'Kredi Süreci Tamamlama',
+        text: 'Kredi süreci tamamlandı mı?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9d2235',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, Tamamlandı',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/satis-surec/ajax/complete-credit/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    lead_id: leadId
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Kredi süreci tamamlandı. Kart "Hizmet Tamamlandı" aşamasına taşındı.');
-                refreshBoard();
-            } else {
-                alert('Hata: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Bir hata oluştu.');
-        });
-    }
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Başarılı!',
+                        text: 'Kredi süreci tamamlandı. Kart "Hizmet Tamamlandı" aşamasına taşındı.',
+                        icon: 'success',
+                        confirmButtonColor: '#9d2235'
+                    }).then(() => {
+                        refreshBoard();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonColor: '#9d2235'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Hata!',
+                    text: 'Bir hata oluştu.',
+                    icon: 'error',
+                    confirmButtonColor: '#9d2235'
+                });
+            });
+        }
+    });
 }
 
 // Tapu sürecini tamamla
 function completeDeedProcess(leadId) {
-    if (confirm('Tapu devri tamamlandı mı?')) {
-        fetch('/satis-surec/ajax/complete-deed/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                lead_id: leadId
+    Swal.fire({
+        title: 'Tapu Devri Tamamlama',
+        text: 'Tapu devri tamamlandı mı?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9d2235',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Evet, Tamamlandı',
+        cancelButtonText: 'İptal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/satis-surec/ajax/complete-deed/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    lead_id: leadId
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Tapu devri tamamlandı. Kart "Hizmet Tamamlandı" aşamasına taşındı.');
-                refreshBoard();
-            } else {
-                alert('Hata: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Bir hata oluştu.');
-        });
-    }
-}
-
-// Ödeme tipini ayarla
-function setPaymentType(leadId, paymentType) {
-    fetch('/satis-surec/ajax/set-payment-type/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            lead_id: leadId,
-            payment_type: paymentType
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Ödeme tipi "${paymentType === 'cash' ? 'Nakit' : 'Kredili'}" olarak ayarlandı.`);
-            refreshBoard();
-        } else {
-            alert('Hata: ' + data.message);
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Başarılı!',
+                        text: 'Tapu devri tamamlandı. Kart "Hizmet Tamamlandı" aşamasına taşındı.',
+                        icon: 'success',
+                        confirmButtonColor: '#9d2235'
+                    }).then(() => {
+                        refreshBoard();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Hata!',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonColor: '#9d2235'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Hata!',
+                    text: 'Bir hata oluştu.',
+                    icon: 'error',
+                    confirmButtonColor: '#9d2235'
+                });
+            });
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Bir hata oluştu.');
     });
 }
+
+// Eski setPaymentType fonksiyonu kaldırıldı - SweetAlert versiyonu kullanılıyor
 
 // Tapu devir tarihini ayarla (eski fonksiyon - artık kullanılmıyor)
 function setDeedDate(leadId) {
@@ -1328,4 +1590,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(refreshBoard, 300000);
 });
 </script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% endblock javascripts %}
