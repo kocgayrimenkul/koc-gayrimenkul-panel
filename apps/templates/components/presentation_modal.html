@@ -8,12 +8,19 @@
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg">
             <!-- Modal Header -->
-            <div class="modal-header border-0 bg-primary text-white">
-                <h5 class="modal-title d-flex align-items-center mb-0" id="{{ modal_id|default:'completePresentationModal' }}Label">
-                    <i class="fas fa-presentation me-3"></i>
-                    <span class="fw-bold">Sunumu Tamamla</span>
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <style>
+              .bg-gradient-koc-red { background: linear-gradient(87deg, #7a1a29 0, #9d2235 100%) !important; }
+              .modal-koc-title { display:flex; align-items:center; margin:0; font-weight:700; }
+              .modal-koc-title i { margin-right:.75rem; }
+            </style>
+            <div class="modal-header border-0 bg-gradient-koc-red text-white">
+              <h5 class="modal-title modal-koc-title" id="{{ modal_id|default:'completePresentationModal' }}Label">
+                <i class="fas fa-chalkboard"></i>
+                Sunumu Tamamla
+              </h5>
+              <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
             </div>
             
             <!-- Modal Body -->
@@ -22,16 +29,16 @@
                     <!-- Konum Bilgisi Bölümü -->
                     <div class="mb-4">
                         <div class="d-flex align-items-center mb-3">
-                            <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
-                                <i class="fas fa-map-marker-alt text-success"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-1 fw-bold text-dark">Sunum Konumu</h6>
-                                <small class="text-muted">Sunumun yapıldığı konum otomatik olarak alınacak</small>
-                            </div>
+                          <div class="rounded-circle p-2 mr-3" style="background:rgba(45,206,137,.12);">
+                            <i class="fas fa-map-marker-alt" style="color:#2dce89;"></i>
+                          </div>
+                          <div>
+                            <h6 class="mb-1 font-weight-bold text-dark">Sunum Konumu</h6>
+                            <small class="text-muted">Sunumun yapıldığı konum otomatik olarak alınacak</small>
+                          </div>
                         </div>
                         
-                        <div class="card border-0 bg-light bg-opacity-50">
+                        <div class="card border-0 bg-light">
                             <div class="card-body p-3">
                                 <div id="{{ modal_id|default:'completePresentationModal' }}LocationContainer">
                                     <div class="text-center py-3">
@@ -47,18 +54,18 @@
                     <!-- Sunum Notları Bölümü -->
                     <div class="mb-4">
                         <div class="d-flex align-items-center mb-3">
-                            <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
-                                <i class="fas fa-sticky-note text-info"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-1 fw-bold text-dark">Sunum Notları</h6>
-                                <small class="text-muted">Sunum sırasında yaşanan gelişmeleri detaylandırın</small>
-                            </div>
+                          <div class="rounded-circle p-2 mr-3" style="background:rgba(17,205,239,.12);">
+                            <i class="fas fa-sticky-note" style="color:#11cdef;"></i>
+                          </div>
+                          <div>
+                            <h6 class="mb-1 font-weight-bold text-dark">Sunum Notları</h6>
+                            <small class="text-muted">Sunum sırasında yaşanan gelişmeleri detaylandırın</small>
+                          </div>
                         </div>
                         
                         <div class="form-group">
                             <textarea 
-                                class="form-control border-0 bg-light bg-opacity-50" 
+                                class="form-control border-0 bg-light" 
                                 id="{{ modal_id|default:'completePresentationModal' }}Notes" 
                                 rows="5" 
                                 placeholder="Örneğin: Müşteri 2+1 daireye çok ilgi gösterdi. Fiyat konusunda pazarlık yapmak istiyor. Kredi kullanmayı planlıyor. Gelecek hafta tekrar görüşme talep etti..." 
@@ -72,12 +79,12 @@
             
             <!-- Modal Footer -->
             <div class="modal-footer border-0 px-4 pb-4">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-2"></i>İptal
-                </button>
-                <button type="button" class="btn btn-primary shadow-sm" onclick="PresentationModal.submit(&quot;{{ modal_id|default:'completePresentationModal' }}&quot;)">
-                    <i class="fas fa-check-circle me-2"></i>Sunumu Tamamla
-                </button>
+              <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                <i class="fas fa-times mr-2"></i>İptal
+              </button>
+              <button type="button" class="btn btn-primary shadow-sm" onclick="PresentationModal.submit(&quot;{{ modal_id|default:'completePresentationModal' }}&quot;)">
+                <i class="fas fa-check-circle mr-2"></i>Sunumu Tamamla
+              </button>
             </div>
         </div>
     </div>
