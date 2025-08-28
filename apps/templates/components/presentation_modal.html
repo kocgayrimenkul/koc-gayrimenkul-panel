@@ -313,8 +313,14 @@ class PresentationModalComponent {
                 $(`#${modalId}`).modal('hide');
                 this.showNotification('success', 'Sunum başarıyla tamamlandı ve konum kaydedildi!');
                 setTimeout(() => {
-                    location.reload();
-                }, 1500);
+                    try {
+                        if (window.refreshKanban) { window.refreshKanban(); return; }
+                        if (window.refreshBoard) { window.refreshBoard(); return; }
+                        location.reload();
+                    } catch (e) {
+                        location.reload();
+                    }
+                }, 500);
             } else {
                 this.showNotification('error', data.message || 'Sunum tamamlanırken hata oluştu.');
             }

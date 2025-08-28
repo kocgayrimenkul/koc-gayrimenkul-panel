@@ -439,42 +439,40 @@ function refreshKanban() {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         
-        // Her kolonu güncelle
-        const stages = ['yeni_musteri', 'arama_yapildi', 'randevu_alindi', 'daire_sunumu', 'teklif_sunuldu', 'sozlesme_imzalandi', 'tapu_islemi', 'kredi_islemleri', 'hizmet_tamamlandi'];
+        // Her kolonu data-stage-id üzerinden güncelle
+        const newColumns = tempDiv.querySelectorAll('#kanban-board .kanban-column');
+        newColumns.forEach(newCol => {
+            const stageId = newCol.getAttribute('data-stage-id');
+            if (!stageId) return;
+            const oldCol = document.querySelector(`#kanban-board .kanban-column[data-stage-id="${stageId}"]`);
+            if (!oldCol) return;
+            const newContent = newCol.querySelector('.kanban-content');
+            const oldContent = oldCol.querySelector('.kanban-content');
+            if (newContent && oldContent) {
+                oldContent.innerHTML = newContent.innerHTML;
+            }
+            const newCount = newCol.querySelector('.kanban-count');
+            const oldCount = oldCol.querySelector('.kanban-count');
+            if (newCount && oldCount) {
+                oldCount.textContent = newCount.textContent;
+            }
+        });
         
-        stages.forEach(stage => {
-            const oldColumn = document.querySelector(`[data-stage="${stage}"] .kanban-cards`);
-            const newColumn = tempDiv.querySelector(`[data-stage="${stage}"] .kanban-cards`);
-            
-            if (oldColumn && newColumn) {
-                oldColumn.innerHTML = newColumn.innerHTML;
-                
-                // Yeni kartlara event listener ekle
-                oldColumn.querySelectorAll('.lead-card').forEach(card => {
-                    card.addEventListener('click', function(e) {
-                        if (!e.target.closest('.lead-actions')) {
-                            const leadId = this.dataset.leadId;
-                            openLeadModal(leadId);
-                        }
-                    });
-                });
-            }
-            
-            // Kolon başlığındaki sayıları güncelle
-            const oldHeader = document.querySelector(`[data-stage="${stage}"] .kanban-header h5`);
-            const newHeader = tempDiv.querySelector(`[data-stage="${stage}"] .kanban-header h5`);
-            if (oldHeader && newHeader) {
-                oldHeader.textContent = newHeader.textContent;
-            }
+        // Yeni kartlara tıklama event'i (ihtiyaç halinde)
+        document.querySelectorAll('#kanban-board .lead-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (!e.target.closest('.lead-actions')) {
+                    const leadId = this.dataset.leadId;
+                    openLeadModal(leadId);
+                }
+            });
         });
         
         // Üst kısımdaki istatistikleri güncelle
         const oldStats = document.querySelectorAll('.stat-number');
         const newStats = tempDiv.querySelectorAll('.stat-number');
         oldStats.forEach((stat, index) => {
-            if (newStats[index]) {
-                stat.textContent = newStats[index].textContent;
-            }
+            if (newStats[index]) stat.textContent = newStats[index].textContent;
         });
         
         console.log('Kanban başarıyla güncellendi');
@@ -588,6 +586,8 @@ function makeCall(phoneNumber, leadId) {
     .then(data => {
         if (data.success) {
             showNotification('success', data.message || 'Arama başlatıldı: ' + phoneNumber);
+            // Arama sonrası aşama değişmiş olabilir; kanbanı yenile (reloadsuz)
+            try { setTimeout(() => { if (window.refreshKanban) refreshKanban(); }, 300); } catch (e) {}
         } else {
             showNotification('error', 'Arama başlatılamadı: ' + (data.error || data.message || 'Bilinmeyen hata'));
         }
@@ -637,9 +637,8 @@ function moveToNextStage(leadId) {
         .then(data => {
             if (data.success) {
                 showNotification('success', data.message);
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
+                // Sayfayı yenilemeden kanbanı güncelle
+                setTimeout(() => { try { refreshKanban(); } catch(e) { location.reload(); } }, 300);
             } else {
                 showNotification('error', data.message);
             }
@@ -681,9 +680,8 @@ function moveToDaireSunumu(leadId) {
         .then(data => {
             if (data.success) {
                 showNotification('success', 'Müşteri "Daire Sunumu" aşamasına geçirildi.');
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
+                // Sayfayı yenilemeden kanbanı güncelle
+                setTimeout(() => { try { refreshKanban(); } catch(e) { location.reload(); } }, 300);
             } else {
                 showNotification('error', data.message || 'Aşama geçişi başarısız.');
             }

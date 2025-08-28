@@ -775,10 +775,8 @@
 
 {% block javascripts %}
 <script>
-// Panoyu yenile
-function refreshBoard() {
-    location.reload();
-}
+// Panoyu yenile (sayfa yenilemeden)
+function refreshBoard() { return refreshBoardAjax(); }
 
 // OSMAN'IN İSTEĞİ: Ödeme tipi belirleme (validasyonlarla)
 function setPaymentType(leadId, paymentType) {
@@ -1501,7 +1499,7 @@ function moveToDeeds(leadId) {
 }
 
 // Kanban kartlarını AJAX ile güncelle
-function refreshBoard() {
+function refreshBoardAjax() {
     fetch(window.location.href, {
         method: 'GET',
         headers: {
@@ -1510,42 +1508,23 @@ function refreshBoard() {
     })
     .then(response => response.text())
     .then(html => {
-        // Yeni HTML'den kanban kolonlarını çıkar
+        // Yeni HTML'yi parse et
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
-        
-        // Her kolonu güncelle
-        const stages = ['yeni_musteri', 'arama_yapildi', 'randevu_alindi', 'daire_sunumu', 'teklif_sunuldu', 'sozlesme_imzalandi', 'tapu_islemi', 'kredi_islemleri', 'hizmet_tamamlandi'];
-        
-        stages.forEach(stage => {
-            const oldColumn = document.querySelector(`[data-stage="${stage}"] .kanban-cards`);
-            const newColumn = tempDiv.querySelector(`[data-stage="${stage}"] .kanban-cards`);
-            
-            if (oldColumn && newColumn) {
-                oldColumn.innerHTML = newColumn.innerHTML;
-                
-                // Yeni kartlara event listener ekle
-                oldColumn.querySelectorAll('.lead-card').forEach(card => {
-                    card.addEventListener('click', function(e) {
-                        if (e.target.closest('.action-btn')) {
-                            return;
-                        }
-                        const leadId = this.dataset.leadId;
-                        window.location.href = `/satis-surec/mudur/lead/${leadId}/`;
-                    });
-                });
+
+        // Kolon içeriklerini ve sayaçlarını güncelle
+        const columns = ['contract-column','credit-column','deed-column','completed-column','survey-column','closed-column'];
+        columns.forEach(id => {
+            const oldCol = document.getElementById(id);
+            const newCol = tempDiv.querySelector(`#${id}`);
+            if (oldCol && newCol) {
+                oldCol.innerHTML = newCol.innerHTML;
+                const oldHeader = oldCol.closest('.kanban-column').querySelector('.column-header .column-count');
+                const newHeader = newCol.closest('.kanban-column').querySelector('.column-header .column-count');
+                if (oldHeader && newHeader) oldHeader.textContent = newHeader.textContent;
             }
         });
-        
-        // Kolon başlıklarındaki sayıları güncelle
-        document.querySelectorAll('.kanban-column h5 .badge').forEach(badge => {
-            const stage = badge.closest('.kanban-column').dataset.stage;
-            const newBadge = tempDiv.querySelector(`[data-stage="${stage}"] h5 .badge`);
-            if (newBadge) {
-                badge.textContent = newBadge.textContent;
-            }
-        });
-        
+
         console.log('Kanban kartları güncellendi');
     })
     .catch(error => {
