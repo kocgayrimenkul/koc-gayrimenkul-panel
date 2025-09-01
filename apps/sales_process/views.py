@@ -295,12 +295,7 @@ def lead_create(request):
             property_id = request.POST.get('property_id')
             property_type = request.POST.get('property_type')
             property_location = request.POST.get('property_location')
-            budget_min = request.POST.get('budget_min', 0)
-            budget_max = request.POST.get('budget_max', 0)
-            meeting_result = request.POST.get('meeting_result', '')
-            meeting_status = request.POST.get('meeting_status', 'bekliyor')
-            response_date = request.POST.get('response_date')
-            reminder_date = request.POST.get('reminder_date')
+
             lead_notes = request.POST.get('lead_notes', '')
             
             # İlk aşamayı getir
@@ -343,7 +338,6 @@ def lead_create(request):
                 'consultant': request.user,
                 'source': source,
                 'contact_type': contact_type,
-                'meeting_result': meeting_result,
                 'notes': lead_notes
             }
             
@@ -351,18 +345,7 @@ def lead_create(request):
             if selected_property:
                 customer_data['property'] = selected_property
             
-            # Tarih alanlarını kontrol et ve ekle
-            if response_date:
-                try:
-                    customer_data['response_date'] = datetime.strptime(response_date, '%Y-%m-%d').date()
-                except ValueError:
-                    pass
-            
-            if reminder_date:
-                try:
-                    customer_data['reminder_date'] = datetime.strptime(reminder_date, '%Y-%m-%d').date()
-                except ValueError:
-                    pass
+
             
             customer = Customer.objects.create(**customer_data)
             
@@ -375,27 +358,10 @@ def lead_create(request):
                 'contact_type': contact_type,
                 'property_type': property_type,
                 'property_location': property_location,
-                'budget_min': budget_min,
-                'budget_max': budget_max,
                 'current_stage': initial_stage,
                 'assigned_staff': request.user,
-                'meeting_result': meeting_result,
-                'meeting_status': meeting_status,
                 'lead_notes': lead_notes
             }
-            
-            # Tarih alanlarını kontrol et ve ekle
-            if response_date:
-                try:
-                    lead_data['response_date'] = datetime.strptime(response_date, '%Y-%m-%d').date()
-                except ValueError:
-                    pass
-            
-            if reminder_date:
-                try:
-                    lead_data['reminder_date'] = datetime.strptime(reminder_date, '%Y-%m-%d').date()
-                except ValueError:
-                    pass
             
             lead = Lead.objects.create(**lead_data)
             

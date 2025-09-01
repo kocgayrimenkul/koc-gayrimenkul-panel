@@ -17,9 +17,8 @@ class LeadForm(forms.ModelForm):
         model = Lead
         fields = [
             'customer_name', 'customer_phone', 'source', 'contact_type',
-            'interested_property', 'neighborhood', 'budget_min', 'budget_max',
-            'priority', 'payment_type', 'meeting_result', 'meeting_status',
-            'response_date', 'reminder_date', 'lead_notes'
+            'interested_property', 'neighborhood', 'priority', 'payment_type',
+            'lead_notes'
         ]
         widgets = {
             'customer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Adı Soyadı'}),
@@ -29,14 +28,8 @@ class LeadForm(forms.ModelForm):
             'contact_type': forms.Select(attrs={'class': 'form-control'}),
             'interested_property': forms.Select(attrs={'class': 'form-control'}),
             'neighborhood': forms.Select(attrs={'class': 'form-control'}),
-            'budget_min': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Minimum Bütçe'}),
-            'budget_max': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Maksimum Bütçe'}),
             'priority': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 5}),
             'payment_type': forms.Select(attrs={'class': 'form-control'}),
-            'meeting_result': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Görüşme Sonucu', 'rows': 4}),
-            'meeting_status': forms.Select(attrs={'class': 'form-control'}),
-            'response_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'Geri Dönüş Tarihi'}),
-            'reminder_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'Hatırlatma Tarihi'}),
             'lead_notes': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Notlar', 'rows': 4}),
         }
 

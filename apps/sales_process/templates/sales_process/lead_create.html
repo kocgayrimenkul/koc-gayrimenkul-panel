@@ -232,59 +232,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="budget_min">Minimum Bütçe</label>
-                                    <input type="number" class="form-control" id="budget_min" name="budget_min">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="budget_max">Maksimum Bütçe</label>
-                                    <input type="number" class="form-control" id="budget_max" name="budget_max">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="meeting_result">Görüşme Sonucu</label>
-                                    <select class="form-control" id="meeting_result" name="meeting_result">
-                                        <option value="">Seçiniz</option>
-                                        <option value="olumlu">Olumlu</option>
-                                        <option value="olumsuz">Olumsuz</option>
-                                        <option value="kararsiz">Kararsız</option>
-                                        <option value="tekrar_gorusme">Tekrar Görüşme</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="meeting_status">Görüşme Durumu</label>
-                                    <select class="form-control" id="meeting_status" name="meeting_status">
-                                        <option value="bekliyor" selected>Bekliyor</option>
-                                        <option value="tamamlandi">Tamamlandı</option>
-                                        <option value="iptal">İptal</option>
-                                        <option value="ertelendi">Ertelendi</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="response_date">Yanıt Tarihi</label>
-                                    <input type="date" class="form-control" id="response_date" name="response_date">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="reminder_date">Hatırlatma Tarihi</label>
-                                    <input type="date" class="form-control" id="reminder_date" name="reminder_date">
-                                </div>
-                            </div>
-                        </div>
+
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="form-group">
@@ -382,26 +330,7 @@ $(function() {
         $prop.val(propVal).trigger('change');
       }
 
-      // Bütçe
-      var minBudget = randomInt(500000, 3000000);
-      var maxBudget = minBudget + randomInt(100000, 2000000);
-      $('#budget_min').val(minBudget);
-      $('#budget_max').val(maxBudget);
 
-      // Görüşme sonucu ve durumu
-      var results = ['olumlu','olumsuz','kararsiz','tekrar_gorusme'];
-      var statuses = ['bekliyor','tamamlandi','iptal','ertelendi'];
-      $('#meeting_result').val(pick(results)).trigger('change');
-      $('#meeting_status').val(pick(statuses)).trigger('change');
-
-      // Tarihler
-      var today = new Date();
-      var response = new Date();
-      response.setDate(today.getDate() + randomInt(-3, 7));
-      var reminder = new Date(response);
-      reminder.setDate(response.getDate() + randomInt(1, 21));
-      $('#response_date').val(formatDateYYYYMMDD(response));
-      $('#reminder_date').val(formatDateYYYYMMDD(reminder));
 
       // Notlar
       var notes = [
