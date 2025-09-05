@@ -249,7 +249,7 @@
         </div>
         
         <div class="dashboard-card position-relative">
-            <div class="dashboard-number">85%</div>
+            <div class="dashboard-number">{{ success_rate }}%</div>
             <div class="dashboard-label">Başarı Oranı</div>
             <div class="dashboard-icon">
                 <i class="fas fa-chart-line"></i>
@@ -290,55 +290,58 @@
             <div class="recent-activity">
                 <h4 class="mb-4">Son Aktiviteler</h4>
                 
-                <div class="activity-item">
-                    <div class="activity-icon success">
-                        <i class="fas fa-handshake"></i>
+                {% if can_view_activities %}
+                    {% if recent_activities %}
+                        {% for activity in recent_activities %}
+                        <div class="activity-item">
+                            <div class="activity-icon {% if activity.is_successful %}success{% elif activity.action_type in 'CALL_FAIL,OFFER_REJECTED' %}danger{% elif activity.action_type in 'APPT_SET,FOLLOW_UP' %}warning{% else %}info{% endif %}">
+                                {% if activity.action_type == 'CONTRACT_SIGNED' %}
+                                    <i class="fas fa-handshake"></i>
+                                {% elif activity.action_type in 'CALL_OK,CALL_FAIL' %}
+                                    <i class="fas fa-phone"></i>
+                                {% elif activity.action_type == 'APPT_SET' %}
+                                    <i class="fas fa-calendar-alt"></i>
+                                {% elif activity.action_type == 'WHATSAPP_SENT' %}
+                                    <i class="fas fa-whatsapp"></i>
+                                {% elif activity.action_type == 'DEED_TRANSFER' %}
+                                    <i class="fas fa-file-contract"></i>
+                                {% elif activity.action_type == 'OFFER_SENT' %}
+                                    <i class="fas fa-paper-plane"></i>
+                                {% elif activity.action_type == 'STAGE_CHANGED' %}
+                                    <i class="fas fa-arrow-right"></i>
+                                {% elif activity.action_type == 'LEAD_CREATED' %}
+                                    <i class="fas fa-user-plus"></i>
+                                {% elif activity.action_type == 'TASK_COMPLETED' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle"></i>
+                                {% endif %}
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">{{ activity.get_action_type_display }}</div>
+                                <div class="activity-time">
+                                    {% if activity.lead %}
+                                        {{ activity.lead.customer_name }} - 
+                                    {% endif %}
+                                    {{ activity.performed_by.get_full_name|default:"Sistem" }} - 
+                                    {{ activity.created_at|timesince }} önce
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">Henüz aktivite bulunmuyor.</p>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-lock fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">Bu bölümü görüntüleme yetkiniz bulunmuyor.</p>
+                        <small class="text-muted">Sadece yöneticiler ve santral personeli son aktiviteleri görebilir.</small>
                     </div>
-                    <div class="activity-content">
-                        <div class="activity-title">Yeni sözleşme imzalandı</div>
-                        <div class="activity-time">Ahmet Yılmaz - 2 saat önce</div>
-                    </div>
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-icon info">
-                        <i class="fas fa-phone"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">Müşteri araması gerçekleştirildi</div>
-                        <div class="activity-time">Mehmet Kaya - 3 saat önce</div>
-                    </div>
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-icon warning">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">Daire sunumu randevusu planlandı</div>
-                        <div class="activity-time">Fatma Demir - 5 saat önce</div>
-                    </div>
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-icon success">
-                        <i class="fas fa-whatsapp"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">WhatsApp teklifi gönderildi</div>
-                        <div class="activity-time">Ali Özkan - 6 saat önce</div>
-                    </div>
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-icon info">
-                        <i class="fas fa-file-contract"></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">Tapu devri tamamlandı</div>
-                        <div class="activity-time">Zeynep Arslan - 1 gün önce</div>
-                    </div>
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>

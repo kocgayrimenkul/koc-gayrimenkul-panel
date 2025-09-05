@@ -15,10 +15,17 @@ from django.core.paginator import Paginator
 from datetime import datetime
 from .models import Lead, SalesStage, LeadNote, Task, Appointment, StageTransition, WhatsAppMessage, CallLog, ActionLog
 from apps.customers.models import Customer
+from .decorators import (
+    can_view_sales_dashboard, can_add_leads, can_edit_leads, can_move_stages,
+    can_manage_contracts, require_manager_or_admin, require_admin_only,
+    require_sales_permission, require_kanban_access, require_lead_ownership_or_manager,
+    require_role_level, require_lead_access, require_manager_or_admin_level, 
+    require_admin_only_level, require_consultant_or_above
+)
 import json
 
 
-@login_required
+@can_view_sales_dashboard
 def sales_dashboard(request):
     """Ana satış süreç dashboard'u"""
     # Dashboard istatistikleri
@@ -38,16 +45,44 @@ def sales_dashboard(request):
         due_date__gte=timezone.now().date()
     ).count()
     
+    # Başarı oranı hesaplama (tamamlanan/toplam lead oranı)
+    total_leads = Lead.objects.count()
+    success_rate = 0
+    if total_leads > 0:
+        success_rate = round((completed_leads_count / total_leads) * 100, 1)
+    
+    # Son aktiviteler - sadece super user ve santral kullanıcıları görebilir
+    recent_activities = []
+    user_role = None
+    
+    # Kullanıcı rolünü belirle
+    if request.user.is_superuser:
+        user_role = 'admin'
+    else:
+        try:
+            user_role = request.user.employee_profile.role
+        except:
+            user_role = None
+    
+    # Sadece super user ve santral kullanıcıları son aktiviteleri görebilir
+    if request.user.is_superuser or user_role == 'secretary':
+        recent_activities = ActionLog.objects.select_related(
+            'lead', 'performed_by'
+        ).order_by('-created_at')[:5]
+    
     context = {
         'title': 'Satış Süreç Yönetimi',
         'active_leads_count': active_leads_count,
         'completed_leads_count': completed_leads_count,
         'pending_tasks_count': pending_tasks_count,
+        'success_rate': success_rate,
+        'recent_activities': recent_activities,
+        'can_view_activities': request.user.is_superuser or user_role == 'secretary',
     }
     return render(request, 'sales_process/dashboard.html', context)
 
 
-@login_required
+@require_kanban_access('staff')
 def staff_kanban(request):
     """Personel kanban görünümü"""
     try:
@@ -59,13 +94,35 @@ def staff_kanban(request):
         cevap_bekleniyor_stage = SalesStage.objects.get(name='cevap_bekleniyor')
         sozlesme_yapildi_stage = SalesStage.objects.get(name='sozlesme_yapildi')
         
-        # Her aşamadaki lead'leri getir
-        bilgi_verildi_leads = Lead.objects.filter(current_stage=bilgi_verildi_stage).order_by('-created_at')
-        ihtiyac_analizi_leads = Lead.objects.filter(current_stage=ihtiyac_analizi_stage).order_by('-stage_updated_at')
-        teklif_gonderildi_leads = Lead.objects.filter(current_stage=teklif_gonderildi_stage).order_by('-stage_updated_at')
-        daire_sunumu_leads = Lead.objects.filter(current_stage=daire_sunumu_stage).order_by('-stage_updated_at')
-        cevap_bekleniyor_leads = Lead.objects.filter(current_stage=cevap_bekleniyor_stage).order_by('-stage_updated_at')
-        sozlesme_yapildi_leads = Lead.objects.filter(current_stage=sozlesme_yapildi_stage).order_by('-stage_updated_at')
+        # Role-based filtreleme
+        try:
+            profile = request.user.employeeprofile
+            base_leads = Lead.objects.all()
+            
+            # Consultant sadece kendi lead'lerini görebilir
+            if profile.role == 'consultant':
+                base_leads = base_leads.filter(assigned_staff=request.user)
+            # Secretary tüm lead'leri görebilir ama düzenleme yapamaz
+            elif profile.role == 'secretary':
+                base_leads = base_leads.all()
+            # Manager, admin tüm lead'leri görebilir
+            elif profile.role in ['manager', 'admin']:
+                base_leads = base_leads.all()
+            else:
+                # Employee sadece kendi lead'lerini görebilir
+                base_leads = base_leads.filter(assigned_staff=request.user)
+                
+        except:
+            # Profil bulunamazsa sadece kendi lead'lerini göster
+            base_leads = Lead.objects.filter(assigned_staff=request.user)
+        
+        # Her aşamadaki lead'leri getir (filtrelenmiş)
+        bilgi_verildi_leads = base_leads.filter(current_stage=bilgi_verildi_stage).order_by('-created_at')
+        ihtiyac_analizi_leads = base_leads.filter(current_stage=ihtiyac_analizi_stage).order_by('-stage_updated_at')
+        teklif_gonderildi_leads = base_leads.filter(current_stage=teklif_gonderildi_stage).order_by('-stage_updated_at')
+        daire_sunumu_leads = base_leads.filter(current_stage=daire_sunumu_stage).order_by('-stage_updated_at')
+        cevap_bekleniyor_leads = base_leads.filter(current_stage=cevap_bekleniyor_stage).order_by('-stage_updated_at')
+        sozlesme_yapildi_leads = base_leads.filter(current_stage=sozlesme_yapildi_stage).order_by('-stage_updated_at')
         
         # Template için stages_with_leads yapısını oluştur
         stages_with_leads = [
@@ -101,10 +158,14 @@ def staff_kanban(request):
             }
         ]
         
-        # İstatistikler
-        total_leads = Lead.objects.count()
+        # İstatistikler (role-based)
+        total_leads = base_leads.count()
         my_leads = Lead.objects.filter(assigned_staff=request.user).count() if hasattr(request.user, 'assigned_leads') else 0
         today_tasks = Task.objects.filter(assigned_to=request.user, due_date__date=timezone.now().date()).count() if hasattr(request.user, 'tasks') else 0
+        
+        # Role bilgisini template'e gönder
+        user_role = getattr(request.user, 'employeeprofile', None)
+        can_edit = user_role and user_role.role not in ['secretary'] if user_role else False
         
         context = {
             'title': 'Personel Satış Akışı',
@@ -119,6 +180,8 @@ def staff_kanban(request):
             'my_leads': my_leads,
             'today_tasks': today_tasks,
             'conversion_rate': 0,  # Bu hesaplanabilir
+            'can_edit': can_edit,
+            'user_role': user_role.role if user_role else 'employee'
         }
         return render(request, 'sales_process/staff_kanban.html', context)
     except SalesStage.DoesNotExist:
@@ -126,7 +189,7 @@ def staff_kanban(request):
         return redirect('sales_process:dashboard')
 
 
-@login_required
+@require_kanban_access('staff')
 def staff_kanban_fullscreen(request):
     """Personel kanban tam ekran görünümü"""
     try:
@@ -204,7 +267,7 @@ def staff_kanban_fullscreen(request):
         return redirect('sales_process:dashboard')
 
 
-@login_required
+@require_kanban_access('manager')
 def manager_kanban(request):
     """Müdür kanban görünümü"""
     # Müdür akışı aşamaları
@@ -242,7 +305,7 @@ def manager_kanban(request):
     return render(request, 'sales_process/manager_kanban.html', context)
 
 
-@login_required
+@require_kanban_access('manager')
 def manager_kanban_fullscreen(request):
     """Müdür kanban tam ekran görünümü"""
     # Müdür akışı aşamaları
@@ -280,7 +343,7 @@ def manager_kanban_fullscreen(request):
     return render(request, 'sales_process/manager_kanban_fullscreen.html', context)
 
 
-@login_required
+@can_add_leads
 def lead_create(request):
     """Yeni lead oluşturma"""
     if request.method == 'POST':
@@ -402,7 +465,7 @@ def lead_create(request):
     return render(request, 'sales_process/lead_create.html', context)
 
 
-@login_required
+@require_sales_permission('view_leads')
 def lead_list(request):
     """Lead listesi sayfası"""
     leads = Lead.objects.select_related('customer', 'current_stage', 'assigned_staff').all().order_by('-created_at')
@@ -446,7 +509,7 @@ def lead_list(request):
     return render(request, 'sales_process/lead_list.html', context)
 
 
-@login_required
+@require_lead_access('view')
 def lead_detail(request, lead_id):
     """Lead detay sayfası"""
     lead = get_object_or_404(Lead, lead_id=lead_id)
@@ -466,7 +529,7 @@ def lead_detail(request, lead_id):
     return render(request, 'sales_process/lead_detail.html', context)
 
 
-@login_required
+@can_edit_leads
 def lead_update(request, lead_id):
     """Lead güncelleme"""
     lead = get_object_or_404(Lead, lead_id=lead_id)
@@ -501,7 +564,7 @@ def lead_update(request, lead_id):
 
 
 # AJAX Views
-@login_required
+@require_sales_permission('view_leads')
 @require_http_methods(["GET"])
 def get_leads_ajax(request):
     """AJAX ile lead listesi getir"""
@@ -560,7 +623,7 @@ def get_leads_ajax(request):
 # survey_results ve send_survey_reminder fonksiyonları survey_views.py dosyasına taşındı
 
 
-@login_required
+@require_sales_permission('manage_contracts')
 @csrf_exempt
 @require_http_methods(["POST"])
 def close_case(request):
@@ -638,7 +701,7 @@ def close_case(request):
         })
 
 
-@login_required
+@can_move_stages
 @csrf_exempt
 @require_http_methods(["POST"])
 def move_stage_ajax(request):
@@ -690,7 +753,7 @@ def move_stage_ajax(request):
 
 
 # AJAX Views - Tamamlanmış fonksiyonlar
-@login_required
+@require_sales_permission('edit_leads')
 @require_http_methods(["POST"])
 def add_note(request):
     """Lead'e not ekleme"""
@@ -728,7 +791,7 @@ def add_note(request):
         })
 
 
-@login_required
+@require_sales_permission('edit_leads')
 @require_http_methods(["POST"])
 def complete_presentation(request):
     """Sunum tamamlama"""
@@ -864,7 +927,7 @@ def complete_presentation(request):
         })
 
 
-@login_required
+@require_sales_permission('manage_contracts')
 @require_http_methods(["POST"])
 def accept_offer(request):
     """Teklif kabul etme"""
@@ -932,7 +995,7 @@ def accept_offer(request):
         })
 
 
-@login_required
+@require_sales_permission('manage_contracts')
 @require_http_methods(["POST"])
 def reject_offer(request):
     """Teklif reddetme"""
@@ -1000,7 +1063,7 @@ def reject_offer(request):
         })
 
 
-@login_required
+@require_sales_permission('edit_leads')
 @require_http_methods(["POST"])
 def schedule_appointment(request):
     """Randevu planlama"""
@@ -1052,7 +1115,7 @@ def schedule_appointment(request):
         })
 
 
-@login_required
+@require_sales_permission('edit_leads')
 @require_http_methods(["POST"])
 def send_whatsapp(request):
     """WhatsApp mesaj gönderme"""
@@ -1162,7 +1225,7 @@ def call_webhook(request):
         return JsonResponse({'status': 'error', 'message': str(e)})
 
 
-@login_required
+@require_sales_permission('edit_leads')
 @require_http_methods(["POST"])
 def make_call(request):
     """Arama yapma"""
@@ -1215,7 +1278,7 @@ def make_call(request):
         })
 
 
-@login_required
+@require_manager_or_admin_level
 def sales_reports(request):
     """Satış raporları"""
     # Rapor verileri
@@ -1241,7 +1304,7 @@ def sales_reports(request):
     })
 
 
-@login_required
+@require_manager_or_admin_level
 @require_http_methods(["GET"])
 def export_reports(request):
     """Rapor dışa aktarma"""
@@ -1253,7 +1316,7 @@ def export_reports(request):
     })
 
 
-@login_required
+@can_move_stages
 @require_http_methods(["POST"])
 def update_stage_ajax(request):
     """AJAX ile aşama güncelleme - OSMAN'IN İSTEĞİ: Guard'larla korunmuş"""
@@ -1432,7 +1495,7 @@ def update_stage_ajax(request):
         })
 
 
-@login_required
+@require_lead_access('view')
 @require_http_methods(["GET"])
 def lead_detail_ajax(request, lead_id):
     """Lead detaylarını AJAX ile getir"""
@@ -1477,7 +1540,7 @@ def lead_detail_ajax(request, lead_id):
         })
 
 
-@login_required
+@require_sales_permission('view_leads')
 def direct_viewing_requests(request):
     """Direkt daire gezme isteyen müşteriler için ayrı sayfa"""
     # Direkt daire gezme isteği olan lead'leri filtrele
@@ -1518,7 +1581,7 @@ def direct_viewing_requests(request):
     return render(request, 'sales_process/direct_viewing_requests.html', context)
 
 
-@login_required
+@can_add_leads
 @require_http_methods(["POST"])
 def create_direct_viewing_lead(request):
     """Direkt daire gezme isteği için yeni lead oluştur"""
@@ -1600,7 +1663,7 @@ def create_direct_viewing_lead(request):
 
 
 # Manager-specific functions for the workflow
-@login_required
+@require_sales_permission('manage_contracts')
 @csrf_exempt
 @require_http_methods(["POST"])
 def set_payment_type(request):
@@ -1706,7 +1769,7 @@ def set_payment_type(request):
         })
 
 
-@login_required
+@require_sales_permission('manage_contracts')
 @csrf_exempt
 @require_http_methods(["POST"])
 def set_deed_date(request):
@@ -1824,7 +1887,7 @@ def set_deed_date(request):
         })
 
 
-@login_required
+@require_sales_permission('manage_contracts')
 @csrf_exempt
 @require_http_methods(["POST"])
 def complete_credit_process(request):
@@ -1884,7 +1947,7 @@ def complete_credit_process(request):
         })
 
 
-@login_required
+@require_sales_permission('manage_contracts')
 @csrf_exempt
 @require_http_methods(["POST"])
 def complete_deed_process(request):
