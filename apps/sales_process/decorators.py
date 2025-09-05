@@ -366,6 +366,10 @@ def require_lead_access(action_type='view', allow_ajax=True):
                     return JsonResponse({'error': 'Oturum açmanız gerekiyor.'}, status=401)
                 return redirect('login')
             
+            # Superuser her zaman erişebilir
+            if request.user.is_superuser:
+                return view_func(request, *args, **kwargs)
+            
             try:
                 profile = request.user.employee_profile
             except:
@@ -380,7 +384,7 @@ def require_lead_access(action_type='view', allow_ajax=True):
             if lead_id:
                 from .models import Lead
                 try:
-                    lead = get_object_or_404(Lead, id=lead_id)
+                    lead = get_object_or_404(Lead, lead_id=lead_id)  # lead_id field kullan
                     
                     # Admin ve manager her zaman erişebilir
                     if profile.role in ['admin', 'manager']:

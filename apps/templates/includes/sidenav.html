@@ -47,6 +47,72 @@
             </div>
           </li>
           
+          <!-- SATIŞ SÜRECİ YÖNETİMİ -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" href="#satis-sureci" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="satis-sureci">
+              <i class="ni ni-chart-bar-32 text-success"></i>
+              <span class="nav-link-text">Satış Süreci</span>
+              <i class="fas fa-chevron-down float-right" style="font-size: 0.8rem; margin-top: 2px;"></i>
+            </a>
+            <div class="collapse" id="satis-sureci">
+              <ul class="nav nav-sm flex-column">
+                {% if user.is_superuser or user.employee_profile.role == 'admin' or user.employee_profile.role == 'manager' or user.employee_profile.role == 'secretary' or user.employee_profile.role == 'consultant' or user.employee_profile.role == 'employee' %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'satis-surec' in segment and 'dashboard' in request.resolver_match.url_name %} active {% endif %}" href="{% url 'sales_process:dashboard' %}">
+                    <i class="ni ni-tv-2 text-primary"></i>
+                    <span class="nav-link-text">Dashboard</span>
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if user.is_superuser or user.employee_profile.role == 'admin' or user.employee_profile.role == 'manager' or user.employee_profile.role == 'secretary' or user.employee_profile.role == 'consultant' or user.employee_profile.role == 'employee' %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'satis-surec' in segment and 'staff_kanban' in request.resolver_match.url_name %} active {% endif %}" href="{% url 'sales_process:staff_kanban' %}">
+                    <i class="ni ni-bullet-list-67 text-info"></i>
+                    <span class="nav-link-text">Personel Kanban</span>
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if user.is_superuser or user.employee_profile.role == 'admin' or user.employee_profile.role == 'manager' %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'satis-surec' in segment and 'manager_kanban' in request.resolver_match.url_name %} active {% endif %}" href="{% url 'sales_process:manager_kanban' %}">
+                    <i class="ni ni-briefcase-24 text-warning"></i>
+                    <span class="nav-link-text">Müdür Kanban</span>
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if user.is_superuser or user.employee_profile.role == 'admin' or user.employee_profile.role == 'manager' or user.employee_profile.role == 'secretary' or user.employee_profile.role == 'consultant' or user.employee_profile.role == 'employee' %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'satis-surec' in segment and 'lead_list' in request.resolver_match.url_name %} active {% endif %}" href="{% url 'sales_process:lead_list' %}">
+                    <i class="ni ni-satisfied text-success"></i>
+                    <span class="nav-link-text">Müşteri Listesi</span>
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if user.is_superuser or user.employee_profile.role == 'admin' or user.employee_profile.role == 'manager' or user.employee_profile.role == 'consultant' %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'satis-surec' in segment and 'lead_create' in request.resolver_match.url_name %} active {% endif %}" href="{% url 'sales_process:lead_create' %}">
+                    <i class="ni ni-fat-add text-success"></i>
+                    <span class="nav-link-text">Yeni Müşteri</span>
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if user.is_superuser or user.employee_profile.role == 'admin' or user.employee_profile.role == 'manager' %}
+                <li class="nav-item">
+                  <a class="nav-link {% if 'satis-surec' in segment and 'sales_reports' in request.resolver_match.url_name %} active {% endif %}" href="{% url 'sales_process:sales_reports' %}">
+                    <i class="ni ni-chart-pie-35 text-danger"></i>
+                    <span class="nav-link-text">Satış Raporları</span>
+                  </a>
+                </li>
+                {% endif %}
+              </ul>
+            </div>
+          </li>
+          
           <!-- MÜŞTERİ YÖNETİMİ -->
           <li class="nav-item">
             <a class="nav-link collapsed" href="#musteri-yonetimi" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="musteri-yonetimi">
