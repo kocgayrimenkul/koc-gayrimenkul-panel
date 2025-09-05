@@ -100,6 +100,7 @@ urlpatterns = [
     path('ajax/update-stage/', views.update_stage_ajax, name='update_stage_ajax'),
     path('ajax/move-stage/', views.move_stage_ajax, name='move_stage_ajax'),
     path('ajax/lead-detail/<uuid:lead_id>/', views.lead_detail_ajax, name='lead_detail_ajax'),
+    path('ajax/lead-locations/<uuid:lead_id>/', views.get_lead_locations_ajax, name='get_lead_locations_ajax'),
     
     # Process completion endpoints
     path('ajax/set-payment-type/', views.set_payment_type, name='set_payment_type'),

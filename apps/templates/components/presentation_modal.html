@@ -3,88 +3,117 @@
 
 {% load static %}
 
-<!-- Modal HTML -->
+<!-- Modern Sunum Modal -->
 <div class="modal fade" id="{{ modal_id|default:'completePresentationModal' }}" tabindex="-1" role="dialog" aria-labelledby="{{ modal_id|default:'completePresentationModal' }}Label" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <!-- Modal Header -->
-            <style>
-              .bg-gradient-koc-red { background: linear-gradient(87deg, #7a1a29 0, #9d2235 100%) !important; }
-              .modal-koc-title { display:flex; align-items:center; margin:0; font-weight:700; }
-              .modal-koc-title i { margin-right:.75rem; }
-            </style>
-            <div class="modal-header border-0 bg-gradient-koc-red text-white">
-              <h5 class="modal-title modal-koc-title" id="{{ modal_id|default:'completePresentationModal' }}Label">
-                <i class="fas fa-chalkboard"></i>
-                Sunumu Tamamla
-              </h5>
-              <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-2xl" style="border-radius: 20px; overflow: hidden;">
+            <!-- Modern Header -->
+            <div class="modal-header border-0 position-relative" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem 2rem 1rem;">
+                <div class="d-flex align-items-center w-100">
+                    <div class="icon-wrapper me-3" style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-map-marker-alt" style="font-size: 24px; color: white;"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h4 class="modal-title text-white mb-1 fw-bold" id="{{ modal_id|default:'completePresentationModal' }}Label">
+                            Daire Sunumu & Konum Yönetimi
+                        </h4>
+                        <p class="text-white-50 mb-0 small">Sunum konumlarınızı kaydedin ve süreci tamamlayın</p>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-dismiss="modal" aria-label="Close" style="font-size: 1.2rem; opacity: 0.8;">
               </button>
+                </div>
+                
+                <!-- Progress Indicator -->
+                <div class="position-absolute bottom-0 start-0 w-100" style="height: 4px; background: rgba(255,255,255,0.3);">
+                    <div class="progress-bar" style="height: 100%; background: #28a745; width: 0%; transition: width 0.3s ease;" id="{{ modal_id|default:'completePresentationModal' }}Progress"></div>
+                </div>
             </div>
             
-            <!-- Modal Body -->
-            <div class="modal-body p-4">
+            <!-- Modern Modal Body -->
+            <div class="modal-body" style="padding: 2rem; background: #f8f9fa;">
                 <form id="{{ modal_id|default:'completePresentationModal' }}Form">
-                    <!-- Konum Bilgisi Bölümü -->
-                    <div class="mb-4">
-                        <div class="d-flex align-items-center mb-3">
-                          <div class="rounded-circle p-2 mr-3" style="background:rgba(45,206,137,.12);">
-                            <i class="fas fa-map-marker-alt" style="color:#2dce89;"></i>
+                    
+                    <!-- Konum Yönetimi Kartı -->
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
+                        <div class="card-header border-0" style="background: linear-gradient(135deg, #28a745, #20c997); border-radius: 15px 15px 0 0; padding: 1.5rem;">
+                            <div class="d-flex align-items-center text-white">
+                                <div class="icon-circle me-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-map-marked-alt" style="font-size: 18px;"></i>
                           </div>
                           <div>
-                            <h6 class="mb-1 font-weight-bold text-dark">Sunum Konumu</h6>
-                            <small class="text-muted">Sunumun yapıldığı konum otomatik olarak alınacak</small>
+                                    <h5 class="mb-1 fw-bold">Sunum Konumları</h5>
+                                    <small class="opacity-75">Maksimum 3 konum ekleyebilirsiniz</small>
+                                </div>
                           </div>
                         </div>
-                        
-                        <div class="card border-0 bg-light">
-                            <div class="card-body p-3">
+                        <div class="card-body" style="padding: 2rem;">
                                 <div id="{{ modal_id|default:'completePresentationModal' }}LocationContainer">
-                                    <div class="text-center py-3">
-                                        <i class="fas fa-location-arrow text-muted fa-2x mb-2"></i>
-                                        <p class="text-muted mb-0">Konum bilgisi alınacak...</p>
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Yükleniyor...</span>
                                     </div>
+                                    <p class="text-muted mt-2 mb-0">Konumlar yükleniyor...</p>
                                 </div>
-                                <div class="invalid-feedback d-block" id="{{ modal_id|default:'completePresentationModal' }}LocationError"></div>
                             </div>
+                            <div class="invalid-feedback d-block" id="{{ modal_id|default:'completePresentationModal' }}LocationError"></div>
                         </div>
                     </div>
 
-                    <!-- Sunum Notları Bölümü -->
-                    <div class="mb-4">
-                        <div class="d-flex align-items-center mb-3">
-                          <div class="rounded-circle p-2 mr-3" style="background:rgba(17,205,239,.12);">
-                            <i class="fas fa-sticky-note" style="color:#11cdef;"></i>
+                    <!-- Sunum Notları Kartı -->
+                    <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+                        <div class="card-header border-0" style="background: linear-gradient(135deg, #6f42c1, #e83e8c); border-radius: 15px 15px 0 0; padding: 1.5rem;">
+                            <div class="d-flex align-items-center text-white">
+                                <div class="icon-circle me-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-edit" style="font-size: 18px;"></i>
                           </div>
                           <div>
-                            <h6 class="mb-1 font-weight-bold text-dark">Sunum Notları</h6>
-                            <small class="text-muted">Sunum sırasında yaşanan gelişmeleri detaylandırın</small>
+                                    <h5 class="mb-1 fw-bold">Sunum Notları</h5>
+                                    <small class="opacity-75">Sunum detaylarını ve müşteri geri bildirimlerini kaydedin</small>
+                                </div>
                           </div>
                         </div>
-                        
+                        <div class="card-body" style="padding: 2rem;">
                         <div class="form-group">
                             <textarea 
-                                class="form-control border-0 bg-light" 
+                                    class="form-control border-0" 
                                 id="{{ modal_id|default:'completePresentationModal' }}Notes" 
-                                rows="5" 
-                                placeholder="Örneğin: Müşteri 2+1 daireye çok ilgi gösterdi. Fiyat konusunda pazarlık yapmak istiyor. Kredi kullanmayı planlıyor. Gelecek hafta tekrar görüşme talep etti..." 
+                                    rows="6" 
+                                    placeholder="📝 Sunum detaylarını yazın...
+
+Örnek:
+• Müşteri 2+1 daireye çok ilgi gösterdi
+• Fiyat konusunda pazarlık yapmak istiyor  
+• Kredi kullanmayı planlıyor
+• Gelecek hafta tekrar görüşme talep etti
+• Ek sorular: Balkon durumu, otopark..."
                                 required 
-                                style="resize: none; border-radius: 8px;"></textarea>
+                                    style="resize: none; border-radius: 12px; background: #f8f9fa; font-size: 14px; line-height: 1.6; padding: 1.5rem;"></textarea>
                             <div class="invalid-feedback d-block" id="{{ modal_id|default:'completePresentationModal' }}NotesError"></div>
+                            </div>
                         </div>
                     </div>
                 </form>
             </div>
             
-            <!-- Modal Footer -->
-            <div class="modal-footer border-0 px-4 pb-4">
-              <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
-                <i class="fas fa-times mr-2"></i>İptal
+            <!-- Modern Footer -->
+            <div class="modal-footer border-0" style="padding: 2rem; background: white; border-radius: 0 0 20px 20px;">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <button type="button" class="btn btn-light border-0 px-4 py-2" data-dismiss="modal" style="border-radius: 12px; font-weight: 500;">
+                        <i class="fas fa-times me-2"></i>İptal
+                    </button>
+                    
+                    <div class="d-flex gap-3">
+                        <button type="button" class="btn px-4 py-2" data-action="save-locations" data-modal-id="{{ modal_id|default:'completePresentationModal' }}" id="{{ modal_id|default:'completePresentationModal' }}SaveLocationsBtn" disabled
+                                style="background: linear-gradient(135deg, #17a2b8, #138496); border: none; border-radius: 12px; color: white; font-weight: 500; transition: all 0.3s ease;">
+                            <i class="fas fa-save me-2"></i>Konumları Kaydet (<span id="{{ modal_id|default:'completePresentationModal' }}LocationCount">0</span>)
               </button>
-              <button type="button" class="btn btn-primary shadow-sm" onclick="PresentationModal.submit(&quot;{{ modal_id|default:'completePresentationModal' }}&quot;)">
-                <i class="fas fa-check-circle mr-2"></i>Sunumu Tamamla
+                        
+                        <button type="button" class="btn px-4 py-2" data-action="complete-presentation" data-modal-id="{{ modal_id|default:'completePresentationModal' }}"
+                                style="background: linear-gradient(135deg, #28a745, #20c997); border: none; border-radius: 12px; color: white; font-weight: 500; transition: all 0.3s ease;">
+                            <i class="fas fa-check-circle me-2"></i>Sunumu Tamamla
               </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -99,7 +128,8 @@ class PresentationModalComponent {
         this.availableProperties = [];
         this.apiEndpoint = '/api/properties/';
         this.submitEndpoint = '/satis-surec/complete-presentation/';
-        this.currentLocation = null;
+        this.savedLocations = []; // Çoklu konum desteği
+        this.maxLocations = 3;
     }
 
     // Modal açma fonksiyonu
@@ -122,12 +152,316 @@ class PresentationModalComponent {
         }
         
         console.log('Modal açılıyor...');
-        // Modal'ı önce aç, sonra konumu al
+        // Modal'ı önce aç, sonra mevcut konumları yükle ve UI'yi hazırla
         modalElement.modal('show');
-        this.getCurrentLocation(modalId);
+        this.loadExistingLocations(leadId, modalId);
     }
 
-    // Mevcut konumu al
+    // Mevcut konumları yükle
+    loadExistingLocations(leadId, modalId) {
+        // Backend'den mevcut konumları al
+        fetch(`/satis-surec/ajax/lead-locations/${leadId}/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': this.getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.locations) {
+                this.savedLocations = data.locations;
+            } else {
+                this.savedLocations = [];
+            }
+            // UI'yi başlat
+            this.initializeLocationUI(modalId);
+        })
+        .catch(error => {
+            console.error('Konumlar yüklenirken hata:', error);
+            this.savedLocations = [];
+            this.initializeLocationUI(modalId);
+        });
+    }
+
+    // Konum UI'sini başlat
+    initializeLocationUI(modalId = 'completePresentationModal') {
+        const container = document.getElementById(`${modalId}LocationContainer`);
+        if (!container) {
+            console.error('Location container bulunamadı:', `${modalId}LocationContainer`);
+            return;
+        }
+        
+        // Modern konum UI'si oluştur
+        container.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h6 class="mb-1 fw-bold text-dark">Kaydedilen Konumlar</h6>
+                    <small class="text-muted">${this.savedLocations.length}/${this.maxLocations} konum eklendi</small>
+                </div>
+                <button type="button" class="btn btn-sm" id="${modalId}AddLocationBtn" 
+                        style="background: linear-gradient(135deg, #28a745, #20c997); border: none; border-radius: 10px; color: white; font-weight: 500; padding: 0.5rem 1rem;">
+                    <i class="fas fa-plus me-1"></i>Konum Ekle
+                </button>
+            </div>
+            
+            <div id="${modalId}LocationsList" class="mb-3">
+                ${this.renderLocationsList()}
+            </div>
+            
+            <div id="${modalId}NewLocationForm" style="display: none;">
+                <div class="card border-0 shadow-sm" style="border-radius: 12px; background: linear-gradient(135deg, #f8f9fa, #e9ecef);">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="icon-circle me-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, #28a745, #20c997); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-crosshairs text-white" style="font-size: 16px;"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1 fw-bold">Yeni Konum Ekle</h6>
+                                <small class="text-muted">GPS ile otomatik konum alın</small>
+                            </div>
+                        </div>
+                        
+                        <div id="${modalId}CurrentLocationStatus">
+                            <div class="text-center py-4">
+                                <button type="button" class="btn btn-lg" onclick="PresentationModal.getCurrentLocationForForm('${modalId}')"
+                                        style="background: linear-gradient(135deg, #28a745, #20c997); border: none; border-radius: 12px; color: white; font-weight: 500; padding: 1rem 2rem;">
+                                    <i class="fas fa-location-arrow me-2"></i>GPS Konum Al
+                                </button>
+                                <div class="mt-3">
+                                    <small class="text-muted">Konum izni vermeniz gerekiyor</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Event listener ekle
+        const addBtn = document.getElementById(`${modalId}AddLocationBtn`);
+        if (addBtn) {
+            addBtn.onclick = () => this.showNewLocationForm(modalId);
+        }
+        
+        // İlk buton durumlarını ayarla
+        this.updateButtonStates(modalId);
+    }
+
+    // Modern konum listesi render et
+    renderLocationsList() {
+        if (this.savedLocations.length === 0) {
+            return `
+                <div class="text-center py-5" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 12px; border: 2px dashed #dee2e6;">
+                    <div class="icon-circle mx-auto mb-3" style="width: 60px; height: 60px; background: linear-gradient(135deg, #6c757d, #495057); border-radius: 15px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-map-marker-alt text-white" style="font-size: 24px;"></i>
+                    </div>
+                    <h6 class="text-muted mb-2">Henüz konum eklenmedi</h6>
+                    <p class="text-muted small mb-0">Sunum konumlarınızı eklemek için "Konum Ekle" butonuna tıklayın</p>
+                </div>
+            `;
+        }
+        
+        let html = '<div class="row">';
+        this.savedLocations.forEach((location, index) => {
+            const timestamp = new Date(location.timestamp).toLocaleString('tr-TR');
+            
+            html += `
+                <div class="col-12 mb-3">
+                    <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; background: white;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div class="d-flex align-items-start flex-grow-1">
+                                    <div class="me-3">
+                                        <span class="badge" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; font-size: 12px; padding: 0.5rem 0.75rem; border-radius: 8px;">
+                                            ${index + 1}
+                                        </span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-satellite-dish me-2" style="color: #28a745; font-size: 14px;"></i>
+                                            <span class="badge badge-light" style="font-size: 10px; color: #6c757d;">
+                                                GPS Konum
+                                            </span>
+                                        </div>
+                                        <h6 class="mb-1 fw-bold text-dark" style="font-size: 14px;">${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}</h6>
+                                        <small class="text-muted d-flex align-items-center">
+                                            <i class="fas fa-clock me-1" style="font-size: 11px;"></i>
+                                            ${timestamp}
+                                        </small>
+                                        ${location.accuracy ? `<small class="text-success d-block mt-1">Doğruluk: ±${Math.round(location.accuracy)}m</small>` : ''}
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm" onclick="PresentationModal.removeLocation(${index})" 
+                                        style="background: linear-gradient(135deg, #dc3545, #c82333); border: none; border-radius: 8px; color: white; padding: 0.25rem 0.5rem;">
+                                    <i class="fas fa-trash" style="font-size: 12px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        return html;
+    }
+
+    // Yeni konum formu göster
+    showNewLocationForm(modalId) {
+        const form = document.getElementById(`${modalId}NewLocationForm`);
+        if (form && this.savedLocations.length < this.maxLocations) {
+            form.style.display = 'block';
+        }
+    }
+
+    // Konum sil
+    removeLocation(index) {
+        if (confirm('Bu konumu silmek istediğinizden emin misiniz?')) {
+            this.savedLocations.splice(index, 1);
+            // UI'yi güncelle
+            const modalId = 'completePresentationModal';
+            const listContainer = document.getElementById(`${modalId}LocationsList`);
+            if (listContainer) {
+                listContainer.innerHTML = this.renderLocationsList();
+            }
+            // Butonları güncelle
+            this.updateButtonStates(modalId);
+            this.showNotification('info', 'Konum silindi.');
+        }
+    }
+
+    // Buton durumlarını güncelle
+    updateButtonStates(modalId = 'completePresentationModal') {
+        const addBtn = document.getElementById(`${modalId}AddLocationBtn`);
+        const saveBtn = document.getElementById(`${modalId}SaveLocationsBtn`);
+        const countSpan = document.getElementById(`${modalId}LocationCount`);
+        const headerCount = document.querySelector(`#${modalId}LocationContainer h6`);
+        const progressBar = document.getElementById(`${modalId}Progress`);
+        
+        // Konum Ekle butonu
+        if (addBtn) {
+            addBtn.disabled = this.savedLocations.length >= this.maxLocations;
+            if (this.savedLocations.length >= this.maxLocations) {
+                addBtn.innerHTML = '<i class="fas fa-check me-1"></i>Maksimum Ulaşıldı';
+                addBtn.style.background = 'linear-gradient(135deg, #6c757d, #495057)';
+            }
+        }
+        
+        // Konumları Kaydet butonu
+        if (saveBtn) {
+            saveBtn.disabled = this.savedLocations.length === 0;
+            if (this.savedLocations.length === 0) {
+                saveBtn.style.opacity = '0.5';
+            } else {
+                saveBtn.style.opacity = '1';
+            }
+        }
+        
+        // Konum sayısını güncelle
+        if (countSpan) {
+            countSpan.textContent = this.savedLocations.length;
+        }
+        
+        // Başlıktaki sayıyı güncelle
+        if (headerCount) {
+            headerCount.textContent = `Kaydedilen Konumlar (${this.savedLocations.length}/${this.maxLocations})`;
+        }
+        
+        // Progress bar güncelle
+        if (progressBar) {
+            const progressPercent = (this.savedLocations.length / this.maxLocations) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+        }
+    }
+
+    // Form için konum al
+    getCurrentLocationForForm(modalId) {
+        const statusDiv = document.getElementById(`${modalId}CurrentLocationStatus`);
+        
+        statusDiv.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-success"></div>
+                <p class="mt-2">Konum alınıyor...</p>
+            </div>
+        `;
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const locationData = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    // Konumu kaydet
+                    this.savedLocations.push(locationData);
+                    
+                    // UI'yi güncelle
+                    const listContainer = document.getElementById(`${modalId}LocationsList`);
+                    if (listContainer) {
+                        listContainer.innerHTML = this.renderLocationsList();
+                    }
+                    
+                    // Butonları güncelle
+                    this.updateButtonStates(modalId);
+                    
+                    // Formu gizle
+                    const form = document.getElementById(`${modalId}NewLocationForm`);
+                    if (form) form.style.display = 'none';
+                    
+                    this.showNotification('success', `Konum ${this.savedLocations.length} başarıyla kaydedildi!`);
+                },
+                (error) => {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-warning">Konum alınamadı. Manuel giriş yapın:</div>
+                        <textarea class="form-control mb-2" id="${modalId}ManualInput" placeholder="Konum açıklaması"></textarea>
+                        <button class="btn btn-success" onclick="PresentationModal.saveManualLocation('${modalId}')">Kaydet</button>
+                        <button class="btn btn-secondary ml-2" onclick="PresentationModal.cancelLocation('${modalId}')">İptal</button>
+                    `;
+                }
+            );
+        }
+    }
+
+    // Manuel konum kaydet
+    saveManualLocation(modalId) {
+        const input = document.getElementById(`${modalId}ManualInput`);
+        if (input && input.value.trim()) {
+            const locationData = {
+                manual_location: input.value.trim(),
+                timestamp: new Date().toISOString()
+            };
+            
+            this.savedLocations.push(locationData);
+            
+            // UI güncelle
+            const listContainer = document.getElementById(`${modalId}LocationsList`);
+            if (listContainer) {
+                listContainer.innerHTML = this.renderLocationsList();
+            }
+            
+            // Butonları güncelle
+            this.updateButtonStates(modalId);
+            
+            // Formu gizle
+            const form = document.getElementById(`${modalId}NewLocationForm`);
+            if (form) form.style.display = 'none';
+            
+            this.showNotification('success', `Konum ${this.savedLocations.length} başarıyla kaydedildi!`);
+        }
+    }
+
+    // Konum eklemeyi iptal et
+    cancelLocation(modalId) {
+        const form = document.getElementById(`${modalId}NewLocationForm`);
+        if (form) form.style.display = 'none';
+    }
+
+
+    // Mevcut konumu al (eski fonksiyon - uyumluluk için)
     getCurrentLocation(modalId = 'completePresentationModal') {
         const container = document.getElementById(`${modalId}LocationContainer`);
         if (!container) {
@@ -266,10 +600,59 @@ class PresentationModalComponent {
 
 
 
+    // Sadece konumları kaydet ve modal'ı kapat
+    saveLocationsOnly(modalId = 'completePresentationModal') {
+        if (this.savedLocations.length === 0) {
+            this.showNotification('warning', 'Önce en az bir konum eklemelisiniz.');
+            return;
+        }
+        
+        // Tüm kaydedilen konumları gönder
+        const requestData = {
+            lead_id: this.currentLeadId,
+            action: 'save_location_only',
+            multiple_locations: this.savedLocations,
+            completion_notes: `${this.savedLocations.length} konum kaydedildi: ${new Date().toLocaleString('tr-TR')}`
+        };
+        
+        fetch(this.submitEndpoint, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': this.getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Modal'ı kapat
+                $(`#${modalId}`).modal('hide');
+                this.showNotification('success', `${this.savedLocations.length} konum başarıyla kaydedildi!`);
+                
+                // Sayfayı yenile veya kanban'ı güncelle
+                setTimeout(() => {
+                    try {
+                        if (window.refreshKanban) { window.refreshKanban(); return; }
+                        if (window.refreshBoard) { window.refreshBoard(); return; }
+                        location.reload();
+                    } catch (e) {
+                        location.reload();
+                    }
+                }, 1000);
+            } else {
+                this.showNotification('error', data.message || 'Konumlar kaydedilirken hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Konum kaydetme hatası:', error);
+            this.showNotification('error', 'Konumlar kaydedilirken hata oluştu.');
+        });
+    }
+
     // Sunum tamamlama formunu gönder
     submit(modalId = 'completePresentationModal') {
         const notes = document.getElementById(`${modalId}Notes`).value.trim();
-        const manualLocationInput = document.getElementById(`${modalId}ManualLocation`);
         
         // Validasyon
         let isValid = true;
@@ -282,9 +665,9 @@ class PresentationModalComponent {
             document.getElementById(`${modalId}NotesError`).style.display = 'none';
         }
         
-        // Konum kontrolü
-        if (!this.currentLocation && (!manualLocationInput || !manualLocationInput.value.trim())) {
-            document.getElementById(`${modalId}LocationError`).textContent = 'Konum bilgisi gereklidir.';
+        // Konum kontrolü (en az bir konum olmalı)
+        if (this.savedLocations.length === 0) {
+            document.getElementById(`${modalId}LocationError`).textContent = 'En az bir konum kaydedilmelidir.';
             document.getElementById(`${modalId}LocationError`).style.display = 'block';
             isValid = false;
         } else {
@@ -296,15 +679,9 @@ class PresentationModalComponent {
         // AJAX isteği gönder
         const requestData = {
             lead_id: this.currentLeadId,
-            completion_notes: notes
+            completion_notes: notes,
+            multiple_locations: this.savedLocations // Çoklu konum desteği
         };
-        
-        // Konum bilgisini ekle
-        if (this.currentLocation) {
-            requestData.location_data = this.currentLocation;
-        } else if (manualLocationInput && manualLocationInput.value.trim()) {
-            requestData.manual_location = manualLocationInput.value.trim();
-        }
         
         fetch(this.submitEndpoint, {
             method: 'POST',
@@ -376,6 +753,26 @@ class PresentationModalComponent {
 if (typeof PresentationModal === 'undefined') {
     window.PresentationModal = new PresentationModalComponent();
 }
+
+// Event listener'ları ekle
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal içindeki butonlar için event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.dataset.action === 'save-locations' || e.target.closest('[data-action="save-locations"]')) {
+            const button = e.target.dataset.action ? e.target : e.target.closest('[data-action="save-locations"]');
+            const modalId = button.dataset.modalId;
+            if (modalId && window.PresentationModal) {
+                window.PresentationModal.saveLocationsOnly(modalId);
+            }
+        } else if (e.target.dataset.action === 'complete-presentation' || e.target.closest('[data-action="complete-presentation"]')) {
+            const button = e.target.dataset.action ? e.target : e.target.closest('[data-action="complete-presentation"]');
+            const modalId = button.dataset.modalId;
+            if (modalId && window.PresentationModal) {
+                window.PresentationModal.submit(modalId);
+            }
+        }
+    });
+});
 </script>
 
 <!-- CSS Stilleri -->
@@ -470,6 +867,17 @@ if (typeof PresentationModal === 'undefined') {
     background-color: #6c757d;
     border-color: #6c757d;
     transform: translateY(-1px);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    border: none;
+    color: white;
+}
+
+.btn-info:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
 }
 
 /* Icon Stilleri */

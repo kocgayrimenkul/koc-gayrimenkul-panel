@@ -801,6 +801,8 @@ def complete_presentation(request):
         completion_notes = data.get('completion_notes', '')
         location_data = data.get('location_data')
         manual_location = data.get('manual_location', '')
+        multiple_locations = data.get('multiple_locations', [])  # Yeni: çoklu konum
+        action = data.get('action', 'complete_presentation')  # Yeni: action tipi
         
         # Validasyon
         if not lead_id:
@@ -809,17 +811,30 @@ def complete_presentation(request):
                 'message': 'Lead ID gerekli.'
             })
             
-        if not completion_notes.strip():
+        # Sadece konum kaydetme işlemi değilse notlar zorunlu
+        if action != 'save_location_only' and not completion_notes.strip():
             return JsonResponse({
                 'success': False,
                 'message': 'Sunum notları zorunludur.'
             })
             
-        # Konum bilgisi kontrolü
-        if not location_data and not manual_location.strip():
+        # Konum bilgisi kontrolü (sadece GPS konumları)
+        has_location = False
+        if multiple_locations and len(multiple_locations) > 0:
+            # Çoklu konumlar için GPS kontrolü
+            for loc in multiple_locations:
+                if loc.get('latitude') and loc.get('longitude'):
+                    has_location = True
+                    break
+        elif location_data:
+            # Tek konum için GPS kontrolü
+            if location_data.get('latitude') and location_data.get('longitude'):
+                has_location = True
+            
+        if not has_location:
             return JsonResponse({
                 'success': False,
-                'message': 'Konum bilgisi gereklidir.'
+                'message': 'GPS konum bilgisi gereklidir. Lütfen konum izni verin.'
             })
         
         lead = get_object_or_404(Lead, lead_id=lead_id)
@@ -850,75 +865,141 @@ def complete_presentation(request):
                 'location_timestamp': location_data.get('timestamp')
             })
         
-        # Manuel konum bilgisini ekle
-        if manual_location:
-            presentation_data['manual_location'] = manual_location
         
-        # PresentationLocation kaydını oluştur
-        presentation_location = PresentationLocation.objects.create(**presentation_data)
+        # Çoklu konum kaydetme
+        presentation_locations = []
         
-        # ActionLog kaydı oluştur
-        payload_data = {
-            'completion_notes': completion_notes,
-            'lead_id': str(lead.lead_id),
-            'customer_name': lead.customer_name,
-            'customer_phone': lead.customer_phone,
-            'presentation_location_id': presentation_location.id
-        }
+        if multiple_locations:
+            # Yeni sistem: Çoklu konum
+            for i, loc in enumerate(multiple_locations):
+                loc_data = {
+                    'lead': lead,
+                    'completion_notes': f"{completion_notes} (Konum {i+1}/{len(multiple_locations)})",
+                    'completed_by': request.user
+                }
+                
+                if loc.get('latitude') and loc.get('longitude'):
+                    loc_data.update({
+                        'latitude': loc.get('latitude'),
+                        'longitude': loc.get('longitude'),
+                        'accuracy': loc.get('accuracy'),
+                        'location_timestamp': loc.get('timestamp')
+                    })
+                
+                
+                presentation_location = PresentationLocation.objects.create(**loc_data)
+                presentation_locations.append(presentation_location)
+        else:
+            # Eski sistem: Tek konum (uyumluluk için)
+            presentation_location = PresentationLocation.objects.create(**presentation_data)
+            presentation_locations.append(presentation_location)
         
-        # Konum bilgisini payload'a ekle
-        if location_data:
-            payload_data['location_data'] = location_data
-        if manual_location:
-            payload_data['manual_location'] = manual_location
-        
-        location_info = presentation_location.location_display
-        
-        ActionLog.objects.create(
-            lead=lead,
-            action_type='SHOW_DONE',
-            title='Sunum Tamamlandı',
-            description=f'Sunum tamamlandı. {location_info} Notlar: {completion_notes[:100]}...',
-            payload=payload_data,
-            is_successful=True,
-            performed_by=request.user
-        )
-        
-        # Lead'i cevap_bekleniyor aşamasına geçir
-        cevap_bekleniyor_stage = SalesStage.objects.get(name='cevap_bekleniyor')
-        old_stage = lead.current_stage
-        
-        lead.current_stage = cevap_bekleniyor_stage
-        lead.stage_updated_at = timezone.now()
-        lead.save()
-        
-        # StageTransition kaydı oluştur
-        StageTransition.objects.create(
-            lead=lead,
-            from_stage=old_stage,
-            to_stage=cevap_bekleniyor_stage,
-            transition_type='manual',
-            performed_by=request.user,
-            reason=f'Sunum tamamlandı - {completion_notes[:100]}...'
-        )
-        
-        # Sistem notu ekle
-        location_text = f" {presentation_location.location_display}"
-        note_text = f"Sunum tamamlandı.{location_text} Notlar: {completion_notes}"
-        
-        LeadNote.objects.create(
-            lead=lead,
-            title='Sunum Tamamlandı',
-            content=note_text,
-            created_by=request.user,
-            note_type='system'
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Sunum başarıyla tamamlandı ve lead "Cevap Bekleniyor" aşamasına geçirildi.',
-            'new_stage': cevap_bekleniyor_stage.display_name
-        })
+        # Action tipine göre farklı işlemler
+        if action == 'save_location_only':
+            # Sadece konum kaydetme - Stage değişimi yok
+            location_count = len(presentation_locations)
+            location_summary = f"{location_count} konum kaydedildi"
+            
+            # Her konum için ActionLog
+            for i, pres_loc in enumerate(presentation_locations):
+                ActionLog.objects.create(
+                    lead=lead,
+                    action_type='LOCATION_SAVED',
+                    title=f'Sunum Konumu {i+1} Kaydedildi',
+                    description=f'Sunum konumu kaydedildi. {pres_loc.location_display}',
+                    payload={
+                        'lead_id': str(lead.lead_id),
+                        'customer_name': lead.customer_name,
+                        'location_index': i+1,
+                        'total_locations': location_count,
+                        'presentation_location_id': pres_loc.id
+                    },
+                    is_successful=True,
+                    performed_by=request.user
+                )
+            
+            # Sistem notu ekle
+            LeadNote.objects.create(
+                lead=lead,
+                title='Sunum Konumları Kaydedildi',
+                content=f"Sunum için {location_count} konum kaydedildi.",
+                created_by=request.user,
+                note_type='location'
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'{location_count} konum başarıyla kaydedildi.',
+                'location_count': location_count
+            })
+            
+        else:
+            # Tam sunum tamamlama - Stage değişimi ile
+            location_count = len(presentation_locations)
+            payload_data = {
+                'completion_notes': completion_notes,
+                'lead_id': str(lead.lead_id),
+                'customer_name': lead.customer_name,
+                'customer_phone': lead.customer_phone,
+                'total_locations': location_count,
+                'presentation_location_ids': [loc.id for loc in presentation_locations]
+            }
+            
+            # Çoklu konum bilgisini payload'a ekle
+            if multiple_locations:
+                payload_data['multiple_locations'] = multiple_locations
+            elif location_data:
+                payload_data['location_data'] = location_data
+            elif manual_location:
+                payload_data['manual_location'] = manual_location
+            
+            location_info = f"{location_count} konum kaydedildi"
+            
+            ActionLog.objects.create(
+                lead=lead,
+                action_type='SHOW_DONE',
+                title='Sunum Tamamlandı',
+                description=f'Sunum tamamlandı. {location_info} Notlar: {completion_notes[:100]}...',
+                payload=payload_data,
+                is_successful=True,
+                performed_by=request.user
+            )
+            
+            # Lead'i cevap_bekleniyor aşamasına geçir
+            cevap_bekleniyor_stage = SalesStage.objects.get(name='cevap_bekleniyor')
+            old_stage = lead.current_stage
+            
+            lead.current_stage = cevap_bekleniyor_stage
+            lead.stage_updated_at = timezone.now()
+            lead.save()
+            
+            # StageTransition kaydı oluştur
+            StageTransition.objects.create(
+                lead=lead,
+                from_stage=old_stage,
+                to_stage=cevap_bekleniyor_stage,
+                transition_type='manual',
+                performed_by=request.user,
+                reason=f'Sunum tamamlandı - {completion_notes[:100]}...'
+            )
+            
+            # Sistem notu ekle
+            note_text = f"Sunum tamamlandı. {location_count} konum kaydedildi. Notlar: {completion_notes}"
+            
+            LeadNote.objects.create(
+                lead=lead,
+                title='Sunum Tamamlandı',
+                content=note_text,
+                created_by=request.user,
+                note_type='system'
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Sunum başarıyla tamamlandı ({location_count} konum) ve lead "Cevap Bekleniyor" aşamasına geçirildi.',
+                'new_stage': cevap_bekleniyor_stage.display_name,
+                'location_count': location_count
+            })
         
     except Exception as e:
         return JsonResponse({
@@ -1537,6 +1618,48 @@ def lead_detail_ajax(request, lead_id):
         return JsonResponse({
             'success': False,
             'message': f'Lead detayları yüklenirken hata oluştu: {str(e)}'
+        })
+
+
+@require_lead_access('view')
+@require_http_methods(["GET"])
+def get_lead_locations_ajax(request, lead_id):
+    """Lead'e ait mevcut konumları getir"""
+    try:
+        lead = get_object_or_404(Lead, lead_id=lead_id)
+        
+        # Mevcut konumları al
+        presentation_locations = lead.presentation_locations.all().order_by('-completed_at')
+        
+        locations_data = []
+        for loc in presentation_locations:
+            location_data = {
+                'id': loc.id,
+                'timestamp': loc.completed_at.isoformat() if loc.completed_at else None,
+                'completion_notes': loc.completion_notes,
+                'completed_by': loc.completed_by.get_full_name() if loc.completed_by else None
+            }
+            
+            # GPS koordinatları varsa ekle (sadece GPS konumları döndür)
+            if loc.latitude and loc.longitude:
+                location_data.update({
+                    'latitude': float(loc.latitude),
+                    'longitude': float(loc.longitude),
+                    'accuracy': loc.accuracy
+                })
+                locations_data.append(location_data)
+        
+        return JsonResponse({
+            'success': True,
+            'locations': locations_data,
+            'count': len(locations_data)
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Konumlar yüklenirken hata oluştu: {str(e)}',
+            'locations': []
         })
 
 
