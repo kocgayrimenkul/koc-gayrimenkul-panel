@@ -385,6 +385,9 @@ def lead_create(request):
                         'message': 'Sistem hatası: Mahalle bulunamadı. Lütfen yöneticinize başvurun.'
                     })
             
+            # Mahalle danışmanı (varsa) tespit et
+            neighborhood_consultant = getattr(selected_neighborhood, 'consultant', None) if selected_neighborhood else None
+            
             # Property seçimini işle
             selected_property = None
             if property_id:
@@ -398,7 +401,7 @@ def lead_create(request):
                 'full_name': customer_name,
                 'phone': customer_phone,
                 'neighborhood': selected_neighborhood,
-                'consultant': request.user,
+                'consultant': neighborhood_consultant or request.user,
                 'source': source,
                 'contact_type': contact_type,
                 'notes': lead_notes
@@ -422,7 +425,7 @@ def lead_create(request):
                 'property_type': property_type,
                 'property_location': property_location,
                 'current_stage': initial_stage,
-                'assigned_staff': request.user,
+                'assigned_staff': neighborhood_consultant or request.user,
                 'lead_notes': lead_notes
             }
             
