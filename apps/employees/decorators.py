@@ -25,7 +25,7 @@ def has_module_permission(user, module, permission_type):
         
         # Özel izinleri kontrol et
         try:
-            permission = employee.permission
+            permission = employee.custom_permissions
             permission_field = f"can_{permission_type}_{module}"
             return getattr(permission, permission_field, False)
         except:
@@ -73,7 +73,7 @@ def check_permission(permission_type, module):
             
             # Özel izinleri kontrol et
             try:
-                custom_permissions = employee.permission
+                custom_permissions = employee.custom_permissions
                 has_permission = getattr(custom_permissions, permission_field, False)
             except:
                 # Özel izin yoksa rol bazlı kontrol yap
@@ -118,9 +118,9 @@ def check_role_permission(role, permission_type, module):
         elif permission_type == 'view':
             return module in ['customers', 'portfolio', 'calendar', 'fsbo', 'presentation', 'careers']
         elif permission_type == 'add':
-            return module in ['customers', 'calendar', 'presentation']  # Müşteri, randevu ve presentation ekleyebilir
+            return module in ['customers', 'portfolio', 'calendar', 'presentation']  # Müşteri, portfolio, randevu ve presentation ekleyebilir
         elif permission_type == 'edit':
-            return module in ['customers', 'calendar', 'presentation']  # Müşteri, takvim ve presentation düzenleyebilir
+            return module in ['customers', 'portfolio', 'calendar', 'presentation']  # Müşteri, portfolio, takvim ve presentation düzenleyebilir
     
     # Çalışan izinleri
     elif role == 'employee':
@@ -379,4 +379,4 @@ def require_admin_only(view_func):
         messages.error(request, "Bu sayfaya erişim yetkiniz bulunmuyor.")
         return redirect('/')
     
-    return wrapper 
+    return wrapper

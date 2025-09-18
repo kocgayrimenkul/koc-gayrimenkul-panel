@@ -259,13 +259,13 @@ def property_create(request):
     """Yeni gayrimenkul ekleme"""
     role = get_user_role(request.user)
     
-    # Yetki kontrolü - Sadece Yönetici, Müdür ve Danışman ekleme yapabilir
-    if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
-        messages.error(request, f"Gayrimenkul ekleme yetkiniz bulunmamaktadır. Mevcut rolünüz: {role or 'Tanımsız'}. Sadece Yönetici, Müdür ve Danışman gayrimenkul ekleyebilir.")
+    # Yetki kontrolü - Sadece Yönetici, Müdür, Danışman ve Santral ekleme yapabilir
+    if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant', 'secretary']:
+        messages.error(request, f"Gayrimenkul ekleme yetkiniz bulunmamaktadır. Mevcut rolünüz: {role or 'Tanımsız'}. Sadece Yönetici, Müdür, Danışman ve Santral gayrimenkul ekleyebilir.")
         return redirect('property_list')
     
     # Mahalleler - yetki kontrolü ile
-    if request.user.is_superuser or role in ['admin', 'manager']:
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
         neighborhoods = Neighborhood.objects.all().order_by('name')
     elif role == 'consultant':
         neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
