@@ -1,491 +1,1173 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+{% load static %}
 
-{% block title %} Müşteri Detay {% endblock %}
-
-<!-- Specific CSS goes HERE -->
-{% block stylesheets %}
-<style>
-  /* Koç Gayrimenkul kurumsal renkleri */
-  :root {
-    --koc-red: #9d2235;
-    --koc-red-light: #b82e42;
-    --koc-red-dark: #7a1a29;
-    --koc-black: #212529;
-    --koc-red-rgb: 157, 34, 53;
-  }
-  
-  .bg-koc-red {
-    background-color: var(--koc-red) !important;
-  }
-  
-  .bg-gradient-koc-red {
-    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
-  }
-  
-  .text-koc-red {
-    color: var(--koc-red) !important;
-  }
-  
-  .btn-koc-red {
-    color: #fff;
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .btn-koc-red:hover {
-    color: #fff;
-    background-color: var(--koc-red-light);
-    border-color: var(--koc-red-light);
-  }
-  
-  .border-koc-red {
-    border-color: var(--koc-red) !important;
-  }
-  
-  /* Kartlar */
-  .card {
-    border-radius: 0.75rem;
-    border: none;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-  }
-  
-  .card:hover {
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  }
-  
-  /* Durum rozeti stilleri */
-  .badge-status {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    font-weight: 600;
-    border-radius: 30px;
-  }
-  
-  .badge-bekliyor {
-    background-color: #ffc107;
-    color: #212529;
-  }
-  
-  .badge-olumlu {
-    background-color: #2dce89;
-    color: white;
-  }
-  
-  .badge-olumsuz {
-    background-color: #f5365c;
-    color: white;
-  }
-  
-  /* Müşteri profil kartı */
-  .customer-profile {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2rem 0;
-  }
-  
-  .customer-avatar {
-    width: 100px;
-    height: 100px;
-    background-color: var(--koc-red);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.5rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-  }
-  
-  .detail-item {
-    padding: 1rem;
-    border-radius: 0.5rem;
-    background-color: #f8f9fe;
-    margin-bottom: 1rem;
-  }
-  
-  .detail-item .icon {
-    color: var(--koc-red);
-    margin-right: 0.5rem;
-  }
-  
-  .timeline {
-    position: relative;
-    padding: 0;
-    list-style: none;
-    margin-bottom: 0;
-  }
-  
-  .timeline:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 16px;
-    height: 100%;
-    width: 2px;
-    background-color: #e9ecef;
-  }
-  
-  .timeline-item {
-    position: relative;
-    padding-left: 40px;
-    padding-bottom: 1.5rem;
-  }
-  
-  .timeline-item:last-child {
-    padding-bottom: 0;
-  }
-  
-  .timeline-icon {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    text-align: center;
-    line-height: 34px;
-    color: white;
-  }
-</style>
-{% endblock stylesheets %}
+{% block title %}{{ customer.display_name }} - Müşteri Detay{% endblock %}
 
 {% block content %}
-
-<div class="header bg-gradient-koc-red pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Müşteri Detay</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="{% url 'customer_list' %}">Müşteriler</a></li>
-              <li class="breadcrumb-item active" aria-current="page">{{ customer.full_name }}</li>
-            </ol>
-          </nav>
+<div class="p-6 max-w-[1600px] mx-auto">
+        <!-- Breadcrumb & Action Buttons -->
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center space-x-2 text-sm">
+                <a href="{% url 'customer_list' %}" class="text-slate-400 hover:text-slate-600 transition">Müşteriler</a>
+                <i class="fas fa-chevron-right text-[10px] text-slate-300"></i>
+                <span class="font-medium">{{ customer.display_name }}</span>
+            </div>
+            <div class="flex space-x-2">
+                <button type="button" onclick="openModal()" class="flex items-center space-x-2 px-4 py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition text-sm font-medium">
+                    <i class="far fa-play-circle"></i>
+                    <span>Süreç Başlat</span>
+                </button>
+            </div>
         </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{% url 'customer_edit' customer.id %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-edit mr-1"></i> Düzenle
-          </a>
-          <a href="{% url 'customer_list' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-arrow-left mr-1"></i> Müşteri Listesine Dön
-          </a>
+
+        {% if messages %}
+        <div class="mb-4 space-y-2">
+            {% for message in messages %}
+            <div class="px-4 py-3 rounded-lg text-sm font-medium {% if message.tags == 'success' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">{{ message }}</div>
+            {% endfor %}
         </div>
-      </div>
-    </div>
-  </div>
-</div>
+        {% endif %}
 
-<!-- Page content -->
-<div class="container-fluid mt--6">
-  <!-- Uyarı mesajları -->
-  {% if messages %}
-  <div class="row">
-    <div class="col">
-      {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
-        <span class="alert-text">{{ message }}</span>
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-  
-  <div class="row">
-    <div class="col-xl-4 order-xl-2">
-      <!-- Müşteri profil kartı -->
-      <div class="card">
-        <div class="card-body">
-          <div class="customer-profile">
-            <div class="customer-avatar">
-              {{ customer.full_name|slice:":1" }}
-            </div>
-            <h3 class="text-center mb-0">{{ customer.full_name }}</h3>
-            <p class="text-muted text-center">{{ customer.neighborhood.name }}</p>
-            
-            {% if customer.meeting_status == 'olumlu' %}
-              <span class="badge badge-status badge-olumlu mb-3">
-                <i class="fas fa-check-circle mr-1"></i> Olumlu
-              </span>
-            {% elif customer.meeting_status == 'olumsuz' %}
-              <span class="badge badge-status badge-olumsuz mb-3">
-                <i class="fas fa-times-circle mr-1"></i> Olumsuz
-              </span>
-            {% else %}
-              <span class="badge badge-status badge-bekliyor mb-3">
-                <i class="fas fa-clock mr-1"></i> Bekliyor
-              </span>
-            {% endif %}
-            
-            <!-- Müşteri iletişim butonu -->
-            <a href="tel:{{ customer.phone }}" class="btn btn-koc-red btn-block mb-3">
-              <i class="fas fa-phone-alt mr-2"></i> Ara
-            </a>
+        <div class="grid grid-cols-12 gap-6">
+            <!-- Left Sidebar -->
+            <div class="col-span-3 space-y-6">
+                <!-- Profile Card -->
+                <div class="bg-white rounded-2xl p-6 custom-shadow border border-slate-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h1 class="text-xl font-bold mb-2">{{ customer.display_name }}</h1>
+                            <span class="inline-block px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded uppercase">{{ customer.get_customer_type_display }}</span>
+                            <span class="inline-block ml-1 px-2 py-0.5 bg-{{ customer.status_color }}-50 text-{{ customer.status_color }}-600 text-[10px] font-bold rounded uppercase border border-{{ customer.status_color }}-100">{{ customer.get_status_display }}</span>
+                        </div>
+                        <button class="text-slate-400 hover:text-slate-600 border border-slate-100 p-1.5 rounded-lg">
+                            <i class="far fa-edit"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400">
+                                <i class="fas fa-phone-alt text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400 uppercase font-semibold">Telefon</div>
+                                <div class="text-sm font-medium">{{ customer.phone }}</div>
+                            </div>
+                        </div>
+                        {% if customer.email %}
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400">
+                                <i class="fas fa-envelope text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400 uppercase font-semibold">E-posta</div>
+                                <div class="text-sm font-medium break-all">{{ customer.email }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400">
+                                <i class="fas fa-building text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400 uppercase font-semibold">İlgilendiği Daire</div>
+                                <div class="text-sm font-medium">
+                                    {% if customer.real_estate %}
+                                        {{ customer.real_estate.apartment_name|default:customer.real_estate }}
+                                    {% else %}
+                                        <span class="text-slate-300">—</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- Müşteri düzenleme butonu -->
-            <a href="{% url 'customer_edit' customer.id %}" class="btn btn-outline-primary btn-block mb-3">
-              <i class="fas fa-edit mr-2"></i> Düzenle
-            </a>
-          </div>
-          
-          <hr class="my-3">
-          
-          <!-- Müşteri detay bilgileri -->
-          <h6 class="heading-small text-muted mb-3">İletişim Bilgileri</h6>
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-phone icon"></i> Telefon</span>
-              <strong>{{ customer.phone }}</strong>
-            </div>
-          </div>
-          
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-map-marker-alt icon"></i> Mahalle</span>
-              <strong>{{ customer.neighborhood.name }}</strong>
-            </div>
-          </div>
-          
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-envelope icon"></i> İletişim Türü</span>
-              <strong>
-                {% if customer.contact_type == 'bilgi_alma' %}Bilgi Alma
-                {% elif customer.contact_type == 'daire_sunumu' %}Daire Sunumu
-                {% elif customer.contact_type == 'sikayet' %}Şikayet
-                {% else %}{{ customer.contact_type|title }}{% endif %}
-              </strong>
-            </div>
-          </div>
-          
-          <h6 class="heading-small text-muted mb-3 mt-4">Görüşme Bilgileri</h6>
-          
-          {% if customer.source %}
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-bullhorn icon"></i> Müşteri Kaynağı</span>
-              <strong>
-                {% if customer.source == 'branda' %}Branda
-                {% elif customer.source == 'sahibinden' %}Sahibinden
-                {% elif customer.source == 'referans' %}Referans
-                {% elif customer.source == 'emlakjet' %}Emlakjet
-                {% elif customer.source == 'sosyal_medya' %}Sosyal Medya
-                {% else %}{{ customer.source|title }}{% endif %}
-              </strong>
-            </div>
-          </div>
-          {% endif %}
-          
-          <h6 class="heading-small text-muted mb-3 mt-4">Sistem Bilgileri</h6>
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-calendar-alt icon"></i> Kayıt Tarihi</span>
-              <strong>{{ customer.created_at|date:"d.m.Y" }}</strong>
-            </div>
-          </div>
-          
-          {% if customer.property %}
-          <h6 class="heading-small text-muted mb-3 mt-4">İlgilendiği Gayrimenkul</h6>
-          <div class="detail-item">
-            <div class="d-flex justify-content-between mb-2">
-              <span><i class="fas fa-home icon"></i> Gayrimenkul</span>
-              <strong>{{ customer.property.apartment_name }}</strong>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-              <span><i class="fas fa-map-marker-alt icon"></i> Mahalle</span>
-              <strong>{{ customer.property.neighborhood.name }}</strong>
-            </div>
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-lira-sign icon"></i> Fiyat</span>
-              <strong>{{ customer.property.price|floatformat:0 }} TL</strong>
-            </div>
-            <div class="text-center mt-3">
-              <a href="{% url 'property_detail' customer.property.id %}" class="btn btn-sm btn-outline-koc-red">
-                <i class="fas fa-external-link-alt mr-2"></i> Gayrimenkul Detayı
-              </a>
-            </div>
-          </div>
-          {% endif %}
-          
-          {% if customer.response_date %}
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-phone-alt icon"></i> Geri Dönüş Tarihi</span>
-              <strong>{{ customer.response_date|date:"d.m.Y" }}</strong>
-            </div>
-          </div>
-          {% endif %}
-          
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-user-tie icon"></i> Danışman</span>
-              <strong>
-                {% if customer.consultant %}
-                  {{ customer.consultant.get_full_name|default:customer.consultant.username }}
-                {% else %}
-                  Atanmamış
+                <!-- General Info Card -->
+                <div class="bg-white rounded-2xl p-6 custom-shadow border border-slate-100">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">Genel Bilgiler</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Kayıt Tarihi</span>
+                            <span class="font-semibold">{{ customer.created_at|date:"d.m.Y" }}</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Danışman</span>
+                            <span class="font-semibold">
+                                {% if customer.consultant %}
+                                    {{ customer.consultant.get_full_name|default:customer.consultant.username }}
+                                {% else %}
+                                    <span class="text-slate-300">Atanmamış</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Kaynak</span>
+                            <span class="font-semibold">{{ customer.get_source_display|default:"—" }}</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">İletişim Türü</span>
+                            <span class="font-semibold">{{ customer.get_contact_type_display }}</span>
+                        </div>
+                        {% if customer.neighborhood %}
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Mahalle</span>
+                            <span class="font-semibold">{{ customer.neighborhood.name }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if customer.financial_info %}
+                <!-- Financial Info Card -->
+                <div class="bg-white rounded-2xl p-6 custom-shadow border border-slate-100">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">Finansal Bilgiler</h3>
+                    <div class="space-y-3">
+                        {% if customer.financial_info.monthly_income %}
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Aylık Gelir</span>
+                            <span class="font-semibold">{{ customer.financial_info.monthly_income|intcomma }} ₺</span>
+                        </div>
+                        {% endif %}
+                        {% if customer.financial_info.budget_min or customer.financial_info.budget_max %}
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Bütçe</span>
+                            <span class="font-semibold">{{ customer.financial_info.budget_min|default:0|intcomma }} - {{ customer.financial_info.budget_max|default:0|intcomma }} ₺</span>
+                        </div>
+                        {% endif %}
+                        {% if customer.financial_info.credit_score %}
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Kredi Notu</span>
+                            <span class="font-semibold">{{ customer.financial_info.credit_score }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
                 {% endif %}
-              </strong>
             </div>
-          </div>
 
-          {% if customer.notes %}
-          <h6 class="heading-small text-muted mb-3 mt-4">Notlar</h6>
-          <div class="detail-item">
-            <p class="mb-0">{{ customer.notes|linebreaks }}</p>
-          </div>
-          {% endif %}
-
-          <!-- Hatırlatma Tarihi Ekleniyor -->
-          {% if customer.reminder_date %}
-          <div class="detail-item">
-            <span class="icon"><i class="fas fa-bell"></i></span>
-            <strong>Hatırlatma Tarihi:</strong> {{ customer.reminder_date|date:"d.m.Y" }}
-          </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-xl-8 order-xl-1">
-      <!-- Görüşme Sonucu -->
-      <div class="card mb-4">
-        <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <h3 class="mb-0">Görüşme Sonucu</h3>
-              <p class="text-sm text-muted mb-0">Müşteri ile yapılan görüşme sonucunu güncelleyin</p>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-              <label class="form-control-label" for="meeting_result">Görüşme Notları</label>
-              <div class="input-group input-group-merge">
-                <div class="input-group-prepend">
-                  <span class="input-group-text"><i class="fas fa-comment-alt"></i></span>
+            <!-- Main Content Area -->
+            <div class="col-span-9 space-y-6">
+                <!-- Navigation Tabs -->
+                <div class="bg-white rounded-2xl p-2 custom-shadow border border-slate-100 flex items-center space-x-1 flex-wrap">
+                    <button onclick="switchTab('notes')" id="tab-notes" class="flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition tab-active">
+                        <i class="far fa-edit"></i>
+                        <span>Notlar &amp; Görevler</span>
+                    </button>
+                    <button onclick="switchTab('workflow')" id="tab-workflow" class="flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition tab-inactive">
+                        <i class="fas fa-filter"></i>
+                        <span>İş Akışları</span>
+                    </button>
+                    <button onclick="switchTab('proposals')" id="tab-proposals" class="flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition tab-inactive">
+                        <i class="far fa-file-alt"></i>
+                        <span>Teklifler</span>
+                    </button>
+                    <button onclick="switchTab('requests')" id="tab-requests" class="flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition tab-inactive">
+                        <i class="fas fa-broadcast-tower"></i>
+                        <span>Talepler</span>
+                    </button>
+                    <button onclick="switchTab('contact')" id="tab-contact" class="flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition tab-inactive">
+                        <i class="far fa-comment-alt"></i>
+                        <span>İletişim</span>
+                    </button>
+                    <button onclick="switchTab('activity')" id="tab-activity" class="flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition tab-inactive">
+                        <i class="far fa-clock"></i>
+                        <span>Son Aktiviteler</span>
+                    </button>
+                    <button onclick="switchTab('callhistory')" id="tab-callhistory" class="flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition tab-inactive">
+                        <i class="fas fa-headphones"></i>
+                        <span>Çağrı Geçmişi</span>
+                        {% if call_stats.total %}
+                        <span class="bg-orange-100 text-orange-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ call_stats.total }}</span>
+                        {% endif %}
+                    </button>
                 </div>
-                <textarea id="meeting_result" name="meeting_result" rows="5" class="form-control" 
-                  placeholder="Görüşme notlarını buraya girebilirsiniz...">{{ customer.meeting_result }}</textarea>
-              </div>
-            </div>
-            
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label class="form-control-label" for="meeting_status">Görüşme Durumu</label>
-                  <div class="input-group input-group-merge">
-                    <div class="input-group-prepend">
-                      <span class="input-group-text"><i class="fas fa-clipboard-check"></i></span>
+
+                <!-- Tab Content: Last Activities -->
+                <div id="content-activity" class="hidden bg-white rounded-2xl p-8 custom-shadow border border-slate-100">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold">Son Aktiviteler</h2>
+                            <p class="text-xs text-slate-400">Müşteriye ait tüm son aktiviteler</p>
+                        </div>
+                        <select class="text-xs border-slate-200 rounded-lg px-3 py-2 bg-white border focus:outline-none">
+                            <option>Tüm Aktiviteler</option>
+                        </select>
                     </div>
-                    <select id="meeting_status" name="meeting_status" class="form-control">
-                      <option value="bekliyor" {% if customer.meeting_status == 'bekliyor' %}selected{% endif %}>Bekliyor</option>
-                      <option value="olumlu" {% if customer.meeting_status == 'olumlu' %}selected{% endif %}>Olumlu</option>
-                      <option value="olumsuz" {% if customer.meeting_status == 'olumsuz' %}selected{% endif %}>Olumsuz</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label class="form-control-label" for="response_date">Geri Dönüş Tarihi</label>
-                  <div class="input-group input-group-merge">
-                    <div class="input-group-prepend">
-                      <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+
+                    <div class="relative pl-8">
+                        <div class="absolute left-4 top-2 bottom-0 w-0.5 bg-slate-100"></div>
+                        {% for activity in activities %}
+                        <div class="relative mb-8">
+                            <div class="absolute -left-5 top-1 w-2.5 h-2.5 bg-slate-400 rounded-full border-4 border-white ring-4 ring-slate-50"></div>
+                            <div class="bg-slate-50 rounded-2xl p-4 flex justify-between items-center">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase bg-slate-200 px-2 py-1 rounded">{{ activity.source_label|default:"Sistem" }}</span>
+                                    <i class="fas fa-arrow-right text-[10px] text-slate-300"></i>
+                                    <span class="text-sm font-medium">{{ activity.get_activity_type_display }}: {{ activity.description }}</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-[10px] text-slate-400">{{ activity.created_at|naturaltime }}</div>
+                                    <div class="text-[10px] text-slate-400">{{ activity.created_at|date:"d.m.Y H:i" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="py-12 text-center">
+                            <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mx-auto mb-4">
+                                <i class="far fa-clock text-xl"></i>
+                            </div>
+                            <h4 class="text-sm font-bold mb-1">Aktivite kaydı yok</h4>
+                            <p class="text-[10px] text-slate-400">Müşteriye ait aktiviteler oluştukça burada listelenecek.</p>
+                        </div>
+                        {% endfor %}
                     </div>
-                    <input type="date" id="response_date" name="response_date" class="form-control" 
-                      value="{% if customer.response_date %}{{ customer.response_date|date:'Y-m-d' }}{% endif %}">
-                  </div>
-                  <small class="form-text text-muted">Danışmanın müşteriye geri dönüş yaptığı tarih</small>
                 </div>
-              </div>
+
+                <!-- Tab Content: Call History -->
+                <div id="content-callhistory" class="hidden bg-white rounded-2xl p-8 custom-shadow border border-slate-100">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold">Çağrı Geçmişi</h2>
+                            <p class="text-xs text-slate-400">{{ customer.display_name }} ile yapılan tüm çağrılar ve ses kayıtları</p>
+                        </div>
+                        <span class="text-[10px] bg-slate-50 text-slate-400 px-2 py-1 rounded">{{ call_stats.total }} çağrı</span>
+                    </div>
+
+                    <!-- Özet Kartlar -->
+                    <div class="grid grid-cols-4 gap-3 mb-6">
+                        <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center space-x-3">
+                            <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600"><i class="fas fa-phone-alt text-sm"></i></div>
+                            <div>
+                                <div class="text-[10px] text-blue-500 font-bold uppercase">Toplam</div>
+                                <div class="text-xl font-bold text-blue-700">{{ call_stats.total }}</div>
+                            </div>
+                        </div>
+                        <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex items-center space-x-3">
+                            <div class="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600"><i class="fas fa-check text-sm"></i></div>
+                            <div>
+                                <div class="text-[10px] text-emerald-500 font-bold uppercase">Tamamlanan</div>
+                                <div class="text-xl font-bold text-emerald-700">{{ call_stats.answered }}</div>
+                            </div>
+                        </div>
+                        <div class="bg-red-50 border border-red-100 rounded-xl p-3 flex items-center space-x-3">
+                            <div class="w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center text-red-500"><i class="fas fa-phone-slash text-sm"></i></div>
+                            <div>
+                                <div class="text-[10px] text-red-400 font-bold uppercase">Cevapsız</div>
+                                <div class="text-xl font-bold text-red-600">{{ call_stats.missed }}</div>
+                            </div>
+                        </div>
+                        <div class="bg-orange-50 border border-orange-100 rounded-xl p-3 flex items-center space-x-3">
+                            <div class="w-9 h-9 bg-orange-100 rounded-lg flex items-center justify-center text-orange-500"><i class="fas fa-headphones text-sm"></i></div>
+                            <div>
+                                <div class="text-[10px] text-orange-500 font-bold uppercase">Ses Kaydı</div>
+                                <div class="text-xl font-bold text-orange-600">{{ call_stats.recorded|default:"0" }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Çağrı Listesi -->
+                    <div class="space-y-3">
+                        {% for call in call_logs %}
+                        <div class="border border-slate-100 rounded-xl p-4 hover:shadow-sm transition bg-white">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <!-- Yön & Durum İkonu -->
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
+                                        {% if call.status == 'missed' %}bg-red-50 text-red-500
+                                        {% elif call.direction == 'inbound' %}bg-blue-50 text-blue-600
+                                        {% else %}bg-emerald-50 text-emerald-600{% endif %}">
+                                        {% if call.status == 'missed' %}
+                                            <i class="fas fa-phone-slash text-sm"></i>
+                                        {% elif call.direction == 'inbound' %}
+                                            <i class="fas fa-phone-volume text-sm"></i>
+                                        {% else %}
+                                            <i class="fas fa-phone-alt text-sm"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-semibold text-slate-800">{{ call.get_direction_display }}</span>
+                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full
+                                                {% if call.status == 'missed' %}bg-red-50 text-red-500
+                                                {% else %}bg-emerald-50 text-emerald-600{% endif %}">
+                                                {{ call.get_status_display }}
+                                            </span>
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 mt-0.5">
+                                            <i class="fas fa-arrow-right text-[8px] mr-1"></i>
+                                            {{ call.caller|default:"—" }} → {{ call.called|default:"—" }}
+                                            {% if call.duration_formatted %}
+                                            <span class="mx-1">·</span>
+                                            <i class="far fa-clock text-[8px]"></i> {{ call.duration_formatted }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    {% if call.recording_url %}
+                                    <button onclick="toggleCallAudio('callrec-{{ call.id }}')"
+                                        id="btn-callrec-{{ call.id }}"
+                                        style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:linear-gradient(135deg,#fb6340,#e8521f);color:white;border:none;border-radius:8px;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(251,99,64,.3);">
+                                        <i class="fas fa-play text-[10px]"></i> Dinle
+                                    </button>
+                                    <button onclick="runAiSummaryDetail({{ call.id }}, this)"
+                                        id="ai-btn-detail-{{ call.id }}"
+                                        style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:8px;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;">
+                                        <i class="fas fa-magic text-[10px]"></i> AI Özet
+                                    </button>
+                                    {% else %}
+                                    <span class="text-[10px] text-slate-300 italic">Kayıt yok</span>
+                                    {% endif %}
+                                    <div class="text-right">
+                                        <div class="text-xs font-medium text-slate-600">{{ call.start_time|date:"d.m.Y" }}</div>
+                                        <div class="text-[10px] text-slate-400">{{ call.start_time|date:"H:i" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Audio Player (gizli, butona basınca açılır) -->
+                            {% if call.recording_url %}
+                            <div id="callrec-{{ call.id }}" class="hidden mt-3 pt-3 border-t border-slate-50">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-headphones text-orange-400 text-sm flex-shrink-0"></i>
+                                    <audio controls class="w-full" style="height:36px; border-radius:8px;" onplay="markPlaying('btn-callrec-{{ call.id }}')" onpause="markPaused('btn-callrec-{{ call.id }}')">
+                                        <source src="{{ call.recording_url }}" type="audio/mpeg">
+                                        <source src="{{ call.recording_url }}" type="audio/wav">
+                                        Tarayıcınız ses oynatmayı desteklemiyor.
+                                    </audio>
+                                    <a href="{{ call.recording_url }}" target="_blank" title="Yeni sekmede aç"
+                                       style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0;border-radius:8px;color:#94a3b8;text-decoration:none;font-size:.8rem;transition:all .2s;"
+                                       onmouseover="this.style.color='#fb6340';this.style.borderColor='#fb6340';"
+                                       onmouseout="this.style.color='#94a3b8';this.style.borderColor='#e2e8f0';">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <!-- AI Özet Sonucu (inline) -->
+                            <div id="ai-result-detail-{{ call.id }}" style="display:none;margin-top:10px;padding:10px 14px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;">
+                                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                                    <i class="fas fa-magic" style="color:#7c3aed;font-size:.7rem;"></i>
+                                    <span style="font-size:.7rem;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.04em;">AI Çağrı Özeti</span>
+                                </div>
+                                <div id="ai-text-detail-{{ call.id }}" style="font-size:.78rem;color:#4b5563;line-height:1.6;white-space:pre-wrap;"></div>
+                                <div id="ai-note-detail-{{ call.id }}" style="display:none;margin-top:6px;font-size:.7rem;color:#7c3aed;font-weight:600;">✓ Müşteri kartına not olarak eklendi</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div class="flex flex-col items-center justify-center py-20 text-center">
+                            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-4">
+                                <i class="fas fa-headphones text-2xl"></i>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-700 mb-1">Çağrı kaydı bulunamadı</h4>
+                            <p class="text-xs text-slate-400">Bu müşteriye ait çağrı geçmişi oluştukça burada listelenecek.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Tab Content: Contact -->
+                <div id="content-contact" class="hidden space-y-6">
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-bold text-blue-600 uppercase">ÇAĞRILAR</span>
+                                <span class="bg-blue-50 text-blue-600 text-[10px] px-1.5 py-0.5 rounded">{{ call_stats.total }}</span>
+                            </div>
+                            <div class="text-2xl font-bold mb-1">{{ call_stats.total }}</div>
+                            <div class="text-[10px] text-slate-400">{{ call_stats.answered }} tamamlanan · {{ call_stats.missed }} cevapsız</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-bold text-purple-600 uppercase">SMS</span>
+                                <span class="bg-purple-50 text-purple-600 text-[10px] px-1.5 py-0.5 rounded">{{ sms_stats.total }}</span>
+                            </div>
+                            <div class="text-2xl font-bold mb-1">{{ sms_stats.total }}</div>
+                            <div class="text-[10px] text-slate-400">{{ sms_stats.sent }} iletilen · {{ sms_stats.failed }} başarısız</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-bold text-emerald-600 uppercase">WHATSAPP</span>
+                                <span class="bg-emerald-50 text-emerald-600 text-[10px] px-1.5 py-0.5 rounded">{{ wa_stats.total }}</span>
+                            </div>
+                            <div class="text-2xl font-bold mb-1">{{ wa_stats.total }}</div>
+                            <div class="text-[10px] text-slate-400">{{ wa_stats.sent }} iletilen · {{ wa_stats.failed }} başarısız</div>
+                        </div>
+                        <div class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-bold text-orange-600 uppercase">AKSİYONLAR</span>
+                                <span class="bg-orange-50 text-orange-600 text-[10px] px-1.5 py-0.5 rounded">{{ action_stats.total }}</span>
+                            </div>
+                            <div class="text-2xl font-bold mb-1">{{ action_stats.total }}</div>
+                            <div class="text-[10px] text-slate-400">{{ action_stats.open }} açık · {{ action_stats.completed }} tamamlanan</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-8 custom-shadow border border-slate-100">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <h2 class="text-sm font-bold">İletişim Geçmişi</h2>
+                                <p class="text-[10px] text-slate-400">Çağrı, SMS, WhatsApp ve müşteri aksiyonları ayrı kategorilerle listelenir.</p>
+                            </div>
+                            {% with total_comm=call_stats.total|add:sms_stats.total|add:wa_stats.total %}
+                            <span class="text-[10px] bg-slate-50 text-slate-400 px-2 py-1 rounded">{{ total_comm }} kayıt</span>
+                            {% endwith %}
+                        </div>
+                        <div class="flex space-x-2 mb-16">
+                            <button type="button" onclick="filterComm('all', this)" class="comm-filter-btn bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2">
+                                <span>Tümü</span>
+                                <span class="bg-white/20 px-1 rounded">{% with total_comm=call_stats.total|add:sms_stats.total|add:wa_stats.total|add:action_stats.total %}{{ total_comm }}{% endwith %}</span>
+                            </button>
+                            <button type="button" onclick="filterComm('calls', this)" class="comm-filter-btn bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50">Çağrılar <span class="text-slate-300 ml-1">{{ call_stats.total }}</span></button>
+                            <button type="button" onclick="filterComm('sms', this)" class="comm-filter-btn bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50">SMS <span class="text-slate-300 ml-1">{{ sms_stats.total }}</span></button>
+                            <button type="button" onclick="filterComm('whatsapp', this)" class="comm-filter-btn bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50">WhatsApp <span class="text-slate-300 ml-1">{{ wa_stats.total }}</span></button>
+                            <button type="button" onclick="filterComm('actions', this)" class="comm-filter-btn bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50">Aksiyonlar <span class="text-slate-300 ml-1">{{ action_stats.total }}</span></button>
+                        </div>
+
+                        <div class="comm-section" data-comm="calls">
+                            {% for call in call_logs %}
+                            <div class="py-3 border-b border-slate-50 last:border-0">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 {% if call.status == 'missed' %}bg-red-50 text-red-500{% else %}bg-blue-50 text-blue-600{% endif %} rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-phone-alt text-xs"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-semibold">{{ call.get_direction_display }} · {{ call.get_status_display }}</div>
+                                            <div class="text-[10px] text-slate-400">{{ call.caller|default:"-" }} → {{ call.called|default:"-" }} · {{ call.duration_formatted }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        {% if call.recording_url %}
+                                        <button onclick="toggleAudio('audio-{{ call.id }}')" class="flex items-center space-x-1 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-medium hover:bg-emerald-100 transition">
+                                            <i class="far fa-play-circle"></i><span>Dinle</span>
+                                        </button>
+                                        {% endif %}
+                                        <div class="text-[10px] text-slate-400">{{ call.start_time|date:"d.m.Y H:i" }}</div>
+                                    </div>
+                                </div>
+                                {% if call.recording_url %}
+                                <div id="audio-{{ call.id }}" class="hidden mt-2 ml-11">
+                                    <audio controls class="w-full h-8" style="height:32px;">
+                                        <source src="{{ call.recording_url }}" type="audio/mpeg">
+                                    </audio>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="comm-section" data-comm="sms">
+                            {% for sms in sms_logs %}
+                            <div class="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center"><i class="fas fa-sms text-xs"></i></div>
+                                    <div>
+                                        <div class="text-sm font-semibold">{{ sms.get_status_display }}</div>
+                                        <div class="text-[10px] text-slate-400">{{ sms.message|truncatechars:80 }}</div>
+                                    </div>
+                                </div>
+                                <div class="text-[10px] text-slate-400">{{ sms.sent_at|date:"d.m.Y H:i" }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="comm-section" data-comm="whatsapp">
+                            {% for wa in whatsapp_logs %}
+                            <div class="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center"><i class="fab fa-whatsapp text-xs"></i></div>
+                                    <div>
+                                        <div class="text-sm font-semibold">{{ wa.get_status_display }}</div>
+                                        <div class="text-[10px] text-slate-400">{{ wa.message|truncatechars:80 }}</div>
+                                    </div>
+                                </div>
+                                <div class="text-[10px] text-slate-400">{{ wa.sent_at|date:"d.m.Y H:i" }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="comm-section" data-comm="actions">
+                            {% for task in tasks %}
+                            <div class="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center"><i class="fas fa-tasks text-xs"></i></div>
+                                    <div>
+                                        <div class="text-sm font-semibold">{{ task.title }}</div>
+                                        <div class="text-[10px] text-slate-400">{{ task.get_status_display }} · {{ task.get_priority_display }}</div>
+                                    </div>
+                                </div>
+                                <div class="text-[10px] text-slate-400">{{ task.created_at|date:"d.m.Y" }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        {% if not call_logs and not sms_logs and not whatsapp_logs and not tasks %}
+                        <div class="flex flex-col items-center justify-center py-10 text-center">
+                            <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-4">
+                                <i class="fas fa-phone-alt text-xl"></i>
+                            </div>
+                            <h4 class="text-sm font-bold mb-1">İletişim kaydı bulunamadı</h4>
+                            <p class="text-[10px] text-slate-400">Çağrı, SMS, WhatsApp ve aksiyon kayıtları oluştukça burada otomatik görünecek.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-8 custom-shadow border border-slate-100">
+                        <div class="flex justify-between items-start mb-10">
+                            <div>
+                                <h2 class="text-sm font-bold">Bağlı Sözleşmeler</h2>
+                                <p class="text-[10px] text-slate-400">Bu müşteriyle eşleşen sözleşmeler ve ilişkili portföyler.</p>
+                            </div>
+                            <span class="text-[10px] bg-slate-50 text-slate-400 px-2 py-1 rounded">0 sözleşme</span>
+                        </div>
+                        <div class="flex flex-col items-center justify-center py-10 text-center">
+                            <h4 class="text-sm font-bold mb-1">Bu müşteriye bağlı sözleşme yok</h4>
+                            <p class="text-[10px] text-slate-400">Müşteriye ait sözleşme oluşturulduğunda bu listede portföy bağıyla birlikte görünecek.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Requests -->
+                <div id="content-requests" class="hidden bg-white rounded-2xl p-8 custom-shadow border border-slate-100">
+                    <div class="flex items-center space-x-2 mb-6 text-slate-700">
+                        <i class="fas fa-broadcast-tower text-sm"></i>
+                        <h2 class="text-sm font-bold">Talepler ({{ demand_stats.total }})</h2>
+                    </div>
+
+                    <div class="flex space-x-2 mb-16">
+                        <button class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2">
+                            <span>Tümü</span>
+                            <span class="bg-white/20 px-1 rounded">{{ demand_stats.total }}</span>
+                        </button>
+                        <button class="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 transition">Aktif <span class="text-slate-300 ml-1">{{ demand_stats.active }}</span></button>
+                        <button class="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 transition">Pasif <span class="text-slate-300 ml-1">{{ demand_stats.passive }}</span></button>
+                        <button class="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 transition">Tamamlandı <span class="text-slate-300 ml-1">{{ demand_stats.completed }}</span></button>
+                        <button class="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 transition">İptal <span class="text-slate-300 ml-1">{{ demand_stats.cancelled }}</span></button>
+                    </div>
+
+                    {% for demand in demands %}
+                    <div class="border border-slate-100 rounded-xl p-4 mb-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <div class="text-sm font-bold">{{ demand.get_property_type_display }} · {{ demand.get_transaction_type_display }}</div>
+                                <div class="text-[10px] text-slate-400">{{ demand.room_count|default:"-" }} {% if demand.preferred_locations %} · {{ demand.preferred_locations|truncatechars:60 }}{% endif %}</div>
+                            </div>
+                            <span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-50 text-slate-500">{{ demand.get_status_display }}</span>
+                        </div>
+                        <div class="flex space-x-6 text-xs text-slate-500">
+                            {% if demand.min_price or demand.max_price %}<span><i class="fas fa-tag mr-1 text-slate-300"></i>{{ demand.min_price|default:0|intcomma }} - {{ demand.max_price|default:0|intcomma }} ₺</span>{% endif %}
+                            {% if demand.min_area or demand.max_area %}<span><i class="fas fa-ruler-combined mr-1 text-slate-300"></i>{{ demand.min_area|default:0 }} - {{ demand.max_area|default:0 }} m²</span>{% endif %}
+                            <span class="ml-auto text-slate-400">{{ demand.created_at|date:"d.m.Y" }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="flex flex-col items-center justify-center py-20 text-center">
+                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-4">
+                            <i class="fas fa-mouse-pointer text-2xl"></i>
+                        </div>
+                        <h4 class="text-md font-bold mb-1">Talep Bulunamadı</h4>
+                        <p class="text-xs text-slate-400">Bu müşteriye ait emlak talebi bulunmuyor.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Tab Content: Proposals -->
+                <div id="content-proposals" class="hidden bg-white rounded-2xl p-8 custom-shadow border border-slate-100">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-bold">Portföy Teklifleri</h2>
+                        <p class="text-xs text-slate-400">Müşteriye gönderilen tüm portföy teklifleri</p>
+                    </div>
+
+                    <div class="grid grid-cols-5 gap-4 mb-16">
+                        <div class="bg-blue-50 border border-blue-200 p-3 rounded-xl flex justify-between items-center">
+                            <div><div class="text-[10px] text-blue-600 font-bold uppercase">Toplam</div><div class="text-xl font-bold text-blue-700">{{ offer_stats.total }}</div></div>
+                            <i class="fas fa-layer-group text-blue-200"></i>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center">
+                            <div><div class="text-[10px] text-slate-500 font-bold uppercase">Bekleyen</div><div class="text-xl font-bold text-slate-700">{{ offer_stats.pending }}</div></div>
+                            <i class="far fa-clock text-slate-200"></i>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center">
+                            <div><div class="text-[10px] text-slate-500 font-bold uppercase">Kabul Edildi</div><div class="text-xl font-bold text-slate-700">{{ offer_stats.accepted }}</div></div>
+                            <i class="far fa-check-circle text-slate-200"></i>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center">
+                            <div><div class="text-[10px] text-slate-500 font-bold uppercase">Reddedildi</div><div class="text-xl font-bold text-slate-700">{{ offer_stats.rejected }}</div></div>
+                            <i class="far fa-times-circle text-slate-200"></i>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center">
+                            <div><div class="text-[10px] text-slate-500 font-bold uppercase">Süresi Doldu</div><div class="text-xl font-bold text-slate-700">{{ offer_stats.expired }}</div></div>
+                            <i class="fas fa-ban text-slate-200"></i>
+                        </div>
+                    </div>
+
+                    {% for offer in offers %}
+                    <div class="border border-slate-100 rounded-xl p-4 mb-3 flex justify-between items-center hover:shadow-sm transition">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400"><i class="far fa-file-alt"></i></div>
+                            <div>
+                                <div class="text-sm font-bold">{{ offer.title|default:offer.related_property }}</div>
+                                <div class="text-[10px] text-slate-400">
+                                    {{ offer.offer_price|intcomma }} {{ offer.currency }} · {{ offer.created_at|date:"d.m.Y" }}
+                                    {% if offer.created_by %} · {{ offer.created_by.get_full_name|default:offer.created_by.username }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-1 rounded bg-{{ offer.status_color }}-50 text-{{ offer.status_color }}-600 border border-{{ offer.status_color }}-100">{{ offer.get_status_display }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="flex flex-col items-center justify-center py-20 text-center">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-4">
+                            <i class="far fa-file-alt text-2xl"></i>
+                        </div>
+                        <h4 class="text-md font-bold mb-1">Teklif Bulunamadı</h4>
+                        <p class="text-xs text-slate-400">Bu müşteriye henüz portföy teklifi gönderilmemiş.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Tab Content: Notes & Tasks -->
+                <div id="content-notes" class="bg-white rounded-2xl p-8 custom-shadow border border-slate-100">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold">Notlar, Görevler &amp; Yorumlar</h2>
+                            <p class="text-xs text-slate-400">Müşteriye ait notlar, görevler, hatırlatıcılar ve CRM yorumları</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <select class="text-xs border-slate-200 rounded-lg px-3 py-2 bg-white border">
+                                <option>Tüm Öncelikler</option>
+                            </select>
+                            <select class="text-xs border-slate-200 rounded-lg px-3 py-2 bg-white border">
+                                <option>Tümü</option>
+                            </select>
+                            <div class="flex">
+                                <button type="button" onclick="toggleNoteForm()" class="flex items-center space-x-2 bg-slate-700 text-white px-4 py-2 rounded-l-lg text-xs font-medium hover:bg-slate-800">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Yeni Ekle</span>
+                                </button>
+                                <button class="bg-slate-700 text-white px-2 py-2 rounded-r-lg border-l border-slate-600 hover:bg-slate-800">
+                                    <i class="fas fa-chevron-down text-[10px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Bar -->
+                    <div class="grid grid-cols-5 gap-4 mb-6">
+                        <div class="bg-orange-50 border border-orange-100 p-3 rounded-xl flex justify-between items-center">
+                            <span class="text-xs font-semibold text-orange-600">Toplam</span>
+                            <span class="text-lg font-bold text-orange-600">{{ notes_stats.total }}</span>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center">
+                            <span class="text-xs font-semibold text-slate-500">Hatırlatıcılar</span>
+                            <span class="text-lg font-bold text-slate-700">{{ notes_stats.reminders }}</span>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center">
+                            <span class="text-xs font-semibold text-slate-500">Tamamlanan</span>
+                            <span class="text-lg font-bold text-slate-700">{{ notes_stats.completed }}</span>
+                        </div>
+                        <div class="bg-purple-50 border border-purple-100 p-3 rounded-xl flex justify-between items-center">
+                            <span class="text-xs font-semibold text-purple-600">CRM Yorumları</span>
+                            <span class="text-lg font-bold text-purple-600">{{ notes_stats.crm_comments }}</span>
+                        </div>
+                        <div class="bg-blue-50 border border-blue-100 p-3 rounded-xl flex justify-between items-center">
+                            <span class="text-xs font-semibold text-blue-600">Görevler</span>
+                            <span class="text-lg font-bold text-blue-600">{{ notes_stats.tasks }}</span>
+                        </div>
+                    </div>
+
+                    <!-- AI Analysis Alert -->
+                    <div id="ai-trigger" class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex items-center justify-between group cursor-pointer hover:bg-blue-100 transition">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+                                <i class="fas fa-magic"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-blue-900">AI Müşteri Analizi</h4>
+                                <p class="text-xs text-blue-700">Notları, görevleri ve CRM yorumlarını analiz ederek müşteri hakkında öneriler üret</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-blue-400 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+
+                    <!-- AI Analysis Result Panel -->
+                    <div id="ai-result" class="hidden border border-blue-100 bg-white rounded-2xl p-6 mb-6 custom-shadow">
+                        <div class="flex justify-between items-center mb-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-purple-100">
+                                    <i class="fas fa-magic"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-md font-bold text-slate-800">AI Müşteri Analizi</h3>
+                                    <div class="inline-flex items-center bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-[10px] font-bold mt-1 border border-indigo-100">
+                                        <i class="fas fa-bolt mr-1 text-[8px]"></i> Arveya AI
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <button class="text-slate-300 hover:text-indigo-500 transition p-2 hover:bg-indigo-50 rounded-lg">
+                                    <i class="fas fa-sync-alt text-sm"></i>
+                                </button>
+                                <button onclick="closeAI()" class="text-slate-300 hover:text-red-500 transition p-2 hover:bg-red-50 rounded-lg">
+                                    <i class="fas fa-times text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-5">
+                                <div class="flex items-center space-x-2 mb-4">
+                                    <div class="w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold">1</div>
+                                    <span class="text-sm font-bold text-emerald-900">Görüşme İçin Fikirler</span>
+                                </div>
+                                <ul class="space-y-3">
+                                    <li class="text-xs text-emerald-800 leading-relaxed flex items-start">
+                                        <span class="mr-2 mt-1 w-1 h-1 bg-emerald-400 rounded-full flex-shrink-0"></span>
+                                        Müşteriyle telefon üzerinden iletişime kurarak, potansiyel yatırım fırsatları hakkında bilgi ver.
+                                    </li>
+                                    <li class="text-xs text-emerald-800 leading-relaxed flex items-start">
+                                        <span class="mr-2 mt-1 w-1 h-1 bg-emerald-400 rounded-full flex-shrink-0"></span>
+                                        Yatırım bütçesi ve tercihleri hakkında daha fazla bilgi almak için açık uçlu sorular sor.
+                                    </li>
+                                    <li class="text-xs text-emerald-800 leading-relaxed flex items-start">
+                                        <span class="mr-2 mt-1 w-1 h-1 bg-emerald-400 rounded-full flex-shrink-0"></span>
+                                        Müşteriye, danışmanlık hizmetlerinin avantajlarını vurgulayarak güven oluştur.
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-orange-50/50 border border-orange-100 rounded-2xl p-5">
+                                <div class="flex items-center space-x-2 mb-4">
+                                    <div class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold">2</div>
+                                    <span class="text-sm font-bold text-orange-900">Dikkat Edilmesi Gerekenler</span>
+                                </div>
+                                <ul class="space-y-3">
+                                    <li class="text-xs text-orange-800 leading-relaxed flex items-start">
+                                        <span class="mr-2 mt-1 w-1 h-1 bg-orange-400 rounded-full flex-shrink-0"></span>
+                                        Müşterinin durumu "{{ customer.get_status_display }}" olduğu için, ilgisini çekmek için ikna edici olmalısın.
+                                    </li>
+                                    {% if notes_stats.total == 0 %}
+                                    <li class="text-xs text-orange-800 leading-relaxed flex items-start">
+                                        <span class="mr-2 mt-1 w-1 h-1 bg-orange-400 rounded-full flex-shrink-0"></span>
+                                        Müşterinin henüz hiçbir not veya görev kaydı yok; bu nedenle ilk görüşmede dikkatli ol.
+                                    </li>
+                                    {% endif %}
+                                    {% if notes_stats.reminders == 0 %}
+                                    <li class="text-xs text-orange-800 leading-relaxed flex items-start">
+                                        <span class="mr-2 mt-1 w-1 h-1 bg-orange-400 rounded-full flex-shrink-0"></span>
+                                        Bekleyen hatırlatıcı veya görev bulunmuyor; bu, takip etmen gereken bir durum.
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes & Tasks List -->
+                    {% if notes or tasks %}
+                    <div class="space-y-3 mb-6">
+                        {% for note in notes %}
+                        <div class="border border-slate-100 rounded-xl p-4 bg-white hover:shadow-sm transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded {% if note.note_type == 'yorum' %}bg-purple-50 text-purple-600{% elif note.note_type == 'hatirlatici' %}bg-orange-50 text-orange-600{% else %}bg-slate-50 text-slate-600{% endif %}">{{ note.get_note_type_display }}</span>
+                                    <span class="text-[10px] text-slate-400">{{ note.get_priority_display }}</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400">{{ note.created_at|date:"d.m.Y H:i" }}</span>
+                            </div>
+                            <div class="text-sm text-slate-700 whitespace-pre-line">{{ note.content }}</div>
+                            {% if note.user %}<div class="text-[10px] text-slate-400 mt-2"><i class="far fa-user mr-1"></i>{{ note.user.get_full_name|default:note.user.username }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                        {% for task in tasks %}
+                        <div class="border border-blue-100 rounded-xl p-4 bg-blue-50/30">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-600">Görev</span>
+                                    <span class="text-[10px] text-slate-400">{{ task.get_status_display }} · {{ task.get_priority_display }}</span>
+                                </div>
+                                {% if task.due_date %}<span class="text-[10px] text-slate-400">Son: {{ task.due_date|date:"d.m.Y H:i" }}</span>{% endif %}
+                            </div>
+                            <div class="text-sm font-semibold">{{ task.title }}</div>
+                            {% if task.description %}<div class="text-xs text-slate-500 mt-1">{{ task.description }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Add New Note Form -->
+                    <form id="note-form" method="POST" action="{% url 'note_create' customer.pk %}" class="border border-orange-100 bg-orange-50/20 rounded-2xl p-6 relative">
+                        {% csrf_token %}
+                        <button type="button" onclick="toggleNoteForm()" class="absolute top-4 right-4 text-slate-300 hover:text-slate-500">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <h4 class="text-sm font-bold mb-4">Yeni Not Ekle</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-1">Başlık <span class="font-normal">(opsiyonel)</span></label>
+                                <input type="text" name="title" class="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-200" placeholder="Not başlığı...">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-1">İçerik <span class="text-red-500">*</span></label>
+                                <textarea name="content" rows="4" required class="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-200 resize-none" placeholder="Not içeriğini yazın..."></textarea>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">Tür</label>
+                                    <select name="note_type" class="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-200">
+                                        <option value="not">Not</option>
+                                        <option value="yorum">CRM Yorumu</option>
+                                        <option value="hatirlatici">Hatırlatıcı</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">Öncelik</label>
+                                    <select name="priority" class="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-200">
+                                        <option value="dusuk">Düşük</option>
+                                        <option value="normal" selected>Normal</option>
+                                        <option value="yuksek">Yüksek</option>
+                                        <option value="acil">Acil</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-500 mb-1">Hatırlatıcı <span class="font-normal">(opsiyonel)</span></label>
+                                    <input type="date" name="reminder_date" class="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-200">
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-2 pt-2">
+                                <button type="button" onclick="toggleNoteForm()" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50">İptal</button>
+                                <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-semibold hover:bg-orange-700 flex items-center">
+                                    <i class="fas fa-check mr-2"></i> Kaydet
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tab Content: Workflow -->
+                <div id="content-workflow" class="hidden bg-white rounded-2xl p-8 custom-shadow border border-slate-100">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold">İş Akışları</h2>
+                            <p class="text-xs text-slate-400">Müşteriye ait tüm iş akışı kartları</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <select class="text-xs border-slate-200 rounded-lg px-3 py-2 bg-white border">
+                                <option>Tüm İş Akışları</option>
+                            </select>
+                            <select class="text-xs border-slate-200 rounded-lg px-3 py-2 bg-white border">
+                                <option>Tüm Durumlar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-5 gap-4 mb-16">
+                        <div class="bg-blue-50 border border-blue-200 p-3 rounded-xl flex justify-between items-center">
+                            <div><div class="text-[10px] text-blue-600 font-bold uppercase">Toplam</div><div class="text-xl font-bold text-blue-700">{{ workflow_stats.total }}</div></div>
+                            <i class="fas fa-layer-group text-blue-200"></i>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center">
+                            <div><div class="text-[10px] text-slate-500 font-bold uppercase">Aktif</div><div class="text-xl font-bold text-slate-700">{{ workflow_stats.active }}</div></div>
+                            <i class="far fa-play-circle text-slate-200"></i>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center">
+                            <div><div class="text-[10px] text-slate-500 font-bold uppercase">Tamamlandı</div><div class="text-xl font-bold text-slate-700">{{ workflow_stats.completed }}</div></div>
+                            <i class="far fa-check-circle text-slate-200"></i>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center">
+                            <div><div class="text-[10px] text-slate-500 font-bold uppercase">Gecikmiş</div><div class="text-xl font-bold text-slate-700">{{ workflow_stats.overdue }}</div></div>
+                            <i class="fas fa-exclamation-triangle text-slate-200"></i>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center">
+                            <div><div class="text-[10px] text-slate-500 font-bold uppercase">Arşivlendi</div><div class="text-xl font-bold text-slate-700">{{ workflow_stats.archived }}</div></div>
+                            <i class="far fa-folder text-slate-200"></i>
+                        </div>
+                    </div>
+
+                    {% for wf in workflows %}
+                    <div class="border border-slate-100 rounded-xl p-4 mb-3 hover:shadow-sm transition">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400"><i class="fas fa-filter text-xs"></i></div>
+                                <div>
+                                    <div class="text-sm font-bold">{{ wf.title }}</div>
+                                    <div class="text-[10px] text-slate-400">
+                                        {{ wf.get_workflow_type_display }} · {{ wf.get_priority_display }}
+                                        {% if wf.related_property %} · {{ wf.related_property }}{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-50 text-slate-500">{{ wf.get_status_display }}</span>
+                        </div>
+                        {% if wf.description %}<div class="text-xs text-slate-500 mt-2 pl-11">{{ wf.description|truncatechars:140 }}</div>{% endif %}
+                        <div class="text-[10px] text-slate-400 mt-2 pl-11 flex space-x-4">
+                            {% if wf.due_date %}<span><i class="far fa-calendar-alt mr-1"></i>{{ wf.due_date|date:"d.m.Y" }}</span>{% endif %}
+                            {% if wf.created_by %}<span><i class="far fa-user mr-1"></i>{{ wf.created_by.get_full_name|default:wf.created_by.username }}</span>{% endif %}
+                            <span class="ml-auto">{{ wf.created_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="flex flex-col items-center justify-center py-20 text-center">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-4">
+                            <i class="fas fa-align-left text-2xl"></i>
+                        </div>
+                        <h4 class="text-md font-bold mb-1">İş Akışı Bulunamadı</h4>
+                        <p class="text-xs text-slate-400">Bu müşteriye ait iş akışı kartı bulunmuyor.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Quick note button -->
+                <div class="flex justify-center -mt-4">
+                    <button type="button" onclick="switchTab('notes'); toggleNoteForm();" class="bg-white border border-orange-200 px-6 py-3 rounded-2xl custom-shadow flex items-center space-x-3 group hover:border-orange-300 transition">
+                        <div class="w-8 h-8 bg-orange-500 text-white rounded-lg flex items-center justify-center">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <span class="text-sm font-medium text-slate-600">Hızlı not eklemek için tıkla.</span>
+                        <div class="bg-slate-100 text-slate-400 text-[10px] px-1.5 py-0.5 rounded border border-slate-200 flex items-center space-x-1">
+                            <span>⌘</span>
+                            <span>J</span>
+                        </div>
+                    </button>
+                </div>
             </div>
-            
-            <div class="text-center">
-              <button type="submit" class="btn btn-koc-red">
-                <i class="fas fa-save mr-2"></i> Görüşme Sonucunu Kaydet
-              </button>
-            </div>
-          </form>
         </div>
-      </div>
-      
-      <!-- Zaman Çizelgesi -->
-      <div class="card">
-        <div class="card-header bg-transparent">
-          <h3 class="mb-0">Müşteri Zaman Çizelgesi</h3>
-        </div>
-        <div class="card-body">
-          <ul class="timeline">
-            <li class="timeline-item">
-              <div class="timeline-icon bg-koc-red">
-                <i class="fas fa-user-plus"></i>
-              </div>
-              <h5>Müşteri Kaydı Oluşturuldu</h5>
-              <p class="text-muted">{{ customer.created_at|date:"d.m.Y H:i" }}</p>
-              <p>Müşteri kaydı oluşturuldu ve {{ customer.consultant.get_full_name|default:"danışmana" }} atandı.</p>
-            </li>
-            
-            {% if customer.meeting_status != 'bekliyor' %}
-            <li class="timeline-item">
-              <div class="timeline-icon {% if customer.meeting_status == 'olumlu' %}bg-success{% else %}bg-danger{% endif %}">
-                <i class="fas fa-clipboard-check"></i>
-              </div>
-              <h5>Görüşme Sonucu Güncellendi</h5>
-              <p class="text-muted">{{ customer.updated_at|date:"d.m.Y H:i"|default:"-" }}</p>
-              <p>
-                Görüşme sonucu 
-                {% if customer.meeting_status == 'olumlu' %}
-                <span class="text-success">olumlu</span>
-                {% else %}
-                <span class="text-danger">olumsuz</span>
-                {% endif %} 
-                olarak kaydedildi.
-              </p>
-            </li>
-            {% endif %}
-          </ul>
-        </div>
-      </div>
     </div>
-  </div>
 
-  {% include "includes/footer.html" %}
-
-</div>
-
+    <!-- Modal: Süreç Başlat -->
+    <div id="modal-process" class="hidden fixed inset-0 z-[60] overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4 bg-slate-900/60 backdrop-blur-sm">
+            <form method="POST" action="{% url 'workflow_create' customer.pk %}" class="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden">
+                {% csrf_token %}
+                <div class="bg-emerald-600 p-6 flex justify-between items-center text-white">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i class="far fa-play-circle text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold">Süreç Başlat</h3>
+                            <p class="text-xs text-emerald-100">{{ customer.display_name }} için yeni süreç</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeModal()" class="text-emerald-100 hover:text-white transition">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="p-8 space-y-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">İş Akışı Türü <span class="text-red-500">*</span></label>
+                        <select name="workflow_type" required class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                            {% for value, label in workflow_type_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Başlık <span class="text-red-500">*</span></label>
+                        <input type="text" name="title" required class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-100" placeholder="Süreç başlığı...">
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">Öncelik</label>
+                            <select name="priority" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                                {% for value, label in priority_choices %}
+                                <option value="{{ value }}" {% if value == 'normal' %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">Bitiş Tarihi</label>
+                            <input type="date" name="due_date" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Portföy <span class="text-slate-400 font-normal">(Opsiyonel)</span></label>
+                        <select name="property_id" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                            <option value="">Portföy seçilmedi</option>
+                            {% for prop in available_properties %}
+                            <option value="{{ prop.id }}">{{ prop }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Açıklama <span class="text-slate-400 font-normal">(Opsiyonel)</span></label>
+                        <textarea name="description" rows="3" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-100 resize-none" placeholder="Süreç hakkında not ekleyin..."></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeModal()" class="px-6 py-3 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition">İptal</button>
+                        <button type="submit" class="px-6 py-3 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition flex items-center space-x-2 shadow-lg shadow-emerald-100">
+                            <i class="far fa-play-circle"></i>
+                            <span>Süreç Başlat</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
-{% block javascripts %}
+{% block extra_js %}
 <script>
-  $(document).ready(function() {
-    // Görüşme durumuna göre renk değiştirme
-    $('#meeting_status').on('change', function() {
-      var status = $(this).val();
-      if (status === 'olumlu') {
-        $(this).removeClass('border-warning border-danger').addClass('border-success');
-      } else if (status === 'olumsuz') {
-        $(this).removeClass('border-warning border-success').addClass('border-danger');
-      } else {
-        $(this).removeClass('border-success border-danger').addClass('border-warning');
-      }
-    });
-    
-    // Sayfa yüklendiğinde de çalıştır
-    $('#meeting_status').trigger('change');
-  });
-</script>
-{% endblock javascripts %} 
+        function openModal() {
+            document.getElementById('modal-process').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-process').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function switchTab(tabId) {
+            const tabs = ['notes', 'workflow', 'proposals', 'requests', 'contact', 'activity', 'callhistory'];
+            tabs.forEach(t => {
+                const tabBtn = document.getElementById(`tab-${t}`);
+                const tabContent = document.getElementById(`content-${t}`);
+                if (!tabBtn) return;
+                if (t === tabId) {
+                    tabBtn.classList.remove('tab-inactive');
+                    tabBtn.classList.add('tab-active');
+                    if (tabContent) tabContent.classList.remove('hidden');
+                } else {
+                    tabBtn.classList.add('tab-inactive');
+                    tabBtn.classList.remove('tab-active');
+                    if (tabContent) tabContent.classList.add('hidden');
+                }
+            });
+        }
+
+        // AI Analysis Panel Logic
+        const aiTrigger = document.getElementById('ai-trigger');
+        const aiResult = document.getElementById('ai-result');
+        if (aiTrigger && aiResult) {
+            aiTrigger.addEventListener('click', () => {
+                aiTrigger.classList.add('hidden');
+                aiResult.classList.remove('hidden');
+            });
+        }
+        function closeAI() {
+            aiResult.classList.add('hidden');
+            aiTrigger.classList.remove('hidden');
+        }
+
+        function toggleNoteForm() {
+            const form = document.getElementById('note-form');
+            if (form) form.classList.toggle('hidden');
+        }
+
+        function filterComm(type, btn) {
+            document.querySelectorAll('.comm-filter-btn').forEach(b => {
+                b.classList.remove('bg-slate-800', 'text-white');
+                b.classList.add('bg-white', 'border', 'border-slate-200', 'text-slate-600');
+            });
+            btn.classList.add('bg-slate-800', 'text-white');
+            btn.classList.remove('bg-white', 'border', 'border-slate-200', 'text-slate-600');
+
+            document.querySelectorAll('.comm-section').forEach(sec => {
+                if (type === 'all' || sec.dataset.comm === type) {
+                    sec.classList.remove('hidden');
+                } else {
+                    sec.classList.add('hidden');
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        function toggleAudio(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle('hidden');
+            if (!el.classList.contains('hidden')) {
+                const audio = el.querySelector('audio');
+                if (audio) audio.play();
+            } else {
+                const audio = el.querySelector('audio');
+                if (audio) audio.pause();
+            }
+        }
+
+        // Çağrı Geçmişi: audio aç/kapat
+        function toggleCallAudio(id) {
+            const panel = document.getElementById(id);
+            if (!panel) return;
+            const isHidden = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+            const audio = panel.querySelector('audio');
+            if (isHidden && audio) {
+                audio.play();
+            } else if (audio) {
+                audio.pause();
+            }
+        }
+
+        function markPlaying(btnId) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            btn.innerHTML = '<i class="fas fa-pause text-[10px]"></i> Duraklat';
+            btn.style.background = 'linear-gradient(135deg,#334155,#1e293b)';
+        }
+
+        function markPaused(btnId) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            btn.innerHTML = '<i class="fas fa-play text-[10px]"></i> Dinle';
+            btn.style.background = 'linear-gradient(135deg,#fb6340,#e8521f)';
+        }
+
+        // AI Özet — Çağrı Geçmişi sekmesi (inline)
+        const AI_SUMMARIZE_URL_DETAIL = "{% url 'ai_summarize_call' 0 %}";
+
+        function runAiSummaryDetail(callId, btn) {
+            const resultDiv = document.getElementById('ai-result-detail-' + callId);
+            const textDiv = document.getElementById('ai-text-detail-' + callId);
+            const noteDiv = document.getElementById('ai-note-detail-' + callId);
+
+            // Buton yükleniyor durumu
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> Analiz ediliyor...';
+            btn.style.opacity = '0.7';
+            btn.style.cursor = 'not-allowed';
+
+            // Sonuç alanını göster, temizle
+            resultDiv.style.display = 'block';
+            textDiv.textContent = '⏳ Ses dosyası indirilip analiz ediliyor, lütfen bekleyin...';
+            noteDiv.style.display = 'none';
+
+            const url = AI_SUMMARIZE_URL_DETAIL.replace('/0/', '/' + callId + '/');
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    textDiv.textContent = data.summary;
+                    noteDiv.style.display = 'block';
+                    btn.innerHTML = '<i class="fas fa-check text-[10px]"></i> Özet Hazır';
+                    btn.style.background = '#f0fdf4';
+                    btn.style.color = '#16a34a';
+                    btn.style.borderColor = '#bbf7d0';
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'default';
+                } else {
+                    textDiv.textContent = '❌ Hata: ' + (data.error || 'Bilinmeyen hata');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-magic text-[10px]"></i> Tekrar Dene';
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+            })
+            .catch(err => {
+                textDiv.textContent = '❌ Bağlantı hatası: ' + err.message;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic text-[10px]"></i> Tekrar Dene';
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            });
+        }
+    </script>
+{% endblock extra_js %}

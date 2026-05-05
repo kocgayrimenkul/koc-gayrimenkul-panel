@@ -1,0 +1,122 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Çağrı Detayı{% endblock %}
+
+{% block stylesheets %}
+<style>
+  :root { --koc-red: #9d2235; --koc-red-dark: #7a1a29; }
+  .bg-gradient-koc-red { background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important; }
+  .detail-row { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { font-weight: 600; color: #6c757d; font-size: 0.85rem; text-transform: uppercase; }
+  .detail-value { font-size: 1rem; color: #2c3e50; }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col">
+          <h6 class="h2 text-white d-inline-block mb-0">Çağrı Detayı</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'sales_process:call_logs' %}">Çağrı Kayıtları</a></li>
+              <li class="breadcrumb-item active">Detay</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col text-right">
+          <a href="{% url 'sales_process:call_logs' %}" class="btn btn-sm btn-white">
+            <i class="fas fa-arrow-left mr-1"></i> Geri
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--7">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card shadow">
+        <div class="card-header bg-white border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Çağrı #{{ call_log.id }}</h3>
+            </div>
+            <div class="col text-right">
+              {% if call_log.call_type == 'incoming' %}
+                <span class="badge badge-pill badge-success"><i class="fas fa-phone-volume mr-1"></i> Gelen</span>
+              {% else %}
+                <span class="badge badge-pill badge-info"><i class="fas fa-phone mr-1"></i> Giden</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="detail-row">
+            <div class="detail-label">Müşteri</div>
+            <div class="detail-value">
+              {% if call_log.lead %}
+                <a href="{% url 'sales_process:lead_detail' call_log.lead.id %}">
+                  {{ call_log.lead.customer_name }}
+                </a>
+              {% else %}
+                <span class="text-muted">Bilinmiyor</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Telefon</div>
+            <div class="detail-value">{{ call_log.phone_number|default:"—" }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Başlangıç Saati</div>
+            <div class="detail-value">{{ call_log.start_time|date:"d.m.Y H:i:s" }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Süre</div>
+            <div class="detail-value">
+              {% if call_log.duration %}
+                {{ call_log.duration }} saniye
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Dahili</div>
+            <div class="detail-value">{{ call_log.agent_extension|default:"—" }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Durum</div>
+            <div class="detail-value">{{ call_log.status|default:"—" }}</div>
+          </div>
+          {% if call_log.notes %}
+          <div class="detail-row">
+            <div class="detail-label">Notlar</div>
+            <div class="detail-value">{{ call_log.notes }}</div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="card-footer bg-white">
+          <form method="post" action="{% url 'sales_process:update_call_notes' call_log.id %}">
+            {% csrf_token %}
+            <div class="form-group mb-2">
+              <label class="form-control-label small font-weight-bold">Not Ekle / Güncelle</label>
+              <textarea name="notes" class="form-control" rows="3" placeholder="Çağrı notu...">{{ call_log.notes }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-danger btn-sm">
+              <i class="fas fa-save mr-1"></i> Kaydet
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

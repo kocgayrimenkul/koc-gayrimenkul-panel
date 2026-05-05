@@ -1,687 +1,302 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+{% load static %}
 
-{% block title %} {{ property.apartment_name }} {% endblock %}
+{% block title %}{{ property.apartment_name }}{% endblock %}
 
-{% block stylesheets %}
-{{ block.super }}
-<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/swiper@11/swiper-bundle.min.css" />
 <style>
-  /* Koç Gayrimenkul kurumsal renkleri */
-  :root {
-    --koc-red: #9d2235;
-    --koc-red-light: #b82e42;
-    --koc-red-dark: #7a1a29;
-    --koc-black: #212529;
-    --koc-gray: #f5f5f5;
-  }
-  
-  /* Satılık/Kiralık badge'i için stiller */
-  .badge-satilik {
-    background-color: #2dce89;
-    color: white;
-  }
-  
-  .badge-kiralik {
-    background-color: var(--koc-red-light);
-    color: white;
-  }
-  
-  /* Detay sayfası için özel stiller */
-  .property-header {
-    padding: 30px 20px;
-    background: linear-gradient(120deg, var(--koc-red-dark), var(--koc-red));
-    border-radius: 0.75rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 30px;
-  }
-  
-  .property-header::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 30%;
-    background: rgba(255, 255, 255, 0.05);
-    transform: skewX(-15deg) translateX(10%);
-  }
-  
-  .property-title {
-    color: white;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    position: relative;
-    z-index: 2;
-  }
-  
-  .property-address {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 1rem;
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 2;
-  }
-  
-  .property-price {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin-top: 1rem;
-    color: white;
-    position: relative;
-    z-index: 2;
-  }
-  
-  .property-badges {
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 2;
-  }
-  
-  .property-badges .badge {
-    font-size: 0.9rem;
-    padding: 0.5rem 1rem;
-    margin-right: 0.5rem;
-    border-radius: 50rem;
-  }
-  
-  .detail-card {
-    border: none;
-    border-radius: 0.75rem;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    margin-bottom: 30px;
-    overflow: hidden;
-  }
-  
-  .detail-card-header {
-    background-color: white;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    padding: 1.25rem 1.5rem;
-    font-weight: 600;
-    color: var(--koc-red);
-    display: flex;
-    align-items: center;
-  }
-  
-  .detail-card-header i {
-    margin-right: 10px;
-    font-size: 1.2rem;
-  }
-  
-  .detail-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .detail-list li {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    display: flex;
-    justify-content: space-between;
-  }
-  
-  .detail-list li:last-child {
-    border-bottom: none;
-  }
-  
-  .detail-label {
-    color: #8898aa;
-    font-weight: 600;
-  }
-  
-  .detail-value {
-    color: #525f7f;
-    font-weight: 500;
-  }
-  
-  /* Swiper stilleri */
-  .swiper-container {
-    width: 100%;
-    height: 400px;
-    border-radius: 0.75rem;
-    overflow: hidden;
-  }
-  
-  .swiper-slide {
-    text-align: center;
-    background: #f8f9fa;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .swiper-slide img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-  
-  .swiper-pagination-bullet-active {
-    background-color: var(--koc-red);
-  }
-  
-  .swiper-button-next, .swiper-button-prev {
-    color: var(--koc-red);
-  }
-  
-  .no-image-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-color: #f8f9fa;
-    color: #8898aa;
-  }
-  
-  .no-image-placeholder i {
-    font-size: 5rem;
-    margin-bottom: 1rem;
-    color: #dee2e6;
-  }
-  
-  /* Çevre bilgileri */
-  .environment-item {
-    background-color: white;
-    border-radius: 1rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    padding: 1rem;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-  }
-  
-  .environment-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: var(--koc-red);
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
-    margin-right: 1rem;
-  }
-  
-  .environment-info {
-    flex: 1;
-  }
-  
-  .environment-name {
-    font-weight: 600;
-    color: #525f7f;
-    margin-bottom: 0.25rem;
-  }
-  
-  .environment-distance {
-    color: #8898aa;
-    font-size: 0.9rem;
-  }
-  
-  .btn-koc-red {
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-    color: white;
-  }
-  
-  .btn-koc-red:hover {
-    background-color: var(--koc-red-dark);
-    border-color: var(--koc-red-dark);
-    color: white;
-  }
-  
-  /* Harita stili */
-  #property-map {
-    height: 400px;
-    width: 100%;
-    border-radius: 0.75rem;
-  }
+    .property-swiper .swiper-button-next, .property-swiper .swiper-button-prev { color: white; }
+    .property-swiper .swiper-pagination-bullet-active { background: #0087d1; }
 </style>
-{% endblock stylesheets %}
+{% endblock %}
 
 {% block content %}
+<div class="p-6 max-w-[1600px] mx-auto">
 
-<div class="header bg-gradient-primary pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Gayrimenkul Detayı</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="{% url 'property_list' %}">Gayrimenkuller</a></li>
-              <li class="breadcrumb-item active" aria-current="page">{{ property.apartment_name }}</li>
-            </ol>
-          </nav>
+    <!-- Breadcrumb + Aksiyonlar -->
+    <div class="flex justify-between items-center mb-6">
+        <div class="flex items-center space-x-2 text-sm">
+            <a href="{% url 'property_list' %}" class="text-slate-400 hover:text-slate-600 transition">Gayrimenkuller</a>
+            <i class="fas fa-chevron-right text-[10px] text-slate-300"></i>
+            <span class="font-medium text-slate-700">{{ property.apartment_name|truncatechars:50 }}</span>
         </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{% url 'property_update' property.id %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-edit mr-1"></i> Düzenle
-          </a>
-          <a href="{% url 'property_list' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-arrow-left mr-1"></i> Listeye Dön
-          </a>
+        <div class="flex space-x-2">
+            <a href="{% url 'property_update' property.id %}" class="flex items-center space-x-2 px-4 py-2 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg hover:bg-amber-100 transition text-sm font-medium">
+                <i class="far fa-edit"></i>
+                <span>Düzenle</span>
+            </a>
+            <a href="{% url 'property_list' %}" class="flex items-center space-x-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm font-medium">
+                <i class="fas fa-arrow-left"></i>
+                <span>Listeye Dön</span>
+            </a>
         </div>
-      </div>
     </div>
-  </div>
-</div>
 
-<!-- Page content -->
-<div class="container-fluid mt--6">
-  <!-- Üst Başlık Kartı -->
-  <div class="property-header">
-    <div class="row">
-      <div class="col-md-8">
-        <div class="property-badges">
-          {% if property.status == 'satilik' %}
-            <span class="badge badge-pill badge-success">Satılık</span>
-          {% elif property.status == 'kiralik' %}
-            <span class="badge badge-pill badge-white">Kiralık</span>
-          {% endif %}
-          
-          {% if property.is_suitable_for_credit %}
-            <span class="badge badge-pill badge-white">Krediye Uygun</span>
-          {% endif %}
-          
-          {% if property.is_bargainable %}
-            <span class="badge badge-pill badge-white">Pazarlıklı</span>
-          {% endif %}
-        </div>
-        <h1 class="property-title">{{ property.apartment_name }}</h1>
-        <p class="property-address"><i class="fas fa-map-marker-alt mr-2"></i>{{ property.address }}</p>
-        <p class="property-address"><i class="fas fa-map mr-2"></i>{{ property.neighborhood.name }}</p>
-      </div>
-      <div class="col-md-4 text-right">
-        <div class="property-price">{{ property.price|floatformat:0 }} TL</div>
-        
-        {% if property.is_bargainable %}
-          <p class="text-white opacity-8"><i class="fas fa-handshake mr-1"></i> Pazarlık Payı Var</p>
-        {% endif %}
-        
-        <p class="text-white opacity-8"><i class="fas fa-calendar-alt mr-1"></i> İlan Tarihi: {{ property.listing_date|date:"d.m.Y" }}</p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="row">
-    <!-- Sol Sütun: Gayrimenkul resimleri ve harita -->
-    <div class="col-lg-8">
-      <!-- Resim Galerisi -->
-      <div class="detail-card mb-4">
-        {% if images %}
-          <div class="swiper-container">
-            <div class="swiper-wrapper">
-              {% for image in images %}
-                <div class="swiper-slide">
-                  <img src="{{ image.image.url }}" alt="{{ image.title }}">
-                </div>
-              {% endfor %}
-            </div>
-            <!-- Gezinme butonları -->
-            <div class="swiper-button-next"></div>
-            <div class="swiper-button-prev"></div>
-            <!-- Pagination -->
-            <div class="swiper-pagination"></div>
-          </div>
-        {% else %}
-          <div class="no-image-placeholder">
-            <i class="ni ni-image"></i>
-            <h4>Fotoğraf Yok</h4>
-            <p>Bu gayrimenkul için henüz fotoğraf eklenmemiş.</p>
-          </div>
-        {% endif %}
-      </div>
-      
-      <!-- Harita -->
-      <div class="detail-card mb-4">
-        <div class="detail-card-header">
-          <i class="fas fa-map-marked-alt"></i> Konum
-        </div>
-        <div class="card-body">
-          <div id="property-map"></div>
-        </div>
-      </div>
-      
-      <!-- Çevre Bilgileri -->
-      {% if environments %}
-        <div class="detail-card mb-4">
-          <div class="detail-card-header">
-            <i class="fas fa-map-signs"></i> Çevre Bilgileri
-          </div>
-          <div class="card-body">
-            <div class="row">
-              {% for item in environments %}
-                <div class="col-md-6">
-                  <div class="environment-item">
-                    <div class="environment-icon">
-                      <i class="fas fa-map-pin"></i>
+    <div class="grid grid-cols-12 gap-6">
+
+        <!-- SOL: Galeri + Açıklama + Çevre -->
+        <div class="col-span-8 space-y-6">
+
+            <!-- Galeri -->
+            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 overflow-hidden">
+                {% if images %}
+                <div class="property-swiper swiper relative">
+                    <div class="swiper-wrapper">
+                        {% for img in images %}
+                        <div class="swiper-slide">
+                            <img src="{{ img.image.url }}" alt="{{ property.apartment_name }}" class="w-full h-[480px] object-cover">
+                        </div>
+                        {% endfor %}
                     </div>
-                    <div class="environment-info">
-                      <div class="environment-name">{{ item.place_name }}</div>
-                      <div class="environment-distance">{{ item.distance }}</div>
-                    </div>
-                  </div>
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-      {% endif %}
-    </div>
-    
-    <!-- Sağ Sütun: Detay Bilgileri -->
-    <div class="col-lg-4">
-      <!-- Temel Bilgiler -->
-      <div class="detail-card mb-4">
-        <div class="detail-card-header">
-          <i class="fas fa-info-circle"></i> Temel Bilgiler
-        </div>
-        <ul class="detail-list">
-          <li>
-            <span class="detail-label">Emlak Tipi</span>
-            <span class="detail-value">
-              {% if property.property_type == 'daire' %}Daire
-              {% elif property.property_type == 'arsa' %}Arsa
-              {% elif property.property_type == 'isyeri' %}İşyeri
-              {% else %}{{ property.property_type }}{% endif %}
-            </span>
-          </li>
-          <li>
-            <span class="detail-label">Durum</span>
-            <span class="detail-value">
-              {% if property.status == 'satilik' %}Satılık
-              {% elif property.status == 'kiralik' %}Kiralık
-              {% else %}{{ property.status }}{% endif %}
-            </span>
-          </li>
-          <li>
-            <span class="detail-label">Mahalle</span>
-            <span class="detail-value">{{ property.neighborhood.name }}</span>
-          </li>
-          <li>
-            <span class="detail-label">İlan Tarihi</span>
-            <span class="detail-value">{{ property.listing_date|date:"d.m.Y" }}</span>
-          </li>
-          <li>
-            <span class="detail-label">Danışman</span>
-            <span class="detail-value">{{ property.consultant.get_full_name }}</span>
-          </li>
-        </ul>
-      </div>
-      
-      <!-- Daire ise Detay Bilgiler -->
-      {% if property.property_type == 'daire' %}
-        <div class="detail-card mb-4">
-          <div class="detail-card-header">
-            <i class="fas fa-home"></i> Daire Özellikleri
-          </div>
-          <ul class="detail-list">
-            {% if property.gross_area %}
-              <li>
-                <span class="detail-label">Brüt Alan</span>
-                <span class="detail-value">{{ property.gross_area }} m²</span>
-              </li>
-            {% endif %}
-            
-            {% if property.net_area %}
-              <li>
-                <span class="detail-label">Net Alan</span>
-                <span class="detail-value">{{ property.net_area }} m²</span>
-              </li>
-            {% endif %}
-            
-            {% if property.room_count %}
-              <li>
-                <span class="detail-label">Oda Sayısı</span>
-                <span class="detail-value">{{ property.room_count }}</span>
-              </li>
-            {% endif %}
-            
-            {% if property.floor %}
-              <li>
-                <span class="detail-label">Bulunduğu Kat</span>
-                <span class="detail-value">{{ property.floor }}</span>
-              </li>
-            {% endif %}
-            
-            {% if property.building_age %}
-              <li>
-                <span class="detail-label">Bina Yaşı</span>
-                <span class="detail-value">{{ property.building_age }}</span>
-              </li>
-            {% endif %}
-            
-            {% if property.heating %}
-              <li>
-                <span class="detail-label">Isıtma</span>
-                <span class="detail-value">
-                  {% if property.heating == 'dogalgaz' %}Doğalgaz
-                  {% elif property.heating == 'merkezi' %}Merkezi Sistem
-                  {% elif property.heating == 'klima' %}Klima
-                  {% elif property.heating == 'soba' %}Soba
-                  {% elif property.heating == 'yok' %}Isıtma Yok
-                  {% else %}{{ property.heating }}{% endif %}
-                </span>
-              </li>
-            {% endif %}
-            
-            <li>
-              <span class="detail-label">Balkon</span>
-              <span class="detail-value">{% if property.has_balcony %}Var{% else %}Yok{% endif %}</span>
-            </li>
-            
-            {% if property.dues %}
-              <li>
-                <span class="detail-label">Aidat</span>
-                <span class="detail-value">{{ property.dues }} TL</span>
-              </li>
-            {% endif %}
-          </ul>
-        </div>
-      {% endif %}
-      
-      <!-- Diğer Bilgiler -->
-      <div class="detail-card mb-4">
-        <div class="detail-card-header">
-          <i class="fas fa-list-alt"></i> Diğer Bilgiler
-        </div>
-        <ul class="detail-list">
-          <li>
-            <span class="detail-label">Tapu Durumu</span>
-            <span class="detail-value">
-              {% if property.deed_status == 'kat_mulkiyetli' %}Kat Mülkiyetli
-              {% elif property.deed_status == 'kat_irtifakli' %}Kat İrtifaklı
-              {% elif property.deed_status == 'arsa' %}Arsa
-              {% elif property.deed_status == 'diger' %}Diğer
-              {% else %}{{ property.deed_status }}{% endif %}
-            </span>
-          </li>
-          <li>
-            <span class="detail-label">Krediye Uygunluk</span>
-            <span class="detail-value">{% if property.is_suitable_for_credit %}Uygun{% else %}Uygun Değil{% endif %}</span>
-          </li>
-          <li>
-            <span class="detail-label">Pazarlık Payı</span>
-            <span class="detail-value">{% if property.is_bargainable %}Var{% else %}Yok{% endif %}</span>
-          </li>
-          {% if property.key_holder %}
-            <li>
-              <span class="detail-label">Anahtar</span>
-              <span class="detail-value">
-                {% if property.key_holder == 'sahibi' %}Ev Sahibi
-                {% elif property.key_holder == 'danisman' %}Emlak Danışmanı
-                {% elif property.key_holder == 'kiracı' %}Kiracı
-                {% elif property.key_holder == 'diger' %}Diğer
-                {% else %}{{ property.key_holder }}{% endif %}
-              </span>
-            </li>
-          {% endif %}
-          
-          <li>
-            <span class="detail-label">Fotoğraf Durumu</span>
-            <span class="detail-value">{% if property.photo_status %}Çekildi{% else %}Çekilmedi{% endif %}</span>
-          </li>
-        </ul>
-      </div>
-      
-      <!-- Portföy Sahibi Bilgileri (Sadece yetkililer görebilir) -->
-      <div class="detail-card mb-4">
-        <div class="detail-card-header">
-          <i class="fas fa-user"></i> Portföy Sahibi Bilgileri
-        </div>
-        <ul class="detail-list">
-          {% if property.owner_name %}
-            <li>
-              <span class="detail-label">Mal Sahibi</span>
-              <span class="detail-value">{{ property.owner_name }}</span>
-            </li>
-          {% endif %}
-          
-          {% if property.owner_phone %}
-            <li>
-              <span class="detail-label">Telefon</span>
-              <span class="detail-value">{{ property.owner_phone }}</span>
-            </li>
-          {% endif %}
-          
-          {% if property.owner_listing_number %}
-            <li>
-              <span class="detail-label">Sahibinden İlan No</span>
-              <span class="detail-value">{{ property.owner_listing_number }}</span>
-            </li>
-          {% endif %}
-          
-          {% if property.emlakjet_listing_number %}
-            <li>
-              <span class="detail-label">Emlakjet İlan No</span>
-              <span class="detail-value">{{ property.emlakjet_listing_number }}</span>
-            </li>
-          {% endif %}
-          
-          {% if property.hepsiemlak_listing_number %}
-            <li>
-              <span class="detail-label">Hepsiemlak İlan No</span>
-              <span class="detail-value">{{ property.hepsiemlak_listing_number }}</span>
-            </li>
-          {% endif %}
-          
-          {% if property.branda_number %}
-            <li>
-              <span class="detail-label">Branda No</span>
-              <span class="detail-value">{{ property.branda_number }}</span>
-            </li>
-          {% endif %}
-        </ul>
-      </div>
-      
-      <!-- Aksiyon Butonları -->
-      <div class="card shadow-none border mb-4">
-        <div class="card-body p-3">
-          <a href="{% url 'property_update' property.id %}" class="btn btn-koc-red btn-block mb-2">
-            <i class="fas fa-edit mr-2"></i> Gayrimenkulü Düzenle
-          </a>
-          <a href="#" class="btn btn-outline-danger btn-block">
-            <i class="fas fa-trash-alt mr-2"></i> Gayrimenkulü Sil
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  {% include "includes/footer.html" %}
-</div>
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                    <div class="swiper-pagination !bottom-3"></div>
 
+                    <!-- Status Badges -->
+                    <div class="absolute top-4 left-4 z-10 flex space-x-2">
+                        <span class="px-3 py-1.5 text-xs font-bold rounded-lg shadow-md {% if property.status == 'satilik' %}bg-emerald-500 text-white{% elif property.status == 'kiralik' %}bg-blue-500 text-white{% else %}bg-slate-500 text-white{% endif %}">
+                            {{ property.get_status_display }}
+                        </span>
+                        <span class="px-3 py-1.5 bg-white/90 backdrop-blur text-slate-700 text-xs font-bold rounded-lg shadow-md">
+                            {{ property.get_property_type_display }}
+                        </span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="h-96 bg-slate-50 flex flex-col items-center justify-center">
+                    <i class="fas fa-image text-6xl text-slate-300 mb-3"></i>
+                    <p class="text-sm text-slate-400">Bu portföy için fotoğraf yüklenmemiş</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Başlık + Fiyat -->
+            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-800">{{ property.apartment_name }}</h1>
+                        {% if property.web_title %}<p class="text-sm text-slate-500 mt-1">{{ property.web_title }}</p>{% endif %}
+                        <div class="flex items-center mt-2 text-sm text-slate-500">
+                            <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>
+                            <span>{{ property.neighborhood.name|default:"—" }}{% if property.address %} · {{ property.address|truncatechars:60 }}{% endif %}</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold text-blue-600">{{ property.price|intcomma }} ₺</div>
+                        {% if property.dues %}<div class="text-xs text-slate-400 mt-1">Aidat: {{ property.dues|intcomma }} ₺</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Hızlı Özellikler -->
+                <div class="grid grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
+                    <div class="text-center p-3 bg-slate-50 rounded-xl">
+                        <i class="fas fa-bed text-blue-500 text-lg mb-1"></i>
+                        <div class="text-sm font-bold text-slate-800">{{ property.room_count|default:"—" }}</div>
+                        <div class="text-[10px] text-slate-400 uppercase">Oda</div>
+                    </div>
+                    <div class="text-center p-3 bg-slate-50 rounded-xl">
+                        <i class="fas fa-ruler-combined text-emerald-500 text-lg mb-1"></i>
+                        <div class="text-sm font-bold text-slate-800">{{ property.gross_area|default:"—" }} m²</div>
+                        <div class="text-[10px] text-slate-400 uppercase">Brüt</div>
+                    </div>
+                    <div class="text-center p-3 bg-slate-50 rounded-xl">
+                        <i class="fas fa-vector-square text-purple-500 text-lg mb-1"></i>
+                        <div class="text-sm font-bold text-slate-800">{{ property.net_area|default:"—" }} m²</div>
+                        <div class="text-[10px] text-slate-400 uppercase">Net</div>
+                    </div>
+                    <div class="text-center p-3 bg-slate-50 rounded-xl">
+                        <i class="fas fa-building text-amber-500 text-lg mb-1"></i>
+                        <div class="text-sm font-bold text-slate-800">{{ property.floor|default:"—" }}</div>
+                        <div class="text-[10px] text-slate-400 uppercase">Kat</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detay Tablosu -->
+            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">İlan Detayları</h2>
+                <div class="grid grid-cols-2 gap-x-8 gap-y-3">
+                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                        <span class="text-slate-500">Kategori</span>
+                        <span class="font-semibold text-slate-700">{{ property.get_category_display|default:"—" }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                        <span class="text-slate-500">İlan Türü</span>
+                        <span class="font-semibold text-slate-700">{{ property.get_listing_type_display|default:"—" }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                        <span class="text-slate-500">Bina Yaşı</span>
+                        <span class="font-semibold text-slate-700">{{ property.building_age|default:"—" }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                        <span class="text-slate-500">Kat Sayısı</span>
+                        <span class="font-semibold text-slate-700">{{ property.floor_count|default:"—" }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                        <span class="text-slate-500">Isıtma</span>
+                        <span class="font-semibold text-slate-700">{{ property.get_heating_display|default:"—" }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                        <span class="text-slate-500">Tapu Durumu</span>
+                        <span class="font-semibold text-slate-700">{{ property.get_deed_status_display|default:"—" }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                        <span class="text-slate-500">Krediye Uygun</span>
+                        <span class="font-semibold {% if property.is_suitable_for_credit %}text-emerald-600{% else %}text-slate-400{% endif %}">
+                            {% if property.is_suitable_for_credit %}<i class="fas fa-check-circle"></i> Evet{% else %}<i class="fas fa-times-circle"></i> Hayır{% endif %}
+                        </span>
+                    </div>
+                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                        <span class="text-slate-500">Pazarlık</span>
+                        <span class="font-semibold {% if property.is_bargainable %}text-emerald-600{% else %}text-slate-400{% endif %}">
+                            {% if property.is_bargainable %}<i class="fas fa-check-circle"></i> Evet{% else %}<i class="fas fa-times-circle"></i> Hayır{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Açıklama -->
+            {% if property.description %}
+            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                <h2 class="text-lg font-bold text-slate-800 mb-3">Açıklama</h2>
+                <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{{ property.description }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Çevre -->
+            {% if environments %}
+            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">Çevre Bilgileri</h2>
+                <div class="grid grid-cols-3 gap-3">
+                    {% for env in environments %}
+                    <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl">
+                        <div class="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-map-marker-alt text-xs"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-slate-700">{{ env.name }}</div>
+                            <div class="text-[10px] text-slate-400">{{ env.distance|default:"—" }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- SAĞ: Sahip + Danışman + İlan Numaraları -->
+        <div class="col-span-4 space-y-6">
+
+            <!-- Mal Sahibi -->
+            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Mal Sahibi</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold text-xs">
+                            {{ property.owner_name|slice:":2"|upper|default:"?" }}
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-semibold text-slate-800">{{ property.owner_name|default:"—" }}</div>
+                            {% if property.owner_phone %}
+                            <a href="tel:{{ property.owner_phone }}" class="text-xs text-blue-600 hover:underline">
+                                <i class="fas fa-phone-alt text-[10px] mr-1"></i>{{ property.owner_phone }}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if property.owner_phone %}
+                <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-100">
+                    <a href="tel:{{ property.owner_phone }}" class="flex items-center justify-center space-x-1 px-3 py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-xs font-bold hover:bg-emerald-100">
+                        <i class="fas fa-phone-alt"></i><span>Ara</span>
+                    </a>
+                    <a href="https://wa.me/{{ property.owner_phone|cut:' '|cut:'+'|cut:'-' }}" target="_blank" class="flex items-center justify-center space-x-1 px-3 py-2 bg-green-50 text-green-600 border border-green-200 rounded-lg text-xs font-bold hover:bg-green-100">
+                        <i class="fab fa-whatsapp"></i><span>WhatsApp</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Danışman -->
+            {% if property.consultant %}
+            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Danışman</h3>
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center font-bold text-xs">
+                        {{ property.consultant.first_name|slice:":1"|upper }}{{ property.consultant.last_name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-slate-800">{{ property.consultant.get_full_name|default:property.consultant.username }}</div>
+                        <div class="text-[10px] text-slate-400">{{ property.consultant.email }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- İlan Numaraları -->
+            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">İlan Numaraları</h3>
+                <div class="space-y-3 text-sm">
+                    {% if property.owner_listing_number %}
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Sahibi</span>
+                        <span class="font-mono font-semibold text-slate-700">{{ property.owner_listing_number }}</span>
+                    </div>
+                    {% endif %}
+                    {% if property.emlakjet_listing_number %}
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Emlakjet</span>
+                        <span class="font-mono font-semibold text-slate-700">{{ property.emlakjet_listing_number }}</span>
+                    </div>
+                    {% endif %}
+                    {% if property.hepsiemlak_listing_number %}
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Hepsiemlak</span>
+                        <span class="font-mono font-semibold text-slate-700">{{ property.hepsiemlak_listing_number }}</span>
+                    </div>
+                    {% endif %}
+                    {% if not property.owner_listing_number and not property.emlakjet_listing_number and not property.hepsiemlak_listing_number %}
+                    <p class="text-xs text-slate-400 text-center py-2">İlan numarası kaydedilmemiş</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Meta Bilgiler -->
+            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Kayıt Bilgileri</h3>
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Eklenme</span>
+                        <span class="font-semibold text-slate-700">{{ property.created_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Son Güncelleme</span>
+                        <span class="font-semibold text-slate-700">{{ property.updated_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Durum</span>
+                        <span class="font-bold {% if property.is_active %}text-emerald-600{% else %}text-red-600{% endif %}">
+                            {% if property.is_active %}Aktif{% else %}Pasif{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock content %}
 
-{% block javascripts %}
-{{ block.super }}
-<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-<!-- Google Maps API - API key'inizi buraya ekleyin -->
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap"></script>
+{% block extra_js %}
+<script src="https://unpkg.com/swiper@11/swiper-bundle.min.js"></script>
 <script>
-  function initMap() {
-    // Gayrimenkul koordinatları varsa haritada göster
-    var coordinates = "{{ property.map_coordinates }}";
-    var defaultLocation = { lat: 37.066667, lng: 37.383333 }; // Gaziantep varsayılan
-    
-    if (coordinates && coordinates.includes(',')) {
-      var latLng = coordinates.split(',');
-      var lat = parseFloat(latLng[0].trim());
-      var lng = parseFloat(latLng[1].trim());
-      
-      if (!isNaN(lat) && !isNaN(lng)) {
-        defaultLocation = { lat: lat, lng: lng };
-      }
-    }
-    
-    // Haritayı başlat
-    var map = new google.maps.Map(document.getElementById('property-map'), {
-      center: defaultLocation,
-      zoom: 15,
-      mapTypeId: google.maps.MapTypeId.ROADMAP,
-      streetViewControl: false,
-      mapTypeControl: true,
-      fullscreenControl: true
+    new Swiper('.property-swiper', {
+        loop: true,
+        pagination: { el: '.swiper-pagination', clickable: true },
+        navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+        autoplay: { delay: 5000, disableOnInteraction: false },
     });
-    
-    // Marker ekle
-    var marker = new google.maps.Marker({
-      position: defaultLocation,
-      map: map,
-      title: "{{ property.apartment_name }}",
-      icon: {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
-            <path fill="#9d2235" d="M16 0C7.2 0 0 7.2 0 16c0 16 16 24 16 24s16-8 16-24c0-8.8-7.2-16-16-16z"/>
-            <circle fill="white" cx="16" cy="16" r="6"/>
-          </svg>
-        `),
-        scaledSize: new google.maps.Size(32, 40),
-        anchor: new google.maps.Point(16, 40)
-      }
-    });
-    
-    // InfoWindow ekle
-    var infoWindow = new google.maps.InfoWindow({
-      content: `
-        <div style="padding: 10px; max-width: 250px;">
-          <h6 style="margin: 0 0 5px 0; color: #9d2235;">{{ property.apartment_name }}</h6>
-          <p style="margin: 0; font-size: 14px; color: #666;">{{ property.address }}</p>
-          <p style="margin: 5px 0 0 0; font-weight: bold; color: #9d2235;">{{ property.price|floatformat:0 }} TL</p>
-        </div>
-      `
-    });
-    
-    // Marker'a tıklandığında InfoWindow göster
-    marker.addListener('click', function() {
-      infoWindow.open(map, marker);
-    });
-    
-    // Başlangıçta InfoWindow'u göster
-    infoWindow.open(map, marker);
-  }
-
-  $(document).ready(function() {
-    // Swiper başlat
-    var swiper = new Swiper('.swiper-container', {
-      slidesPerView: 1,
-      spaceBetween: 30,
-      loop: true,
-      pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
-      },
-      navigation: {
-        nextEl: '.swiper-button-next',
-        prevEl: '.swiper-button-prev',
-      },
-    });
-  });
 </script>
-{% endblock javascripts %} 
+{% endblock extra_js %}

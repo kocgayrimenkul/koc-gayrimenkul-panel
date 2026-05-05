@@ -1,0 +1,128 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}WhatsApp Şablon Seçimi{% endblock %}
+
+{% block stylesheets %}
+<style>
+  :root { --koc-red: #9d2235; --koc-red-dark: #7a1a29; }
+  .bg-gradient-koc-red { background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important; }
+  .template-card { border: 2px solid #e0e0e0; border-radius: 12px; padding: 20px; cursor: pointer; transition: all .2s; }
+  .template-card:hover, .template-card.selected { border-color: #25d366; background: #f0fff4; }
+  .template-card .template-icon { font-size: 2rem; color: #25d366; margin-bottom: 10px; }
+  .btn-whatsapp { background: #25d366; border-color: #25d366; color: #fff; }
+  .btn-whatsapp:hover { background: #128c7e; color: #fff; }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col">
+          <h6 class="h2 text-white d-inline-block mb-0">
+            <i class="fab fa-whatsapp mr-2"></i>WhatsApp Şablon Seçimi
+          </h6>
+          {% if lead %}
+          <p class="text-white-50 mb-0 mt-1 small">
+            Müşteri: <strong>{{ lead.customer_name }}</strong> — {{ lead.phone }}
+          </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--7">
+  <div class="card shadow">
+    <div class="card-header bg-white border-0">
+      <h3 class="mb-0">Şablon Seçin</h3>
+    </div>
+    <div class="card-body">
+      <form method="post" id="templateForm">
+        {% csrf_token %}
+        {% if lead %}<input type="hidden" name="lead_id" value="{{ lead.id }}">{% endif %}
+
+        <div class="row">
+          <!-- Hoş Geldiniz -->
+          <div class="col-md-4 mb-4">
+            <label class="template-card d-block" id="card_welcome">
+              <input type="radio" name="template_name" value="welcome" class="d-none" onchange="selectTemplate('welcome')">
+              <div class="template-icon"><i class="fas fa-hand-wave"></i> 👋</div>
+              <h5 class="font-weight-bold mb-1">Hoş Geldiniz</h5>
+              <p class="text-muted small mb-0">Yeni müşteriye karşılama mesajı gönderir.</p>
+            </label>
+          </div>
+
+          <!-- Randevu Hatırlatma -->
+          <div class="col-md-4 mb-4">
+            <label class="template-card d-block" id="card_appointment_reminder">
+              <input type="radio" name="template_name" value="appointment_reminder" class="d-none" onchange="selectTemplate('appointment_reminder')">
+              <div class="template-icon">📅</div>
+              <h5 class="font-weight-bold mb-1">Randevu Hatırlatma</h5>
+              <p class="text-muted small mb-0">Yaklaşan randevuyu hatırlatır.</p>
+            </label>
+          </div>
+
+          <!-- Teklif Gönderildi -->
+          <div class="col-md-4 mb-4">
+            <label class="template-card d-block" id="card_offer_sent">
+              <input type="radio" name="template_name" value="offer_sent" class="d-none" onchange="selectTemplate('offer_sent')">
+              <div class="template-icon">📋</div>
+              <h5 class="font-weight-bold mb-1">Teklif Gönderildi</h5>
+              <p class="text-muted small mb-0">Müşteriye teklif bildirimini iletir.</p>
+            </label>
+          </div>
+
+          <!-- Sözleşme Hazır -->
+          <div class="col-md-4 mb-4">
+            <label class="template-card d-block" id="card_contract_ready">
+              <input type="radio" name="template_name" value="contract_ready" class="d-none" onchange="selectTemplate('contract_ready')">
+              <div class="template-icon">✍️</div>
+              <h5 class="font-weight-bold mb-1">Sözleşme Hazır</h5>
+              <p class="text-muted small mb-0">Sözleşmenin hazır olduğunu bildirir.</p>
+            </label>
+          </div>
+
+          <!-- Memnuniyet Anketi -->
+          <div class="col-md-4 mb-4">
+            <label class="template-card d-block" id="card_satisfaction_survey">
+              <input type="radio" name="template_name" value="satisfaction_survey" class="d-none" onchange="selectTemplate('satisfaction_survey')">
+              <div class="template-icon">⭐</div>
+              <h5 class="font-weight-bold mb-1">Memnuniyet Anketi</h5>
+              <p class="text-muted small mb-0">Satış sonrası memnuniyet anketi gönderir.</p>
+            </label>
+          </div>
+        </div>
+
+        <div class="mt-3 d-flex justify-content-between">
+          {% if lead %}
+          <a href="{% url 'sales_process:lead_detail' lead.id %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left mr-1"></i> İptal
+          </a>
+          {% else %}
+          <a href="{% url 'sales_process:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left mr-1"></i> İptal
+          </a>
+          {% endif %}
+          <button type="submit" class="btn btn-whatsapp" id="sendBtn" disabled>
+            <i class="fab fa-whatsapp mr-1"></i> Şablonu Gönder
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block javascripts %}
+<script>
+function selectTemplate(name) {
+  document.querySelectorAll('.template-card').forEach(el => el.classList.remove('selected'));
+  document.getElementById('card_' + name).classList.add('selected');
+  document.getElementById('sendBtn').disabled = false;
+}
+</script>
+{% endblock javascripts %}
+{% endblock content %}

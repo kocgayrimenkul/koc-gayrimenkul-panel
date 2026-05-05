@@ -14,7 +14,7 @@ from .views import (
     contact_detail,
 )
 
-app_name = 'contact'
+app_name = 'contact-views'
 
 urlpatterns = [
     # API URL'leri (korundu)

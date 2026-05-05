@@ -1,0 +1,437 @@
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Müşteri Yönetimi{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-[1600px] mx-auto">
+
+    <!-- Sayfa Başlığı + Eylem Butonları -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Müşteriler</h1>
+            <p class="text-sm text-slate-400 mt-1">Tüm müşterileri görüntüle, filtrele ve yönet</p>
+        </div>
+        <div class="flex space-x-2">
+            <button type="button" onclick="document.getElementById('quick-create-modal').classList.remove('hidden')"
+                    class="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium shadow-sm">
+                <i class="fas fa-plus"></i>
+                <span>Yeni Müşteri</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- İstatistik Kartları -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100 flex justify-between items-center">
+            <div>
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Toplam Müşteri</div>
+                <div class="text-3xl font-bold text-slate-800 mt-2">{{ stats.total }}</div>
+            </div>
+            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                <i class="fas fa-users text-lg"></i>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100 flex justify-between items-center">
+            <div>
+                <div class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Aktif</div>
+                <div class="text-3xl font-bold text-slate-800 mt-2">{{ stats.active }}</div>
+            </div>
+            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                <i class="fas fa-check-circle text-lg"></i>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100 flex justify-between items-center">
+            <div>
+                <div class="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Potansiyel</div>
+                <div class="text-3xl font-bold text-slate-800 mt-2">{{ stats.potential }}</div>
+            </div>
+            <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center">
+                <i class="fas fa-star text-lg"></i>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100 flex justify-between items-center">
+            <div>
+                <div class="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Bu Ay Eklenen</div>
+                <div class="text-3xl font-bold text-slate-800 mt-2">{{ stats.this_month }}</div>
+            </div>
+            <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                <i class="fas fa-calendar-plus text-lg"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtreler -->
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100 mb-6">
+        <form method="GET" class="grid grid-cols-12 gap-3">
+            <div class="col-span-3">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ara</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                        <i class="fas fa-search text-xs"></i>
+                    </span>
+                    <input type="text" name="q" value="{{ current_filters.q }}" placeholder="İsim, telefon, e-posta..."
+                           class="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="col-span-2">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Durum</label>
+                <select name="status" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+                    <option value="">Tümü</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if current_filters.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-span-2">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Görüşme</label>
+                <select name="meeting_status" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+                    <option value="">Tümü</option>
+                    {% for value, label in meeting_status_choices %}
+                    <option value="{{ value }}" {% if current_filters.meeting_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-span-2">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Danışman</label>
+                <select name="consultant" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+                    <option value="">Tümü</option>
+                    {% for c in consultants %}
+                    <option value="{{ c.id }}" {% if current_filters.consultant == c.id|stringformat:"s" %}selected{% endif %}>{{ c.get_full_name|default:c.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-span-2">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kaynak</label>
+                <select name="source" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+                    <option value="">Tümü</option>
+                    {% for value, label in source_choices %}
+                    <option value="{{ value }}" {% if current_filters.source == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-span-1 flex items-end">
+                <button type="submit" class="w-full px-3 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition text-sm font-medium">
+                    <i class="fas fa-filter mr-1"></i> Filtrele
+                </button>
+            </div>
+            {% if current_filters.q or current_filters.status or current_filters.meeting_status or current_filters.consultant or current_filters.source %}
+            <div class="col-span-12 -mt-1">
+                <a href="{% url 'customer_list' %}" class="text-xs text-slate-500 hover:text-red-600 transition">
+                    <i class="fas fa-times-circle mr-1"></i>Filtreleri temizle
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Müşteri Tablosu -->
+    <div class="bg-white rounded-2xl custom-shadow border border-slate-100 overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+            <div class="text-sm">
+                <span class="font-semibold text-slate-700">{{ page_obj.paginator.count }}</span>
+                <span class="text-slate-400">müşteri bulundu</span>
+            </div>
+            <div class="flex items-center space-x-2 text-xs text-slate-500">
+                <span>Sayfa</span>
+                <span class="font-semibold">{{ page_obj.number }}</span>
+                <span>/</span>
+                <span>{{ page_obj.paginator.num_pages }}</span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <tr>
+                        <th class="px-5 py-3 text-left">Müşteri</th>
+                        <th class="px-5 py-3 text-left">Telefon</th>
+                        <th class="px-5 py-3 text-left">Görüşme</th>
+                        <th class="px-5 py-3 text-left">Danışman</th>
+                        <th class="px-5 py-3 text-left">Daire</th>
+                        <th class="px-5 py-3 text-center">Teklif</th>
+                        <th class="px-5 py-3 text-left">Kayıt</th>
+                        <th class="px-5 py-3 text-right">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for customer in customers %}
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-5 py-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 bg-{{ customer.status_color }}-50 text-{{ customer.status_color }}-600 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                    {{ customer.display_name|slice:":2"|upper }}
+                                </div>
+                                <div>
+                                    <a href="{% url 'customer_detail' customer.pk %}" class="font-semibold text-slate-800 hover:text-blue-600 transition">{{ customer.display_name }}</a>
+
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3">
+                            <div class="text-xs">
+                                {% if customer.phone %}<div class="text-slate-700 font-medium"><i class="fas fa-phone-alt text-[9px] text-slate-300 mr-1"></i>{{ customer.phone }}</div>{% endif %}
+                            </div>
+                        </td>
+
+                        <td class="px-5 py-3">
+                            <span class="text-xs text-slate-600">{{ customer.get_meeting_status_display|default:"—" }}</span>
+                        </td>
+                        <td class="px-5 py-3">
+                            {% if customer.consultant %}
+                            <span class="text-xs text-slate-700">{{ customer.consultant.get_full_name|default:customer.consultant.username }}</span>
+                            {% else %}
+                            <span class="text-xs text-slate-300">Atanmamış</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3">
+                            {% with customer.offers.first as ilk_teklif %}
+                            {% if ilk_teklif and ilk_teklif.related_property %}
+                              {% with ilk_teklif.related_property as p %}
+                              <div class="daire-popup-wrap" style="position:relative;display:inline-block;">
+                                <span style="cursor:pointer;font-size:.75rem;color:#32325d;font-weight:600;border-bottom:1px dashed #adb5bd;">
+                                  <i class="fas fa-building" style="color:#9d2235;margin-right:4px;font-size:.7rem;"></i>
+                                  {{ p.apartment_name|default:"—"|truncatechars:20 }}
+                                </span>
+                                <div class="daire-popup" style="display:none;position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:12px 16px;min-width:210px;z-index:9999;font-size:.82rem;color:#32325d;">
+                                  <div style="font-weight:700;font-size:.88rem;color:#9d2235;margin-bottom:8px;border-bottom:1px solid #f0f0f0;padding-bottom:6px;">{{ p.apartment_name|default:"Daire" }}</div>
+                                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:#8898aa;">Mahalle</span><span style="font-weight:600;">{{ p.neighborhood.name|default:"—" }}</span></div>
+                                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:#8898aa;">Oda</span><span style="font-weight:600;">{{ p.room_count|default:"—" }}</span></div>
+                                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:#8898aa;">Kat</span><span style="font-weight:600;">{{ p.floor|default:"—" }}</span></div>
+                                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:#8898aa;">Net m²</span><span style="font-weight:600;">{{ p.net_area|default:"—" }}</span></div>
+                                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:#8898aa;">Brüt m²</span><span style="font-weight:600;">{{ p.gross_area|default:"—" }}</span></div>
+                                  <div style="display:flex;justify-content:space-between;"><span style="color:#8898aa;">Fiyat</span><span style="font-weight:600;">{{ p.price|default:"—" }}</span></div>
+                                </div>
+                              </div>
+                              {% endwith %}
+                            {% else %}
+                              <span class="text-xs text-slate-300">—</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="px-5 py-3 text-center">
+                            {% if customer.offer_count %}
+                            <span class="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded">{{ customer.offer_count }}</span>
+                            {% else %}
+                            <span class="text-slate-300 text-xs">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-center">
+                            {% with customer.call_logs.first as last_call %}
+                            {% if last_call and last_call.recording_url %}
+                            <button
+                                onclick="playRecording('{{ last_call.recording_url }}', '{{ customer.display_name }}', '{{ last_call.start_time|date:"d.m.Y H:i" }}', '{{ last_call.duration_formatted }}', '{{ last_call.get_direction_display }}')"
+                                title="Kaydı Dinle"
+                                style="width:34px;height:34px;border-radius:50%;border:none;background:linear-gradient(135deg,#fb6340,#e8521f);color:white;font-size:.75rem;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 10px rgba(251,99,64,.4);transition:all .2s;">
+                                <i class="fas fa-play" style="margin-left:2px;"></i>
+                            </button>
+                            {% else %}
+                            <span class="text-slate-300 text-xs">—</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="px-5 py-3 text-right">
+                            <a href="{% url 'customer_detail' customer.pk %}" class="inline-flex items-center px-3 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-lg hover:bg-slate-900 transition">
+                                Detay
+                                <i class="fas fa-arrow-right ml-1 text-[10px]"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="px-5 py-16 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
+                                    <i class="fas fa-users text-2xl"></i>
+                                </div>
+                                <h4 class="text-md font-bold text-slate-700 mb-1">Müşteri Bulunamadı</h4>
+                                <p class="text-xs text-slate-400 mb-4">Filtrelere uyan müşteri yok veya henüz kayıtlı müşteri bulunmuyor.</p>
+                                <button type="button" onclick="document.getElementById('quick-create-modal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                                    <i class="fas fa-plus mr-2"></i>İlk Müşteriyi Ekle
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Sayfalama -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+            <div class="text-xs text-slate-500">
+                Toplam <span class="font-semibold text-slate-700">{{ page_obj.paginator.count }}</span> müşteriden
+                <span class="font-semibold text-slate-700">{{ page_obj.start_index }}</span> -
+                <span class="font-semibold text-slate-700">{{ page_obj.end_index }}</span> arası gösteriliyor
+            </div>
+            <div class="flex items-center space-x-1">
+                {% if page_obj.has_previous %}
+                <a href="?{% if current_filters.q %}q={{ current_filters.q }}&{% endif %}{% if current_filters.status %}status={{ current_filters.status }}&{% endif %}page={{ page_obj.previous_page_number }}"
+                   class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50">
+                    <i class="fas fa-chevron-left text-[10px]"></i>
+                </a>
+                {% else %}
+                <span class="px-3 py-1.5 border border-slate-100 rounded-lg text-xs text-slate-300 cursor-not-allowed">
+                    <i class="fas fa-chevron-left text-[10px]"></i>
+                </span>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num == page_obj.number %}
+                    <span class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold">{{ num }}</span>
+                    {% elif num == 1 or num == page_obj.paginator.num_pages or num|add:"-2" <= page_obj.number and num|add:"2" >= page_obj.number %}
+                    <a href="?{% if current_filters.q %}q={{ current_filters.q }}&{% endif %}{% if current_filters.status %}status={{ current_filters.status }}&{% endif %}page={{ num }}"
+                       class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50">{{ num }}</a>
+                    {% elif num == 2 or num == page_obj.paginator.num_pages|add:"-1" %}
+                    <span class="px-2 text-slate-400 text-xs">…</span>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <a href="?{% if current_filters.q %}q={{ current_filters.q }}&{% endif %}{% if current_filters.status %}status={{ current_filters.status }}&{% endif %}page={{ page_obj.next_page_number }}"
+                   class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50">
+                    <i class="fas fa-chevron-right text-[10px]"></i>
+                </a>
+                {% else %}
+                <span class="px-3 py-1.5 border border-slate-100 rounded-lg text-xs text-slate-300 cursor-not-allowed">
+                    <i class="fas fa-chevron-right text-[10px]"></i>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- ================== MODAL: SES KAYDI ================== -->
+<div id="audioModal" onclick="if(event.target===this)closeAudio()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;padding:28px 32px;width:440px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative;">
+    <button onclick="closeAudio()" style="position:absolute;top:16px;right:18px;background:none;border:none;font-size:1.4rem;color:#adb5bd;cursor:pointer;line-height:1;">×</button>
+    <div style="margin-bottom:20px;">
+      <div style="font-size:.75rem;font-weight:700;color:#adb5bd;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Ses Kaydı</div>
+      <div style="font-weight:700;font-size:1.1rem;color:#32325d;" id="audioModalName">—</div>
+      <div style="font-size:.82rem;color:#adb5bd;margin-top:2px;" id="audioModalMeta"></div>
+    </div>
+    <audio id="audioPlayer" controls style="width:100%;border-radius:10px;outline:none;margin-bottom:20px;">
+      <source id="audioSource" src="" type="audio/wav">
+      Tarayıcınız ses oynatmayı desteklemiyor.
+    </audio>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <a id="audioDownloadLink" href="#" target="_blank"
+         style="background:#f6f9fc;color:#32325d;border:2px solid #e9ecef;border-radius:10px;padding:0 18px;height:40px;font-weight:600;display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-size:.88rem;">
+        <i class="fas fa-external-link-alt"></i> Kaydı Aç
+      </a>
+      <button onclick="closeAudio()"
+              style="background:linear-gradient(135deg,#334155,#1e293b);color:white;border:none;border-radius:10px;padding:0 22px;height:40px;font-weight:600;cursor:pointer;font-size:.88rem;">
+        Kapat
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================== MODAL: HIZLI MÜŞTERİ EKLE ================== -->
+<div id="quick-create-modal" class="hidden fixed inset-0 z-[60] overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4 bg-slate-900/60 backdrop-blur-sm">
+        <form method="POST" action="{% url 'customer_quick_create' %}" class="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden">
+            {% csrf_token %}
+            <div class="bg-blue-600 p-6 flex justify-between items-center text-white">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-user-plus text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold">Hızlı Müşteri Ekle</h3>
+                        <p class="text-xs text-blue-100">Sadece zorunlu alanlarla kaydet</p>
+                    </div>
+                </div>
+                <button type="button" onclick="document.getElementById('quick-create-modal').classList.add('hidden')" class="text-blue-100 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-8 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">Ad Soyad <span class="text-red-500">*</span></label>
+                    <input type="text" name="full_name" required class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100" placeholder="Ad Soyad...">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">Telefon <span class="text-red-500">*</span></label>
+                    <input type="tel" name="phone" required class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100" placeholder="0500 000 00 00">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">E-posta</label>
+                    <input type="email" name="email" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100" placeholder="ornek@mail.com">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Müşteri Türü</label>
+                        <select name="customer_type" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100">
+                            <option value="alici">Alıcı</option>
+                            <option value="satici">Satıcı</option>
+                            <option value="kiraci">Kiracı</option>
+                            <option value="kiraya_veren">Kiraya Veren</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Durum</label>
+                        <select name="status" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if value == 'potansiyel' %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="document.getElementById('quick-create-modal').classList.add('hidden')"
+                            class="px-6 py-3 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50">İptal</button>
+                    <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center space-x-2">
+                        <i class="fas fa-check"></i>
+                        <span>Kaydet</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+    // Ses kaydı oynat
+    function playRecording(url, name, date, duration, direction) {
+        document.getElementById('audioModalName').textContent = name;
+        document.getElementById('audioModalMeta').textContent =
+            (date || '') + (duration ? '  ·  ' + duration : '') + (direction ? '  ·  ' + direction : '');
+        document.getElementById('audioSource').src = url;
+        document.getElementById('audioDownloadLink').href = url;
+        var player = document.getElementById('audioPlayer');
+        player.load();
+        player.play();
+        var modal = document.getElementById('audioModal');
+        modal.style.display = 'flex';
+    }
+
+    function closeAudio() {
+        document.getElementById('audioPlayer').pause();
+        document.getElementById('audioModal').style.display = 'none';
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.getElementById('quick-create-modal').classList.add('hidden');
+            closeAudio();
+        }
+    });
+</script>
+
+    // Daire popup hover
+    document.querySelectorAll('.daire-popup-wrap').forEach(function(wrap) {
+        var popup = wrap.querySelector('.daire-popup');
+        wrap.addEventListener('mouseenter', function() { popup.style.display = 'block'; });
+        wrap.addEventListener('mouseleave', function() { popup.style.display = 'none'; });
+    });
+{% endblock extra_js %}

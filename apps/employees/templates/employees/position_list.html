@@ -1,0 +1,158 @@
+{% extends "layouts/base.html" %}
+{% block title %} Pozisyon Yönetimi {% endblock %}
+
+{% block stylesheets %}
+<style>
+  :root {
+    --koc-red: #9d2235;
+    --koc-red-dark: #7a1a29;
+  }
+  .bg-gradient-koc-red {
+    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
+  }
+  .text-koc-red { color: var(--koc-red) !important; }
+  .btn-koc-red { background-color: var(--koc-red); border-color: var(--koc-red); color: #fff; }
+  .btn-koc-red:hover { background-color: var(--koc-red-dark); border-color: var(--koc-red-dark); color: #fff; }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center">
+        <div class="col">
+          <h6 class="h2 text-white d-inline-block mb-0">Pozisyon Yönetimi</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'employee_list' %}">Çalışanlar</a></li>
+              <li class="breadcrumb-item active">Pozisyonlar</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--7">
+  <div class="row">
+    <!-- Pozisyon Ekle -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-white border-0">
+          <h3 class="mb-0">Yeni Pozisyon Ekle</h3>
+        </div>
+        <div class="card-body">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+          <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+              <label class="form-control-label">Pozisyon Adı</label>
+              <input type="text" name="name" class="form-control" placeholder="örn. Kıdemli Danışman" required>
+            </div>
+            <button type="submit" class="btn btn-koc-red btn-block">
+              <i class="fas fa-plus mr-1"></i> Ekle
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pozisyon Listesi -->
+    <div class="col-lg-8 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-white border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">Mevcut Pozisyonlar</h3>
+            </div>
+            <div class="col text-right">
+              <span class="badge badge-pill badge-danger">{{ positions|length }} pozisyon</span>
+            </div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush">
+            <thead class="thead-light">
+              <tr>
+                <th>Pozisyon Adı</th>
+                <th>Çalışan Sayısı</th>
+                <th class="text-right">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for position in positions %}
+              <tr>
+                <td>
+                  <span class="font-weight-bold">{{ position.name }}</span>
+                </td>
+                <td>
+                  <span class="badge badge-pill badge-info">
+                    {{ position.employeeprofile_set.count }} kişi
+                  </span>
+                </td>
+                <td class="text-right">
+                  <button type="button" class="btn btn-sm btn-outline-primary"
+                          data-toggle="modal" data-target="#editModal{{ position.id }}">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <form method="post" class="d-inline"
+                        onsubmit="return confirm('Bu pozisyonu silmek istediğinize emin misiniz?')">
+                    {% csrf_token %}
+                    <input type="hidden" name="delete_id" value="{{ position.id }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              <!-- Edit Modal -->
+              <div class="modal fade" id="editModal{{ position.id }}" tabindex="-1" role="dialog">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Pozisyon Düzenle</h5>
+                      <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                    </div>
+                    <form method="post">
+                      {% csrf_token %}
+                      <div class="modal-body">
+                        <input type="hidden" name="position_id" value="{{ position.id }}">
+                        <div class="form-group">
+                          <label>Pozisyon Adı</label>
+                          <input type="text" name="name" class="form-control" value="{{ position.name }}" required>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-koc-red">Kaydet</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-4">
+                  <i class="fas fa-briefcase fa-2x mb-2 d-block"></i>
+                  Henüz pozisyon eklenmemiş.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

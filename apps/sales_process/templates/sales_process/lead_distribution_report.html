@@ -1,0 +1,146 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Lead Dağılım Raporu{% endblock %}
+
+{% block stylesheets %}
+<style>
+  :root { --koc-red: #9d2235; --koc-red-dark: #7a1a29; }
+  .bg-gradient-koc-red { background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important; }
+  .stage-bar { height: 12px; border-radius: 6px; background: var(--koc-red); }
+  .source-icon { width: 36px; height: 36px; border-radius: 50%; background: #f0f0f0;
+                 display: flex; align-items: center; justify-content: center; font-size: 14px; }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col">
+          <h6 class="h2 text-white d-inline-block mb-0">Lead Dağılım Raporu</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item active">Lead Dağılımı</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--7">
+  <div class="row">
+    <!-- Aşama Dağılımı -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header bg-white border-0">
+          <h3 class="mb-0">Aşama Bazlı Dağılım</h3>
+        </div>
+        <div class="card-body">
+          {% for stage in stages %}
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="font-weight-bold small">{{ stage.name }}</span>
+              <span class="text-muted small">{{ stage.lead_count }} lead</span>
+            </div>
+            <div class="progress" style="height:10px;">
+              {% if stages %}
+                {% with max_count=stages.0.lead_count %}
+                  {% if max_count > 0 %}
+                    {% widthratio stage.lead_count max_count 100 as pct %}
+                    <div class="progress-bar" style="width:{{ pct }}%;background-color:var(--koc-red);"></div>
+                  {% endif %}
+                {% endwith %}
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-muted text-center py-3">Aşama verisi bulunamadı.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Kaynak Dağılımı -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header bg-white border-0">
+          <h3 class="mb-0">Kaynak Bazlı Dağılım</h3>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush">
+            <thead class="thead-light">
+              <tr>
+                <th>Kaynak</th>
+                <th>Lead Sayısı</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for src in source_distribution %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="source-icon mr-3">
+                      {% if src.source == 'whatsapp' %}<i class="fab fa-whatsapp text-success"></i>
+                      {% elif src.source == 'phone' %}<i class="fas fa-phone text-info"></i>
+                      {% elif src.source == 'website' %}<i class="fas fa-globe text-primary"></i>
+                      {% elif src.source == 'referral' %}<i class="fas fa-user-friends text-warning"></i>
+                      {% else %}<i class="fas fa-tag text-secondary"></i>{% endif %}
+                    </div>
+                    <span class="font-weight-bold">{{ src.source|default:"Diğer"|capfirst }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge badge-pill badge-danger">{{ src.count }}</span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="2" class="text-center text-muted py-4">Veri bulunamadı.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Öncelik Dağılımı -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-white border-0">
+      <h3 class="mb-0">Öncelik Bazlı Dağılım</h3>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        {% for prio in priority_distribution %}
+        <div class="col-md-4 mb-3">
+          <div class="card border-0 bg-light">
+            <div class="card-body text-center py-3">
+              {% if prio.priority == 'high' %}
+                <i class="fas fa-arrow-up fa-2x text-danger mb-2 d-block"></i>
+                <h5 class="font-weight-bold text-danger mb-0">Yüksek</h5>
+              {% elif prio.priority == 'medium' %}
+                <i class="fas fa-minus fa-2x text-warning mb-2 d-block"></i>
+                <h5 class="font-weight-bold text-warning mb-0">Orta</h5>
+              {% else %}
+                <i class="fas fa-arrow-down fa-2x text-success mb-2 d-block"></i>
+                <h5 class="font-weight-bold text-success mb-0">Düşük</h5>
+              {% endif %}
+              <p class="h3 font-weight-bold mb-0 mt-2">{{ prio.count }}</p>
+              <span class="text-muted small">lead</span>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col text-center text-muted py-3">Öncelik verisi bulunamadı.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

@@ -92,6 +92,17 @@
   .info-icon i {
     font-size: 18px;
   }
+  
+  /* Gelen çağrı animasyonu */
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+  }
+  
+  .incoming-call-indicator {
+    animation: pulse 2s infinite;
+  }
 </style>
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -140,7 +151,13 @@
     <div class="header-body">
       <div class="row align-items-center py-4">
         <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Yeni Müşteri Oluştur</h6>
+          <h6 class="h2 text-white d-inline-block mb-0">
+            {% if prefill_phone %}
+              <i class="fas fa-phone-volume incoming-call-indicator"></i> Gelen Çağrı - Yeni Müşteri
+            {% else %}
+              Yeni Müşteri Oluştur
+            {% endif %}
+          </h6>
           <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
             <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
               <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
@@ -178,6 +195,23 @@
   </div>
   {% endif %}
   
+  <!-- Gelen çağrı bildirimi -->
+  {% if prefill_phone %}
+  <div class="row">
+    <div class="col">
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <span class="alert-icon"><i class="fas fa-phone-volume"></i></span>
+        <span class="alert-text">
+          <strong>Gelen Çağrı!</strong> {{ prefill_phone }} numarasından çağrı alındı. Lütfen müşteri bilgilerini doldurun.
+        </span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  
   <div class="row">
     <div class="col-xl-8 order-xl-1">
       <div class="card">
@@ -195,6 +229,12 @@
         <div class="card-body">
           <form method="post" action="{% url 'customer_create' %}">
             {% csrf_token %}
+            
+            <!-- Hidden field for call_id -->
+            {% if call_id %}
+            <input type="hidden" name="call_id" value="{{ call_id }}">
+            {% endif %}
+            
             <!-- Müşteri Bilgileri -->
             <h6 class="heading-small text-muted mb-4">Müşteri Bilgileri</h6>
             <div class="pl-lg-4">
@@ -207,7 +247,7 @@
                         <span class="input-group-text"><i class="fas fa-user"></i></span>
                       </div>
                       <input type="text" id="full_name" name="full_name" class="form-control" required 
-                        placeholder="Müşterinin adı soyadı" value="{{ form_data.full_name|default:'' }}">
+                        placeholder="Müşterinin adı soyadı" value="">
                     </div>
                   </div>
                 </div>
@@ -220,8 +260,22 @@
                       </div>
                       <input type="tel" id="phone" name="phone" class="form-control" required 
                         placeholder="05XX XXX XX XX" pattern="[0-9]{11}" 
-                        title="Lütfen 11 haneli telefon numarası girin" value="{{ form_data.phone|default:'' }}">
+                        title="Lütfen 11 haneli telefon numarası girin" 
+                        value="{{ prefill_phone|default:'' }}"
+                        {% if prefill_phone %}readonly style="background-color: #e8f5e9;"{% endif %}>
+                      {% if prefill_phone %}
+                        <div class="input-group-append">
+                          <span class="input-group-text bg-success text-white">
+                            <i class="fas fa-phone-volume"></i> Gelen Çağrı
+                          </span>
+                        </div>
+                      {% endif %}
                     </div>
+                    {% if prefill_phone %}
+                      <small class="form-text text-success">
+                        <i class="fas fa-info-circle"></i> Bu numara gelen çağrıdan otomatik dolduruldu
+                      </small>
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -235,13 +289,14 @@
                       </div>
                       <select id="source" name="source" class="form-control" required>
                         <option value="">Kaynak Seçiniz</option>
-                        <option value="branda" {% if form_data.source == 'branda' %}selected{% endif %}>Branda</option>
-                        <option value="sahibinden" {% if form_data.source == 'sahibinden' %}selected{% endif %}>Sahibinden</option>
-                        <option value="referans" {% if form_data.source == 'referans' %}selected{% endif %}>Referans</option>
-                        <option value="emlakjet" {% if form_data.source == 'emlakjet' %}selected{% endif %}>Emlakjet</option>
-                        <option value="hepsi_emlak" {% if form_data.source == 'hepsi_emlak' %}selected{% endif %}>Hepsi Emlak</option>
-                        <option value="sosyal_medya" {% if form_data.source == 'sosyal_medya' %}selected{% endif %}>Sosyal Medya</option>
-                        <option value="diger" {% if form_data.source == 'diger' %}selected{% endif %}>Diğer</option>
+                        <option value="branda">Branda</option>
+                        <option value="sahibinden">Sahibinden</option>
+                        <option value="referans">Referans</option>
+                        <option value="emlakjet">Emlakjet</option>
+                        <option value="hepsi_emlak">Hepsi Emlak</option>
+                        <option value="sosyal_medya">Sosyal Medya</option>
+                        <option value="telefon" {% if prefill_phone %}selected{% endif %}>Telefon Görüşmesi</option>
+                        <option value="diger">Diğer</option>
                       </select>
                     </div>
                   </div>
@@ -254,9 +309,9 @@
                         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                       </div>
                       <select id="contact_type" name="contact_type" class="form-control" required>
-                        <option value="bilgi_alma" {% if form_data.contact_type == 'bilgi_alma' %}selected{% endif %}>Bilgi Alma</option>
-                        <option value="daire_sunumu" {% if form_data.contact_type == 'daire_sunumu' %}selected{% endif %}>Daire Sunumu</option>
-                        <option value="sikayet" {% if form_data.contact_type == 'sikayet' %}selected{% endif %}>Şikayet</option>
+                        <option value="bilgi_alma">Bilgi Alma</option>
+                        <option value="daire_sunumu">Daire Sunumu</option>
+                        <option value="sikayet">Şikayet</option>
                       </select>
                     </div>
                   </div>
@@ -273,9 +328,7 @@
                       <select id="neighborhood" name="neighborhood" class="form-control" required>
                         <option value="">Mahalle Seçiniz</option>
                         {% for neighborhood in neighborhoods %}
-                          <option value="{{ neighborhood.id }}" {% if form_data.neighborhood == neighborhood.id|stringformat:"i" %}selected{% endif %}>
-                            {{ neighborhood.name }}
-                          </option>
+                          <option value="{{ neighborhood.id }}">{{ neighborhood.name }}</option>
                         {% endfor %}
                       </select>
                     </div>
@@ -316,7 +369,7 @@
                       <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-sticky-note"></i></span>
                       </div>
-                      <textarea id="id_notes" name="notes" cols="40" rows="4" class="form-control" placeholder="Müşteri ile ilgili notlar" required>{{ form_data.notes|default:'' }}</textarea>
+                      <textarea id="id_notes" name="notes" cols="40" rows="4" class="form-control" placeholder="Müşteri ile ilgili notlar" required></textarea>
                     </div>
                   </div>
                 </div>
@@ -325,7 +378,7 @@
                 <div class="col-lg-12">
                   <div class="form-group">
                     <label class="form-control-label" for="id_reminder_date">Hatırlatma Tarihi</label>
-                    <input type="date" name="reminder_date" class="form-control" id="id_reminder_date" value="{{ form_data.reminder_date|default:'' }}" />
+                    <input type="date" name="reminder_date" class="form-control" id="id_reminder_date" />
                     <small class="form-text text-muted">Bu tarihte sistem otomatik olarak hatırlatma bildirecek</small>
                   </div>
                 </div>
@@ -433,37 +486,23 @@
       allowClear: true,
       width: '100%',
       matcher: function(params, data) {
-        // Eğer arama terimi yoksa tüm sonuçları göster
         if ($.trim(params.term) === '') {
           return data;
         }
-        
-        // Arama terimini normalleştir
         var searchTerm = normalizeText(params.term);
         var optionText = normalizeText(data.text);
-        
-        // Metin içinde herhangi bir yerde arama yap
         if (optionText.indexOf(searchTerm) > -1) {
           return data;
         }
-        
-        // Sonuç bulunamadı
         return null;
       },
       language: {
-        noResults: function() {
-          return "Sonuç bulunamadı";
-        },
-        searching: function() {
-          return "Aranıyor...";
-        },
-        inputTooShort: function() {
-          return "En az 1 karakter giriniz";
-        }
+        noResults: function() { return "Sonuç bulunamadı"; },
+        searching: function() { return "Aranıyor..."; },
+        inputTooShort: function() { return "En az 1 karakter giriniz"; }
       }
     });
     
-    // Input group ile uyumlu hale getir
     $('.select2-property').on('select2:open', function() {
       document.querySelector('.select2-search__field').focus();
     });
@@ -486,6 +525,31 @@
         return false;
       }
     });
+    
+    // Gelen çağrı için özel işlemler
+    {% if prefill_phone %}
+    $('#full_name').focus();
+    document.title = '🔔 Gelen Çağrı - Yeni Müşteri';
+    $('#source').val('telefon');
+    
+    if ("Notification" in window) {
+      if (Notification.permission === "granted") {
+        new Notification("Gelen Çağrı", {
+          body: "{{ prefill_phone }} numarasından gelen çağrı",
+          icon: "/static/assets/img/brand/favicon.png",
+          tag: "incoming-call"
+        });
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(function (permission) {
+          if (permission === "granted") {
+            new Notification("Gelen Çağrı", {
+              body: "{{ prefill_phone }} numarasından gelen çağrı"
+            });
+          }
+        });
+      }
+    }
+    {% endif %}
   });
 </script>
-{% endblock javascripts %} 
+{% endblock javascripts %}

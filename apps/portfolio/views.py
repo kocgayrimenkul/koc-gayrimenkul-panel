@@ -10,10 +10,12 @@ from django.template import loader
 from django.urls import reverse
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .models import Property, PropertyEnvironment, PropertyImage
+from .models import Property, PropertyEnvironment, PropertyImage, PropertyNote, PortalNotification
 from apps.customers.models import Neighborhood
 from apps.employees.models import EmployeeProfile
 from django.utils import timezone
+from django.conf import settings
+from datetime import timedelta
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -24,7 +26,7 @@ from apps.employees.decorators import (
     can_delete_portfolio,
     require_portfolio_permission
 )
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 
 def get_user_role(user):
     """Kullanıcının rolünü döndürür"""
@@ -46,11 +48,13 @@ def property_list(request):
     
     # Filtreleme
     search = request.GET.get('search', '')
-    property_type = request.GET.get('type', '')
+    query = request.GET.get('q', search)  # Modern template için 'q' parametresi
+    property_type = request.GET.get('type', '') or request.GET.get('property_type', '')
     status = request.GET.get('status', '')
     neighborhood_id = request.GET.get('neighborhood', '')
     min_price = request.GET.get('min_price', '')
     max_price = request.GET.get('max_price', '')
+    price_range = request.GET.get('price_range', '')  # Yeni eklenen
     consultant_id = request.GET.get('consultant', '')
     category = request.GET.get('category', '')
     listing_type = request.GET.get('listing_type', '')
@@ -65,45 +69,46 @@ def property_list(request):
     
     # Başlangıç sorgusu - yetki kontrolü ile
     if request.user.is_superuser or role in ['admin', 'manager']:
-        # Yönetici ve Müdür tüm gayrimenkulleri görebilir
         properties_list = Property.objects.filter(is_active=True)\
             .select_related('neighborhood', 'consultant')\
-            .prefetch_related(
-                'images'
-            )
+            .prefetch_related('images')
     elif role == 'secretary':
-        # Santral tüm aktif gayrimenkulleri görebilir (okuma yetkisi)
         properties_list = Property.objects.filter(is_active=True)\
             .select_related('neighborhood', 'consultant')\
-            .prefetch_related(
-                'images'
-            )
+            .prefetch_related('images')
     elif role == 'consultant':
-        # Danışman sadece kendi mahallelerindeki gayrimenkulleri görebilir
         consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
-        properties_list = Property.objects.filter(
-            is_active=True,
-            neighborhood__in=consultant_neighborhoods
-        ).select_related('neighborhood', 'consultant')\
-         .prefetch_related(
-             'images'
-         )
+        # Sekme kontrolu: ?tab=office ise ofis portfoyleri, yoksa kendi portfoyleri
+        requested_tab = request.GET.get('tab', 'own')
+        if requested_tab == 'office':
+            # Diger mahalleler (kendi mahallesi disindaki tum portfoyler)
+            properties_list = Property.objects.filter(is_active=True)\
+                .exclude(neighborhood__in=consultant_neighborhoods)\
+                .select_related('neighborhood', 'consultant')\
+                .prefetch_related('images')
+        else:
+            # Kendi mahallesindeki portfoyler
+            properties_list = Property.objects.filter(
+                is_active=True,
+                neighborhood__in=consultant_neighborhoods
+            ).select_related('neighborhood', 'consultant')\
+             .prefetch_related('images')
     else:
-        # Diğer roller için sınırlı erişim
         properties_list = Property.objects.none()
         messages.warning(request, "Gayrimenkul listesini görüntüleme yetkiniz sınırlıdır.")
     
-    # Arama sorgusu
-    if search:
+    # Arama sorgusu - hem search hem query parametresini destekle
+    search_term = query or search
+    if search_term:
         properties_list = properties_list.filter(
-            Q(apartment_name__icontains=search) | 
-            Q(web_title__icontains=search) |
-            Q(description__icontains=search) | 
-            Q(address__icontains=search) | 
-            Q(owner_name__icontains=search) | 
-            Q(owner_listing_number__icontains=search) |
-            Q(emlakjet_listing_number__icontains=search) |
-            Q(hepsiemlak_listing_number__icontains=search)
+            Q(apartment_name__icontains=search_term) | 
+            Q(web_title__icontains=search_term) |
+            Q(description__icontains=search_term) | 
+            Q(address__icontains=search_term) | 
+            Q(owner_name__icontains=search_term) | 
+            Q(owner_listing_number__icontains=search_term) |
+            Q(emlakjet_listing_number__icontains=search_term) |
+            Q(hepsiemlak_listing_number__icontains=search_term)
         )
     
     # Filtreleri uygula
@@ -112,25 +117,36 @@ def property_list(request):
     if status:
         properties_list = properties_list.filter(status=status)
     if neighborhood_id:
-        # Danışman sadece kendi mahallelerini filtreleyebilir
         if role == 'consultant':
             consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
             if consultant_neighborhoods.filter(id=neighborhood_id).exists():
                 properties_list = properties_list.filter(neighborhood_id=neighborhood_id)
         else:
             properties_list = properties_list.filter(neighborhood_id=neighborhood_id)
-    if min_price:
-        try:
-            properties_list = properties_list.filter(price__gte=float(min_price))
-        except ValueError:
-            pass
-    if max_price:
-        try:
-            properties_list = properties_list.filter(price__lte=float(max_price))
-        except ValueError:
-            pass
+    
+    # Fiyat filtresi - min/max veya price_range
+    if price_range:
+        if price_range == '0-500000':
+            properties_list = properties_list.filter(price__lte=500000)
+        elif price_range == '500000-1000000':
+            properties_list = properties_list.filter(price__gte=500000, price__lte=1000000)
+        elif price_range == '1000000-2000000':
+            properties_list = properties_list.filter(price__gte=1000000, price__lte=2000000)
+        elif price_range == '2000000-':
+            properties_list = properties_list.filter(price__gte=2000000)
+    else:
+        if min_price:
+            try:
+                properties_list = properties_list.filter(price__gte=float(min_price))
+            except ValueError:
+                pass
+        if max_price:
+            try:
+                properties_list = properties_list.filter(price__lte=float(max_price))
+            except ValueError:
+                pass
+    
     if consultant_id:
-        # Sadece yönetici ve müdür başka danışmanları filtreleyebilir
         if request.user.is_superuser or role in ['admin', 'manager']:
             properties_list = properties_list.filter(consultant_id=consultant_id)
     if category:
@@ -162,16 +178,14 @@ def property_list(request):
     properties_list = properties_list.order_by('-created_at')
     
     # Pagination
-    paginator = Paginator(properties_list, 9)  # Her sayfada 9 kayıt göster
+    paginator = Paginator(properties_list, 12)  # Modern template için 12 kayıt
     page = request.GET.get('page', 1)
     
     try:
         properties = paginator.page(page)
     except PageNotAnInteger:
-        # Eğer sayfa sayı değilse, ilk sayfayı göster
         properties = paginator.page(1)
     except EmptyPage:
-        # Eğer sayfa sayısı mevcut sayfa aralığını aşıyorsa, son sayfayı göster
         properties = paginator.page(paginator.num_pages)
     
     # İlgili mahalleler - yetki kontrolü ile
@@ -191,11 +205,27 @@ def property_list(request):
     context = {
         'segment': 'gayrimenkul',
         'properties': properties,
+        'total_properties': Property.objects.count(),
+        'active_properties': Property.objects.filter(is_active=True).count(),
+        'satilik_count': Property.objects.filter(status='satilik', is_active=True).count(),
+        'kiralik_count': Property.objects.filter(status='kiralik', is_active=True).count(),
+        # === YENI: Dan\u0131\u015fman i\u00e7in Kendi/Ofis portf\u00f6y sekmesi sayilari ===
+        'own_count': (Property.objects.filter(is_active=True, neighborhood__in=Neighborhood.objects.filter(consultant=request.user)).count() if role == 'consultant' else 0),
+        'office_count': (Property.objects.filter(is_active=True).exclude(neighborhood__in=Neighborhood.objects.filter(consultant=request.user)).count() if role == 'consultant' else 0),
+        'active_tab': request.GET.get('tab', 'own'),
+        'is_office_view': (role == 'consultant' and request.GET.get('tab', 'own') == 'office'),
+        'is_consultant': (role == 'consultant'),
+
         'neighborhoods': neighborhoods,
         'consultants': consultants,
         'user_role': role,
+        'query': search_term,
+        'status': status,
+        'property_type': property_type,
+        'price_range': price_range,
+        'neighborhood': neighborhood_id,
         'filters': {
-            'search': search,
+            'search': search_term,
             'property_type': property_type,
             'status': status,
             'neighborhood_id': neighborhood_id,
@@ -1190,3 +1220,904 @@ def image_update_order(request):
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+
+@login_required(login_url="/login/")
+@require_http_methods(["POST"])
+def move_property_to_group(request):
+    """Portföyü gruba taşı"""
+    
+    try:
+        data = json.loads(request.body)
+        property_id = data.get('property_id')
+        target_group = data.get('group')
+        
+        property_obj = Property.objects.get(id=property_id)
+        
+        if target_group == 'yeni-gelenler':
+            property_obj.created_at = timezone.now()
+            property_obj.save()
+        else:
+            parts = target_group.split(' - ')
+            if len(parts) == 2:
+                neighborhood_name = parts[0]
+                room_count = parts[1]
+                
+                neighborhood = Neighborhood.objects.filter(name=neighborhood_name).first()
+                if neighborhood:
+                    property_obj.neighborhood = neighborhood
+                
+                if room_count != "Belirtilmemiş":
+                    property_obj.room_count = room_count
+                
+                from datetime import timedelta
+                property_obj.created_at = timezone.now() - timedelta(days=8)
+                property_obj.save()
+        
+        return JsonResponse({'success': True})
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+# Bu kodu mevcut views.py dosyanıza ekleyin
+
+@login_required(login_url="/login/")
+@can_view_portfolio
+def property_list_grouped(request):
+    """Gayrimenkul listesi - Akıllı Gruplu Görünüm"""
+    
+    role = get_user_role(request.user)
+    
+    # Yetki kontrolü
+    if request.user.is_superuser or role in ['admin', 'manager']:
+        all_properties = Property.objects.filter(is_active=True)\
+            .select_related('neighborhood', 'consultant')\
+            .prefetch_related('images')\
+            .order_by('-created_at')
+    elif role == 'secretary':
+        all_properties = Property.objects.filter(is_active=True)\
+            .select_related('neighborhood', 'consultant')\
+            .prefetch_related('images')\
+            .order_by('-created_at')
+    elif role == 'consultant':
+        consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+        all_properties = Property.objects.filter(
+            is_active=True,
+            neighborhood__in=consultant_neighborhoods
+        ).select_related('neighborhood', 'consultant')\
+         .prefetch_related('images')\
+         .order_by('-created_at')
+    else:
+        all_properties = Property.objects.none()
+
+    # ── FİLTRELEME ──────────────────────────────────────────────────────────
+    search          = request.GET.get('search', '').strip()
+    neighborhood_id = request.GET.get('neighborhood', '').strip()
+    min_price       = request.GET.get('min_price', '').strip()
+    max_price       = request.GET.get('max_price', '').strip()
+    consultant_id   = request.GET.get('consultant', '').strip()
+    status          = request.GET.get('status', '').strip()
+    banner_status   = request.GET.get('banner_status', '').strip()
+    photo_status    = request.GET.get('photo_status', '').strip()
+
+    if search:
+        all_properties = all_properties.filter(
+            Q(apartment_name__icontains=search) |
+            Q(web_title__icontains=search) |
+            Q(owner_name__icontains=search) |
+            Q(address__icontains=search)
+        )
+    if neighborhood_id:
+        all_properties = all_properties.filter(neighborhood_id=neighborhood_id)
+    if min_price:
+        try:
+            all_properties = all_properties.filter(price__gte=float(min_price))
+        except ValueError:
+            pass
+    if max_price:
+        try:
+            all_properties = all_properties.filter(price__lte=float(max_price))
+        except ValueError:
+            pass
+    if consultant_id and (request.user.is_superuser or role in ['admin', 'manager', 'secretary']):
+        all_properties = all_properties.filter(consultant_id=consultant_id)
+    if status:
+        all_properties = all_properties.filter(status=status)
+    if banner_status:
+        all_properties = all_properties.filter(banner_status=banner_status)
+    if photo_status:
+        all_properties = all_properties.filter(photo_status=photo_status)
+    # ────────────────────────────────────────────────────────────────────────
+
+    # Filtre dropdown verileri
+    from django.contrib.auth import get_user_model
+    _User = get_user_model()
+    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
+        neighborhoods_qs = Neighborhood.objects.all().order_by('name')
+        consultants_qs   = _User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+    else:
+        neighborhoods_qs = Neighborhood.objects.filter(consultant=request.user).order_by('name')
+        consultants_qs   = _User.objects.none()
+
+    # AKILLI GRUPLAMA ALGORİTMASI
+    from collections import defaultdict
+    from datetime import timedelta
+    
+    # Son 7 gün içinde eklenen portföyler
+    seven_days_ago = timezone.now() - timedelta(days=7)
+    new_properties = all_properties.filter(created_at__gte=seven_days_ago)
+    other_properties = all_properties.filter(created_at__lt=seven_days_ago)
+    
+    # Mahalle bazlı ana gruplama
+    neighborhood_groups = defaultdict(list)
+    for prop in other_properties:
+        neighborhood_name = prop.neighborhood.name if prop.neighborhood else "Belirtilmemiş"
+        neighborhood_groups[neighborhood_name].append(prop)
+    
+    # Her mahalle içinde akıllı alt gruplama
+    final_grouped = {}
+    
+    for neighborhood, properties in neighborhood_groups.items():
+        # Bina + Oda + Kat Tipi kombinasyonlarını say
+        combinations = defaultdict(list)
+        
+        for prop in properties:
+            # Bina adı
+            building_name = prop.apartment_name if prop.apartment_name else "Belirtilmemiş"
+            
+            # Oda sayısı
+            room_count = prop.room_count if prop.room_count else "Belirtilmemiş"
+            
+            # Kat tipini belirle
+            try:
+                floor_num = int(prop.floor) if prop.floor and str(prop.floor).isdigit() else None
+                total_floors = int(prop.floor_count) if prop.floor_count and str(prop.floor_count).isdigit() else None
+                
+                if floor_num is not None:
+                    if floor_num == 0:
+                        floor_type = "Giriş Kat"
+                    elif floor_num == 1:
+                        floor_type = "1. Kat"
+                    elif total_floors and floor_num == total_floors:
+                        floor_type = "En Üst Kat"
+                    else:
+                        floor_type = "Ara Kat"
+                else:
+                    floor_type = str(prop.floor) if prop.floor else "Belirtilmemiş"
+            except:
+                floor_type = str(prop.floor) if prop.floor else "Belirtilmemiş"
+            
+            # Kombination key: Bina + Oda + Kat Tipi
+            combo_key = f"{building_name}|{room_count}|{floor_type}"
+            combinations[combo_key].append(prop)
+        
+        # Grup oluşturma mantığı
+        grouped_items = []
+        standalone_items = []
+        
+        for combo_key, props_in_combo in combinations.items():
+            building_name, room_count, floor_type = combo_key.split('|')
+            
+            if len(props_in_combo) >= 2:
+                # 2+ kayıt varsa grup oluştur
+                # En ucuz olanı başa al
+                sorted_props = sorted(props_in_combo, key=lambda x: x.price)
+                
+                grouped_items.append({
+                    'type': 'group',
+                    'header': f"{building_name} - {room_count} - {floor_type}",
+                    'main_property': sorted_props[0],  # En ucuz
+                    'sub_properties': sorted_props[1:],  # Diğerleri
+                    'count': len(sorted_props)
+                })
+            else:
+                # Tek kayıt ise ayrı satır
+                standalone_items.extend(props_in_combo)
+        
+        # Mahalle grubu için liste oluştur
+        # Önce gruplar, sonra tek satırlar
+        final_grouped[neighborhood] = {
+            'grouped_items': grouped_items,
+            'standalone_items': standalone_items,
+            'total_count': len(properties)
+        }
+    
+    # Mahalle isimlerine göre alfabetik sırala
+    final_grouped = dict(sorted(final_grouped.items()))
+    
+    # İstatistikler
+    total_count = all_properties.count()
+    satilik_count = all_properties.filter(status='satilik').count()
+    kiralik_count = all_properties.filter(status='kiralik').count()
+    
+    context = {
+        'segment': 'gayrimenkul',
+        'new_properties': new_properties,
+        'grouped_properties': final_grouped,
+        'total_count': total_count,
+        'satilik_count': satilik_count,
+        'kiralik_count': kiralik_count,
+        'user_role': role,
+        # Filtre dropdown verileri
+        'neighborhoods': neighborhoods_qs,
+        'consultants': consultants_qs,
+        # Aktif filtre değerleri (formu dolu tutmak için)
+        'filter_search': search,
+        'filter_neighborhood': neighborhood_id,
+        'filter_min_price': min_price,
+        'filter_max_price': max_price,
+        'filter_consultant': consultant_id,
+        'filter_status': status,
+        'filter_banner_status': banner_status,
+        'filter_photo_status': photo_status,
+        'has_active_filter': any([search, neighborhood_id, min_price, max_price,
+                                   consultant_id, status, banner_status, photo_status]),
+    }
+    
+    return render(request, 'portfolio/property_list_grouped.html', context)
+
+
+@login_required(login_url="/login/")
+@require_http_methods(["POST"])
+def move_property_to_group(request):
+    """Portföyü gruba taşı"""
+    import json
+    
+    try:
+        data = json.loads(request.body)
+        property_id = data.get('property_id')
+        target_group = data.get('group')
+        
+        property_obj = Property.objects.get(id=property_id)
+        
+        # Eğer "yeni-gelenler" grubuna taşınıyorsa, created_at'ı güncelle
+        if target_group == 'yeni-gelenler':
+            property_obj.created_at = timezone.now()
+            property_obj.save()
+        else:
+            # Grup formatı: "MAHALLE - ODA SAYISI"
+            parts = target_group.split(' - ')
+            if len(parts) == 2:
+                neighborhood_name = parts[0]
+                room_count = parts[1]
+                
+                # Mahalleyi bul veya oluştur
+                neighborhood = Neighborhood.objects.filter(name=neighborhood_name).first()
+                if neighborhood:
+                    property_obj.neighborhood = neighborhood
+                
+                # Oda sayısını güncelle
+                if room_count != "Belirtilmemiş":
+                    property_obj.room_count = room_count
+                
+                # created_at'ı güncelle (yeni gelenler dışına çıksın)
+                from datetime import timedelta
+                property_obj.created_at = timezone.now() - timedelta(days=8)
+                property_obj.save()
+        
+        return JsonResponse({'success': True})
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required(login_url="/login/")
+def property_map(request):
+    """Harita görünümü - Tüm gayrimenkulleri Google Maps üzerinde göster"""
+    
+    role = get_user_role(request.user)
+    from django.contrib.auth import get_user_model
+    _User = get_user_model()
+
+    # Kullanıcı rolüne göre gayrimenkulleri filtrele
+    if role in ['admin', 'manager', 'secretary']:
+        properties = Property.objects.filter(is_active=True)
+    elif role == 'consultant':
+        consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
+        properties = Property.objects.filter(is_active=True, neighborhood__in=consultant_neighborhoods)
+    else:
+        properties = Property.objects.none()
+
+    # Sadece koordinatı olanları al
+    properties = properties.filter(
+        map_coordinates__isnull=False
+    ).exclude(map_coordinates='').select_related('neighborhood', 'consultant').order_by('-created_at')
+
+    # Filtre dropdown verileri
+    if role in ['admin', 'manager', 'secretary']:
+        neighborhoods_qs = Neighborhood.objects.all().order_by('name')
+        consultants_qs = _User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+    else:
+        neighborhoods_qs = Neighborhood.objects.filter(consultant=request.user).order_by('name')
+        consultants_qs = _User.objects.none()
+
+    total_all = Property.objects.filter(is_active=True)
+    if role == 'consultant':
+        total_all = total_all.filter(neighborhood__in=Neighborhood.objects.filter(consultant=request.user))
+
+    context = {
+        'properties': properties,
+        'total_count': total_all.count(),
+        'satilik_count': total_all.filter(status='satilik').count(),
+        'kiralik_count': total_all.filter(status='kiralik').count(),
+        'neighborhoods': neighborhoods_qs,
+        'consultants': consultants_qs,
+        'user_role': role,
+        'GOOGLE_MAPS_API_KEY': settings.GOOGLE_MAPS_API_KEY,
+    }
+    
+    return render(request, 'portfolio/property_map.html', context)
+
+@login_required(login_url="/login/")
+@require_POST
+def update_portal_link(request):
+    """Portal linklerini güncelle (Sahibinden, Emlakjet, Hepsiemlak, Sosyal Medya)"""
+    property_id = request.POST.get('property_id')
+    portal = request.POST.get('portal')
+    link = request.POST.get('link', '').strip()
+    
+    try:
+        prop = Property.objects.get(id=property_id)
+        
+        # Portal'e göre field'ı güncelle + tarihi kaydet
+        now = timezone.now()
+        if portal == 'sahibinden':
+            prop.owner_listing_number = link
+            prop.owner_listing_updated_at = now if link else None
+        elif portal == 'emlakjet':
+            prop.emlakjet_listing_number = link
+            prop.emlakjet_listing_updated_at = now if link else None
+        elif portal == 'hepsiemlak':
+            prop.hepsiemlak_listing_number = link
+            prop.hepsiemlak_listing_updated_at = now if link else None
+        elif portal == 'social_media':
+            pass
+
+        prop.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Link başarıyla güncellendi'
+        })
+    except Property.DoesNotExist:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Gayrimenkul bulunamadı'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        })
+
+@login_required(login_url="/login/")
+@require_POST
+def update_photo_status(request):
+    """Fotoğraf durumunu güncelle"""
+    property_id = request.POST.get('property_id')
+    status = request.POST.get('status')
+    
+    try:
+        prop = Property.objects.get(id=property_id)
+        prop.photo_status = status
+        prop.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Fotoğraf durumu güncellendi'
+        })
+    except Property.DoesNotExist:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Gayrimenkul bulunamadı'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        })
+
+@login_required(login_url="/login/")
+@require_POST
+def update_banner_status(request):
+    """Branda durumunu güncelle"""
+    property_id = request.POST.get('property_id')
+    status = request.POST.get('status')
+    
+    try:
+        prop = Property.objects.get(id=property_id)
+        prop.banner_status = status
+        prop.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Branda durumu güncellendi'
+        })
+    except Property.DoesNotExist:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Gayrimenkul bulunamadı'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        })
+
+@login_required(login_url="/login/")
+@require_http_methods(["GET"])
+def property_notes(request, property_id):
+    """Gayrimenkul notlarını getir"""
+    try:
+        prop = get_object_or_404(Property, id=property_id, is_active=True)
+        notes = prop.notes.select_related('user').order_by('-created_at')
+        data = [
+            {
+                'id': n.id,
+                'note': n.note,
+                'user': n.user.get_full_name() or n.user.username if n.user else 'Bilinmiyor',
+                'created_at': n.created_at.strftime('%d.%m.%Y %H:%M'),
+            }
+            for n in notes
+        ]
+        return JsonResponse({'success': True, 'notes': data, 'property_name': str(prop)})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required(login_url="/login/")
+@require_http_methods(["POST"])
+def property_note_add(request, property_id):
+    """Gayrimenkule not ekle"""
+    try:
+        prop = get_object_or_404(Property, id=property_id, is_active=True)
+        note_text = request.POST.get('note', '').strip()
+        if not note_text:
+            return JsonResponse({'success': False, 'error': 'Not boş olamaz.'})
+        note = PropertyNote.objects.create(
+            property=prop,
+            user=request.user,
+            note=note_text,
+        )
+        return JsonResponse({
+            'success': True,
+            'note': {
+                'id': note.id,
+                'note': note.note,
+                'user': note.user.get_full_name() or note.user.username,
+                'created_at': note.created_at.strftime('%d.%m.%Y %H:%M'),
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required(login_url="/login/")
+@require_http_methods(["POST"])
+def property_note_delete(request, note_id):
+    """Not sil (sadece sahibi veya admin)"""
+    try:
+        note = get_object_or_404(PropertyNote, id=note_id)
+        role = get_user_role(request.user)
+        if note.user != request.user and not (request.user.is_superuser or role in ['admin', 'manager']):
+            return JsonResponse({'success': False, 'error': 'Bu notu silme yetkiniz yok.'})
+        note.delete()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required(login_url="/login/")
+@require_http_methods(["GET"])
+def portal_notifications(request):
+    """Kullanıcının okunmamış portal bildirimlerini getir"""
+    notifs = PortalNotification.objects.filter(
+        user=request.user,
+        is_read=False
+    ).select_related('property').order_by('-created_at')[:20]
+
+    data = [
+        {
+            'id': n.id,
+            'property_name': str(n.property),
+            'property_id': n.property.id,
+            'portal': n.get_portal_display(),
+            'created_at': n.created_at.strftime('%d.%m.%Y'),
+        }
+        for n in notifs
+    ]
+    return JsonResponse({'success': True, 'notifications': data, 'count': len(data)})
+
+
+@login_required(login_url="/login/")
+@require_http_methods(["POST"])
+def portal_notification_read(request, notification_id):
+    """Bildirimi okundu olarak işaretle"""
+    try:
+        notif = PortalNotification.objects.get(id=notification_id, user=request.user)
+        notif.is_read = True
+        notif.save()
+        return JsonResponse({'success': True})
+    except PortalNotification.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Bildirim bulunamadı'})
+
+
+@login_required(login_url="/login/")
+@require_http_methods(["POST"])
+def portal_notifications_read_all(request):
+    """Tüm bildirimleri okundu olarak işaretle"""
+    PortalNotification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'success': True})
+
+# ============ PROPERTY NOTE AJAX API ============
+from django.http import JsonResponse as _JR
+from django.views.decorators.http import require_POST as _rp, require_GET as _rg
+from django.utils import timezone as _tz
+
+@login_required
+@_rg
+def property_notes_api(request, property_id):
+    """Bir portfoyun tum notlarini JSON olarak dondur"""
+    try:
+        prop = Property.objects.get(id=property_id)
+    except Property.DoesNotExist:
+        return _JR({'success': False, 'error': 'Portfoy bulunamadi'}, status=404)
+
+    notes_qs = prop.notes.select_related('user').all()
+
+    notes = []
+    for n in notes_qs:
+        notes.append({
+            'id': n.id,
+            'note': n.note,
+            'priority': n.priority,
+            'priority_display': n.get_priority_display(),
+            'is_reminder': n.is_reminder,
+            'reminder_date': n.reminder_date.isoformat() if n.reminder_date else None,
+            'is_completed': n.is_completed,
+            'user_name': n.user.get_full_name() if n.user and n.user.get_full_name() else (n.user.username if n.user else 'Bilinmeyen'),
+            'created_at': n.created_at.isoformat(),
+            'created_at_display': n.created_at.strftime('%d.%m.%Y %H:%M'),
+        })
+
+    stats = {
+        'total': len(notes),
+        'important': sum(1 for n in notes if n['priority'] in ['onemli', 'acil']),
+        'reminders': sum(1 for n in notes if n['is_reminder']),
+        'completed': sum(1 for n in notes if n['is_completed']),
+    }
+
+    return _JR({
+        'success': True,
+        'property_name': prop.apartment_name or prop.web_title or 'Isimsiz',
+        'notes': notes,
+        'stats': stats,
+    })
+
+
+@login_required
+@_rp
+def property_note_add_api(request, property_id):
+    """Yeni not ekle - AJAX"""
+    try:
+        prop = Property.objects.get(id=property_id)
+    except Property.DoesNotExist:
+        return _JR({'success': False, 'error': 'Portfoy bulunamadi'}, status=404)
+
+    note_text = request.POST.get('note', '').strip()
+    priority = request.POST.get('priority', 'normal')
+    is_reminder = request.POST.get('is_reminder', 'false').lower() == 'true'
+    reminder_date = request.POST.get('reminder_date', '').strip()
+
+    if not note_text:
+        return _JR({'success': False, 'error': 'Not bos olamaz'}, status=400)
+
+    try:
+        from apps.portfolio.models import PropertyNote
+        n = PropertyNote(
+            property=prop,
+            user=request.user,
+            note=note_text,
+            priority=priority if priority in ['normal', 'onemli', 'acil'] else 'normal',
+            is_reminder=is_reminder,
+        )
+        if is_reminder and reminder_date:
+            from django.utils.dateparse import parse_datetime, parse_date
+            parsed = parse_datetime(reminder_date) or parse_date(reminder_date)
+            if parsed:
+                n.reminder_date = parsed
+        n.save()
+
+        return _JR({
+            'success': True,
+            'note': {
+                'id': n.id,
+                'note': n.note,
+                'priority': n.priority,
+                'priority_display': n.get_priority_display(),
+                'is_reminder': n.is_reminder,
+                'reminder_date': n.reminder_date.isoformat() if n.reminder_date else None,
+                'is_completed': n.is_completed,
+                'user_name': request.user.get_full_name() or request.user.username,
+                'created_at': n.created_at.isoformat(),
+                'created_at_display': n.created_at.strftime('%d.%m.%Y %H:%M'),
+            }
+        })
+    except Exception as e:
+        return _JR({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@_rp
+def property_note_toggle_complete(request, note_id):
+    """Notu tamamlandi/tamamlanmadi olarak isaretle"""
+    try:
+        from apps.portfolio.models import PropertyNote
+        n = PropertyNote.objects.get(id=note_id)
+        n.is_completed = not n.is_completed
+        n.save(update_fields=['is_completed'])
+        return _JR({'success': True, 'is_completed': n.is_completed})
+    except Exception as e:
+        return _JR({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@_rp
+def property_note_delete_api(request, note_id):
+    """Notu sil (AJAX)"""
+    try:
+        from apps.portfolio.models import PropertyNote
+        n = PropertyNote.objects.get(id=note_id)
+        n.delete()
+        return _JR({'success': True})
+    except Exception as e:
+        return _JR({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def price_history_api(request, property_id):
+    """Gayrimenkul fiyat geçmişi API"""
+    from .models import Property, PropertyPriceHistory
+    try:
+        prop = Property.objects.get(pk=property_id)
+    except Property.DoesNotExist:
+        from django.http import JsonResponse
+        return JsonResponse({'error': 'Bulunamadı'}, status=404)
+
+    history = PropertyPriceHistory.objects.filter(property=prop).order_by('-created_at')[:20]
+
+    total_change = 0
+    if history.exists():
+        first = history.last()
+        total_change = float(prop.price) - float(first.old_price)
+
+    rows = []
+    for h in history:
+        rows.append({
+            'old_price': float(h.old_price),
+            'new_price': float(h.new_price),
+            'change': float(h.change_amount()),
+            'change_percent': h.change_percent(),
+            'note': h.note,
+            'changed_by': h.changed_by.get_full_name() if h.changed_by else '',
+            'date': h.created_at.strftime('%d.%m.%Y %H:%M'),
+        })
+
+    from django.http import JsonResponse
+    return JsonResponse({
+        'property_id': prop.id,
+        'name': prop.apartment_name or str(prop),
+        'current_price': float(prop.price),
+        'total_change': total_change,
+        'history': rows,
+    })
+
+
+@login_required
+def sahibinden_export(request):
+    """Sahibinden XML export sayfası"""
+    from .models import Property, PropertyImage
+    properties = Property.objects.filter(
+        is_active=True, sahibinden_active=True
+    ).select_related('neighborhood__city').prefetch_related('images').order_by('-created_at')
+
+    all_properties = Property.objects.filter(
+        is_active=True
+    ).select_related('neighborhood').prefetch_related('images').order_by('-created_at')
+
+    context = {
+        'segment': 'gayrimenkuller',
+        'properties': properties,
+        'all_properties': all_properties,
+        'total_active': properties.count(),
+        'total_all': all_properties.count(),
+    }
+    return render(request, 'portfolio/sahibinden_export.html', context)
+
+
+@login_required
+def sahibinden_xml_feed(request):
+    """Sahibinden XML dosyası üret ve indir"""
+    from .models import Property, PropertyImage
+    from django.http import HttpResponse
+    import xml.etree.ElementTree as ET
+    from xml.dom import minidom
+
+    properties = Property.objects.filter(
+        is_active=True, sahibinden_active=True
+    ).select_related('neighborhood').prefetch_related('images').order_by('-created_at')
+
+    root = ET.Element('Listings')
+
+    # Sahibinden kategori mapping
+    PROP_TYPE_MAP = {
+        'daire': 'Daire', 'villa': 'Villa', 'mustakil': 'Müstakil Ev',
+        'arsa': 'Arsa', 'bina': 'Bina', 'dukkan': 'Dükkan/Mağaza',
+        'ofis': 'Ofis', 'depo': 'Depo/Ardiye', 'other': 'Diğer',
+    }
+    STATUS_MAP = {
+        'satilik': 'Satılık', 'kiralik': 'Kiralık', 'devren': 'Devren',
+    }
+
+    for prop in properties:
+        listing = ET.SubElement(root, 'Listing')
+
+        def tag(parent, name, value):
+            el = ET.SubElement(parent, name)
+            el.text = str(value) if value is not None else ''
+            return el
+
+        tag(listing, 'Id', prop.id)
+        tag(listing, 'Title', prop.web_title or prop.apartment_name or f'İlan #{prop.id}')
+        tag(listing, 'Description', prop.description or '')
+        tag(listing, 'Price', int(prop.price))
+        tag(listing, 'Currency', 'TRY')
+
+        # Konum
+        loc = ET.SubElement(listing, 'Location')
+        tag(loc, 'City', prop.neighborhood.city.name if hasattr(prop.neighborhood, 'city') and prop.neighborhood.city else 'Gaziantep')
+        tag(loc, 'District', prop.neighborhood.name if prop.neighborhood else '')
+        tag(loc, 'Neighborhood', prop.neighborhood.name if prop.neighborhood else '')
+
+        # Özellikler
+        attrs = ET.SubElement(listing, 'Attributes')
+        if prop.net_area:
+            a = ET.SubElement(attrs, 'Attribute')
+            tag(a, 'Key', 'net_m2'); tag(a, 'Value', int(prop.net_area))
+        if prop.gross_area:
+            a = ET.SubElement(attrs, 'Attribute')
+            tag(a, 'Key', 'gross_m2'); tag(a, 'Value', int(prop.gross_area))
+        if prop.room_count:
+            a = ET.SubElement(attrs, 'Attribute')
+            tag(a, 'Key', 'room_count'); tag(a, 'Value', prop.room_count)
+        if prop.floor:
+            a = ET.SubElement(attrs, 'Attribute')
+            tag(a, 'Key', 'floor'); tag(a, 'Value', prop.floor)
+        if prop.floor_count:
+            a = ET.SubElement(attrs, 'Attribute')
+            tag(a, 'Key', 'floor_count'); tag(a, 'Value', prop.floor_count)
+        if prop.bathroom_count:
+            a = ET.SubElement(attrs, 'Attribute')
+            tag(a, 'Key', 'bathroom_count'); tag(a, 'Value', prop.bathroom_count)
+        if prop.usage_status:
+            a = ET.SubElement(attrs, 'Attribute')
+            tag(a, 'Key', 'usage_status'); tag(a, 'Value', prop.usage_status)
+
+        prop_type = PROP_TYPE_MAP.get(prop.property_type, prop.property_type)
+        a = ET.SubElement(attrs, 'Attribute')
+        tag(a, 'Key', 'property_type'); tag(a, 'Value', prop_type)
+
+        # Görseller
+        imgs = ET.SubElement(listing, 'Images')
+        for img in prop.images.all()[:10]:
+            if img.image:
+                img_url = request.build_absolute_uri(img.image.url)
+                tag(imgs, 'Image', img_url)
+
+        # İlan linki
+        if prop.sahibinden_url:
+            tag(listing, 'ExternalUrl', prop.sahibinden_url)
+        if prop.owner_listing_number:
+            tag(listing, 'ExternalId', prop.owner_listing_number)
+
+    # Güzel formatlı XML
+    xml_str = minidom.parseString(ET.tostring(root, encoding='unicode')).toprettyxml(indent='  ', encoding='UTF-8')
+    response = HttpResponse(xml_str, content_type='application/xml; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="sahibinden_ilanlar.xml"'
+    return response
+
+
+@login_required
+def sahibinden_toggle(request, property_id):
+    """Gayrimenkulü Sahibinden'de yayına al/kaldır"""
+    from django.http import JsonResponse as JR
+    if request.method != 'POST':
+        return JR({'error': 'POST gerekli'}, status=405)
+    try:
+        prop = Property.objects.get(pk=property_id)
+        import json
+        data = json.loads(request.body)
+        prop.sahibinden_active = data.get('active', False)
+        if 'url' in data:
+            prop.sahibinden_url = data.get('url', '')
+        prop.save(update_fields=['sahibinden_active', 'sahibinden_url'])
+        return JR({'success': True, 'active': prop.sahibinden_active})
+    except Property.DoesNotExist:
+        return JR({'error': 'Bulunamadı'}, status=404)
+    except Exception as e:
+        return JR({'error': str(e)}, status=500)
+
+
+# ─────────────────────────────────────────────────────────────
+#  EMLAKJET ENTEGRASYONU
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def emlakjet_export(request):
+    """Emlakjet export sayfası"""
+    all_properties = Property.objects.filter(is_active=True).select_related('neighborhood').prefetch_related('images').order_by('-created_at')
+    total_active = all_properties.filter(emlakjet_active=True).count()
+    context = {
+        'all_properties': all_properties,
+        'total_active': total_active,
+        'total_all': all_properties.count(),
+    }
+    return render(request, 'portfolio/emlakjet_export.html', context)
+
+
+@login_required
+def emlakjet_toggle(request, property_id):
+    """Gayrimenkulü Emlakjet'te yayına al/kaldır"""
+    from django.http import JsonResponse as JR
+    if request.method != 'POST':
+        return JR({'error': 'POST gerekli'}, status=405)
+    try:
+        prop = Property.objects.get(pk=property_id)
+        import json
+        data = json.loads(request.body)
+        prop.emlakjet_active = data.get('active', False)
+        if 'url' in data:
+            prop.emlakjet_url = data.get('url', '')
+        prop.save(update_fields=['emlakjet_active', 'emlakjet_url'])
+        return JR({'success': True, 'active': prop.emlakjet_active})
+    except Property.DoesNotExist:
+        return JR({'error': 'Bulunamadı'}, status=404)
+    except Exception as e:
+        return JR({'error': str(e)}, status=500)
+
+
+# ─────────────────────────────────────────────────────────────
+#  HEPSİEMLAK ENTEGRASYONU
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def hepsiemlak_export(request):
+    """Hepsiemlak export sayfası"""
+    all_properties = Property.objects.filter(is_active=True).select_related('neighborhood').prefetch_related('images').order_by('-created_at')
+    total_active = all_properties.filter(hepsiemlak_active=True).count()
+    context = {
+        'all_properties': all_properties,
+        'total_active': total_active,
+        'total_all': all_properties.count(),
+    }
+    return render(request, 'portfolio/hepsiemlak_export.html', context)
+
+
+@login_required
+def hepsiemlak_toggle(request, property_id):
+    """Gayrimenkulü Hepsiemlak'ta yayına al/kaldır"""
+    from django.http import JsonResponse as JR
+    if request.method != 'POST':
+        return JR({'error': 'POST gerekli'}, status=405)
+    try:
+        prop = Property.objects.get(pk=property_id)
+        import json
+        data = json.loads(request.body)
+        prop.hepsiemlak_active = data.get('active', False)
+        if 'url' in data:
+            prop.hepsiemlak_url = data.get('url', '')
+        prop.save(update_fields=['hepsiemlak_active', 'hepsiemlak_url'])
+        return JR({'success': True, 'active': prop.hepsiemlak_active})
+    except Property.DoesNotExist:
+        return JR({'error': 'Bulunamadı'}, status=404)
+    except Exception as e:
+        return JR({'error': str(e)}, status=500)

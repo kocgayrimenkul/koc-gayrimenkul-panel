@@ -482,3 +482,62 @@ def property_search_ajax(request):
         return JsonResponse(response_data)
     
     return JsonResponse({'results': [], 'pagination': {'more': False}})
+
+
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse as _JR2
+
+@login_required
+def property_presentations_api(request, property_id):
+    """Bir gayrimenkule ait tüm yer göstermeleri döndür"""
+    from apps.portfolio.models import Property
+    try:
+        prop = Property.objects.get(pk=property_id)
+    except Property.DoesNotExist:
+        return _JR2({'error': 'Bulunamadı'}, status=404)
+
+    qs = Presentation.objects.filter(property=prop).select_related('presenter').order_by('-presentation_date')
+
+    STATUS_MAP = {
+        'bekliyor':    'Planlandı',
+        'tamamlandi':  'Gösterildi',
+        'satis':       'Satışa Gönderildi',
+        'iptal':       'İptal/Gelmedi',
+    }
+    COLOR_MAP = {
+        'bekliyor':   '#3b82f6',
+        'tamamlandi': '#10b981',
+        'satis':      '#8b5cf6',
+        'iptal':      '#ef4444',
+    }
+
+    rows = []
+    for p in qs:
+        rows.append({
+            'id': p.id,
+            'customer_name': p.customer_name,
+            'customer_phone': p.customer_phone,
+            'presenter': p.presenter.get_full_name() or p.presenter.username if p.presenter else '',
+            'status': p.status,
+            'status_label': STATUS_MAP.get(p.status, p.get_status_display()),
+            'status_color': COLOR_MAP.get(p.status, '#64748b'),
+            'date': p.presentation_date.strftime('%d.%m.%Y') if p.presentation_date else '',
+            'notes': p.notes or '',
+            'is_completed': p.is_completed,
+            'detail_url': f'/daire-sunumu/{p.id}/',
+        })
+
+    stats = {
+        'total':     qs.count(),
+        'planned':   qs.filter(status='bekliyor').count(),
+        'shown':     qs.filter(status='tamamlandi').count(),
+        'sale':      qs.filter(status='satis').count(),
+        'cancelled': qs.filter(status='iptal').count(),
+    }
+
+    return _JR2({
+        'property_name': prop.apartment_name or str(prop),
+        'property_id': prop.id,
+        'stats': stats,
+        'presentations': rows,
+    })

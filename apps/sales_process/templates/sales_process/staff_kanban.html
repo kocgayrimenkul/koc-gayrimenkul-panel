@@ -1,9 +1,9 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/modern_base.html" %}
 {% load static %}
 
 {% block title %} Personel Satış Akışı {% endblock %}
 
-{% block stylesheets %}
+{% block extra_css %}
 <!-- SweetAlert2 CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <style>
@@ -240,98 +240,73 @@
     }
 }
 </style>
-{% endblock stylesheets %}
+{% endblock extra_css %}
 
 {% block content %}
-<div class="header bg-gradient-koc-red pb-6">
-    <div class="container-fluid">
-        <div class="header-body">
-            <div class="row align-items-center py-4">
-                <div class="col-lg-6 col-7">
-                    <h6 class="h2 text-white d-inline-block mb-0">{{ title }}</h6>
-                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-                        <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-                            <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-                            <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}">Satış Süreç</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Personel Akışı</li>
-                        </ol>
-                    </nav>
-                </div>
-                <div class="col-lg-6 col-5 text-right">
-                    <a href="{% url 'sales_process:lead_create' %}" class="btn btn-sm btn-neutral">
-                        <i class="fas fa-plus"></i> Yeni Müşteri
-                    </a>
-                    <a href="{% url 'sales_process:sales_reports' %}" class="btn btn-sm btn-neutral">
-                        <i class="fas fa-chart-bar"></i> Raporlar
-                    </a>
-                    <a href="{% url 'sales_process:staff_kanban_fullscreen' %}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-expand"></i> Tam Ekran
-                    </a>
-                </div>
+<div class="p-4">
+
+    <!-- Sayfa Başlığı -->
+    <div class="bg-white rounded-2xl p-4 custom-shadow mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">{{ title }}</h1>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    <a href="/" class="text-blue-500 hover:underline"><i class="fas fa-home"></i></a>
+                    <span class="mx-1 text-slate-300">/</span>
+                    <a href="{% url 'sales_process:dashboard' %}" class="text-blue-500 hover:underline">Satış Süreç</a>
+                    <span class="mx-1 text-slate-300">/</span>
+                    Personel Akışı
+                </p>
             </div>
-            
-            <!-- Stats Row -->
-            <div class="row stats-row">
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-number">{{ user_leads }}</div>
-                        <div class="stat-label">Atanmış Müşterilerim</div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-number">{{ stages_with_leads|length }}</div>
-                        <div class="stat-label">Aktif Aşamalar</div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-number">
-                            {% for stage in stages_with_leads %}
-                                {% if forloop.first %}{{ stage.count }}{% endif %}
-                            {% empty %}0{% endfor %}
-                        </div>
-                        <div class="stat-label">Yeni Müşteriler</div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-number">
-                            {% for stage in stages_with_leads %}
-                                {% if forloop.last %}{{ stage.count }}{% endif %}
-                            {% empty %}0{% endfor %}
-                        </div>
-                        <div class="stat-label">Sözleşme Bekleyen</div>
-                    </div>
-                </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="{% url 'sales_process:lead_create' %}" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg flex items-center hover:bg-emerald-700 transition shadow-sm no-underline">
+                    <i class="fas fa-plus mr-1.5"></i> Yeni Müşteri
+                </a>
+                <a href="{% url 'sales_process:sales_reports' %}" class="px-3 py-1.5 bg-slate-600 text-white text-xs font-semibold rounded-lg flex items-center hover:bg-slate-700 transition shadow-sm no-underline">
+                    <i class="fas fa-chart-bar mr-1.5"></i> Raporlar
+                </a>
+                <a href="{% url 'sales_process:staff_kanban_fullscreen' %}" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg flex items-center hover:bg-blue-700 transition shadow-sm no-underline">
+                    <i class="fas fa-expand mr-1.5"></i> Tam Ekran
+                </a>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Page content -->
-<div class="container-fluid mt--6">
-    <div class="row">
-        <div class="col">
-            <div class="card">
-                <div class="card-header border-0">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h3 class="mb-0">Satış Süreci Kanban Panosu</h3>
-                        </div>
-                        <div class="col text-right">
-                            <button class="btn btn-sm btn-secondary" onclick="toggleFullscreen()" id="fullscreen-btn" title="Tam Ekran">
-                                <i class="fas fa-expand"></i> Tam Ekran
-                            </button>
-                            <button class="btn btn-sm btn-primary" onclick="refreshKanban()">
-                                <i class="fas fa-sync-alt"></i> Yenile
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    <div class="kanban-board" id="kanban-board">
+    <!-- İstatistik Kartları -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div class="stat-card">
+            <div class="stat-number">{{ user_leads }}</div>
+            <div class="stat-label">Atanmış Müşterilerim</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stages_with_leads|length }}</div>
+            <div class="stat-label">Aktif Aşamalar</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{% for stage in stages_with_leads %}{% if forloop.first %}{{ stage.count }}{% endif %}{% empty %}0{% endfor %}</div>
+            <div class="stat-label">Yeni Müşteriler</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{% for stage in stages_with_leads %}{% if forloop.last %}{{ stage.count }}{% endif %}{% empty %}0{% endfor %}</div>
+            <div class="stat-label">Sözleşme Bekleyen</div>
+        </div>
+    </div>
+
+    <!-- Kanban Panosu -->
+    <div class="bg-white rounded-2xl custom-shadow overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+            <h3 class="text-sm font-bold text-slate-800">Satış Süreci Kanban Panosu</h3>
+            <div class="flex gap-2">
+                <button class="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg flex items-center hover:bg-slate-200 transition" onclick="toggleFullscreen()" id="fullscreen-btn">
+                    <i class="fas fa-expand mr-1.5"></i> Tam Ekran
+                </button>
+                <button class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg flex items-center hover:bg-blue-700 transition" onclick="refreshKanban()">
+                    <i class="fas fa-sync-alt mr-1.5"></i> Yenile
+                </button>
+            </div>
+        </div>
+        <div class="p-4">
+            <div class="kanban-board" id="kanban-board">
                         {% for stage_data in stages_with_leads %}
                         <div class="kanban-column" data-stage-id="{{ stage_data.stage.id }}">
                             <div class="kanban-header">
@@ -407,11 +382,10 @@
                             </div>
                         </div>
                         {% endfor %}
-                    </div>
-                </div>
             </div>
         </div>
     </div>
+
 </div>
 
 <!-- Sunum Tamamlama Modal Component -->
@@ -419,7 +393,7 @@
 
 {% endblock content %}
 
-{% block javascripts %}
+{% block extra_js %}
 <script>
 // Global değişkenler
 let currentLeadId = null;
@@ -991,4 +965,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <!-- SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{% endblock javascripts %}
+{% endblock extra_js %}

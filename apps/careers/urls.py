@@ -6,7 +6,7 @@ Koç Gayrimenkul Panel - Kariyer URLs
 from django.urls import path
 from . import views
 
-app_name = 'careers'
+app_name = 'careers-views'
 
 urlpatterns = [
     # API Endpoints (api/ prefix ana URLs'de zaten var)

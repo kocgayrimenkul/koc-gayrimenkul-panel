@@ -1,0 +1,43 @@
+{% load static %}
+{% with ay_adlar="Oca,Şub,Mar,Nis,May,Haz,Tem,Ağu,Eyl,Eki,Kas,Ara" %}
+<div class="hcard {{ durum }}">
+  <!-- Tarih badge -->
+  <div class="tarih-badge {{ durum }}">
+    <div class="gun">{{ h.reminder_date|date:"d" }}</div>
+    <div class="ay">{{ h.reminder_date|date:"M" }}</div>
+  </div>
+
+  <!-- İçerik -->
+  <div class="flex-1 min-w-0">
+    <div class="flex items-center gap-3 flex-wrap">
+      <a href="/{{ h.customer.pk }}/" class="musteri-ad hover:text-red-700 transition">
+        {{ h.customer.full_name }}
+      </a>
+      {% if h.customer.phone %}
+      <a href="tel:{{ h.customer.phone }}" class="musteri-tel">
+        <i class="fas fa-phone text-xs"></i> {{ h.customer.phone }}
+      </a>
+      {% endif %}
+      <span class="durum-pill {{ durum }}">
+        {% if durum == "tamamlandi" %}Tamamlandı
+        {% elif durum == "gecmis" %}Geçmiş
+        {% elif durum == "bugun" %}Bugün
+        {% else %}Yaklaşan{% endif %}
+      </span>
+    </div>
+    {% if h.message %}
+    <div class="hcard-mesaj">{{ h.message }}</div>
+    {% endif %}
+    {% if is_manager and h.customer.consultant %}
+    <div class="text-xs text-slate-400 mt-1">
+      <i class="fas fa-user"></i> {{ h.customer.consultant.get_full_name }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Tarih -->
+  <div class="text-right flex-shrink-0 text-xs text-slate-400">
+    {{ h.reminder_date|date:"d.m.Y" }}
+  </div>
+</div>
+{% endwith %}

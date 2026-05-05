@@ -125,9 +125,18 @@ class Property(models.Model):
     # Portföy Sahibi Bilgileri
     owner_name = models.CharField(max_length=100, verbose_name="Mal Sahibi", blank=True)
     owner_phone = models.CharField(max_length=20, verbose_name="Mal Sahibi Telefon", blank=True)
-    owner_listing_number = models.CharField(max_length=50, verbose_name="Sahibinden İlan No", blank=True)
-    emlakjet_listing_number = models.CharField(max_length=50, verbose_name="Emlakjet İlan No", blank=True)
-    hepsiemlak_listing_number = models.CharField(max_length=50, verbose_name="Hepsiemlak İlan No", blank=True)
+    owner_listing_number = models.CharField(max_length=500, verbose_name="Sahibinden İlan No", blank=True)
+    owner_listing_updated_at = models.DateTimeField(null=True, blank=True, verbose_name="Sahibinden Güncelleme Tarihi")
+    sahibinden_url = models.URLField(max_length=500, verbose_name="Sahibinden İlan Linki", blank=True)
+    sahibinden_active = models.BooleanField(default=False, verbose_name="Sahibinden'de Yayında")
+    emlakjet_listing_number = models.CharField(max_length=500, verbose_name="Emlakjet İlan No", blank=True)
+    emlakjet_listing_updated_at = models.DateTimeField(null=True, blank=True, verbose_name="Emlakjet Güncelleme Tarihi")
+    emlakjet_url = models.URLField(max_length=500, verbose_name="Emlakjet İlan Linki", blank=True)
+    emlakjet_active = models.BooleanField(default=False, verbose_name="Emlakjet'te Yayında")
+    hepsiemlak_listing_number = models.CharField(max_length=500, verbose_name="Hepsiemlak İlan No", blank=True)
+    hepsiemlak_listing_updated_at = models.DateTimeField(null=True, blank=True, verbose_name="Hepsiemlak Güncelleme Tarihi")
+    hepsiemlak_url = models.URLField(max_length=500, verbose_name="Hepsiemlak İlan Linki", blank=True)
+    hepsiemlak_active = models.BooleanField(default=False, verbose_name="Hepsiemlak'ta Yayında")
     branda_number = models.CharField(max_length=50, verbose_name="Branda No", blank=True)
     
     # Operasyonel Bilgiler
@@ -208,3 +217,66 @@ class PropertyImage(models.Model):
         verbose_name = "Gayrimenkul Görseli"
         verbose_name_plural = "Gayrimenkul Görselleri"
         ordering = ['order']
+
+class PropertyNote(models.Model):
+    """Gayrimenkul Notları"""
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='notes', verbose_name="Gayrimenkul")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="Kullanıcı")
+    note = models.TextField(verbose_name="Not")
+
+    PRIORITY_CHOICES = [
+        ('normal', 'Normal'),
+        ('onemli', 'Onemli'),
+        ('acil', 'Acil'),
+    ]
+    priority = models.CharField(
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        default='normal',
+        verbose_name="Oncelik"
+    )
+    is_reminder = models.BooleanField(default=False, verbose_name="Hatirlatma mi?")
+    reminder_date = models.DateTimeField(null=True, blank=True, verbose_name="Hatirlatma Tarihi")
+    is_completed = models.BooleanField(default=False, verbose_name="Tamamlandi mi?")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Tarih")
+
+    def __str__(self):
+        return f"{self.property} - {self.user} - {self.created_at:%d.%m.%Y %H:%M}"
+
+    class Meta:
+        verbose_name = "Gayrimenkul Notu"
+        verbose_name_plural = "Gayrimenkul Notları"
+        ordering = ['-created_at']
+
+class PortalNotification(models.Model):
+    """Portal ilan süresi dolunca danışmana bildirim"""
+    PORTAL_CHOICES = [
+        ('sahibinden', 'Sahibinden'),
+        ('emlakjet', 'Emlakjet'),
+        ('hepsiemlak', 'Hepsiemlak'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='portal_notifications',
+        verbose_name="Danışman"
+    )
+    property = models.ForeignKey(
+        Property,
+        on_delete=models.CASCADE,
+        related_name='portal_notifications',
+        verbose_name="Gayrimenkul"
+    )
+    portal = models.CharField(max_length=20, choices=PORTAL_CHOICES, verbose_name="Portal")
+    is_read = models.BooleanField(default=False, verbose_name="Okundu")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Tarih")
+
+    def __str__(self):
+        return f"{self.user} - {self.property} - {self.portal}"
+
+    class Meta:
+        verbose_name = "Portal Bildirimi"
+        verbose_name_plural = "Portal Bildirimleri"
+        ordering = ['-created_at']
+

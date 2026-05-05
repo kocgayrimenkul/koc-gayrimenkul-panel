@@ -18,4 +18,7 @@ urlpatterns = [
     path('daire-sunumu/<int:presentation_id>/durum-guncelle/', views.update_presentation_status, name='update_presentation_status'),
     path('daire-sunumu/mahalle-danismani/', views.get_neighborhood_consultant, name='get_neighborhood_consultant'),
     path('daire-sunumu/daire-ara/', views.property_search_ajax, name='property_search_ajax'),
-] 
+
+    # API: Gayrimenkule ait yer göstermeler
+    path('api/gayrimenkul/<int:property_id>/yer-gostermeler/', views.property_presentations_api, name='property_presentations_api'),
+]

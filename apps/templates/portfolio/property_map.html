@@ -1,0 +1,588 @@
+{% extends "layouts/base.html" %}
+{% load humanize %}
+
+{% block title %}Gayrimenkul Haritası{% endblock %}
+
+{% block stylesheets %}
+<style>
+  /* ── GENEL ── */
+  body { background: #f8f9fa; }
+
+  .map-page-wrap {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* ── TOP BAR ── */
+  .map-topbar {
+    background: white;
+    padding: 14px 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .map-topbar-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #202124;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .map-topbar-title i { color: #9d2235; }
+
+  /* View switcher */
+  .view-switcher {
+    display: flex;
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 8px;
+  }
+
+  .view-tab {
+    padding: 6px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.78rem;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .view-tab:hover { background: rgba(157,34,53,0.07); color: #9d2235; }
+  .view-tab.active { background: white; color: #9d2235; box-shadow: 0 2px 6px rgba(0,0,0,0.07); }
+
+  /* Stats */
+  .map-stats {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .stat-pill .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ── FİLTRE PANEL ── */
+  .map-filter-bar {
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+    padding: 10px 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .map-filter-bar select,
+  .map-filter-bar input {
+    border: 1.5px solid #dadce0;
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    color: #202124;
+    background: #fafafa;
+    outline: none;
+    height: 34px;
+    transition: border 0.2s;
+  }
+
+  .map-filter-bar select:focus,
+  .map-filter-bar input:focus {
+    border-color: #9d2235;
+    background: white;
+  }
+
+  .price-range-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .price-range-wrap input { width: 100px; }
+  .price-range-wrap span { color: #94a3b8; font-size: 0.8rem; }
+
+  .btn-apply-filter {
+    background: #9d2235;
+    color: white;
+    border: none;
+    border-radius: 7px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.2s;
+  }
+
+  .btn-apply-filter:hover { background: #7a1a29; }
+
+  .btn-reset-filter {
+    background: transparent;
+    color: #64748b;
+    border: 1.5px solid #dadce0;
+    border-radius: 7px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+  }
+
+  .btn-reset-filter:hover { border-color: #9d2235; color: #9d2235; }
+
+  /* ── HARİTA ── */
+  #map {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+  }
+
+  /* ── CUSTOM CLUSTER ── */
+  .custom-cluster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 800;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    border: 3px solid white;
+    transition: transform 0.15s;
+  }
+
+  .custom-cluster:hover { transform: scale(1.1); }
+
+  /* ── POPUP (InfoWindow) içi ── */
+  .iw-wrap { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-width: 220px; }
+  .iw-header {
+    background: #9d2235;
+    color: white;
+    padding: 10px 14px;
+    margin: -12px -12px 10px -12px;
+    border-radius: 8px 8px 0 0;
+    font-weight: 700;
+    font-size: 0.88rem;
+  }
+  .iw-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: 6px;
+  }
+  .iw-badge.satilik { background: #dcfce7; color: #166534; }
+  .iw-badge.kiralik { background: #dbeafe; color: #1e40af; }
+  .iw-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem; }
+  .iw-label { color: #64748b; }
+  .iw-value { font-weight: 600; color: #202124; }
+  .iw-price { font-size: 1rem; font-weight: 800; color: #9d2235; margin: 6px 0; }
+  .iw-link {
+    display: block;
+    text-align: center;
+    background: #9d2235;
+    color: white;
+    border-radius: 6px;
+    padding: 7px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 10px;
+    transition: background 0.2s;
+  }
+  .iw-link:hover { background: #7a1a29; color: white; }
+
+  /* Çoklu portföy popup */
+  .iw-multi-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f3f4;
+    font-size: 0.8rem;
+  }
+  .iw-multi-item:last-child { border-bottom: none; }
+  .iw-multi-name { font-weight: 700; color: #202124; margin-bottom: 2px; }
+  .iw-multi-price { color: #9d2235; font-weight: 600; }
+  .iw-multi-detail { color: #64748b; font-size: 0.72rem; }
+  .iw-multi-scroll { max-height: 280px; overflow-y: auto; padding-right: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="map-page-wrap">
+
+  <!-- Top Bar -->
+  <div class="map-topbar">
+    <div class="map-topbar-title">
+      <i class="fas fa-map-marked-alt"></i>
+      Gayrimenkul Haritası
+    </div>
+
+    <!-- View Switcher -->
+    <div class="view-switcher">
+      <a href="/gayrimenkul/" class="view-tab"><i class="fas fa-th"></i> Grid</a>
+      <a href="/gayrimenkul/liste-gruplu/" class="view-tab"><i class="fas fa-list"></i> Liste</a>
+      <a href="/gayrimenkul/harita/" class="view-tab active"><i class="fas fa-map-marked-alt"></i> Harita</a>
+    </div>
+
+    <!-- Stats -->
+    <div class="map-stats">
+      <span class="stat-pill">
+        <span class="dot" style="background:#6b7280;"></span>
+        Toplam <strong id="statTotal">{{ total_count }}</strong>
+      </span>
+      <span class="stat-pill">
+        <span class="dot" style="background:#16a34a;"></span>
+        Satılık <strong id="statSatilik">{{ satilik_count }}</strong>
+      </span>
+      <span class="stat-pill">
+        <span class="dot" style="background:#2563eb;"></span>
+        Kiralık <strong id="statKiralik">{{ kiralik_count }}</strong>
+      </span>
+    </div>
+  </div>
+
+  <!-- Filtre Bar -->
+  <div class="map-filter-bar">
+    <!-- Mahalle -->
+    <select id="filterNeighborhood" onchange="applyFilters()">
+      <option value="">Tüm Mahalleler</option>
+      {% for n in neighborhoods %}
+      <option value="{{ n.id }}">{{ n.name }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Danışman -->
+    {% if user_role in 'admin manager secretary' %}
+    <select id="filterConsultant" onchange="applyFilters()">
+      <option value="">Tüm Danışmanlar</option>
+      {% for c in consultants %}
+      <option value="{{ c.id }}">{{ c.get_full_name|default:c.username }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+
+    <!-- Kullanım -->
+    <select id="filterStatus" onchange="applyFilters()">
+      <option value="">Satılık & Kiralık</option>
+      <option value="satilik">Satılık</option>
+      <option value="kiralik">Kiralık</option>
+    </select>
+
+    <!-- Fiyat -->
+    <div class="price-range-wrap">
+      <input type="number" id="filterMinPrice" placeholder="Min ₺" step="50000" oninput="applyFilters()">
+      <span>—</span>
+      <input type="number" id="filterMaxPrice" placeholder="Max ₺" step="50000" oninput="applyFilters()">
+    </div>
+
+    <button class="btn-reset-filter" onclick="resetFilters()">
+      <i class="fas fa-times"></i> Temizle
+    </button>
+
+    <span id="filterResultCount" style="font-size:0.78rem;color:#64748b;margin-left:4px;"></span>
+  </div>
+
+  <!-- Harita -->
+  <div id="map"></div>
+
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+// ── TÜM GAYRİMENKUL VERİLERİ ──────────────────────────────────────────────
+const ALL_PROPERTIES = [
+  {% for prop in properties %}
+  {
+    id: {{ prop.id }},
+    name: "{{ prop.apartment_name|escapejs }}",
+    price: {{ prop.price|floatformat:0 }},
+    priceFormatted: "{{ prop.price|floatformat:0|intcomma }} ₺",
+    status: "{{ prop.status }}",
+    neighborhood: "{{ prop.neighborhood.name|escapejs|default:'' }}",
+    neighborhoodId: {{ prop.neighborhood.id|default:'null' }},
+    consultant: "{{ prop.consultant.get_full_name|escapejs|default:'' }}",
+    consultantId: {{ prop.consultant.id|default:'null' }},
+    roomCount: "{{ prop.room_count|escapejs|default:'-' }}",
+    grossArea: "{{ prop.gross_area|floatformat:0|default:'-' }}",
+    floor: "{{ prop.floor|escapejs|default:'-' }}",
+    lat: {% if prop.map_coordinates %}parseFloat("{{ prop.map_coordinates }}".split(',')[0].trim()) || null{% else %}null{% endif %},
+    lng: {% if prop.map_coordinates %}parseFloat("{{ prop.map_coordinates }}".split(',')[1]?.trim()) || null{% else %}null{% endif %},
+    detailUrl: "/gayrimenkul/{{ prop.id }}/",
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+
+// Koordinatsız olanları filtrele
+const VALID_PROPERTIES = ALL_PROPERTIES.filter(p => p.lat && p.lng && !isNaN(p.lat) && !isNaN(p.lng));
+
+// ── HARİTA DEĞİŞKENLERİ ───────────────────────────────────────────────────
+let googleMap;
+let gMarkers = [];
+let gOpenInfoWindow = null;
+let filteredProperties = [...VALID_PROPERTIES];
+
+// ── HARİTAYI BAŞLAT ───────────────────────────────────────────────────────
+function initMap() {
+  const center = { lat: 37.066, lng: 37.383 };
+
+  googleMap = new google.maps.Map(document.getElementById('map'), {
+    zoom: 13,
+    center: center,
+    mapTypeId: 'hybrid',
+    styles: [],
+    mapTypeControl: true,
+    streetViewControl: false,
+    fullscreenControl: true,
+    zoomControl: true,
+  });
+
+  renderMarkers(filteredProperties);
+}
+
+// ── MARKER'LARI ÇALIŞKAR ──────────────────────────────────────────────────
+function renderMarkers(props) {
+  // Mevcut marker'ları temizle
+  gMarkers.forEach(m => m.marker.setMap(null));
+  gMarkers = [];
+
+  if (gOpenInfoWindow) { gOpenInfoWindow.close(); gOpenInfoWindow = null; }
+
+  // Aynı koordinattaki gayrimenkulleri grupla
+  const locationMap = {};
+  props.forEach(prop => {
+    const key = prop.lat.toFixed(5) + ',' + prop.lng.toFixed(5);
+    if (!locationMap[key]) locationMap[key] = [];
+    locationMap[key].push(prop);
+  });
+
+  // İstatistikleri güncelle
+  const satilik = props.filter(p => p.status === 'satilik').length;
+  const kiralik = props.filter(p => p.status === 'kiralik').length;
+  document.getElementById('statTotal').textContent = props.length;
+  document.getElementById('statSatilik').textContent = satilik;
+  document.getElementById('statKiralik').textContent = kiralik;
+  document.getElementById('filterResultCount').textContent = props.length + ' portföy gösteriliyor';
+
+  const bounds = new google.maps.LatLngBounds();
+
+  Object.entries(locationMap).forEach(([key, group]) => {
+    const lat = group[0].lat;
+    const lng = group[0].lng;
+    const count = group.length;
+
+    // Renk: eğer grupta birden fazla türde varsa karışık (mor), sadece satılık yeşil, sadece kiralık mavi
+    const hasSatilik = group.some(p => p.status === 'satilik');
+    const hasKiralik = group.some(p => p.status === 'kiralik');
+    let bgColor, borderColor;
+    if (hasSatilik && hasKiralik) {
+      bgColor = '#7c3aed'; borderColor = '#5b21b6'; // mor - karışık
+    } else if (hasSatilik) {
+      bgColor = '#16a34a'; borderColor = '#15803d'; // yeşil - satılık
+    } else {
+      bgColor = '#2563eb'; borderColor = '#1d4ed8'; // mavi - kiralık
+    }
+
+    // Boyut count'a göre değişsin
+    const size = count === 1 ? 36 : count < 5 ? 42 : count < 10 ? 48 : 54;
+    const fontSize = count === 1 ? '13px' : count < 10 ? '14px' : '13px';
+
+    const markerLabel = count === 1 ? '1' : String(count);
+
+    const marker = new google.maps.Marker({
+      position: { lat, lng },
+      map: googleMap,
+      label: {
+        text: markerLabel,
+        color: 'white',
+        fontWeight: '800',
+        fontSize: fontSize,
+      },
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        fillColor: bgColor,
+        fillOpacity: 1,
+        strokeColor: borderColor,
+        strokeWeight: 3,
+        scale: size / 2,
+      },
+      zIndex: count,
+    });
+
+    // Popup içeriği
+    const infoContent = buildInfoContent(group);
+    const infoWindow = new google.maps.InfoWindow({
+      content: infoContent,
+      maxWidth: 300,
+    });
+
+    marker.addListener('click', () => {
+      if (gOpenInfoWindow) gOpenInfoWindow.close();
+      infoWindow.open(googleMap, marker);
+      gOpenInfoWindow = infoWindow;
+    });
+
+    bounds.extend({ lat, lng });
+    gMarkers.push({ marker, group });
+  });
+
+  // Tüm markerları göster
+  if (markers.length > 0) {
+    googleMap.fitBounds(bounds);
+    // Çok yakın zoom yapmasın
+    google.maps.event.addListenerOnce(map, 'idle', () => {
+      if (googleMap.getZoom() > 17) googleMap.setZoom(17);
+    });
+  }
+}
+
+// ── POPUP İÇERİĞİ ─────────────────────────────────────────────────────────
+function buildInfoContent(group) {
+  if (group.length === 1) {
+    const p = group[0];
+    const badgeClass = p.status === 'satilik' ? 'satilik' : 'kiralik';
+    const badgeText = p.status === 'satilik' ? 'Satılık' : 'Kiralık';
+    return `
+      <div class="iw-wrap">
+        <div class="iw-header">
+          ${p.name}
+          <span class="iw-badge ${badgeClass}">${badgeText}</span>
+        </div>
+        <div class="iw-price">${p.priceFormatted}</div>
+        <div class="iw-row">
+          <span class="iw-label">Mahalle</span>
+          <span class="iw-value">${p.neighborhood || '-'}</span>
+        </div>
+        <div class="iw-row">
+          <span class="iw-label">Oda</span>
+          <span class="iw-value">${p.roomCount}</span>
+        </div>
+        <div class="iw-row">
+          <span class="iw-label">Brüt m²</span>
+          <span class="iw-value">${p.grossArea}</span>
+        </div>
+        <div class="iw-row">
+          <span class="iw-label">Kat</span>
+          <span class="iw-value">${p.floor}</span>
+        </div>
+        <div class="iw-row">
+          <span class="iw-label">Danışman</span>
+          <span class="iw-value">${p.consultant || '-'}</span>
+        </div>
+        <a href="${p.detailUrl}" class="iw-link" target="_blank">
+          <i class="fas fa-external-link-alt"></i> Detayı Görüntüle
+        </a>
+      </div>
+    `;
+  } else {
+    // Çoklu
+    const items = group.map(p => {
+      const badgeClass = p.status === 'satilik' ? 'satilik' : 'kiralik';
+      const badgeText = p.status === 'satilik' ? 'Satılık' : 'Kiralık';
+      return `
+        <div class="iw-multi-item">
+          <div class="iw-multi-name">
+            <a href="${p.detailUrl}" target="_blank" style="color:#202124;text-decoration:none;">
+              ${p.name}
+            </a>
+            <span class="iw-badge ${badgeClass}" style="font-size:0.65rem;">${badgeText}</span>
+          </div>
+          <div class="iw-multi-price">${p.priceFormatted}</div>
+          <div class="iw-multi-detail">${p.roomCount} · ${p.grossArea} m² · ${p.consultant || '-'}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="iw-wrap">
+        <div class="iw-header">
+          ${group.length} Portföy
+          <small style="font-weight:400;opacity:0.85;font-size:0.72rem;margin-left:4px;">${group[0].neighborhood}</small>
+        </div>
+        <div class="iw-multi-scroll">${items}</div>
+      </div>
+    `;
+  }
+}
+
+// ── FİLTRELEME ────────────────────────────────────────────────────────────
+function applyFilters() {
+  const neighborhood = document.getElementById('filterNeighborhood')?.value || '';
+  const consultant = document.getElementById('filterConsultant')?.value || '';
+  const status = document.getElementById('filterStatus').value;
+  const minPrice = parseFloat(document.getElementById('filterMinPrice').value) || null;
+  const maxPrice = parseFloat(document.getElementById('filterMaxPrice').value) || null;
+
+  filteredProperties = VALID_PROPERTIES.filter(p => {
+    if (neighborhood && String(p.neighborhoodId) !== neighborhood) return false;
+    if (consultant && String(p.consultantId) !== consultant) return false;
+    if (status && p.status !== status) return false;
+    if (minPrice && p.price < minPrice) return false;
+    if (maxPrice && p.price > maxPrice) return false;
+    return true;
+  });
+
+  renderMarkers(filteredProperties);
+}
+
+function resetFilters() {
+  document.getElementById('filterNeighborhood').value = '';
+  const fc = document.getElementById('filterConsultant');
+  if (fc) fc.value = '';
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterMinPrice').value = '';
+  document.getElementById('filterMaxPrice').value = '';
+  filteredProperties = [...VALID_PROPERTIES];
+  renderMarkers(filteredProperties);
+}
+
+// ── GOOGLE MAPS YÜKLE ─────────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  const script = document.createElement('script');
+  script.src = 'https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap&language=tr';
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+});
+</script>
+{% endblock %}

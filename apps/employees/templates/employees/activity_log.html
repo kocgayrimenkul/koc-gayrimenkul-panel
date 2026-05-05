@@ -1,0 +1,119 @@
+{% extends "layouts/base.html" %}
+{% block title %} Aktivite Kayıtları {% endblock %}
+
+{% block stylesheets %}
+<style>
+  :root { --koc-red: #9d2235; --koc-red-dark: #7a1a29; }
+  .bg-gradient-koc-red { background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important; }
+  .activity-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center">
+        <div class="col">
+          <h6 class="h2 text-white d-inline-block mb-0">Aktivite Kayıtları</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'employee_list' %}">Çalışanlar</a></li>
+              <li class="breadcrumb-item active">Aktiviteler</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--7">
+  <!-- Filtreler -->
+  <div class="card shadow mb-4">
+    <div class="card-body py-3">
+      <form method="get" class="row align-items-end">
+        <div class="col-md-4">
+          <label class="form-control-label small">Kullanıcı</label>
+          <select name="user" class="form-control form-control-sm">
+            <option value="">— Tümü —</option>
+            {% for u in users %}
+            <option value="{{ u.id }}" {% if request.GET.user == u.id|stringformat:"s" %}selected{% endif %}>
+              {{ u.get_full_name|default:u.username }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-control-label small">Başlangıç Tarihi</label>
+          <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request.GET.date_from }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-control-label small">Bitiş Tarihi</label>
+          <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request.GET.date_to }}">
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-danger btn-sm btn-block">
+            <i class="fas fa-filter mr-1"></i> Filtrele
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Aktivite Listesi -->
+  <div class="card shadow">
+    <div class="card-header bg-white border-0">
+      <div class="row align-items-center">
+        <div class="col">
+          <h3 class="mb-0">Son Aktiviteler</h3>
+        </div>
+        <div class="col text-right">
+          <span class="badge badge-pill badge-danger">{{ activities|length }} kayıt</span>
+        </div>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-items-center table-flush">
+        <thead class="thead-light">
+          <tr>
+            <th>Kullanıcı</th>
+            <th>İşlem</th>
+            <th>Detay</th>
+            <th>Tarih & Saat</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for activity in activities %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="activity-icon bg-gradient-danger text-white mr-3">
+                  <i class="fas fa-user"></i>
+                </div>
+                <span class="font-weight-bold">
+                  {{ activity.user.get_full_name|default:activity.user.username }}
+                </span>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-pill badge-light">{{ activity.action }}</span>
+            </td>
+            <td class="text-muted small">{{ activity.description|default:"—" }}</td>
+            <td class="text-muted small">{{ activity.timestamp|date:"d.m.Y H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-center text-muted py-5">
+              <i class="fas fa-history fa-2x mb-2 d-block"></i>
+              Henüz aktivite kaydı bulunmuyor.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock content %}

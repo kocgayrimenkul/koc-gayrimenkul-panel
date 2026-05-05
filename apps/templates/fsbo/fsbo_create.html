@@ -1,433 +1,162 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+{% block title %}Yeni FSBO Ekle{% endblock %}
 
-{% block title %} Yeni FSBO Ekle {% endblock %}
-
-{% block stylesheets %}
+{% block extra_css %}
 <style>
-  /* Koç Gayrimenkul kurumsal renkleri */
-  :root {
-    --koc-red: #9d2235;
-    --koc-red-light: #b82e42;
-    --koc-red-dark: #7a1a29;
-    --koc-black: #212529;
-    --koc-red-rgb: 157, 34, 53;
-  }
-  
-  .bg-koc-red {
-    background-color: var(--koc-red) !important;
-  }
-  
-  .bg-gradient-koc-red {
-    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
-  }
-  
-  .text-koc-red {
-    color: var(--koc-red) !important;
-  }
-  
-  .btn-koc-red {
-    color: #fff;
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .btn-koc-red:hover {
-    color: #fff;
-    background-color: var(--koc-red-light);
-    border-color: var(--koc-red-light);
-  }
-  
-  .border-koc-red {
-    border-color: var(--koc-red) !important;
-  }
-  
-  /* Form elemanları */
-  .form-control:focus {
-    border-color: var(--koc-red-light);
-    box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
-  }
-  
-  /* Kartlar */
-  .card {
-    border-radius: 0.75rem;
-    border: none;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-  }
-  
-  .card:hover {
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  }
-  
-  /* Link kutuları */
-  .link-card {
-    border-radius: 0.5rem;
-    padding: 15px;
-    margin-bottom: 15px;
-    border: 1px solid #e9ecef;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  }
-  
-  .link-card:hover {
-    border-color: var(--koc-red);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-  }
-  
-  .link-card label {
-    color: #555;
-  }
-  
-  .link1-card {
-    background-color: #ffc107;
-  }
-  
-  .link2-card {
-    background-color: #dc3545;
-    color: white;
-  }
-  
-  /* Bilgi kutuları */
-  .info-box {
-    background-color: #f8f9fe;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-  }
-  
-  .info-box i {
-    font-size: 1.5rem;
-    margin-right: 10px;
-  }
-  
-  .info-box h5 {
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-  
-  .info-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #f8f9fe;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 15px;
-  }
-  
-  .info-icon i {
-    font-size: 18px;
-  }
+  .fi { width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:.85rem;outline:none;transition:border-color .15s; }
+  .fi:focus { border-color:#9d2235;box-shadow:0 0 0 3px rgba(157,34,53,.1); }
+  .fi select { background:#fff; }
+  label.lbl { font-size:.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px; }
+  .sec-title { font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:24px 0 14px; }
+  .sec-title:first-child { margin-top:0; }
 </style>
-{% endblock stylesheets %}
+{% endblock %}
 
 {% block content %}
+<div class="px-6 py-6">
+  <!-- Başlık -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Yeni FSBO Ekle</h1>
+      <p class="text-sm text-slate-500 mt-1">FSBO Aramaları / Yeni Kayıt</p>
+    </div>
+    <a href="{% url 'fsbo_list' %}" class="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">
+      <i class="fas fa-arrow-left"></i> Listeye Dön
+    </a>
+  </div>
 
-<div class="header bg-gradient-koc-red pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Yeni FSBO Ekle</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="{% url 'fsbo_list' %}">FSBO Aramaları</a></li>
-              <li class="breadcrumb-item active" aria-current="page">Yeni FSBO Ekle</li>
-            </ol>
-          </nav>
+  <div class="flex gap-6 items-start">
+    <!-- Form -->
+    <div class="flex-1 bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+      <form method="POST" action="{% url 'fsbo_create' %}">
+        {% csrf_token %}
+
+        <div class="sec-title">Temel Bilgiler</div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="lbl">Ad Soyad <span class="text-red-500">*</span></label>
+            {{ form.full_name }}
+          </div>
+          <div>
+            <label class="lbl">Telefon <span class="text-red-500">*</span></label>
+            {{ form.phone }}
+          </div>
         </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{% url 'fsbo_list' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-arrow-left mr-1"></i> FSBO Listesine Dön
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="lbl">Sonuç <span class="text-red-500">*</span></label>
+            {{ form.result }}
+          </div>
+          <div>
+            <label class="lbl">İletişim Türü <span class="text-red-500">*</span></label>
+            {{ form.contact_type }}
+          </div>
+        </div>
+
+        <div class="sec-title">Gayrimenkul İlanları</div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="lbl">Link 1</label>
+            {{ form.link1 }}
+          </div>
+          <div>
+            <label class="lbl">Link 2</label>
+            {{ form.link2 }}
+          </div>
+        </div>
+
+        <div class="sec-title">Hatırlatıcı</div>
+        <div class="bg-slate-50 rounded-lg p-4 mb-4">
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="lbl">Durum</label>
+              {{ form.reminder_status }}
+            </div>
+            <div>
+              <label class="lbl">Tarih</label>
+              {{ form.reminder_date }}
+            </div>
+            <div>
+              <label class="lbl">Saat</label>
+              {{ form.reminder_time }}
+            </div>
+          </div>
+        </div>
+
+        <div class="sec-title">Görüşme Notları</div>
+        <div class="mb-6">
+          {{ form.notes }}
+        </div>
+
+        <div class="flex gap-3">
+          <button type="submit" class="flex-1 bg-red-800 hover:bg-red-900 text-white font-semibold rounded-lg py-2.5 text-sm transition flex items-center justify-center gap-2">
+            <i class="fas fa-save"></i> Kaydet
+          </button>
+          <a href="{% url 'fsbo_list' %}" class="px-6 bg-slate-100 text-slate-600 font-semibold rounded-lg py-2.5 text-sm hover:bg-slate-200 transition flex items-center gap-2">
+            <i class="fas fa-times"></i> İptal
           </a>
         </div>
+      </form>
+    </div>
+
+    <!-- Bilgi paneli -->
+    <div class="w-72 flex-shrink-0 space-y-4">
+      <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-info text-white text-xs"></i>
+          </div>
+          <span class="font-semibold text-blue-700 text-sm">FSBO Nedir?</span>
+        </div>
+        <p class="text-xs text-blue-600 leading-relaxed">Sahibinden satılık ilanlarını takip etmek için kullanılan modüldür.</p>
+      </div>
+      <div class="bg-amber-50 border border-amber-100 rounded-xl p-4">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-exclamation text-white text-xs"></i>
+          </div>
+          <span class="font-semibold text-amber-700 text-sm">Önemli Notlar</span>
+        </div>
+        <ul class="text-xs text-amber-700 space-y-1 leading-relaxed list-disc list-inside">
+          <li>İsim ve telefon zorunludur.</li>
+          <li>Hatırlatıcı açıksa tarih ve saat girin.</li>
+          <li>Link alanlarına ilan bağlantısı ekleyin.</li>
+        </ul>
+      </div>
+      <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-check text-white text-xs"></i>
+          </div>
+          <span class="font-semibold text-emerald-700 text-sm">Sonuç Alanı</span>
+        </div>
+        <p class="text-xs text-emerald-600 leading-relaxed">Görüşme sonucunu belirtin. Filtreleme için kullanılır.</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Page content -->
-<div class="container-fluid mt--6">
-  <div class="row">
-    <div class="col-xl-8 order-xl-1">
-      <div class="card">
-        <div class="card-header">
-          <div class="row align-items-center">
-            <div class="col-8">
-              <h3 class="mb-0">Yeni FSBO Kaydı</h3>
-              <p class="text-sm text-muted mb-0">Sisteme yeni FSBO kaydı ekleyin</p>
-            </div>
-            <div class="col-4 text-right">
-              <span class="badge badge-koc-red">Yeni</span>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <form method="POST" action="{% url 'fsbo_create' %}">
-            {% csrf_token %}
-            
-            <!-- Temel Bilgiler -->
-            <h6 class="heading-small text-muted mb-4">Temel Bilgiler</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="id_full_name">Ad Soyad <span class="text-danger">*</span></label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                      </div>
-                      {{ form.full_name }}
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="id_phone">Telefon <span class="text-danger">*</span></label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                      </div>
-                      {{ form.phone }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="form-group">
-                    <label class="form-control-label" for="id_result">Sonuç <span class="text-danger">*</span></label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-clipboard-check"></i></span>
-                      </div>
-                      {{ form.result }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="form-group">
-                    <label class="form-control-label" for="id_contact_type">İletişim Türü <span class="text-danger">*</span></label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                      </div>
-                      {{ form.contact_type }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Link Bilgileri -->
-            <h6 class="heading-small text-muted mb-4">Gayrimenkul İlanları</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group link-card">
-                    <label class="form-control-label" for="id_link1">Link 1</label>
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-link"></i></span>
-                      </div>
-                      {{ form.link1 }}
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group link-card">
-                    <label class="form-control-label" for="id_link2">Link 2</label>
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-link"></i></span>
-                      </div>
-                      {{ form.link2 }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Hatırlatıcı Bölümü -->
-            <h6 class="heading-small text-muted mb-4">Hatırlatıcı Ayarları</h6>
-            <div class="pl-lg-4">
-              <div class="card shadow-none border">
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="form-group">
-                        <label class="form-control-label" for="id_reminder_status">Hatırlatıcı Durumu</label>
-                        <div class="input-group input-group-merge">
-                          <div class="input-group-prepend">
-                            <span class="input-group-text"><i class="fas fa-bell"></i></span>
-                          </div>
-                          {{ form.reminder_status }}
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group">
-                        <label class="form-control-label" for="id_reminder_date">Tarih</label>
-                        <div class="input-group input-group-merge">
-                          <div class="input-group-prepend">
-                            <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                          </div>
-                          {{ form.reminder_date }}
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group">
-                        <label class="form-control-label" for="id_reminder_time">Saat</label>
-                        <div class="input-group input-group-merge">
-                          <div class="input-group-prepend">
-                            <span class="input-group-text"><i class="fas fa-clock"></i></span>
-                          </div>
-                          {{ form.reminder_time }}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Notlar -->
-            <h6 class="heading-small text-muted mb-4">Görüşme Notları</h6>
-            <div class="pl-lg-4">
-              <div class="form-group">
-                <label class="form-control-label" for="id_notes">Notlar</label>
-                <div class="input-group input-group-merge">
-                  <div class="input-group-prepend">
-                    <span class="input-group-text"><i class="fas fa-sticky-note"></i></span>
-                  </div>
-                  {{ form.notes }}
-                </div>
-              </div>
-            </div>
-            
-            <hr class="my-4" />
-            
-            <div class="row justify-content-center">
-              <div class="col-md-6 text-center">
-                <button type="submit" class="btn btn-koc-red btn-lg btn-block">
-                  <i class="fas fa-save mr-2"></i> KAYDET
-                </button>
-              </div>
-              <div class="col-md-6 text-center">
-                <a href="{% url 'fsbo_list' %}" class="btn btn-secondary btn-lg btn-block">
-                  <i class="fas fa-times mr-2"></i> İPTAL
-                </a>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-xl-4 order-xl-2">
-      <div class="card">
-        <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <h3 class="mb-0">Bilgilendirme</h3>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <!-- Bilgilendirme kutusu 1 -->
-          <div class="info-box d-flex align-items-start mb-4">
-            <div class="info-icon bg-info">
-              <i class="fas fa-info text-white"></i>
-            </div>
-            <div>
-              <h5 class="text-info">FSBO Nedir?</h5>
-              <p class="text-sm mb-0">
-                FSBO (For Sale By Owner), sahibinden satılık ilanlarını takip etmek için kullanılan bir modüldür. Telefon ile görüşülen kişilerin kaydedilmesi için kullanılır.
-              </p>
-            </div>
-          </div>
-          
-          <!-- Bilgilendirme kutusu 2 -->
-          <div class="info-box d-flex align-items-start mb-4">
-            <div class="info-icon bg-warning">
-              <i class="fas fa-exclamation text-white"></i>
-            </div>
-            <div>
-              <h5 class="text-warning">Önemli Notlar</h5>
-              <ul class="pl-3 mb-0 text-sm">
-                <li>İsim ve telefon bilgileri zorunludur.</li>
-                <li>Hatırlatıcı açıksa tarih ve saat belirtmelisiniz.</li>
-                <li>Link alanlarına sahibinden.com vb. ilan bağlantıları ekleyebilirsiniz.</li>
-              </ul>
-            </div>
-          </div>
-          
-          <!-- Bilgilendirme kutusu 3 -->
-          <div class="info-box d-flex align-items-start">
-            <div class="info-icon bg-success">
-              <i class="fas fa-check text-white"></i>
-            </div>
-            <div>
-              <h5 class="text-success">Sonuç Alanı</h5>
-              <p class="text-sm mb-0">
-                Görüşme sonucunu belirtmek için "Sonuç" alanını kullanın. Daha sonra bu bilgiye göre filtreleme yapabilirsiniz.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {% include "includes/footer.html" %}
-</div>
-
-{% endblock content %}
-
-{% block javascripts %}
 <script>
-  $(document).ready(function() {
-    // Hatırlatıcı bölümü işlevselliği
-    function toggleReminderFields() {
-      var status = $('#id_reminder_status').val();
-      if(status === 'acik') {
-        $('#id_reminder_date, #id_reminder_time').prop('required', true).prop('disabled', false);
-      } else {
-        $('#id_reminder_date, #id_reminder_time').prop('required', false).prop('disabled', true);
-      }
-    }
-    
-    // İlk yükleme
-    toggleReminderFields();
-    
-    // Değişiklik olduğunda
-    $('#id_reminder_status').change(toggleReminderFields);
-    
-    // Sonuç alanı için renk değiştirme
-    $('#id_result').on('change', function() {
-      var result = $(this).val();
-      $(this).removeClass('border-success border-warning border-danger border-secondary');
-      
-      if(result === 'olumlu') {
-        $(this).addClass('border-success');
-      } else if(result === 'bekliyor') {
-        $(this).addClass('border-warning');
-      } else if(result === 'olumsuz') {
-        $(this).addClass('border-danger');
-      } else {
-        $(this).addClass('border-secondary');
+document.addEventListener('DOMContentLoaded', function() {
+  // form alanlarına Tailwind sınıfı ekle
+  document.querySelectorAll('input[type=text],input[type=date],input[type=time],input[type=url],textarea,select').forEach(el => {
+    el.classList.add('fi');
+    if (el.tagName === 'TEXTAREA') { el.rows = 4; }
+  });
+
+  function toggleReminder() {
+    const v = document.getElementById('id_reminder_status').value;
+    ['id_reminder_date','id_reminder_time'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.disabled = (v !== 'acik');
+        el.closest('div').style.opacity = (v !== 'acik') ? '0.4' : '1';
       }
     });
-    
-    // Sayfa yüklendiğinde çalıştır
-    $('#id_result').trigger('change');
-  });
+  }
+  const rs = document.getElementById('id_reminder_status');
+  if (rs) { toggleReminder(); rs.addEventListener('change', toggleReminder); }
+});
 </script>
-{% endblock javascripts %} 
+{% endblock %}

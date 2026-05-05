@@ -1,0 +1,167 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Agent Dashboard{% endblock %}
+
+{% block stylesheets %}
+<style>
+  :root { --koc-red: #9d2235; --koc-red-dark: #7a1a29; }
+  .bg-gradient-koc-red { background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important; }
+  .stat-card { border-left: 4px solid var(--koc-red); }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6">
+          <h6 class="h2 text-white d-inline-block mb-0">Agent Dashboard</h6>
+          <p class="text-white-50 mb-0 mt-1 small">Bugünkü çağrı özeti — {{ today|date:"d.m.Y" }}</p>
+        </div>
+        <div class="col-lg-6 text-right">
+          <form method="get" class="d-inline-flex">
+            <input type="text" name="extension" class="form-control form-control-sm mr-2"
+                   placeholder="Dahili no." value="{{ request.GET.extension }}" style="width:120px;">
+            <button type="submit" class="btn btn-sm btn-white">
+              <i class="fas fa-filter mr-1"></i> Filtrele
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--7">
+  <!-- İstatistik Kartları -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card shadow stat-card">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col">
+              <h5 class="card-title text-uppercase text-muted mb-0 small">Toplam Çağrı</h5>
+              <span class="h2 font-weight-bold mb-0">{{ stats.total_calls|default:0 }}</span>
+            </div>
+            <div class="col-auto">
+              <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
+                <i class="fas fa-phone"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card shadow stat-card">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col">
+              <h5 class="card-title text-uppercase text-muted mb-0 small">Gelen Çağrı</h5>
+              <span class="h2 font-weight-bold mb-0">{{ stats.incoming_calls|default:0 }}</span>
+            </div>
+            <div class="col-auto">
+              <div class="icon icon-shape bg-success text-white rounded-circle shadow">
+                <i class="fas fa-phone-volume"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card shadow stat-card">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col">
+              <h5 class="card-title text-uppercase text-muted mb-0 small">Giden Çağrı</h5>
+              <span class="h2 font-weight-bold mb-0">{{ stats.outgoing_calls|default:0 }}</span>
+            </div>
+            <div class="col-auto">
+              <div class="icon icon-shape bg-info text-white rounded-circle shadow">
+                <i class="fas fa-phone-slash"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card shadow stat-card">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col">
+              <h5 class="card-title text-uppercase text-muted mb-0 small">Ort. Süre</h5>
+              <span class="h2 font-weight-bold mb-0">{{ stats.avg_duration|default:0 }}s</span>
+            </div>
+            <div class="col-auto">
+              <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
+                <i class="fas fa-clock"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Son Çağrılar -->
+  <div class="card shadow">
+    <div class="card-header bg-white border-0">
+      <h3 class="mb-0">Bugünkü Çağrılar</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-items-center table-flush">
+        <thead class="thead-light">
+          <tr>
+            <th>Müşteri</th>
+            <th>Tür</th>
+            <th>Süre</th>
+            <th>Dahili</th>
+            <th>Saat</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for call in recent_calls %}
+          <tr>
+            <td>
+              {% if call.lead %}
+                <a href="{% url 'sales_process:lead_detail' call.lead.id %}" class="font-weight-bold text-dark">
+                  {{ call.lead.customer_name }}
+                </a>
+              {% else %}
+                <span class="text-muted">{{ call.phone_number|default:"Bilinmiyor" }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if call.call_type == 'incoming' %}
+                <span class="badge badge-success"><i class="fas fa-phone-volume mr-1"></i> Gelen</span>
+              {% else %}
+                <span class="badge badge-info"><i class="fas fa-phone mr-1"></i> Giden</span>
+              {% endif %}
+            </td>
+            <td>{{ call.duration|default:"—" }}s</td>
+            <td>{{ call.agent_extension|default:"—" }}</td>
+            <td class="text-muted small">{{ call.start_time|date:"H:i" }}</td>
+            <td>
+              <a href="{% url 'sales_process:call_detail' call.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-5">
+              <i class="fas fa-phone-slash fa-2x mb-2 d-block"></i>Bugün henüz çağrı yok.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,262 @@
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.bina-kart { transition: box-shadow 0.2s, transform 0.2s; }
+.bina-kart:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.10); transform: translateY(-2px); }
+.not-textarea { resize: vertical; min-height: 72px; }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="p-4">
+
+    {% if messages %}
+    <div class="mb-4 space-y-2">
+        {% for msg in messages %}
+        <div class="px-4 py-3 rounded-xl text-sm font-medium
+            {% if msg.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
+            {% else %}bg-emerald-50 text-emerald-700 border border-emerald-200{% endif %}">
+            {{ msg }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Başlık + Tarih -->
+    <div class="bg-white rounded-2xl p-4 custom-shadow mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">Günlük Görevim</h1>
+                <p class="text-xs text-slate-500 mt-0.5">{{ bugun|date:"d F Y, l" }}</p>
+            </div>
+            {% if gorev %}
+            <div class="flex items-center gap-3">
+                <!-- İlerleme Çemberi -->
+                <div class="flex items-center gap-2">
+                    <div class="relative w-12 h-12">
+                        <svg class="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="#10b981" stroke-width="3"
+                                    stroke-dasharray="{% if toplam_sayi %}{% widthratio tamamlanan_sayi toplam_sayi 88 %}{% else %}0{% endif %} 88"
+                                    stroke-linecap="round"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-700">
+                            {{ tamamlanan_sayi }}/{{ toplam_sayi }}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-700">{{ tamamlanan_sayi }} tamamlandı</div>
+                        <div class="text-[10px] text-slate-400">{{ toplam_sayi }} binadan</div>
+                    </div>
+                </div>
+
+                <!-- Broker Bildir -->
+                {% if not gorev.tamamlandi and not gorev.broker_bildirildi %}
+                <button onclick="gunuBitir()"
+                        class="px-3 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-semibold rounded-xl transition">
+                    <i class="fas fa-flag-checkered mr-1"></i> Güne Son Ver
+                </button>
+                {% elif gorev.tamamlandi %}
+                <span class="px-3 py-2 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl">
+                    <i class="fas fa-check-circle mr-1"></i> Görev Tamamlandı!
+                </span>
+                {% elif gorev.broker_bildirildi %}
+                <span class="px-3 py-2 bg-slate-100 text-slate-500 text-xs font-semibold rounded-xl">
+                    <i class="fas fa-bell-slash mr-1"></i> Broker Bilgilendirildi
+                </span>
+                {% endif %}
+
+                <a href="{% url 'saha_harita' %}"
+                   class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition">
+                    <i class="fas fa-map-marked-alt mr-1"></i> Haritada Gör
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if gorev %}
+    <!-- Plan Bilgisi -->
+    <div class="bg-blue-50 border border-blue-100 rounded-2xl px-5 py-3 mb-4 flex items-center gap-3">
+        <i class="fas fa-info-circle text-blue-500"></i>
+        <div class="text-xs text-blue-700">
+            <span class="font-semibold">{{ gorev.plan.mahalle_adi }}</span> mahallesinde bugün
+            <span class="font-semibold">{{ toplam_sayi }} bina</span> ziyaret etmeniz gerekiyor.
+            {% if gorev.plan.atayan_broker %}
+            Plan atayan: <span class="font-semibold">{{ gorev.plan.atayan_broker.get_full_name }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bina Kartları -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {% for item in parseller_bilgi %}
+        <div class="bina-kart bg-white rounded-2xl custom-shadow overflow-hidden" id="bina-{{ item.parsel.id }}">
+            <!-- Kart Başlık -->
+            <div class="px-5 py-4 border-b border-slate-100 flex items-start justify-between">
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-slate-800 text-sm truncate" title="{{ item.parsel.adres }}">
+                        {{ item.parsel.adres|default:"Adres yok" }}
+                    </h3>
+                    {% if item.parsel.ada_no or item.parsel.parsel_no %}
+                    <p class="text-[10px] text-slate-400 mt-0.5">
+                        Ada: {{ item.parsel.ada_no|default:"-" }} / Parsel: {{ item.parsel.parsel_no|default:"-" }}
+                    </p>
+                    {% endif %}
+                </div>
+                {% if item.ziyaret_edildi %}
+                <span class="flex-shrink-0 ml-2 w-7 h-7 bg-emerald-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-check text-emerald-600 text-xs"></i>
+                </span>
+                {% else %}
+                <span class="flex-shrink-0 ml-2 w-7 h-7 bg-slate-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-clock text-slate-400 text-xs"></i>
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- İletişim Bilgileri -->
+            <div class="px-5 py-3 space-y-1.5">
+                {% if item.parsel.yonetici_ad %}
+                <div class="flex items-center gap-2 text-xs">
+                    <i class="fas fa-user-tie w-4 text-blue-500 flex-shrink-0"></i>
+                    <span class="text-slate-600">{{ item.parsel.yonetici_ad }}</span>
+                    {% if item.parsel.yonetici_tel %}
+                    <a href="tel:{{ item.parsel.yonetici_tel }}"
+                       class="ml-auto text-blue-600 hover:text-blue-700 font-semibold">
+                        {{ item.parsel.yonetici_tel }}
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if item.parsel.kapici_ad %}
+                <div class="flex items-center gap-2 text-xs">
+                    <i class="fas fa-key w-4 text-amber-500 flex-shrink-0"></i>
+                    <span class="text-slate-600">{{ item.parsel.kapici_ad }}</span>
+                    {% if item.parsel.kapici_tel %}
+                    <a href="tel:{{ item.parsel.kapici_tel }}"
+                       class="ml-auto text-blue-600 hover:text-blue-700 font-semibold">
+                        {{ item.parsel.kapici_tel }}
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if item.parsel.mahalle %}
+                <div class="flex items-center gap-2 text-xs text-slate-400">
+                    <i class="fas fa-map-pin w-4 text-slate-300 flex-shrink-0"></i>
+                    <span>{{ item.parsel.mahalle }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Bugünkü Görüşmeler -->
+            {% if item.bugun_gorusmeler %}
+            <div class="px-5 py-3 bg-emerald-50 border-t border-emerald-100">
+                <div class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-2">
+                    Bugünkü Görüşmeler
+                </div>
+                {% for gorusme in item.bugun_gorusmeler %}
+                <div class="mb-2 last:mb-0">
+                    <div class="flex items-center gap-1 text-[10px] text-emerald-600 mb-0.5">
+                        <i class="fas fa-clock"></i> {{ gorusme.tarih|date:"H:i" }}
+                    </div>
+                    <p class="text-xs text-slate-700">{{ gorusme.not_metni }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Görüşme Notu Ekle -->
+            <div class="px-5 pb-4 pt-3 border-t border-slate-100">
+                <div id="not-form-{{ item.parsel.id }}">
+                    <textarea id="not-text-{{ item.parsel.id }}"
+                              class="not-textarea w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Görüşme notu yazın..."></textarea>
+                    <button onclick="gorusmeEkle({{ item.parsel.id }})"
+                            class="mt-2 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition">
+                        <i class="fas fa-plus mr-1"></i> Görüşme Notu Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Görev Yok -->
+    <div class="bg-white rounded-2xl custom-shadow p-12 text-center">
+        <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-calendar-times text-2xl text-slate-400"></i>
+        </div>
+        <h3 class="text-base font-semibold text-slate-700 mb-1">Bugün için göreviniz yok</h3>
+        <p class="text-sm text-slate-500 mb-4">
+            Bugün size atanmış bir saha görevi bulunmuyor. Broker ile iletişime geçin.
+        </p>
+        <a href="{% url 'gorev_plani_listesi' %}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition">
+            <i class="fas fa-list"></i> Tüm Planları Gör
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+const CSRF = (function() {
+    let v = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith('csrftoken=')) v = decodeURIComponent(c.slice(10));
+    });
+    return v;
+})();
+
+function gorusmeEkle(parselId) {
+    const not = document.getElementById(`not-text-${parselId}`).value.trim();
+    if (!not) { alert('Lütfen bir görüşme notu girin.'); return; }
+
+    fetch(`/api/saha/parsel/${parselId}/gorusme/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ not_metni: not }),
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            // Sayfayı yenile - tamamlanma kontrolü için
+            location.reload();
+        } else {
+            alert('Hata: ' + (d.error || 'Kaydedilemedi'));
+        }
+    });
+}
+
+function gunuBitir() {
+    {% if gorev %}
+    const gorevId = {{ gorev.id }};
+    const kalan = {{ toplam_sayi }} - {{ tamamlanan_sayi }};
+
+    if (kalan === 0) {
+        alert('Tüm görevler tamamlanmış, broker\'a bildirim gerekmiyor.');
+        return;
+    }
+
+    if (!confirm(`Bugün ${kalan} bina ziyaret edilmedi. Broker\'a bildirim gönderilsin mi?`)) return;
+
+    fetch(`/api/saha/gorev/${gorevId}/bildir/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+    })
+    .then(r => r.json())
+    .then(d => {
+        alert(d.mesaj || (d.success ? 'Broker bilgilendirildi.' : 'Gönderilemedi.'));
+        if (d.success) location.reload();
+    });
+    {% endif %}
+}
+</script>
+{% endblock extra_js %}

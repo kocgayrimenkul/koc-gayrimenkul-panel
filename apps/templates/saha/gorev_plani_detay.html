@@ -1,0 +1,198 @@
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.progress-bar { transition: width 0.5s ease; }
+.gorev-satir:hover { background: #f8fafc; }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="p-4">
+
+    <!-- Sayfa Başlığı -->
+    <div class="bg-white rounded-2xl p-4 custom-shadow mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+                    <a href="{% url 'gorev_plani_listesi' %}" class="hover:text-blue-600 transition">Görev Planları</a>
+                    <i class="fas fa-chevron-right text-[9px]"></i>
+                    <span class="text-slate-600 font-medium">{{ plan.mahalle_adi }}</span>
+                </div>
+                <h1 class="text-lg font-bold text-slate-800">
+                    {{ plan.mahalle_adi }} — {{ plan.get_ay_display }} {{ plan.yil }}
+                </h1>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    Bölge Uzmanı: <span class="font-medium text-slate-700">{{ plan.bolge_uzmani.get_full_name }}</span>
+                    &nbsp;·&nbsp; Günlük hedef: <span class="font-semibold text-amber-600">{{ plan.gunluk_hedef }} bina</span>
+                    &nbsp;·&nbsp; {{ plan.calisma_gunu }} çalışma günü
+                </p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{% url 'saha_harita' %}"
+                   class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-xl transition">
+                    <i class="fas fa-map-marked-alt mr-1"></i> Haritaya Git
+                </a>
+                <a href="{% url 'gorev_plani_listesi' %}"
+                   class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition">
+                    <i class="fas fa-arrow-left mr-1"></i> Geri
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Özet İstatistikler -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div class="bg-white rounded-2xl p-4 custom-shadow text-center">
+            <div class="text-2xl font-bold text-slate-800">{{ plan.toplam_bina }}</div>
+            <div class="text-xs text-slate-500 mt-1">Toplam Bina</div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 custom-shadow text-center">
+            <div class="text-2xl font-bold text-blue-600">{{ gorev_listesi|length }}</div>
+            <div class="text-xs text-slate-500 mt-1">Toplam Gün</div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 custom-shadow text-center">
+            <div class="text-2xl font-bold text-emerald-600">
+                {% with tamamlanan_gun=gorev_listesi|length %}
+                {% for g in gorev_listesi %}{% if g.gorev.tamamlandi %}{% endif %}{% endfor %}
+                {{ gorev_listesi|length }}
+                {% endwith %}
+            </div>
+            <div class="text-xs text-slate-500 mt-1">Aktif Gün</div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 custom-shadow text-center">
+            <div class="text-2xl font-bold text-amber-600">{{ plan.gunluk_hedef }}</div>
+            <div class="text-xs text-slate-500 mt-1">Günlük Hedef</div>
+        </div>
+    </div>
+
+    <!-- Günlük Görev Tablosu -->
+    <div class="bg-white rounded-2xl custom-shadow overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-800">Günlük Görev Takvimi</h3>
+            <span class="text-xs text-slate-400">{{ gorev_listesi|length }} gün</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                        <th class="px-5 py-3 text-left">Tarih</th>
+                        <th class="px-5 py-3 text-left">Atanan Binalar</th>
+                        <th class="px-5 py-3 text-left">İlerleme</th>
+                        <th class="px-5 py-3 text-left">Durum</th>
+                        <th class="px-5 py-3 text-left">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for item in gorev_listesi %}
+                    <tr class="gorev-satir transition {% if item.bugun %}bg-blue-50/50{% endif %}">
+                        <td class="px-5 py-3">
+                            <div class="flex items-center gap-2">
+                                {% if item.bugun %}
+                                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse flex-shrink-0"></span>
+                                {% elif item.gecmis %}
+                                <span class="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0"></span>
+                                {% else %}
+                                <span class="w-2 h-2 rounded-full bg-slate-200 flex-shrink-0"></span>
+                                {% endif %}
+                                <div>
+                                    <div class="font-semibold text-slate-800 text-xs">{{ item.gorev.tarih|date:"d F Y" }}</div>
+                                    <div class="text-[10px] text-slate-400">{{ item.gorev.tarih|date:"l" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3">
+                            <div class="flex flex-wrap gap-1 max-w-xs">
+                                {% for parsel in item.gorev.atanan_parseller.all|slice:":3" %}
+                                <span class="px-2 py-0.5 bg-slate-100 rounded-lg text-[10px] text-slate-600 font-medium truncate max-w-[100px]" title="{{ parsel.adres }}">
+                                    {{ parsel.adres|truncatechars:20 }}
+                                </span>
+                                {% endfor %}
+                                {% if item.toplam > 3 %}
+                                <span class="px-2 py-0.5 bg-blue-100 rounded-lg text-[10px] text-blue-600 font-medium">
+                                    +{{ item.toplam|add:"-3" }} daha
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-5 py-3">
+                            <div class="flex items-center gap-2 min-w-[120px]">
+                                <div class="flex-1 bg-slate-100 rounded-full h-1.5">
+                                    <div class="progress-bar bg-emerald-500 h-1.5 rounded-full"
+                                         style="width: {{ item.yuzde }}%"></div>
+                                </div>
+                                <span class="text-xs text-slate-500 whitespace-nowrap">{{ item.tamamlanan }}/{{ item.toplam }}</span>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3">
+                            {% if item.gorev.tamamlandi %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-semibold">
+                                <i class="fas fa-check"></i> Tamamlandı
+                            </span>
+                            {% elif item.bugun %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px] font-semibold">
+                                <i class="fas fa-clock"></i> Bugün
+                            </span>
+                            {% elif item.gecmis %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-[10px] font-semibold">
+                                <i class="fas fa-times"></i> Tamamlanmadı
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full text-[10px] font-semibold">
+                                <i class="fas fa-hourglass"></i> Bekliyor
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3">
+                            <div class="flex gap-1">
+                                {% if item.gecmis and not item.gorev.tamamlandi and not item.gorev.broker_bildirildi and is_broker %}
+                                <button onclick="bildirimGonder({{ item.gorev.id }})"
+                                        class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 text-[10px] font-semibold rounded-lg transition"
+                                        title="Broker'a bildir">
+                                    <i class="fas fa-bell"></i>
+                                </button>
+                                {% endif %}
+                                {% if item.gorev.broker_bildirildi %}
+                                <span class="px-2 py-1 bg-slate-100 text-slate-400 text-[10px] rounded-lg" title="Broker bilgilendirildi">
+                                    <i class="fas fa-bell-slash"></i>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+function bildirimGonder(gorevId) {
+    if (!confirm('Bu gün için broker\'a tamamlanmadı bildirimi gönderilsin mi?')) return;
+    fetch(`/api/saha/gorev/${gorevId}/bildir/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+    })
+    .then(r => r.json())
+    .then(d => {
+        alert(d.mesaj || (d.success ? 'Bildirim gönderildi.' : 'Gönderilemedi.'));
+        if (d.success) location.reload();
+    });
+}
+
+function getCookie(name) {
+    let v = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) v = decodeURIComponent(c.slice(name.length + 1));
+    });
+    return v;
+}
+</script>
+{% endblock extra_js %}

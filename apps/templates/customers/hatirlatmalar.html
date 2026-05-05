@@ -1,0 +1,114 @@
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+
+{% block title %}Hatırlatmalar{% endblock %}
+
+{% block extra_css %}
+<style>
+  .filtre-btn {
+    padding: 6px 16px; border-radius: 9999px; font-size: .78rem; font-weight: 600;
+    border: 1.5px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer;
+    transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+  }
+  .filtre-btn:hover { border-color: #9d2235; color: #9d2235; }
+  .filtre-btn.active { background: #9d2235; border-color: #9d2235; color: #fff; }
+
+  .hcard {
+    background: #fff; border-radius: 12px; border: 1px solid #f1f5f9;
+    padding: 16px 20px; display: flex; align-items: center; gap: 16px;
+    transition: box-shadow .15s;
+  }
+  .hcard:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+  .hcard.gecmis { border-left: 3px solid #ef4444; }
+  .hcard.bugun  { border-left: 3px solid #f59e0b; }
+  .hcard.gelecek{ border-left: 3px solid #10b981; }
+
+  .tarih-badge {
+    min-width: 56px; text-align: center; border-radius: 10px; padding: 8px 10px; flex-shrink: 0;
+  }
+  .tarih-badge .gun { font-size: 1.3rem; font-weight: 800; line-height: 1; }
+  .tarih-badge .ay  { font-size: .65rem; font-weight: 700; text-transform: uppercase; margin-top: 2px; }
+
+  .tarih-badge.gecmis { background: #fee2e2; color: #dc2626; }
+  .tarih-badge.bugun  { background: #fef3c7; color: #d97706; }
+  .tarih-badge.gelecek{ background: #d1fae5; color: #059669; }
+
+  .musteri-ad { font-size: .9rem; font-weight: 700; color: #1e293b; }
+  .musteri-tel { font-size: .78rem; color: #64748b; margin-top: 2px; }
+  .hcard-mesaj { font-size: .82rem; color: #475569; line-height: 1.5; margin-top: 4px; }
+
+  .durum-pill {
+    font-size: .68rem; font-weight: 700; padding: 2px 10px; border-radius: 9999px;
+  }
+  .durum-pill.gecmis  { background: #fee2e2; color: #dc2626; }
+  .durum-pill.bugun   { background: #fef3c7; color: #d97706; }
+  .durum-pill.gelecek { background: #d1fae5; color: #059669; }
+  .durum-pill.tamamlandi { background: #f1f5f9; color: #94a3b8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-6 py-6">
+
+  <!-- Başlık -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Hatırlatmalar</h1>
+      <p class="text-sm text-slate-500 mt-1">Müşteri takip hatırlatmaları</p>
+    </div>
+    <div class="flex gap-3">
+      {% if gecmis_sayisi %}
+      <span class="inline-flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 rounded-lg px-4 py-2 text-sm font-semibold">
+        <i class="fas fa-exclamation-circle"></i> {{ gecmis_sayisi }} geçmiş
+      </span>
+      {% endif %}
+      {% if bugun_sayisi %}
+      <span class="inline-flex items-center gap-2 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg px-4 py-2 text-sm font-semibold">
+        <i class="fas fa-clock"></i> Bugün {{ bugun_sayisi }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Filtreler -->
+  <div class="flex gap-2 mb-6 flex-wrap">
+    <a href="?filtre=hepsi"    class="filtre-btn {% if filtre == 'hepsi' %}active{% endif %}"><i class="fas fa-list"></i> Hepsi</a>
+    <a href="?filtre=bugun"    class="filtre-btn {% if filtre == 'bugun' %}active{% endif %}"><i class="fas fa-sun"></i> Bugün</a>
+    <a href="?filtre=yaklasan" class="filtre-btn {% if filtre == 'yaklasan' %}active{% endif %}"><i class="fas fa-calendar-alt"></i> Yaklaşan</a>
+    <a href="?filtre=gecmis"   class="filtre-btn {% if filtre == 'gecmis' %}active{% endif %}"><i class="fas fa-history"></i> Geçmiş</a>
+    <a href="?filtre=okunmamis"class="filtre-btn {% if filtre == 'okunmamis' %}active{% endif %}"><i class="fas fa-bell"></i> Okunmamış</a>
+  </div>
+
+  <!-- Liste -->
+  {% if hatirlatmalar %}
+  <div class="space-y-3">
+    {% for h in hatirlatmalar %}
+    {% if h.is_sent %}
+      {% with durum="tamamlandi" %}
+      {% include "customers/_hatirlatma_kart.html" %}
+      {% endwith %}
+    {% elif h.reminder_date < bugun %}
+      {% with durum="gecmis" %}
+      {% include "customers/_hatirlatma_kart.html" %}
+      {% endwith %}
+    {% elif h.reminder_date == bugun %}
+      {% with durum="bugun" %}
+      {% include "customers/_hatirlatma_kart.html" %}
+      {% endwith %}
+    {% else %}
+      {% with durum="gelecek" %}
+      {% include "customers/_hatirlatma_kart.html" %}
+      {% endwith %}
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="flex flex-col items-center justify-center py-24 text-slate-400">
+    <i class="fas fa-bell-slash text-5xl mb-4 opacity-30"></i>
+    <p class="text-base font-semibold">Hatırlatma bulunamadı</p>
+    <p class="text-sm mt-1">Seçilen filtreye uygun kayıt yok.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

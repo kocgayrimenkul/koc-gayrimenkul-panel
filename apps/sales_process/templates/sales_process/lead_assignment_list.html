@@ -1,0 +1,143 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Lead Atama Listesi{% endblock %}
+
+{% block stylesheets %}
+<style>
+  :root { --koc-red: #9d2235; --koc-red-dark: #7a1a29; }
+  .bg-gradient-koc-red { background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important; }
+  .text-koc-red { color: var(--koc-red) !important; }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6">
+          <h6 class="h2 text-white d-inline-block mb-0">Lead Atama Listesi</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'sales_process:assignment_dashboard' %}">Atamalar</a></li>
+              <li class="breadcrumb-item active">Liste</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--7">
+  <!-- Filtreler -->
+  <div class="card shadow mb-4">
+    <div class="card-body py-3">
+      <form method="get" class="row align-items-end">
+        <div class="col-md-3">
+          <label class="form-control-label small">Atama Türü</label>
+          <select name="assignment_type" class="form-control form-control-sm">
+            <option value="">— Tümü —</option>
+            <option value="auto" {% if request.GET.assignment_type == 'auto' %}selected{% endif %}>Otomatik</option>
+            <option value="manual" {% if request.GET.assignment_type == 'manual' %}selected{% endif %}>Manuel</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-control-label small">Personel</label>
+          <select name="assigned_to" class="form-control form-control-sm">
+            <option value="">— Tümü —</option>
+            {% for staff in staff_list %}
+            <option value="{{ staff.id }}" {% if request.GET.assigned_to == staff.id|stringformat:"s" %}selected{% endif %}>
+              {{ staff.get_full_name|default:staff.username }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-control-label small">Başlangıç</label>
+          <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request.GET.date_from }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-control-label small">Bitiş</label>
+          <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request.GET.date_to }}">
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-danger btn-sm">
+            <i class="fas fa-filter mr-1"></i> Filtrele
+          </button>
+          <a href="{% url 'sales_process:lead_assignment_list' %}" class="btn btn-outline-secondary btn-sm">Temizle</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow">
+    <div class="card-header bg-white border-0">
+      <div class="row align-items-center">
+        <div class="col"><h3 class="mb-0">Atama Kayıtları</h3></div>
+        <div class="col text-right">
+          <span class="badge badge-pill badge-danger">{{ page_obj.paginator.count }} kayıt</span>
+        </div>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-items-center table-flush">
+        <thead class="thead-light">
+          <tr>
+            <th>Müşteri</th>
+            <th>Atanan Personel</th>
+            <th>Atayan</th>
+            <th>Tür</th>
+            <th>Tarih</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for assignment in page_obj %}
+          <tr>
+            <td>
+              <a href="{% url 'sales_process:lead_detail' assignment.lead.id %}" class="font-weight-bold text-dark">
+                {{ assignment.lead.customer_name }}
+              </a>
+              <div class="text-muted small">{{ assignment.lead.phone }}</div>
+            </td>
+            <td>{{ assignment.assigned_to.get_full_name|default:assignment.assigned_to.username }}</td>
+            <td>{{ assignment.assigned_by.get_full_name|default:assignment.assigned_by.username|default:"—" }}</td>
+            <td>
+              {% if assignment.assignment_type == 'auto' %}
+                <span class="badge badge-pill badge-info">Otomatik</span>
+              {% else %}
+                <span class="badge badge-pill badge-warning">Manuel</span>
+              {% endif %}
+            </td>
+            <td class="text-muted small">{{ assignment.assigned_at|date:"d.m.Y H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-5">
+              <i class="fas fa-inbox fa-2x mb-2 d-block"></i>Atama kaydı bulunamadı.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="card-footer py-3">
+      <nav>
+        <ul class="pagination justify-content-end mb-0">
+          {% if page_obj.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Önceki</a></li>
+          {% endif %}
+          <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+          {% if page_obj.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Sonraki</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock content %}

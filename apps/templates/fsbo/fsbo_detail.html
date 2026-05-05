@@ -1,467 +1,126 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+{% block title %}FSBO Detay{% endblock %}
 
-{% block title %} FSBO Detay {% endblock %}
-
-{% block stylesheets %}
+{% block extra_css %}
 <style>
-  /* Koç Gayrimenkul kurumsal renkleri */
-  :root {
-    --koc-red: #9d2235;
-    --koc-red-light: #b82e42;
-    --koc-red-dark: #7a1a29;
-    --koc-black: #212529;
-    --koc-red-rgb: 157, 34, 53;
-  }
-  
-  .bg-koc-red {
-    background-color: var(--koc-red) !important;
-  }
-  
-  .bg-gradient-koc-red {
-    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
-  }
-  
-  .text-koc-red {
-    color: var(--koc-red) !important;
-  }
-  
-  .btn-koc-red {
-    color: #fff;
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .btn-koc-red:hover {
-    color: #fff;
-    background-color: var(--koc-red-light);
-    border-color: var(--koc-red-light);
-  }
-  
-  .border-koc-red {
-    border-color: var(--koc-red) !important;
-  }
-  
-  /* Kartlar */
-  .card {
-    border-radius: 0.75rem;
-    border: none;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-  }
-  
-  .card:hover {
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  }
-  
-  /* FSBO profil kartı */
-  .fsbo-profile {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2rem 0;
-  }
-  
-  .fsbo-avatar {
-    width: 100px;
-    height: 100px;
-    background-color: var(--koc-red);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.5rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-  }
-  
-  /* Durum rozeti stilleri */
-  .badge-status {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    font-weight: 600;
-    border-radius: 30px;
-  }
-  
-  .badge-bekliyor {
-    background-color: #ffc107;
-    color: #212529;
-  }
-  
-  .badge-olumlu {
-    background-color: #2dce89;
-    color: white;
-  }
-  
-  .badge-olumsuz {
-    background-color: #f5365c;
-    color: white;
-  }
-  
-  .badge-aranmadi {
-    background-color: #6c757d;
-    color: white;
-  }
-  
-  .info-label {
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 0.25rem;
-    font-size: 0.9rem;
-  }
-  
-  .info-value {
-    margin-bottom: 1rem;
-    font-size: 1rem;
-  }
-  
-  .detail-item {
-    padding: 1rem;
-    border-radius: 0.5rem;
-    background-color: #f8f9fe;
-    margin-bottom: 1rem;
-  }
-  
-  .detail-item .icon {
-    color: var(--koc-red);
-    margin-right: 0.5rem;
-  }
-  
-  .log-item {
-    padding: 15px;
-    border-left: 3px solid var(--koc-red);
-    background-color: #f8f9fe;
-    margin-bottom: 15px;
-    border-radius: 0.5rem;
-  }
-  
-  .log-time {
-    font-size: 0.8rem;
-    color: #666;
-  }
-  
-  .log-user {
-    font-weight: bold;
-    color: var(--koc-red);
-  }
-  
-  .log-action {
-    font-style: italic;
-  }
-  
-  .log-details {
-    font-size: 0.9rem;
-    color: #555;
-    margin-top: 5px;
-  }
-  
-  .notes-box {
-    background-color: #f9f9f9;
-    padding: 15px;
-    border-radius: 5px;
-    border-left: 3px solid #007bff;
-  }
+  .info-row { display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f8fafc; }
+  .info-row:last-child { border-bottom:none; }
+  .info-lbl { font-size:.78rem;color:#64748b; }
+  .info-val { font-size:.82rem;font-weight:600;color:#1e293b; }
+  .log-item { border-left:3px solid #9d2235;background:#f8fafc;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:10px; }
 </style>
-{% endblock stylesheets %}
+{% endblock %}
 
 {% block content %}
-
-<div class="header bg-gradient-koc-red pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">FSBO Detay</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="{% url 'fsbo_list' %}">FSBO Aramaları</a></li>
-              <li class="breadcrumb-item active" aria-current="page">FSBO #{{ fsbo.id }}</li>
-            </ol>
-          </nav>
-        </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{% url 'fsbo_edit' fsbo.id %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-edit mr-1"></i> Düzenle
-          </a>
-          <a href="{% url 'fsbo_list' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-arrow-left mr-1"></i> FSBO Listesine Dön
-          </a>
-        </div>
-      </div>
+<div class="px-6 py-6">
+  <!-- Başlık -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">{{ fsbo.full_name }}</h1>
+      <p class="text-sm text-slate-500 mt-1">FSBO Aramaları / #{{ fsbo.id }}</p>
     </div>
-  </div>
-</div>
-
-<!-- Page content -->
-<div class="container-fluid mt--6">
-  <div class="row">
-    <div class="col-xl-4 order-xl-2">
-      <!-- FSBO profil kartı -->
-      <div class="card">
-        <div class="card-body">
-          <div class="fsbo-profile">
-            <div class="fsbo-avatar">
-              {{ fsbo.full_name|slice:":1" }}
-            </div>
-            <h3 class="text-center mb-0">{{ fsbo.full_name }}</h3>
-            <p class="text-muted text-center">FSBO #{{ fsbo.id }}</p>
-            
-            {% if fsbo.result == 'olumlu' %}
-              <span class="badge badge-status badge-olumlu mb-3">
-                <i class="fas fa-check-circle mr-1"></i> Olumlu
-              </span>
-            {% elif fsbo.result == 'olumsuz' %}
-              <span class="badge badge-status badge-olumsuz mb-3">
-                <i class="fas fa-times-circle mr-1"></i> Olumsuz
-              </span>
-            {% elif fsbo.result == 'bekliyor' %}
-              <span class="badge badge-status badge-bekliyor mb-3">
-                <i class="fas fa-clock mr-1"></i> Bekliyor
-              </span>
-            {% else %}
-              <span class="badge badge-status badge-aranmadi mb-3">
-                <i class="fas fa-phone-slash mr-1"></i> Aranmadı
-              </span>
-            {% endif %}
-            
-            <!-- İletişim butonu -->
-            <a href="tel:{{ fsbo.phone }}" class="btn btn-koc-red btn-block mb-3">
-              <i class="fas fa-phone-alt mr-2"></i> Ara
-            </a>
-
-            <!-- Düzenleme butonu -->
-            <a href="{% url 'fsbo_edit' fsbo.id %}" class="btn btn-outline-primary btn-block mb-3">
-              <i class="fas fa-edit mr-2"></i> Düzenle
-            </a>
-            
-            {% if user_role == 'admin' or user_role == 'manager' %}
-            <button type="button" class="btn btn-outline-danger btn-block" data-bs-toggle="modal" data-bs-target="#deleteModal">
-              <i class="fas fa-trash mr-2"></i> Sil
-            </button>
-            {% endif %}
-          </div>
-          
-          <hr class="my-3">
-          
-          <!-- FSBO detay bilgileri -->
-          <h6 class="heading-small text-muted mb-3">İletişim Bilgileri</h6>
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-phone icon"></i> Telefon</span>
-              <strong>{{ fsbo.phone }}</strong>
-            </div>
-          </div>
-          
-          <h6 class="heading-small text-muted mb-3 mt-4">İlan Bağlantıları</h6>
-          
-          <div class="row mb-3">
-            <div class="col-md-12">
-              <div class="text-center">
-                {% if fsbo.link1 %}
-                <a href="{{ fsbo.link1 }}" target="_blank" class="btn btn-warning btn-sm">
-                  <i class="fas fa-external-link-alt mr-1"></i> Link 1
-                </a>
-                {% else %}
-                <span class="text-muted">Link 1 eklenmemiş</span>
-                {% endif %}
-                
-                {% if fsbo.link2 %}
-                <a href="{{ fsbo.link2 }}" target="_blank" class="btn btn-danger btn-sm ml-2">
-                  <i class="fas fa-external-link-alt mr-1"></i> Link 2
-                </a>
-                {% else %}
-                <span class="text-muted">Link 2 eklenmemiş</span>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-          
-          <h6 class="heading-small text-muted mb-3 mt-4">Hatırlatıcı Bilgisi</h6>
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-bell icon"></i> Hatırlatıcı</span>
-              <strong>{{ fsbo.get_reminder_status_display }}</strong>
-            </div>
-            
-            {% if fsbo.reminder_status == 'acik' %}
-            <hr class="my-2">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-calendar-alt icon"></i> Tarih</span>
-              <strong>{{ fsbo.reminder_date|date:"d.m.Y" }}</strong>
-            </div>
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-clock icon"></i> Saat</span>
-              <strong>{{ fsbo.reminder_time|time:"H:i" }}</strong>
-            </div>
-            {% endif %}
-          </div>
-          
-          <h6 class="heading-small text-muted mb-3 mt-4">Sistem Bilgileri</h6>
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-calendar-alt icon"></i> Kayıt Tarihi</span>
-              <strong>{{ fsbo.created_at|date:"d.m.Y H:i" }}</strong>
-            </div>
-            <hr class="my-2">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-user-tie icon"></i> Kaydeden</span>
-              <strong>{{ fsbo.created_by.get_full_name|default:fsbo.created_by.username }}</strong>
-            </div>
-            
-            {% if fsbo.consultant %}
-            <hr class="my-2">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-user-tie icon"></i> Danışman</span>
-              <strong>
-                {% if fsbo.consultant %}
-                {{ fsbo.consultant.get_full_name|default:fsbo.consultant.username }}
-                {% else %}
-                <span class="badge badge-warning">Atanmadı</span>
-                {% endif %}
-              </strong>
-            </div>
-            {% endif %}
-          </div>
-          
-          <div class="detail-item">
-            <div class="d-flex justify-content-between">
-              <span><i class="fas fa-envelope icon"></i> İletişim Türü</span>
-              <strong>
-                {% if fsbo.contact_type == 'bilgi_alma' %}Bilgi Alma
-                {% elif fsbo.contact_type == 'daire_sunumu' %}Daire Sunumu
-                {% elif fsbo.contact_type == 'sikayet' %}Şikayet
-                {% else %}{{ fsbo.contact_type|title }}
-                {% endif %}
-              </strong>
-            </div>
-          </div>
-          
-          <h6 class="heading-small text-muted mb-3 mt-4">Gayrimenkul Bilgileri</h6>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-xl-8 order-xl-1">
-      <!-- Ana Bilgiler -->
-      <div class="card mb-4">
-        <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <h3 class="mb-0">FSBO Detay Bilgileri</h3>
-              <p class="text-sm text-muted mb-0">{{ fsbo.full_name }} - {{ fsbo.phone }}</p>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6">
-              <div class="info-label">Ad Soyad</div>
-              <div class="info-value">{{ fsbo.full_name }}</div>
-            </div>
-            <div class="col-md-6">
-              <div class="info-label">Telefon</div>
-              <div class="info-value">{{ fsbo.phone }}</div>
-            </div>
-          </div>
-          
-          <div class="row">
-            <div class="col-md-6">
-              <div class="info-label">Sonuç</div>
-              <div class="info-value">
-                {% if fsbo.result == 'olumlu' %}
-                <span class="badge bg-success result-badge">{{ fsbo.get_result_display }}</span>
-                {% elif fsbo.result == 'olumsuz' %}
-                <span class="badge bg-danger result-badge">{{ fsbo.get_result_display }}</span>
-                {% elif fsbo.result == 'bekliyor' %}
-                <span class="badge bg-warning text-dark result-badge">{{ fsbo.get_result_display }}</span>
-                {% else %}
-                <span class="badge bg-secondary result-badge">{{ fsbo.get_result_display }}</span>
-                {% endif %}
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="info-label">Danışman</div>
-              <div class="info-value">
-                {% if fsbo.consultant %}
-                {{ fsbo.consultant.get_full_name|default:fsbo.consultant.username }}
-                {% else %}
-                <span class="text-muted">Atanmamış</span>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-          
-          {% if fsbo.notes %}
-          <div class="row">
-            <div class="col-md-12">
-              <div class="info-label">Görüşme Notları</div>
-              <div class="notes-box">{{ fsbo.notes|linebreaks }}</div>
-            </div>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-      
-      <!-- İşlem Geçmişi -->
-      <div class="card">
-        <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <h3 class="mb-0">İşlem Geçmişi</h3>
-              <p class="text-sm text-muted mb-0">Tüm yapılan işlemlerin kayıtları</p>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          {% for log in logs %}
-          <div class="log-item">
-            <div class="log-time">{{ log.timestamp|date:"d.m.Y H:i" }}</div>
-            <div>
-              <span class="log-user">{{ log.user.get_full_name|default:log.user.username }}</span>
-              <span class="log-action">{{ log.action }}</span>
-            </div>
-            {% if log.details %}
-            <div class="log-details">{{ log.details }}</div>
-            {% endif %}
-          </div>
-          {% empty %}
-          <div class="text-center py-5">
-            <i class="fas fa-history fa-4x mb-3 text-muted"></i>
-            <h4>İşlem Geçmişi Bulunamadı</h4>
-            <p class="text-muted">Bu FSBO kaydı için henüz işlem geçmişi bulunmuyor.</p>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
+    <div class="flex gap-2">
+      <a href="{% url 'fsbo_edit' fsbo.id %}" class="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">
+        <i class="fas fa-edit"></i> Düzenle
+      </a>
+      <a href="{% url 'fsbo_list' %}" class="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">
+        <i class="fas fa-arrow-left"></i> Listeye Dön
+      </a>
     </div>
   </div>
 
-  {% include "includes/footer.html" %}
-</div>
+  <div class="flex gap-6 items-start">
+    <!-- Sol panel -->
+    <div class="w-64 flex-shrink-0 space-y-4">
+      <!-- Profil -->
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5 text-center">
+        <div class="w-16 h-16 bg-red-800 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3">
+          {{ fsbo.full_name|slice:":1" }}
+        </div>
+        <div class="font-bold text-slate-800 text-sm">{{ fsbo.full_name }}</div>
+        <div class="text-xs text-slate-400 mb-3">FSBO #{{ fsbo.id }}</div>
 
-<!-- Silme Onay Modalı -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="deleteModalLabel">FSBO Kaydını Sil</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
-      </div>
-      <div class="modal-body">
-        <p>Bu FSBO kaydını silmek istediğinize emin misiniz?</p>
-        <p class="text-danger"><strong>Dikkat:</strong> Bu işlem geri alınamaz.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-        <form action="{% url 'fsbo_delete' fsbo.id %}" method="POST">
+        {% if fsbo.result == "olumlu" %}
+          <span class="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full mb-3">Olumlu</span>
+        {% elif fsbo.result == "olumsuz" %}
+          <span class="inline-block bg-red-100 text-red-700 text-xs font-bold px-3 py-1 rounded-full mb-3">Olumsuz</span>
+        {% elif fsbo.result == "bekliyor" %}
+          <span class="inline-block bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full mb-3">Bekliyor</span>
+        {% else %}
+          <span class="inline-block bg-slate-100 text-slate-500 text-xs font-bold px-3 py-1 rounded-full mb-3">Aranmadı</span>
+        {% endif %}
+
+        <a href="tel:{{ fsbo.phone }}" class="flex items-center justify-center gap-2 bg-red-800 hover:bg-red-900 text-white rounded-lg px-4 py-2 text-sm font-semibold transition w-full mb-2">
+          <i class="fas fa-phone"></i> {{ fsbo.phone }}
+        </a>
+        {% if user_role == "admin" or user_role == "manager" %}
+        <form action="{% url 'fsbo_delete' fsbo.id %}" method="POST" onsubmit="return confirm('Bu kaydı silmek istediğinize emin misiniz?')">
           {% csrf_token %}
-          <button type="submit" class="btn btn-danger">Evet, Sil</button>
+          <button type="submit" class="w-full text-red-500 border border-red-200 rounded-lg px-4 py-2 text-xs font-semibold hover:bg-red-50 transition">
+            <i class="fas fa-trash"></i> Sil
+          </button>
         </form>
+        {% endif %}
+      </div>
+
+      <!-- Bilgiler -->
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Bilgiler</div>
+        <div class="info-row"><span class="info-lbl"><i class="fas fa-envelope mr-1"></i>İletişim</span><span class="info-val">{{ fsbo.get_contact_type_display }}</span></div>
+        <div class="info-row"><span class="info-lbl"><i class="fas fa-bell mr-1"></i>Hatırlatıcı</span><span class="info-val">{{ fsbo.get_reminder_status_display }}</span></div>
+        {% if fsbo.reminder_status == "acik" %}
+        <div class="info-row"><span class="info-lbl"><i class="fas fa-calendar mr-1"></i>Tarih</span><span class="info-val">{{ fsbo.reminder_date|date:"d.m.Y" }}</span></div>
+        <div class="info-row"><span class="info-lbl"><i class="fas fa-clock mr-1"></i>Saat</span><span class="info-val">{{ fsbo.reminder_time|time:"H:i" }}</span></div>
+        {% endif %}
+        <div class="info-row"><span class="info-lbl"><i class="fas fa-user-tie mr-1"></i>Danışman</span><span class="info-val">{{ fsbo.consultant.get_full_name|default:"—" }}</span></div>
+        <div class="info-row"><span class="info-lbl"><i class="fas fa-calendar-alt mr-1"></i>Kayıt</span><span class="info-val">{{ fsbo.created_at|date:"d.m.Y" }}</span></div>
+      </div>
+
+      <!-- Linkler -->
+      {% if fsbo.link1 or fsbo.link2 %}
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">İlan Linkleri</div>
+        {% if fsbo.link1 %}
+        <a href="{{ fsbo.link1 }}" target="_blank" class="flex items-center gap-2 text-amber-600 bg-amber-50 rounded-lg px-3 py-2 text-sm font-semibold mb-2 hover:bg-amber-100 transition">
+          <i class="fas fa-external-link-alt"></i> Link 1
+        </a>
+        {% endif %}
+        {% if fsbo.link2 %}
+        <a href="{{ fsbo.link2 }}" target="_blank" class="flex items-center gap-2 text-blue-600 bg-blue-50 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-blue-100 transition">
+          <i class="fas fa-external-link-alt"></i> Link 2
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sağ panel -->
+    <div class="flex-1 space-y-4">
+      {% if fsbo.notes %}
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Görüşme Notları</div>
+        <div class="text-sm text-slate-600 leading-relaxed border-l-3 border-l-blue-400 bg-blue-50 rounded-r-lg p-4" style="border-left:3px solid #3b82f6;">{{ fsbo.notes|linebreaks }}</div>
+      </div>
+      {% endif %}
+
+      <!-- İşlem geçmişi -->
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">İşlem Geçmişi</div>
+        {% for log in logs %}
+        <div class="log-item">
+          <div class="text-xs text-slate-400 mb-1">{{ log.timestamp|date:"d.m.Y H:i" }}</div>
+          <div class="text-sm"><span class="font-semibold text-red-800">{{ log.user.get_full_name|default:log.user.username }}</span> — <span class="text-slate-500 italic">{{ log.action }}</span></div>
+          {% if log.details %}<div class="text-xs text-slate-500 mt-1">{{ log.details }}</div>{% endif %}
+        </div>
+        {% empty %}
+        <div class="text-center py-8 text-slate-400">
+          <i class="fas fa-history text-3xl mb-2 block opacity-30"></i>
+          <p class="text-sm">İşlem geçmişi bulunamadı.</p>
+        </div>
+        {% endfor %}
       </div>
     </div>
   </div>
 </div>
-
-{% endblock content %} 
+{% endblock %}

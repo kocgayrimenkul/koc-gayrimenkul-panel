@@ -1,0 +1,50 @@
+{% load static %}<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Yönetim Paneli{% endblock %} · Koç Gayrimenkul</title>
+
+    <!-- Tailwind + Inter + Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="{% static 'assets/img/brand/favicon.png' %}" type="image/png">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f6f9; }
+        .custom-shadow { box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06); }
+        .tab-active { background-color: #0087d1; color: white; }
+        .tab-inactive { color: #64748b; }
+        .tab-inactive:hover { background-color: #f1f5f9; }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="text-slate-700">
+
+    {% include "includes/sidenav_modern.html" %}
+
+    <div class="ml-64 min-h-screen">
+        {% include "includes/topnav_modern.html" %}
+
+        {% if messages %}
+        <div class="px-6 pt-4 space-y-2">
+            {% for message in messages %}
+            <div class="px-4 py-3 rounded-lg text-sm font-medium {% if message.tags == 'success' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% elif message.tags == 'warning' %}bg-amber-50 text-amber-700 border border-amber-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

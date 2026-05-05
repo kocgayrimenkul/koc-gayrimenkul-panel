@@ -1,0 +1,376 @@
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+{% block title %}Sahibinden Entegrasyonu{% endblock %}
+{% block extra_css %}
+<style>
+  .stat-card { background:#fff; border-radius:12px; border:1px solid #e2e8f0; padding:20px 24px; }
+  .badge-ok  { background:#dcfce7; color:#16a34a; font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .badge-err { background:#fee2e2; color:#dc2626; font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .badge-pen { background:#fef9c3; color:#ca8a04; font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .badge-off { background:#f1f5f9; color:#64748b; font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .fi { width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:.85rem;outline:none;transition:border-color .15s;background:#fff;color:#1e293b; }
+  .fi:focus { border-color:#9d2235;box-shadow:0 0 0 3px rgba(157,34,53,.1); }
+  label.lbl { font-size:.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px; }
+  .copy-btn { cursor:pointer; }
+  .copy-btn:hover { color:#9d2235; }
+  #toast { position:fixed;bottom:24px;right:24px;z-index:9999;display:none; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="px-6 py-6">
+
+  <!-- Başlık -->
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
+        <i class="fas fa-sync-alt text-white text-sm"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-slate-800">Sahibinden Entegrasyonu</h1>
+        <p class="text-sm text-slate-500">Panel ↔ Sahibinden.com çift yönlü senkronizasyon</p>
+      </div>
+    </div>
+    {% if has_token %}
+      <span class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+        <i class="fas fa-circle text-xs"></i> API Bağlı
+      </span>
+    {% else %}
+      <span class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+        <i class="fas fa-exclamation-triangle text-xs"></i> API Token Girilmemiş
+      </span>
+    {% endif %}
+  </div>
+
+  <!-- İstatistikler -->
+  <div class="grid grid-cols-4 gap-4 mb-6">
+    <div class="stat-card">
+      <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Toplam İlan</p>
+      <p class="text-3xl font-bold text-slate-800">{{ total_active }}</p>
+      <p class="text-xs text-slate-400 mt-1">Panelde aktif</p>
+    </div>
+    <div class="stat-card">
+      <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Senkronize</p>
+      <p class="text-3xl font-bold text-green-600">{{ synced_count }}</p>
+      <p class="text-xs text-slate-400 mt-1">Başarılı</p>
+    </div>
+    <div class="stat-card">
+      <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Bekliyor</p>
+      <p class="text-3xl font-bold text-amber-500">{{ pending_count }}</p>
+      <p class="text-xs text-slate-400 mt-1">Henüz gönderilmedi</p>
+    </div>
+    <div class="stat-card">
+      <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Hata</p>
+      <p class="text-3xl font-bold text-red-500">{{ error_count }}</p>
+      <p class="text-xs text-slate-400 mt-1">Başarısız</p>
+    </div>
+  </div>
+
+  <div class="flex gap-6">
+
+    <!-- Sol: Aksiyonlar + Ayarlar -->
+    <div class="w-80 flex-shrink-0 flex flex-col gap-4">
+
+      <!-- XML Feed Kartı -->
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+            <i class="fas fa-rss text-blue-600 text-xs"></i>
+          </div>
+          <p class="text-sm font-bold text-slate-700">XML Feed (Panel → Sahibinden)</p>
+        </div>
+        <p class="text-xs text-slate-500 mb-3 leading-relaxed">
+          Sahibinden Pro Ofis'te <strong>API ile Transfer Et</strong> butonuna tıklayın ve aşağıdaki URL'yi girin. Sahibinden ilanlarınızı otomatik çekecektir.
+        </p>
+        <label class="lbl">Feed URL'niz</label>
+        <div class="flex gap-2">
+          <input id="feed-url" type="text" class="fi text-xs" value="{{ feed_url }}" readonly>
+          <button onclick="copyFeedUrl()" class="copy-btn bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg px-3 py-2 text-sm transition flex-shrink-0" title="Kopyala">
+            <i class="fas fa-copy"></i>
+          </button>
+        </div>
+        <a href="{{ feed_url }}" target="_blank" class="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:underline">
+          <i class="fas fa-external-link-alt text-xs"></i> Feed'i önizle
+        </a>
+      </div>
+
+      <!-- API Aksiyonlar -->
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
+            <i class="fas fa-exchange-alt text-purple-600 text-xs"></i>
+          </div>
+          <p class="text-sm font-bold text-slate-700">API Senkronizasyon</p>
+        </div>
+        {% if not has_token %}
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+            <p class="text-xs text-amber-700"><i class="fas fa-info-circle mr-1"></i>API token gerekli. Aşağıdan ekleyin.</p>
+          </div>
+        {% endif %}
+        <div class="flex flex-col gap-2">
+          <button onclick="importFromSahibinden()" {% if not has_token %}disabled title="API token gerekli"{% endif %}
+            class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg px-4 py-2.5 transition">
+            <i class="fas fa-download"></i> Sahibinden'den İçe Aktar
+          </button>
+          <button onclick="pushAllToSahibinden()" {% if not has_token %}disabled title="API token gerekli"{% endif %}
+            class="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg px-4 py-2.5 transition">
+            <i class="fas fa-upload"></i> Tüm İlanları Gönder
+          </button>
+        </div>
+        <p class="text-xs text-slate-400 mt-2 text-center">Son senkronizasyon: {% if settings_obj.last_export_at %}{{ settings_obj.last_export_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</p>
+      </div>
+
+      <!-- API Ayarları -->
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
+            <i class="fas fa-key text-slate-500 text-xs"></i>
+          </div>
+          <p class="text-sm font-bold text-slate-700">API Ayarları</p>
+        </div>
+        <form method="post" action="{% url 'sahibinden_settings_save' %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="lbl">API Token <span class="text-red-500">*</span></label>
+            <input type="text" name="api_token" class="fi text-xs font-mono" 
+              value="{{ settings_obj.api_token }}" placeholder="Sahibinden Pro Ofis'ten alınan token">
+            <p class="text-xs text-slate-400 mt-1">Sahibinden Pro Ofis → Ayarlar → API</p>
+          </div>
+          <div class="mb-3">
+            <label class="lbl">Ofis ID (isteğe bağlı)</label>
+            <input type="text" name="office_id" class="fi text-xs" 
+              value="{{ settings_obj.office_id }}" placeholder="Ofis kimliği">
+          </div>
+          <div class="flex items-center gap-2 mb-4">
+            <input type="checkbox" name="auto_sync_enabled" id="auto_sync" 
+              {% if settings_obj.auto_sync_enabled %}checked{% endif %}
+              class="w-4 h-4 accent-red-700">
+            <label for="auto_sync" class="text-xs font-semibold text-slate-600">Otomatik senkronizasyonu etkinleştir</label>
+          </div>
+          <button type="submit" class="w-full bg-red-800 hover:bg-red-700 text-white text-sm font-semibold rounded-lg px-4 py-2.5 transition">
+            <i class="fas fa-save mr-1"></i> Kaydet
+          </button>
+        </form>
+      </div>
+
+      <!-- Nasıl Çalışır -->
+      <div class="bg-blue-50 rounded-xl border border-blue-100 p-4">
+        <p class="text-xs font-bold text-blue-700 mb-2"><i class="fas fa-info-circle mr-1"></i>Nasıl Kullanılır?</p>
+        <ol class="text-xs text-blue-700 space-y-1.5 list-none pl-0">
+          <li class="flex gap-2"><span class="font-bold">1.</span> Sahibinden Pro Ofis giriş yapın</li>
+          <li class="flex gap-2"><span class="font-bold">2.</span> İlanlar → İlan Transferi → API ile Transfer Et</li>
+          <li class="flex gap-2"><span class="font-bold">3.</span> Feed URL'sini yapıştırın → Sahibinden otomatik çeker</li>
+          <li class="flex gap-2"><span class="font-bold">4.</span> API token alıp buraya girin → çift yönlü senkronizasyon hazır</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Sağ: Senkronizasyon Kayıtları -->
+    <div class="flex-1">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div>
+            <p class="text-sm font-bold text-slate-700">Senkronizasyon Kayıtları</p>
+            <p class="text-xs text-slate-400 mt-0.5">Son 50 ilan</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="location.reload()" class="text-xs text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 flex items-center gap-1">
+              <i class="fas fa-sync-alt text-xs"></i> Yenile
+            </button>
+          </div>
+        </div>
+
+        {% if sync_logs %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs text-slate-400 border-b border-slate-100 bg-slate-50">
+                <th class="px-5 py-3 font-semibold">İlan</th>
+                <th class="px-4 py-3 font-semibold">Sahibinden No</th>
+                <th class="px-4 py-3 font-semibold">Durum</th>
+                <th class="px-4 py-3 font-semibold">Son Sync</th>
+                <th class="px-4 py-3 font-semibold">İşlem</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+              {% for log in sync_logs %}
+              <tr class="hover:bg-slate-50 transition">
+                <td class="px-5 py-3">
+                  <p class="text-sm font-semibold text-slate-800">{{ log.property.apartment_name|truncatechars:35 }}</p>
+                  <p class="text-xs text-slate-400">{{ log.property.neighborhood }}</p>
+                </td>
+                <td class="px-4 py-3">
+                  {% if log.sahibinden_listing_id %}
+                    <a href="{{ log.sahibinden_url }}" target="_blank" class="text-xs text-blue-600 hover:underline font-mono">
+                      {{ log.sahibinden_listing_id }}
+                      <i class="fas fa-external-link-alt text-xs ml-0.5"></i>
+                    </a>
+                  {% else %}
+                    <span class="text-xs text-slate-400">—</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                  {% if log.status == 'synced' %}
+                    <span class="badge-ok">Senkronize</span>
+                  {% elif log.status == 'error' %}
+                    <span class="badge-err" title="{{ log.error_message }}">Hata</span>
+                  {% elif log.status == 'pending' %}
+                    <span class="badge-pen">Bekliyor</span>
+                  {% else %}
+                    <span class="badge-off">{{ log.status }}</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                  <span class="text-xs text-slate-500">
+                    {% if log.last_synced_at %}{{ log.last_synced_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <button onclick="pushOne({{ log.property.pk }}, this)"
+                    class="text-xs text-blue-600 hover:text-blue-800 border border-blue-200 rounded-md px-2.5 py-1 hover:bg-blue-50 transition {% if not has_token %}opacity-50 cursor-not-allowed{% endif %}"
+                    {% if not has_token %}disabled title="API token gerekli"{% endif %}>
+                    <i class="fas fa-upload mr-1"></i>Gönder
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="py-16 text-center">
+          <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-sync-alt text-slate-300 text-xl"></i>
+          </div>
+          <p class="text-sm font-semibold text-slate-500">Henüz senkronizasyon kaydı yok</p>
+          <p class="text-xs text-slate-400 mt-1">İlk senkronizasyonu başlatmak için sol paneli kullanın</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- İşlem Sonuç Modalı -->
+<div id="result-modal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-96 max-w-full mx-4">
+    <div class="flex items-start gap-3 mb-4">
+      <div id="modal-icon" class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"></div>
+      <div>
+        <h3 id="modal-title" class="font-bold text-slate-800 text-base"></h3>
+        <p id="modal-body" class="text-sm text-slate-500 mt-1 whitespace-pre-line"></p>
+      </div>
+    </div>
+    <button onclick="closeModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-4 py-2.5 transition">
+      Kapat
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="bg-slate-800 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg">
+  <i class="fas fa-check mr-1.5"></i> <span id="toast-msg"></span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyFeedUrl() {
+  const url = document.getElementById('feed-url').value;
+  navigator.clipboard.writeText(url).then(() => showToast('Feed URL kopyalandı!'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+function showModal(success, title, body) {
+  const icon = document.getElementById('modal-icon');
+  icon.className = `w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${success ? 'bg-green-100' : 'bg-red-100'}`;
+  icon.innerHTML = `<i class="fas fa-${success ? 'check' : 'times'} ${success ? 'text-green-600' : 'text-red-600'}"></i>`;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  document.getElementById('result-modal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('result-modal').classList.add('hidden');
+  location.reload();
+}
+
+function importFromSahibinden() {
+  if (!confirm('Sahibinden\'den ilanlar çekilecek. Devam?')) return;
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İçe Aktarılıyor...';
+  
+  fetch('{% url "sahibinden_import" %}', {method:'POST', headers:{'X-CSRFToken': getCsrf()}})
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        showModal(true, 'İçe Aktarma Tamamlandı',
+          `Toplam: ${d.total} ilan\nYeni: ${d.imported}\nGüncellendi: ${d.updated}` +
+          (d.errors.length ? `\nHata: ${d.errors.length}` : ''));
+      } else {
+        showModal(false, 'Hata', d.error);
+      }
+    })
+    .catch(e => showModal(false, 'Bağlantı Hatası', e.message))
+    .finally(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-download"></i> Sahibinden\'den İçe Aktar';
+    });
+}
+
+function pushAllToSahibinden() {
+  if (!confirm('Tüm aktif ilanlar Sahibinden\'e gönderilecek. Devam?')) return;
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gönderiliyor...';
+  
+  fetch('{% url "sahibinden_push_all" %}', {method:'POST', headers:{'X-CSRFToken': getCsrf()}})
+    .then(r => r.json())
+    .then(d => {
+      showModal(d.success,
+        'Toplu Gönderme Tamamlandı',
+        `Toplam: ${d.total}\nGönderildi: ${d.pushed}` +
+        (d.errors.length ? `\nHata: ${d.errors.length}` : ''));
+    })
+    .catch(e => showModal(false, 'Hata', e.message))
+    .finally(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-upload"></i> Tüm İlanları Gönder';
+    });
+}
+
+function pushOne(propertyId, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  
+  fetch(`/sahibinden/push/${propertyId}/`, {method:'POST', headers:{'X-CSRFToken': getCsrf()}})
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        showToast('İlan gönderildi!');
+        setTimeout(() => location.reload(), 1000);
+      } else {
+        showModal(false, 'Gönderme Hatası', d.error);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-upload mr-1"></i>Gönder';
+      }
+    })
+    .catch(e => {
+      showModal(false, 'Hata', e.message);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-upload mr-1"></i>Gönder';
+    });
+}
+
+function getCsrf() {
+  return document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
+}
+</script>
+{% endblock %}

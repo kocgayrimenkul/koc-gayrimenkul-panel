@@ -1,0 +1,1304 @@
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+
+{% block title %}Saha Haritası{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  /* ── Layout ── */
+  #map-wrap {
+    position: fixed;
+    top: 64px; left: 256px; right: 380px; bottom: 0;
+    z-index: 1;
+  }
+  #map { width: 100%; height: 100%; }
+
+  #right-panel {
+    position: fixed;
+    top: 64px; right: 0; width: 380px; bottom: 0;
+    background: #fff;
+    border-left: 1px solid #e2e8f0;
+    display: flex; flex-direction: column;
+    z-index: 500;
+  }
+
+  /* ── Right panel tabs ── */
+  .rp-tabs {
+    display: flex; border-bottom: 2px solid #f1f5f9; flex-shrink: 0;
+  }
+  .rp-tab {
+    flex: 1; padding: 14px 8px; font-size: .78rem; font-weight: 700;
+    color: #94a3b8; border: none; background: none; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .rp-tab.active { color: #9d2235; border-bottom-color: #9d2235; }
+  .rp-tab:hover:not(.active) { color: #475569; background: #f8fafc; }
+  .badge {
+    background: #ef4444; color: #fff; font-size: .65rem; font-weight: 700;
+    border-radius: 9999px; padding: 1px 6px; min-width: 18px; text-align: center;
+  }
+
+  .rp-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+  .rp-pane { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
+  .rp-pane.active { display: flex; }
+
+  /* ── Plans pane ── */
+  .rp-toolbar {
+    padding: 12px 16px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .rp-title { font-size: .8rem; font-weight: 700; color: #1e293b; }
+  .btn-sm-red {
+    background: #9d2235; color: #fff; border: none; border-radius: 7px;
+    padding: 6px 12px; font-size: .75rem; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 5px; transition: background .15s;
+  }
+  .btn-sm-red:hover { background: #7f1d2e; }
+
+  .plan-card {
+    margin: 10px 14px 0; background: #f8fafc; border-radius: 10px;
+    padding: 12px 14px; border: 1px solid #f1f5f9;
+  }
+  .plan-card:last-child { margin-bottom: 14px; }
+  .plan-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+  .plan-name { font-size: .82rem; font-weight: 700; color: #1e293b; line-height: 1.3; }
+  .plan-meta { font-size: .72rem; color: #64748b; margin-top: 2px; }
+  .plan-badge {
+    font-size: .65rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px;
+    white-space: nowrap;
+  }
+  .plan-badge.aktif { background: #dcfce7; color: #16a34a; }
+  .plan-badge.pasif { background: #f1f5f9; color: #94a3b8; }
+  .progress-bar-wrap { background: #e2e8f0; border-radius: 9999px; height: 5px; margin: 8px 0 6px; }
+  .progress-bar { height: 5px; border-radius: 9999px; background: linear-gradient(90deg, #9d2235, #e11d48); transition: width .4s; }
+  .progress-text { font-size: .7rem; color: #64748b; }
+  .plan-delete-btn {
+    background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 2px;
+    font-size: .8rem; transition: color .15s;
+  }
+  .plan-delete-btn:hover { color: #ef4444; }
+
+  /* ── Notifications pane ── */
+  .bildirim-card {
+    margin: 10px 14px 0; background: #fff; border-radius: 10px;
+    padding: 12px 14px; border: 1px solid #f1f5f9;
+  }
+  .bildirim-card.okunmamis { border-color: #fca5a5; background: #fff5f5; }
+  .bildirim-card:last-child { margin-bottom: 14px; }
+  .bildirim-uzman { font-size: .72rem; font-weight: 700; color: #9d2235; margin-bottom: 4px; }
+  .bildirim-mesaj { font-size: .78rem; color: #334155; line-height: 1.5; }
+  .bildirim-tarih { font-size: .68rem; color: #94a3b8; margin-top: 6px; }
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; color: #94a3b8; gap: 8px; padding: 32px;
+  }
+  .empty-state i { font-size: 2rem; }
+  .empty-state p { font-size: .8rem; text-align: center; }
+
+  /* ── Left sidebar (parcel detail) ── */
+  #sidebar {
+    position: fixed; top: 64px; left: -420px; width: 400px;
+    height: calc(100vh - 64px); background: #fff; z-index: 1100;
+    box-shadow: 4px 0 24px rgba(0,0,0,.12); transition: left .3s ease;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  #sidebar.open { left: 256px; }
+
+  .sidebar-header {
+    padding: 18px 20px 14px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
+    background: linear-gradient(135deg, #9d2235 0%, #b91c3c 100%); color: #fff;
+  }
+  .sidebar-body { flex: 1; overflow-y: auto; padding: 0; }
+  .sidebar-section { padding: 16px 20px; border-bottom: 1px solid #f8fafc; }
+  .sidebar-section:last-child { border-bottom: none; }
+  .section-label {
+    font-size: .7rem; font-weight: 700; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px;
+  }
+  .info-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .info-row i { width: 16px; color: #9d2235; font-size: .8rem; flex-shrink: 0; }
+  .info-val { font-size: .85rem; color: #1e293b; font-weight: 500; }
+  .info-tel a { color: #2563eb; text-decoration: none; font-weight: 600; }
+  .info-tel a:hover { text-decoration: underline; }
+
+  .gorusme-kart { background: #f8fafc; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+  .gorusme-kart .meta { font-size: .72rem; color: #94a3b8; margin-bottom: 5px; }
+  .gorusme-kart .metin { font-size: .82rem; color: #334155; line-height: 1.5; }
+
+  .form-input {
+    width: 100%; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 8px 12px; font-size: .82rem; color: #1e293b;
+    outline: none; transition: border-color .15s;
+  }
+  .form-input:focus { border-color: #9d2235; box-shadow: 0 0 0 3px rgba(157,34,53,.1); }
+
+  .btn-red {
+    background: #9d2235; color: #fff; border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: .8rem; font-weight: 600; cursor: pointer; transition: background .15s;
+  }
+  .btn-red:hover { background: #7f1d2e; }
+  .btn-ghost {
+    background: #f1f5f9; color: #64748b; border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: .8rem; font-weight: 600; cursor: pointer;
+  }
+  .btn-danger {
+    background: #fee2e2; color: #dc2626; border: none; border-radius: 8px;
+    padding: 6px 12px; font-size: .75rem; font-weight: 600; cursor: pointer;
+  }
+
+  /* ── Toolbar ── */
+  #toolbar {
+    position: fixed; top: 72px; left: 266px; z-index: 900;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .tool-btn {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 10px 14px; font-size: .78rem; font-weight: 600; color: #475569;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08); transition: all .15s; white-space: nowrap;
+  }
+  .tool-btn:hover { background: #9d2235; color: #fff; border-color: #9d2235; }
+  .tool-btn.active { background: #9d2235; color: #fff; border-color: #9d2235; }
+
+  /* ── Loading ── */
+  #yukleniyor {
+    position: fixed; inset: 0; background: rgba(255,255,255,.7);
+    display: none; align-items: center; justify-content: center; z-index: 9999;
+  }
+
+  /* ── Form sections ── */
+  .edit-section { display: none; }
+  .edit-section.visible { display: block; }
+  .view-section { display: block; }
+  .view-section.hidden { display: none; }
+
+  .leaflet-control-layers {
+    border-radius: 10px !important; border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.10) !important; font-size: 12px !important;
+    font-weight: 600 !important; padding: 6px 10px !important; background: rgba(255,255,255,.97) !important;
+  }
+  .leaflet-control-layers label { cursor: pointer; padding: 3px 0; display: flex; align-items: center; gap: 6px; }
+  .leaflet-control-layers-base { display: flex; flex-direction: column; gap: 2px; }
+
+  .taseron-item { background: #f8fafc; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+  .sub-label { font-size: .72rem; color: #64748b; font-weight: 600; margin-bottom: 6px; margin-top: 14px; }
+  .sub-label:first-child { margin-top: 0; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    display: none; align-items: center; justify-content: center; z-index: 8000;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 14px; padding: 28px; width: 420px; max-width: 95vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  }
+  .modal-title { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 20px; }
+  .modal-field { margin-bottom: 14px; }
+  .modal-label { font-size: .75rem; font-weight: 600; color: #64748b; margin-bottom: 5px; display: block; }
+  .modal-input {
+    width: 100%; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 9px 12px; font-size: .83rem; outline: none; transition: border-color .15s;
+  }
+  .modal-input:focus { border-color: #9d2235; box-shadow: 0 0 0 3px rgba(157,34,53,.1); }
+  .modal-footer { display: flex; gap: 10px; margin-top: 22px; }
+
+  /* Scrollbar */
+  .rp-body::-webkit-scrollbar,
+  .rp-pane::-webkit-scrollbar,
+  .sidebar-body::-webkit-scrollbar { width: 5px; }
+  .rp-body::-webkit-scrollbar-track,
+  .rp-pane::-webkit-scrollbar-track,
+  .sidebar-body::-webkit-scrollbar-track { background: transparent; }
+  .rp-body::-webkit-scrollbar-thumb,
+  .rp-pane::-webkit-scrollbar-thumb,
+  .sidebar-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Loading overlay -->
+<div id="yukleniyor" style="display:none;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:24px 32px;box-shadow:0 8px 32px rgba(0,0,0,.15);text-align:center;">
+    <div style="width:36px;height:36px;border:3px solid #f1f5f9;border-top-color:#9d2235;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px;"></div>
+    <div style="font-size:.82rem;color:#64748b;font-weight:600;">Yükleniyor...</div>
+  </div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<!-- ── Map ── -->
+<div id="map-wrap"><div id="map"></div></div>
+
+<!-- ── Toolbar ── -->
+<div id="toolbar">
+  <button class="tool-btn" id="btn-ekle-mod" onclick="toggleEkleModu()">
+    <i class="fas fa-plus-circle"></i> Parsel Ekle
+  </button>
+  <button class="tool-btn" onclick="haritayiSifirla()">
+    <i class="fas fa-compress-arrows-alt"></i> Sıfırla
+  </button>
+</div>
+
+<!-- ── Left sidebar (parcel detail) ── -->
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:.7rem;opacity:.7;font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Parsel Detayı</div>
+        <div id="sb-adres" style="font-size:.95rem;font-weight:700;margin-top:4px;line-height:1.3;">—</div>
+      </div>
+      <button onclick="kenarCubugKapat()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="sidebar-body">
+
+    <!-- VIEW MODE -->
+    <div id="view-mode">
+      <div class="sidebar-section">
+        <div class="section-label">Konum Bilgisi</div>
+        <div class="info-row"><i class="fas fa-map-marker-alt"></i><span class="info-val" id="vw-adres">—</span></div>
+        <div class="info-row"><i class="fas fa-th"></i><span class="info-val" id="vw-ada-parsel">—</span></div>
+        <div class="info-row"><i class="fas fa-city"></i><span class="info-val" id="vw-mahalle">—</span></div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">Durum</div>
+        <div class="info-row">
+          <i class="fas fa-building"></i>
+          <span class="info-val" id="vw-durum" style="display:inline-flex;align-items:center;gap:6px;">—</span>
+        </div>
+      </div>
+
+      <!-- Yapım Aşamasında -->
+      <div class="sidebar-section view-section" id="vw-yapim-section" style="display:none;">
+        <div class="section-label">Yapım Bilgileri</div>
+        <div id="vw-muteahit-block">
+          <div class="info-row"><i class="fas fa-hard-hat"></i><span class="info-val" id="vw-muteahit-ad">—</span></div>
+          <div class="info-row info-tel"><i class="fas fa-phone"></i><span class="info-val" id="vw-muteahit-tel">—</span></div>
+        </div>
+        <div id="vw-bekci-block" style="margin-top:10px;">
+          <div style="font-size:.7rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Bekçi</div>
+          <div class="info-row"><i class="fas fa-user-shield"></i><span class="info-val" id="vw-bekci-ad">—</span></div>
+          <div class="info-row info-tel"><i class="fas fa-phone"></i><span class="info-val" id="vw-bekci-tel">—</span></div>
+        </div>
+        <div id="vw-cavus-block" style="margin-top:10px;">
+          <div style="font-size:.7rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Çavuş</div>
+          <div class="info-row"><i class="fas fa-user-tie"></i><span class="info-val" id="vw-cavus-ad">—</span></div>
+          <div class="info-row info-tel"><i class="fas fa-phone"></i><span class="info-val" id="vw-cavus-tel">—</span></div>
+        </div>
+        <div id="vw-taseronlar-block" style="margin-top:10px;"></div>
+      </div>
+
+      <!-- Oturuma Hazır -->
+      <div class="sidebar-section view-section" id="vw-oturuma-section" style="display:none;">
+        <div class="section-label">Arsa Sahibi</div>
+        <div class="info-row"><i class="fas fa-user"></i><span class="info-val" id="vw-arsa-sahibi-ad">—</span></div>
+        <div class="info-row info-tel"><i class="fas fa-phone"></i><span class="info-val" id="vw-arsa-sahibi-tel">—</span></div>
+        <div id="vw-oturuma-muteahit-block" style="margin-top:10px;">
+          <div style="font-size:.7rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Müteahhit</div>
+          <div class="info-row"><i class="fas fa-hard-hat"></i><span class="info-val" id="vw-oturuma-muteahit-ad">—</span></div>
+          <div class="info-row info-tel"><i class="fas fa-phone"></i><span class="info-val" id="vw-oturuma-muteahit-tel">—</span></div>
+        </div>
+        <div id="vw-oturuma-yonetici-block" style="margin-top:10px;">
+          <div style="font-size:.7rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Yönetici</div>
+          <div class="info-row"><i class="fas fa-user-tie"></i><span class="info-val" id="vw-oturuma-yonetici-ad">—</span></div>
+          <div class="info-row info-tel"><i class="fas fa-phone"></i><span class="info-val" id="vw-oturuma-yonetici-tel">—</span></div>
+        </div>
+        <div id="vw-oturuma-bekci-block" style="margin-top:10px;">
+          <div style="font-size:.7rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Bekçi</div>
+          <div class="info-row"><i class="fas fa-shield-alt"></i><span class="info-val" id="vw-oturuma-bekci-ad">—</span></div>
+          <div class="info-row info-tel"><i class="fas fa-phone"></i><span class="info-val" id="vw-oturuma-bekci-tel">—</span></div>
+        </div>
+        <div id="vw-oturuma-ek-kisiler-block" style="margin-top:10px;"></div>
+      </div>
+
+      <!-- Dolu Bina -->
+      <div class="sidebar-section view-section" id="vw-dolu-section" style="display:none;">
+        <div class="section-label">Bina Görevlileri</div>
+        <div id="vw-yonetici-block">
+          <div style="font-size:.7rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Yönetici</div>
+          <div class="info-row"><i class="fas fa-user-tie"></i><span class="info-val" id="vw-yonetici-ad">—</span></div>
+          <div class="info-row info-tel"><i class="fas fa-phone"></i><span class="info-val" id="vw-yonetici-tel">—</span></div>
+        </div>
+        <div id="vw-kapici-block" style="margin-top:10px;">
+          <div style="font-size:.7rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Kapıcı</div>
+          <div class="info-row"><i class="fas fa-key"></i><span class="info-val" id="vw-kapici-ad">—</span></div>
+          <div class="info-row info-tel"><i class="fas fa-phone"></i><span class="info-val" id="vw-kapici-tel">—</span></div>
+        </div>
+        <div id="vw-dolu-ek-kisiler-block" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">Notlar</div>
+        <div style="font-size:.83rem;color:#334155;line-height:1.6;white-space:pre-wrap;" id="vw-not">—</div>
+      </div>
+
+      <div class="sidebar-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="section-label" style="margin-bottom:0;">Görüşmeler</div>
+          <button class="btn-red" style="padding:5px 12px;font-size:.73rem;" onclick="gorusmeFormGoster()">
+            <i class="fas fa-plus"></i> Ekle
+          </button>
+        </div>
+        <div id="vw-gorusmeler"></div>
+
+        <div id="gorusme-form" style="display:none;margin-top:10px;">
+          <textarea id="gorusme-not" class="form-input" rows="3" placeholder="Görüşme notunu yazın..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn-red" style="font-size:.75rem;padding:7px 14px;" onclick="gorusmeKaydet()">Kaydet</button>
+            <button class="btn-ghost" style="font-size:.75rem;padding:7px 14px;" onclick="gorusmeFormGizle()">İptal</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div style="display:flex;gap:8px;">
+          <button class="btn-red" style="flex:1;" onclick="duzenlemeyeGec()"><i class="fas fa-edit"></i> Düzenle</button>
+          <button class="btn-danger" onclick="parselSil()"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div><!-- /view-mode -->
+
+    <!-- EDIT MODE -->
+    <div id="edit-mode" style="display:none;">
+      <div class="sidebar-section">
+        <div class="section-label">Konum Bilgisi</div>
+        <div style="margin-bottom:10px;">
+          <label class="sub-label">Adres</label>
+          <input type="text" class="form-input" id="ed-adres" placeholder="Adres">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <label class="sub-label">Ada No</label>
+            <input type="text" class="form-input" id="ed-ada" placeholder="Ada No">
+          </div>
+          <div>
+            <label class="sub-label">Parsel No</label>
+            <input type="text" class="form-input" id="ed-parsel" placeholder="Parsel No">
+          </div>
+        </div>
+        <div>
+          <label class="sub-label">Mahalle</label>
+          <select class="form-input" id="ed-mahalle">
+            <option value="">-- Mahalle Seç --</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">Durum</div>
+        <select class="form-input" id="ed-durum" onchange="durumDegisti()">
+          <option value="">-- Seç --</option>
+          <option value="yapim_asamasinda">Yapım Aşamasında</option>
+          <option value="oturuma_hazir">Oturuma Hazır</option>
+          <option value="dolu_bina">Dolu Bina</option>
+        </select>
+      </div>
+
+      <!-- Yapım Aşamasında -->
+      <div class="sidebar-section edit-section" id="sec-yapim">
+        <div class="section-label">Yapım Bilgileri</div>
+        <label class="sub-label">Müteahhit Adı</label>
+        <input type="text" class="form-input" id="ed-muteahit-ad" placeholder="Müteahhit Adı" style="margin-bottom:8px;">
+        <label class="sub-label">Müteahhit Tel</label>
+        <input type="text" class="form-input" id="ed-muteahit-tel" placeholder="Müteahhit Telefonu" style="margin-bottom:14px;">
+
+        <label class="sub-label">Bekçi Adı</label>
+        <input type="text" class="form-input" id="ed-bekci-ad" placeholder="Bekçi Adı" style="margin-bottom:8px;">
+        <label class="sub-label">Bekçi Tel</label>
+        <input type="text" class="form-input" id="ed-bekci-tel" placeholder="Bekçi Telefonu" style="margin-bottom:14px;">
+
+        <label class="sub-label">Çavuş Adı</label>
+        <input type="text" class="form-input" id="ed-cavus-ad" placeholder="Çavuş Adı" style="margin-bottom:8px;">
+        <label class="sub-label">Çavuş Tel</label>
+        <input type="text" class="form-input" id="ed-cavus-tel" placeholder="Çavuş Telefonu" style="margin-bottom:14px;">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <label class="sub-label" style="margin:0;">Taşeronlar</label>
+          <button class="btn-sm-red" onclick="taseronEkle(null)"><i class="fas fa-plus"></i> Ekle</button>
+        </div>
+        <div id="taseron-listesi"></div>
+      </div>
+
+      <!-- Oturuma Hazır -->
+      <div class="sidebar-section edit-section" id="sec-oturuma">
+        <div class="section-label">Arsa Sahibi</div>
+        <label class="sub-label">Ad Soyad</label>
+        <input type="text" class="form-input" id="ed-arsa-sahibi-ad" placeholder="Arsa Sahibi Adı" style="margin-bottom:8px;">
+        <label class="sub-label">Telefon</label>
+        <input type="text" class="form-input" id="ed-arsa-sahibi-tel" placeholder="Arsa Sahibi Telefonu">
+        <div style="margin-top:14px;">
+          <label class="sub-label">Müteahhit Adı</label>
+          <input type="text" class="form-input" id="ed-oturuma-muteahit-ad" placeholder="Müteahhit Adı" style="margin-bottom:8px;">
+          <label class="sub-label">Müteahhit Tel</label>
+          <input type="text" class="form-input" id="ed-oturuma-muteahit-tel" placeholder="Müteahhit Telefonu">
+        </div>
+        <div style="margin-top:14px;">
+          <label class="sub-label">Yönetici Adı</label>
+          <input type="text" class="form-input" id="ed-oturuma-yonetici-ad" placeholder="Yönetici Adı" style="margin-bottom:8px;">
+          <label class="sub-label">Yönetici Tel</label>
+          <input type="text" class="form-input" id="ed-oturuma-yonetici-tel" placeholder="Yönetici Telefonu">
+        </div>
+        <div style="margin-top:14px;">
+          <label class="sub-label">Bekçi Adı</label>
+          <input type="text" class="form-input" id="ed-oturuma-bekci-ad" placeholder="Bekçi Adı" style="margin-bottom:8px;">
+          <label class="sub-label">Bekçi Tel</label>
+          <input type="text" class="form-input" id="ed-oturuma-bekci-tel" placeholder="Bekçi Telefonu">
+        </div>
+        <div style="margin-top:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;">Ek Kişiler</span>
+            <button type="button" onclick="oturumaEkKisiEkle()" style="background:#f1f5f9;border:none;color:#475569;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:.72rem;font-weight:600;"><i class="fas fa-plus" style="margin-right:4px;"></i>Ekle</button>
+          </div>
+          <div id="oturuma-ek-kisiler-listesi"></div>
+        </div>
+      </div>
+
+      <!-- Dolu Bina -->
+      <div class="sidebar-section edit-section" id="sec-dolu">
+        <div class="section-label">Bina Görevlileri</div>
+        <label class="sub-label">Yönetici Adı</label>
+        <input type="text" class="form-input" id="ed-yonetici-ad" placeholder="Yönetici Adı" style="margin-bottom:8px;">
+        <label class="sub-label">Yönetici Tel</label>
+        <input type="text" class="form-input" id="ed-yonetici-tel" placeholder="Yönetici Telefonu" style="margin-bottom:14px;">
+        <label class="sub-label">Kapıcı Adı</label>
+        <input type="text" class="form-input" id="ed-kapici-ad" placeholder="Kapıcı Adı" style="margin-bottom:8px;">
+        <label class="sub-label">Kapıcı Tel</label>
+        <input type="text" class="form-input" id="ed-kapici-tel" placeholder="Kapıcı Telefonu">
+        <div style="margin-top:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;">Ek Kişiler</span>
+            <button type="button" onclick="doluEkKisiEkle()" style="background:#f1f5f9;border:none;color:#475569;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:.72rem;font-weight:600;"><i class="fas fa-plus" style="margin-right:4px;"></i>Ekle</button>
+          </div>
+          <div id="dolu-ek-kisiler-listesi"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-label">Notlar</div>
+        <textarea class="form-input" id="ed-not" rows="3" placeholder="Bina hakkında notlar..."></textarea>
+      </div>
+
+      <div class="sidebar-section">
+        <div style="display:flex;gap:8px;">
+          <button class="btn-red" style="flex:1;" onclick="kaydet()"><i class="fas fa-save"></i> Kaydet</button>
+          <button class="btn-ghost" onclick="duzenlemeIptal()">İptal</button>
+        </div>
+      </div>
+    </div><!-- /edit-mode -->
+
+  </div><!-- /sidebar-body -->
+</div><!-- /sidebar -->
+
+<!-- ── Right Panel ── -->
+<div id="right-panel">
+  <div class="rp-tabs">
+    <button class="rp-tab active" id="tab-gorevim" onclick="rpTab('gorevim')">
+      <i class="fas fa-route"></i> Görevim
+    </button>
+    <button class="rp-tab" id="tab-planlar" onclick="rpTab('planlar')" style="display:none;">
+      <i class="fas fa-tasks"></i> Planlar
+    </button>
+    <button class="rp-tab" id="tab-bildirimler" onclick="rpTab('bildirimler')" style="display:none;">
+      <i class="fas fa-bell"></i>
+      <span class="badge" id="bildirim-badge" style="display:none;">0</span>
+    </button>
+  </div>
+
+  <div class="rp-body">
+    <!-- Gorevim pane -->
+    <div class="rp-pane active" id="pane-gorevim">
+      <div class="rp-toolbar">
+        <span class="rp-title" id="gorevim-baslik">Bugünkü Görevim</span>
+        <span id="gorevim-ilerleme" style="font-size:.72rem;color:#64748b;font-weight:600;"></span>
+      </div>
+      <div id="gorev-progress-wrap" style="padding:0 14px 10px;display:none;">
+        <div style="background:#e2e8f0;border-radius:9999px;height:6px;">
+          <div id="gorev-progress-bar" style="height:6px;border-radius:9999px;background:linear-gradient(90deg,#9d2235,#e11d48);transition:width .4s;width:0%"></div>
+        </div>
+      </div>
+      <div id="gorevim-listesi" style="flex:1;overflow-y:auto;padding-bottom:8px;"></div>
+    </div>
+
+    <!-- Planlar pane -->
+    <div class="rp-pane" id="pane-planlar">
+      <div class="rp-toolbar">
+        <span class="rp-title">Görev Planları</span>
+        <button class="btn-sm-red" id="btn-yeni-plan" style="display:none;" onclick="planlariOtomatikOlustur()">
+          <i class="fas fa-sync-alt"></i> Bu Ay Planla
+        </button>
+      </div>
+      <div id="planlar-listesi" style="flex:1;overflow-y:auto;padding-bottom:8px;"></div>
+    </div>
+
+    <!-- Bildirimler pane -->
+    <div class="rp-pane" id="pane-bildirimler">
+      <div class="rp-toolbar">
+        <span class="rp-title">Bildirimler</span>
+      </div>
+      <div id="bildirimler-listesi" style="flex:1;overflow-y:auto;padding-bottom:8px;"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const CSRF = '{{ csrf_token }}';
+const DURUM_LABELS = {
+  yapim_asamasinda: 'Yapım Aşamasında',
+  oturuma_hazir: 'Oturuma Hazır',
+  dolu_bina: 'Dolu Bina',
+};
+const DURUM_COLORS = {
+  yapim_asamasinda: '#f59e0b',
+  oturuma_hazir: '#3b82f6',
+  dolu_bina: '#10b981',
+};
+
+let map, markerLayer, ekleModu = false, aktifParselId = null, aktifParselData = null;
+
+// ── Map init ──────────────────────────────────────────────────────────────────
+const MAP_LAT  = {{ baslangic_lat }};
+const MAP_LNG  = {{ baslangic_lng }};
+const MAP_ZOOM = {{ baslangic_zoom }};
+const MAHALLE  = '{{ mahalle_adi }}';
+
+function initMap() {
+  map = L.map('map', { zoomControl: true }).setView([MAP_LAT, MAP_LNG], MAP_ZOOM);
+
+  const gmRoad = L.tileLayer(
+    'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    { subdomains: '0123', attribution: '© Google Maps', maxZoom: 21 }
+  );
+  const gmHybrid = L.tileLayer(
+    'https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    { subdomains: '0123', attribution: '© Google Maps', maxZoom: 21 }
+  );
+  const gmSat = L.tileLayer(
+    'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    { subdomains: '0123', attribution: '© Google Maps', maxZoom: 21 }
+  );
+
+  gmHybrid.addTo(map);
+  L.control.layers(
+    {'Yol': gmRoad, 'Uydu+Yol': gmHybrid, 'Uydu': gmSat},
+    {}, {position:'topleft'}
+  ).addTo(map);
+
+  markerLayer = L.layerGroup().addTo(map);
+  parselleriYukle();
+
+  // Parsel yoksa Nominatim ile mahalle merkezine git
+  if (MAHALLE && MAP_ZOOM < 14) {
+    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(MAHALLE + ', Türkiye') + '&format=json&limit=1')
+      .then(r => r.json())
+      .then(data => {
+        if (data && data[0]) {
+          map.setView([parseFloat(data[0].lat), parseFloat(data[0].lon)], 15);
+        }
+      }).catch(() => {});
+  }
+
+  map.on('click', function(e) {
+    if (!ekleModu) return;
+    parselEkle(e.latlng.lat, e.latlng.lng);
+  });
+}
+
+function haritayiSifirla() { map.setView([MAP_LAT, MAP_LNG], MAP_ZOOM); }
+
+// ── Markers ───────────────────────────────────────────────────────────────────
+function markerIkonu(durum) {
+  const c = DURUM_COLORS[durum] || '#9d2235';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32">
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="${c}"/>
+    <circle cx="12" cy="12" r="5" fill="white"/>
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '', iconSize: [24,32], iconAnchor: [12,32], popupAnchor: [0,-32]
+  });
+}
+
+function parselleriYukle() {
+  fetch('/api/saha/parseller/')
+    .then(r => r.json())
+    .then(data => {
+      markerLayer.clearLayers();
+      (data.parseller || []).forEach(p => {
+        const m = L.marker([p.lat, p.lng], {icon: markerIkonu(p.durum)});
+        m._parsel_id = p.id;
+        m.on('click', () => parselAc(p.id));
+        m.bindTooltip(p.adres || ('%.5f, %.5f'.replace('%.5f', p.lat.toFixed(5)).replace('%.5f', p.lng.toFixed(5))), {direction:'top', offset:[0,-28]});
+        markerLayer.addLayer(m);
+      });
+      if (gorevParselleri.length) parselleriVurgula(gorevParselleri);
+    });
+}
+
+// ── Ekle modu ─────────────────────────────────────────────────────────────────
+function toggleEkleModu() {
+  ekleModu = !ekleModu;
+  const btn = document.getElementById('btn-ekle-mod');
+  if (ekleModu) {
+    btn.classList.add('active');
+    map.getContainer().style.cursor = 'crosshair';
+  } else {
+    btn.classList.remove('active');
+    map.getContainer().style.cursor = '';
+  }
+}
+
+// yeniParselLat/Lng: API'ye henüz kaydedilmemiş yeni parsel koordinatları
+let yeniParselLat = null, yeniParselLng = null;
+
+function parselEkle(lat, lng) {
+  // API çağrısı yapmadan önce formu hemen aç
+  yeniParselLat = lat;
+  yeniParselLng = lng;
+  aktifParselId = null;  // null = henüz kaydedilmemiş yeni parsel
+  aktifParselData = null;
+
+  // Edit alanlarını temizle
+  ['ed-adres','ed-ada','ed-parsel','ed-mahalle','ed-not',
+   'ed-muteahit-ad','ed-muteahit-tel','ed-bekci-ad','ed-bekci-tel',
+   'ed-cavus-ad','ed-cavus-tel','ed-arsa-sahibi-ad','ed-arsa-sahibi-tel',
+   'ed-oturuma-muteahit-ad','ed-oturuma-muteahit-tel',
+   'ed-oturuma-yonetici-ad','ed-oturuma-yonetici-tel',
+   'ed-oturuma-bekci-ad','ed-oturuma-bekci-tel',
+   'ed-yonetici-ad','ed-yonetici-tel','ed-kapici-ad','ed-kapici-tel'
+  ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('ed-durum').value = '';
+  document.getElementById('taseron-listesi').innerHTML = '';
+  document.getElementById('oturuma-ek-kisiler-listesi').innerHTML = '';
+  document.getElementById('dolu-ek-kisiler-listesi').innerHTML = '';
+  document.querySelectorAll('.edit-section').forEach(s => s.classList.remove('visible'));
+
+  // Sidebar aç, edit modu göster
+  document.getElementById('sb-adres').textContent = 'Yeni Parsel';
+  document.getElementById('view-mode').style.display = 'none';
+  document.getElementById('edit-mode').style.display = 'block';
+  document.getElementById('sidebar').classList.add('open');
+
+  // Ekle modunu kapat
+  ekleModu = false;
+  document.getElementById('btn-ekle-mod').classList.remove('active');
+  map.getContainer().style.cursor = '';
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function parselAc(id, editMode) {
+  yukleniyor(true);
+  fetch('/api/saha/parsel/' + id + '/')
+    .then(r => r.json())
+    .then(d => {
+      yukleniyor(false);
+      aktifParselId = id;
+      aktifParselData = d;
+      if (editMode) {
+        document.getElementById('view-mode').style.display = 'none';
+        document.getElementById('edit-mode').style.display = 'block';
+        duzenlemeyeGec();
+      } else {
+        viewModuGoster(d);
+      }
+      document.getElementById('sidebar').classList.add('open');
+    })
+    .catch(() => yukleniyor(false));
+}
+
+function parselAcVeDuzenle(id) {
+  parselAc(id, true);
+}
+
+function viewModuGoster(d) {
+  document.getElementById('view-mode').style.display = 'block';
+  document.getElementById('edit-mode').style.display = 'none';
+
+  document.getElementById('sb-adres').textContent = d.adres || '—';
+  document.getElementById('vw-adres').textContent = d.adres || '—';
+  document.getElementById('vw-mahalle').textContent = d.mahalle || '—';
+  document.getElementById('vw-ada-parsel').textContent =
+    (d.ada_no && d.parsel_no) ? ('Ada: ' + d.ada_no + ' / Parsel: ' + d.parsel_no) :
+    (d.ada_no || d.parsel_no || '—');
+  document.getElementById('vw-not').textContent = d.diger_not || '—';
+
+  // Durum
+  const durumEl = document.getElementById('vw-durum');
+  if (d.durum) {
+    const c = DURUM_COLORS[d.durum] || '#94a3b8';
+    durumEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + c + ';"></span> ' + (DURUM_LABELS[d.durum] || d.durum);
+  } else {
+    durumEl.textContent = '—';
+  }
+
+  // Hide all durum sections
+  ['vw-yapim-section','vw-oturuma-section','vw-dolu-section'].forEach(s => {
+    document.getElementById(s).style.display = 'none';
+  });
+
+  if (d.durum === 'yapim_asamasinda') {
+    document.getElementById('vw-yapim-section').style.display = 'block';
+    document.getElementById('vw-muteahit-ad').textContent = d.muteahit_ad || '—';
+    document.getElementById('vw-muteahit-tel').innerHTML = d.muteahit_tel ? '<a href="tel:' + d.muteahit_tel + '">' + d.muteahit_tel + '</a>' : '—';
+    document.getElementById('vw-bekci-ad').textContent = d.bekci_ad || '—';
+    document.getElementById('vw-bekci-tel').innerHTML = d.bekci_tel ? '<a href="tel:' + d.bekci_tel + '">' + d.bekci_tel + '</a>' : '—';
+    document.getElementById('vw-cavus-ad').textContent = d.cavus_ad || '—';
+    document.getElementById('vw-cavus-tel').innerHTML = d.cavus_tel ? '<a href="tel:' + d.cavus_tel + '">' + d.cavus_tel + '</a>' : '—';
+    // Taşeronlar
+    const tb = document.getElementById('vw-taseronlar-block');
+    tb.innerHTML = '';
+    const taseronlar = d.taseronlar || [];
+    if (taseronlar.length) {
+      tb.innerHTML = '<div style="font-size:.7rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:8px;">Taşeronlar</div>';
+      taseronlar.forEach(t => {
+        tb.innerHTML += '<div class="gorusme-kart"><div style="font-size:.78rem;font-weight:700;color:#1e293b;">' + (t.ad||'—') + '</div>' +
+          (t.tel ? '<div class="info-row info-tel" style="margin:4px 0 0;"><i class="fas fa-phone" style="width:14px;color:#9d2235;font-size:.75rem;"></i><a href="tel:' + t.tel + '">' + t.tel + '</a></div>' : '') + '</div>';
+      });
+    }
+  } else if (d.durum === 'oturuma_hazir') {
+    document.getElementById('vw-oturuma-section').style.display = 'block';
+    document.getElementById('vw-arsa-sahibi-ad').textContent = d.arsa_sahibi_ad || '—';
+    document.getElementById('vw-arsa-sahibi-tel').innerHTML = d.arsa_sahibi_tel ? '<a href="tel:' + d.arsa_sahibi_tel + '">' + d.arsa_sahibi_tel + '</a>' : '—';
+    document.getElementById('vw-oturuma-muteahit-ad').textContent = d.muteahit_ad || '—';
+    document.getElementById('vw-oturuma-muteahit-tel').innerHTML = d.muteahit_tel ? '<a href="tel:' + d.muteahit_tel + '">' + d.muteahit_tel + '</a>' : '—';
+    document.getElementById('vw-oturuma-yonetici-ad').textContent = d.oturuma_yonetici_ad || '—';
+    document.getElementById('vw-oturuma-yonetici-tel').innerHTML = d.oturuma_yonetici_tel ? '<a href="tel:' + d.oturuma_yonetici_tel + '">' + d.oturuma_yonetici_tel + '</a>' : '—';
+    document.getElementById('vw-oturuma-bekci-ad').textContent = d.oturuma_bekci_ad || '—';
+    document.getElementById('vw-oturuma-bekci-tel').innerHTML = d.oturuma_bekci_tel ? '<a href="tel:' + d.oturuma_bekci_tel + '">' + d.oturuma_bekci_tel + '</a>' : '—';
+    const ekKisilerBlok = document.getElementById('vw-oturuma-ek-kisiler-block');
+    ekKisilerBlok.innerHTML = '';
+    (d.oturuma_ek_kisiler || []).forEach(function(k) {
+      ekKisilerBlok.innerHTML += '<div style="margin-top:8px;"><div style="font-size:.7rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Ek Kişi</div>' +
+        '<div class="info-row"><i class="fas fa-user"></i><span class="info-val">' + (k.ad || '—') + '</span></div>' +
+        (k.tel ? '<div class="info-row info-tel"><i class="fas fa-phone"></i><a href="tel:' + k.tel + '">' + k.tel + '</a></div>' : '') + '</div>';
+    });
+  } else if (d.durum === 'dolu_bina') {
+    document.getElementById('vw-dolu-section').style.display = 'block';
+    document.getElementById('vw-yonetici-ad').textContent = d.yonetici_ad || '—';
+    document.getElementById('vw-yonetici-tel').innerHTML = d.yonetici_tel ? '<a href="tel:' + d.yonetici_tel + '">' + d.yonetici_tel + '</a>' : '—';
+    document.getElementById('vw-kapici-ad').textContent = d.kapici_ad || '—';
+    document.getElementById('vw-kapici-tel').innerHTML = d.kapici_tel ? '<a href="tel:' + d.kapici_tel + '">' + d.kapici_tel + '</a>' : '—';
+    const doluEkBlok = document.getElementById('vw-dolu-ek-kisiler-block');
+    doluEkBlok.innerHTML = '';
+    (d.dolu_ek_kisiler || []).forEach(function(k) {
+      doluEkBlok.innerHTML += '<div style="margin-top:8px;"><div style="font-size:.7rem;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Ek Kişi</div>' +
+        '<div class="info-row"><i class="fas fa-user"></i><span class="info-val">' + (k.ad || '—') + '</span></div>' +
+        (k.tel ? '<div class="info-row info-tel"><i class="fas fa-phone"></i><a href="tel:' + k.tel + '">' + k.tel + '</a></div>' : '') + '</div>';
+    });
+  }
+
+  // Görüşmeler
+  const gorusmeDiv = document.getElementById('vw-gorusmeler');
+  gorusmeDiv.innerHTML = '';
+  const gorusmeler = d.gorusmeler || [];
+  if (gorusmeler.length) {
+    gorusmeler.forEach(g => {
+      gorusmeDiv.innerHTML += '<div class="gorusme-kart"><div class="meta">' + (g.personel||'') + ' · ' + (g.tarih||'') + '</div><div class="metin">' + g.not_metni + '</div></div>';
+    });
+  } else {
+    gorusmeDiv.innerHTML = '<div style="font-size:.78rem;color:#94a3b8;">Henüz görüşme kaydedilmemiş.</div>';
+  }
+
+  gorusmeFormGizle();
+}
+
+function kenarCubugKapat() {
+  document.getElementById('sidebar').classList.remove('open');
+  aktifParselId = null;
+  aktifParselData = null;
+}
+
+function duzenlemeyeGec() {
+  const d = aktifParselData;
+  if (!d) return;
+  document.getElementById('view-mode').style.display = 'none';
+  document.getElementById('edit-mode').style.display = 'block';
+
+  document.getElementById('ed-adres').value = d.adres || '';
+  document.getElementById('ed-ada').value = d.ada_no || '';
+  document.getElementById('ed-parsel').value = d.parsel_no || '';
+  document.getElementById('ed-mahalle').value = d.mahalle || '';
+  document.getElementById('ed-not').value = d.diger_not || '';
+  document.getElementById('ed-durum').value = d.durum || '';
+
+  // Yapım fields
+  document.getElementById('ed-muteahit-ad').value = d.muteahit_ad || '';
+  document.getElementById('ed-muteahit-tel').value = d.muteahit_tel || '';
+  document.getElementById('ed-bekci-ad').value = d.bekci_ad || '';
+  document.getElementById('ed-bekci-tel').value = d.bekci_tel || '';
+  document.getElementById('ed-cavus-ad').value = d.cavus_ad || '';
+  document.getElementById('ed-cavus-tel').value = d.cavus_tel || '';
+
+  // Taşeronlar
+  document.getElementById('taseron-listesi').innerHTML = '';
+  (d.taseronlar || []).forEach(t => taseronEkle(t));
+
+  // Oturuma fields
+  document.getElementById('ed-arsa-sahibi-ad').value = d.arsa_sahibi_ad || '';
+  document.getElementById('ed-arsa-sahibi-tel').value = d.arsa_sahibi_tel || '';
+  document.getElementById('ed-oturuma-muteahit-ad').value = d.muteahit_ad || '';
+  document.getElementById('ed-oturuma-muteahit-tel').value = d.muteahit_tel || '';
+  document.getElementById('ed-oturuma-yonetici-ad').value = d.oturuma_yonetici_ad || '';
+  document.getElementById('ed-oturuma-yonetici-tel').value = d.oturuma_yonetici_tel || '';
+  document.getElementById('ed-oturuma-bekci-ad').value = d.oturuma_bekci_ad || '';
+  document.getElementById('ed-oturuma-bekci-tel').value = d.oturuma_bekci_tel || '';
+  document.getElementById('oturuma-ek-kisiler-listesi').innerHTML = '';
+  (d.oturuma_ek_kisiler || []).forEach(k => oturumaEkKisiEkle(k));
+
+  // Dolu fields
+  document.getElementById('ed-yonetici-ad').value = d.yonetici_ad || '';
+  document.getElementById('ed-yonetici-tel').value = d.yonetici_tel || '';
+  document.getElementById('ed-kapici-ad').value = d.kapici_ad || '';
+  document.getElementById('ed-kapici-tel').value = d.kapici_tel || '';
+  document.getElementById('dolu-ek-kisiler-listesi').innerHTML = '';
+  (d.dolu_ek_kisiler || []).forEach(k => doluEkKisiEkle(k));
+
+  durumDegisti();
+}
+
+function duzenlemeIptal() {
+  if (aktifParselData) viewModuGoster(aktifParselData);
+}
+
+function durumDegisti() {
+  const val = document.getElementById('ed-durum').value;
+  document.querySelectorAll('.edit-section').forEach(s => s.classList.remove('visible'));
+  if (val === 'yapim_asamasinda') document.getElementById('sec-yapim').classList.add('visible');
+  else if (val === 'oturuma_hazir') document.getElementById('sec-oturuma').classList.add('visible');
+  else if (val === 'dolu_bina') document.getElementById('sec-dolu').classList.add('visible');
+}
+
+function taseronEkle(t) {
+  const d = t || {ad:'', tel:''};
+  const div = document.createElement('div');
+  div.className = 'taseron-item';
+  div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+    '<span style="font-size:.72rem;font-weight:700;color:#64748b;">TAŞERON</span>' +
+    '<button type="button" onclick="this.parentNode.parentNode.remove()" style="background:#fee2e2;border:none;color:#ef4444;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:.72rem;">Sil</button>' +
+    '</div>' +
+    '<input type="text" class="form-input taseron-ad" placeholder="Ad Soyad" value="' + (d.ad||'') + '" style="margin-bottom:6px;">' +
+    '<input type="text" class="form-input taseron-tel" placeholder="Telefon" value="' + (d.tel||'') + '">';
+  document.getElementById('taseron-listesi').appendChild(div);
+}
+
+function taseronlariOku() {
+  const result = [];
+  document.querySelectorAll('#taseron-listesi .taseron-item').forEach(item => {
+    const ad = item.querySelector('.taseron-ad').value.trim();
+    const tel = item.querySelector('.taseron-tel').value.trim();
+    if (ad || tel) result.push({ad, tel});
+  });
+  return result;
+}
+
+function oturumaEkKisiEkle(k) {
+  const d = k || {ad:'', tel:''};
+  const div = document.createElement('div');
+  div.className = 'oturuma-ek-kisi-item';
+  div.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;';
+  div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+    '<span style="font-size:.72rem;font-weight:700;color:#64748b;">EK KİŞİ</span>' +
+    '<button type="button" onclick="this.parentNode.parentNode.remove()" style="background:#fee2e2;border:none;color:#ef4444;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:.72rem;">Sil</button>' +
+    '</div>' +
+    '<input type="text" class="form-input oturuma-ek-ad" placeholder="Ad Soyad" value="' + (d.ad||'') + '" style="margin-bottom:6px;">' +
+    '<input type="text" class="form-input oturuma-ek-tel" placeholder="Telefon" value="' + (d.tel||'') + '">';
+  document.getElementById('oturuma-ek-kisiler-listesi').appendChild(div);
+}
+
+function oturumaEkKisileriniOku() {
+  const result = [];
+  document.querySelectorAll('#oturuma-ek-kisiler-listesi .oturuma-ek-kisi-item').forEach(item => {
+    const ad = item.querySelector('.oturuma-ek-ad').value.trim();
+    const tel = item.querySelector('.oturuma-ek-tel').value.trim();
+    if (ad || tel) result.push({ad, tel});
+  });
+  return result;
+}
+
+function doluEkKisiEkle(k) {
+  const d = k || {ad:'', tel:''};
+  const div = document.createElement('div');
+  div.className = 'dolu-ek-kisi-item';
+  div.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;';
+  div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+    '<span style="font-size:.72rem;font-weight:700;color:#64748b;">EK KİŞİ</span>' +
+    '<button type="button" onclick="this.parentNode.parentNode.remove()" style="background:#fee2e2;border:none;color:#ef4444;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:.72rem;">Sil</button>' +
+    '</div>' +
+    '<input type="text" class="form-input dolu-ek-ad" placeholder="Ad Soyad" value="' + (d.ad||'') + '" style="margin-bottom:6px;">' +
+    '<input type="text" class="form-input dolu-ek-tel" placeholder="Telefon" value="' + (d.tel||'') + '">';
+  document.getElementById('dolu-ek-kisiler-listesi').appendChild(div);
+}
+
+function doluEkKisileriniOku() {
+  const result = [];
+  document.querySelectorAll('#dolu-ek-kisiler-listesi .dolu-ek-kisi-item').forEach(item => {
+    const ad = item.querySelector('.dolu-ek-ad').value.trim();
+    const tel = item.querySelector('.dolu-ek-tel').value.trim();
+    if (ad || tel) result.push({ad, tel});
+  });
+  return result;
+}
+
+function kaydet() {
+  const durum = document.getElementById('ed-durum').value;
+  let payload = {
+    adres: document.getElementById('ed-adres').value.trim(),
+    ada_no: document.getElementById('ed-ada').value.trim(),
+    parsel_no: document.getElementById('ed-parsel').value.trim(),
+    mahalle: document.getElementById('ed-mahalle').value.trim(),
+    diger_not: document.getElementById('ed-not').value.trim(),
+    durum: durum,
+  };
+  if (durum === 'yapim_asamasinda') {
+    payload.muteahit_ad = document.getElementById('ed-muteahit-ad').value.trim();
+    payload.muteahit_tel = document.getElementById('ed-muteahit-tel').value.trim();
+    payload.bekci_ad = document.getElementById('ed-bekci-ad').value.trim();
+    payload.bekci_tel = document.getElementById('ed-bekci-tel').value.trim();
+    payload.cavus_ad = document.getElementById('ed-cavus-ad').value.trim();
+    payload.cavus_tel = document.getElementById('ed-cavus-tel').value.trim();
+    payload.taseronlar = taseronlariOku();
+  } else if (durum === 'oturuma_hazir') {
+    payload.arsa_sahibi_ad = document.getElementById('ed-arsa-sahibi-ad').value.trim();
+    payload.arsa_sahibi_tel = document.getElementById('ed-arsa-sahibi-tel').value.trim();
+    payload.muteahit_ad = document.getElementById('ed-oturuma-muteahit-ad').value.trim();
+    payload.muteahit_tel = document.getElementById('ed-oturuma-muteahit-tel').value.trim();
+    payload.oturuma_yonetici_ad = document.getElementById('ed-oturuma-yonetici-ad').value.trim();
+    payload.oturuma_yonetici_tel = document.getElementById('ed-oturuma-yonetici-tel').value.trim();
+    payload.oturuma_bekci_ad = document.getElementById('ed-oturuma-bekci-ad').value.trim();
+    payload.oturuma_bekci_tel = document.getElementById('ed-oturuma-bekci-tel').value.trim();
+    payload.oturuma_ek_kisiler = oturumaEkKisileriniOku();
+  } else if (durum === 'dolu_bina') {
+    payload.yonetici_ad = document.getElementById('ed-yonetici-ad').value.trim();
+    payload.yonetici_tel = document.getElementById('ed-yonetici-tel').value.trim();
+    payload.kapici_ad = document.getElementById('ed-kapici-ad').value.trim();
+    payload.kapici_tel = document.getElementById('ed-kapici-tel').value.trim();
+    payload.dolu_ek_kisiler = doluEkKisileriniOku();
+  }
+
+  yukleniyor(true);
+
+  // Yeni parsel mi, güncelleme mi?
+  if (aktifParselId === null) {
+    // Yeni parsel — önce oluştur, sonra güncelle
+    payload.lat = yeniParselLat;
+    payload.lng = yeniParselLng;
+    fetch('/api/saha/parsel/ekle/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken': CSRF},
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(d => {
+      yukleniyor(false);
+      if (!d.id) { alert('Parsel kaydedilemedi. Lütfen tekrar deneyin.'); return; }
+      aktifParselId = d.id;
+      yeniParselLat = null;
+      yeniParselLng = null;
+      parselleriYukle();
+      parselAc(d.id);
+    })
+    .catch(() => { yukleniyor(false); alert('Bağlantı hatası.'); });
+  } else {
+    // Mevcut parseli güncelle
+    fetch('/api/saha/parsel/' + aktifParselId + '/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken': CSRF},
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(d => {
+      yukleniyor(false);
+      aktifParselData = d;
+      viewModuGoster(d);
+      parselleriYukle();
+    })
+    .catch(() => yukleniyor(false));
+  }
+}
+
+function parselSil() {
+  if (!aktifParselId) return;
+  if (!confirm('Bu parseli silmek istediğinize emin misiniz?')) return;
+  yukleniyor(true);
+  fetch('/api/saha/parsel/' + aktifParselId + '/sil/', {
+    method: 'POST', headers: {'X-CSRFToken': CSRF}
+  })
+  .then(r => r.json())
+  .then(d => {
+    yukleniyor(false);
+    if (d.success) { kenarCubugKapat(); parselleriYukle(); }
+  })
+  .catch(() => yukleniyor(false));
+}
+
+// ── Görüşme ───────────────────────────────────────────────────────────────────
+function gorusmeFormGoster() { document.getElementById('gorusme-form').style.display = 'block'; }
+function gorusmeFormGizle() {
+  document.getElementById('gorusme-form').style.display = 'none';
+  document.getElementById('gorusme-not').value = '';
+}
+
+function gorusmeKaydet() {
+  const not = document.getElementById('gorusme-not').value.trim();
+  if (!not || !aktifParselId) return;
+  yukleniyor(true);
+  fetch('/api/saha/parsel/' + aktifParselId + '/gorusme/', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken': CSRF},
+    body: JSON.stringify({not_metni: not})
+  })
+  .then(r => r.json())
+  .then(() => { yukleniyor(false); parselAc(aktifParselId); })
+  .catch(() => yukleniyor(false));
+}
+
+// ── Loading ────────────────────────────────────────────────────────────────────
+function yukleniyor(goster) {
+  document.getElementById('yukleniyor').style.display = goster ? 'flex' : 'none';
+}
+
+// ── Right panel tabs ──────────────────────────────────────────────────────────
+function rpTab(name) {
+  document.querySelectorAll('.rp-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.rp-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('pane-' + name).classList.add('active');
+  if (name === 'bildirimler') bildirimleriYukle();
+}
+
+function gorevimTabGoster() {
+  document.getElementById('tab-gorevim').style.display = 'flex';
+}
+function brokerTablariniGoster() {
+  document.getElementById('tab-planlar').style.display = 'flex';
+  document.getElementById('tab-bildirimler').style.display = 'flex';
+}
+
+// ── Plans ─────────────────────────────────────────────────────────────────────
+let bolgeUzmanlariCache = [];
+
+function planlariYukle() {
+  fetch('/api/saha/gorev-planlari/')
+    .then(r => r.json())
+    .then(data => {
+      bolgeUzmanlariCache = data.bolge_uzmanlari || [];
+      if (data.is_broker) {
+        brokerTablariniGoster();
+        document.getElementById('btn-yeni-plan').style.display = 'flex';
+      }
+      const listDiv = document.getElementById('planlar-listesi');
+      listDiv.innerHTML = '';
+      if (!data.planlar || !data.planlar.length) {
+        listDiv.innerHTML = '<div class="empty-state"><i class="fas fa-clipboard-list"></i><p>Henüz görev planı yok.</p></div>';
+        return;
+      }
+      data.planlar.forEach(p => {
+        const pct = p.yuzde || 0;
+        const card = document.createElement('div');
+        card.className = 'plan-card';
+        card.innerHTML =
+          '<div class="plan-header">' +
+            '<div>' +
+              '<div class="plan-name">' + p.mahalle + '</div>' +
+              '<div class="plan-meta">' + p.uzman + ' · ' + p.ay + ' ' + p.yil + '</div>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:6px;">' +
+              '<span class="plan-badge ' + (p.aktif ? 'aktif' : 'pasif') + '">' + (p.aktif ? 'Aktif' : 'Pasif') + '</span>' +
+              (data.is_broker ? '<button class="plan-delete-btn" onclick="planSil(' + p.id + ',this)" title="Sil"><i class="fas fa-trash"></i></button>' : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="progress-bar-wrap"><div class="progress-bar" style="width:' + pct + '%"></div></div>' +
+          '<div class="progress-text">' + p.tamamlanan_gorev + '/' + p.toplam_gorev + ' gün tamamlandı (' + pct + '%) · Hedef: ' + p.gunluk_hedef + ' bina/gün</div>';
+        listDiv.appendChild(card);
+      });
+    });
+}
+
+function planSil(id, btn) {
+  if (!confirm('Bu planı silmek istediğinize emin misiniz?')) return;
+  fetch('/api/saha/plan/' + id + '/sil/', {
+    method: 'POST', headers: {'X-CSRFToken': CSRF}
+  })
+  .then(r => r.json())
+  .then(d => { if (d.success) planlariYukle(); });
+}
+
+function planlariOtomatikOlustur() {
+  if (!confirm('Bu ay için tüm mahalleler otomatik planlanacak. Devam edilsin mi?')) return;
+  yukleniyor(true);
+  fetch('/api/saha/plan/otomatik-olustur/', {
+    method: 'POST', headers: {'X-CSRFToken': CSRF}
+  })
+  .then(r => r.json())
+  .then(d => {
+    yukleniyor(false);
+    if (d.success) {
+      let msg = 'Planlar oluşturuldu: ' + d.olusturulan + ' yeni, ' + d.guncellenen + ' güncellendi.';
+      if (d.atlanan) msg += ' ' + d.atlanan + ' mahalle atlandı (parsel yok).';
+      alert(msg);
+      planlariYukle();
+    } else {
+      alert(d.error || 'Hata oluştu.');
+    }
+  })
+  .catch(() => yukleniyor(false));
+}
+
+// ── Bugünkü Görev ────────────────────────────────────────────────────────────
+let gorevParselleri = [];
+
+function gorevimYukle() {
+  fetch('/api/saha/gorev/parseller/')
+    .then(r => r.json())
+    .then(d => {
+      gorevParselleri = d.parsel_ids || [];
+      const listDiv = document.getElementById('gorevim-listesi');
+      const ilerleme = document.getElementById('gorevim-ilerleme');
+      const progressWrap = document.getElementById('gorev-progress-wrap');
+      const progressBar = document.getElementById('gorev-progress-bar');
+
+      if (!d.gorev_id) {
+        listDiv.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle" style="color:#10b981;"></i><p>Bugün için atanmış göreviniz yok.</p></div>';
+        ilerleme.textContent = '';
+        return;
+      }
+
+      const pct = d.toplam > 0 ? Math.round(d.tamamlanan * 100 / d.toplam) : 0;
+      ilerleme.textContent = d.tamamlanan + '/' + d.toplam + ' bina';
+      progressWrap.style.display = 'block';
+      progressBar.style.width = pct + '%';
+
+      parselleriVurgula(gorevParselleri);
+
+      fetch('/api/saha/parseller/')
+        .then(r => r.json())
+        .then(pd => {
+          const tumParseller = pd.parseller || [];
+          const gorevParsMap = {};
+          gorevParselleri.forEach(id => gorevParsMap[id] = true);
+          const bugunParseller = tumParseller.filter(p => gorevParsMap[p.id]);
+
+          listDiv.innerHTML = '';
+          if (!bugunParseller.length) {
+            listDiv.innerHTML = '<div class="empty-state"><i class="fas fa-map-marker-alt"></i><p>Mahallenizde henüz parsel kaydı yok.</p></div>';
+            return;
+          }
+
+          bugunParseller.forEach(p => {
+            const card = document.createElement('div');
+            card.style.cssText = 'margin:10px 14px 0;background:#f8fafc;border-radius:10px;padding:12px 14px;border:1px solid #f1f5f9;cursor:pointer;transition:all .15s;';
+            card.innerHTML =
+              '<div style="font-size:.82rem;font-weight:700;color:#1e293b;margin-bottom:3px;">' + (p.adres || '—') + '</div>' +
+              '<div style="font-size:.72rem;color:#64748b;">' + (p.mahalle || '') + (p.durum ? ' · ' + (DURUM_LABELS[p.durum] || p.durum) : '') + '</div>';
+            card.addEventListener('mouseenter', function() { this.style.background = '#f1f5f9'; });
+            card.addEventListener('mouseleave', function() { this.style.background = '#f8fafc'; });
+            card.addEventListener('click', function() {
+              map.flyTo([p.lat, p.lng], 17, {duration: 1});
+              parselAc(p.id);
+            });
+            listDiv.appendChild(card);
+          });
+        });
+    });
+}
+
+function parselleriVurgula(ids) {
+  if (!ids || !ids.length) return;
+  const idSet = new Set(ids);
+  markerLayer.eachLayer(function(m) {
+    if (m._parsel_id && idSet.has(m._parsel_id)) {
+      m.setIcon(gorevIkonu());
+    }
+  });
+}
+
+function gorevIkonu() {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 28 38">' +
+    '<path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="#f59e0b"/>' +
+    '<circle cx="14" cy="14" r="6" fill="white"/>' +
+    '<circle cx="14" cy="14" r="3" fill="#f59e0b"/>' +
+    '</svg>';
+  return L.divIcon({html: svg, className: '', iconSize: [28,38], iconAnchor: [14,38], popupAnchor: [0,-38]});
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+function bildirimleriYukle() {
+  fetch('/api/saha/bildirimler/')
+    .then(r => r.json())
+    .then(data => {
+      const badge = document.getElementById('bildirim-badge');
+      badge.style.display = 'none';
+      const listDiv = document.getElementById('bildirimler-listesi');
+      listDiv.innerHTML = '';
+      if (!data.bildirimler || !data.bildirimler.length) {
+        listDiv.innerHTML = '<div class="empty-state"><i class="fas fa-bell-slash"></i><p>Henüz bildirim yok.</p></div>';
+        return;
+      }
+      data.bildirimler.forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'bildirim-card' + (b.goruldu ? '' : ' okunmamis');
+        card.innerHTML =
+          '<div class="bildirim-uzman"><i class="fas fa-user"></i> ' + b.uzman + '</div>' +
+          '<div class="bildirim-mesaj">' + b.mesaj + '</div>' +
+          '<div class="bildirim-tarih"><i class="fas fa-clock"></i> ' + b.tarih + '</div>';
+        listDiv.appendChild(card);
+      });
+    });
+}
+
+function bildirimSayisiniGuncelle() {
+  fetch('/api/saha/bildirim/sayisi/')
+    .then(r => r.json())
+    .then(d => {
+      const badge = document.getElementById('bildirim-badge');
+      if (d.okunmamis > 0) {
+        badge.style.display = 'inline-block';
+        badge.textContent = d.okunmamis;
+      } else {
+        badge.style.display = 'none';
+      }
+    });
+}
+
+// ── Mahalleler ────────────────────────────────────────────────────────────────
+let mahallelerCache = [];
+
+function mahallelerYukle() {
+  fetch('/api/saha/mahalleler/')
+    .then(r => r.json())
+    .then(data => {
+      mahallelerCache = data.mahalleler || [];
+      const sel = document.getElementById('ed-mahalle');
+      if (!sel) return;
+      const mevcut = sel.value;
+      sel.innerHTML = '<option value="">-- Mahalle Seç --</option>';
+      mahallelerCache.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.name;
+        o.textContent = m.name + (m.district ? ' (' + m.district + ')' : '');
+        sel.appendChild(o);
+      });
+      if (mevcut) sel.value = mevcut;
+    });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  initMap();
+  mahallelerYukle();
+  planlariYukle();
+  gorevimYukle();
+  bildirimSayisiniGuncelle();
+  setInterval(bildirimSayisiniGuncelle, 60000);
+});
+</script>
+{% endblock %}

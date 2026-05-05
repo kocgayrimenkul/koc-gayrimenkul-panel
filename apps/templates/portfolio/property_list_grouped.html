@@ -1,0 +1,2598 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gayrimenkul Portföyü - Liste Görünümü</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      background: white;
+      padding: 20px 40px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #202124;
+    }
+    
+    .btn-primary-koc {
+      background: #9d2235;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-primary-koc:hover {
+      background: #7a1a29;
+      color: white;
+    }
+
+    /* VIEW SWITCHER */
+    .view-switcher {
+      display: flex;
+      gap: 8px;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      width: fit-content;
+      margin-left: auto;
+    }
+
+    .view-tab {
+      padding: 7px 14px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #64748b;
+      font-weight: 600;
+      font-size: 0.75rem;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .view-tab:hover {
+      background: rgba(157, 34, 53, 0.05);
+      color: #9d2235;
+    }
+
+    .view-tab.active {
+      background: white;
+      color: #9d2235;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    /* STATS BAR */
+    .stats-bar {
+      background: white;
+      padding: 15px 40px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      gap: 30px;
+    }
+
+    /* EXCEL TABLE */
+    .excel-container {
+      margin: 20px 40px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow-x: auto;
+    }
+
+    .excel-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: auto;
+    }
+
+    .excel-table thead th {
+      background: #f8f9fa;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #5f6368;
+      border-bottom: 2px solid #e9ecef;
+      white-space: nowrap;
+    }
+
+    .excel-table tbody tr {
+      border-bottom: 1px solid #f1f3f4;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    .excel-table tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    .excel-table tbody tr.sub-row {
+      background: #fafbfc;
+    }
+
+    .excel-table tbody tr.sub-row:hover {
+      background: #f1f3f4;
+    }
+
+    .excel-table tbody td {
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      vertical-align: middle;
+      border-bottom: 1px solid #f1f3f4;
+      white-space: nowrap;
+    }
+
+    /* INDENT FOR SUB ROWS */
+    .indent-cell {
+      padding-left: 40px !important;
+    }
+
+    /* GROUP ROW */
+    .group-row {
+      background: #e8f4f8 !important;
+      font-weight: 600;
+    }
+
+    .group-toggle {
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .group-toggle:hover {
+      background: rgba(0,0,0,0.05);
+    }
+
+    .group-badge {
+      background: #1a73e8;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      margin-left: 8px;
+    }
+
+    /* CHECKBOX */
+    .cell-checkbox {
+      width: 30px;
+      text-align: center;
+    }
+
+    .cell-checkbox input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #9d2235;
+    }
+
+    /* PROPERTY NAME */
+    .property-name-cell {
+      max-width: 200px;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+
+    .property-name {
+      color: #1a73e8;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .property-name:hover {
+      text-decoration: underline;
+    }
+
+    /* STATUS ICONS */
+    .status-icon {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 20px;
+      font-size: 0.65rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .status-icon.status-yes {
+      background: #4caf50;
+      color: white;
+    }
+
+    .status-icon.status-yes:hover {
+      background: #45a049;
+      transform: scale(1.1);
+    }
+
+    .status-icon.status-no {
+      background: #f44336;
+      color: white;
+    }
+
+    .status-icon.status-no:hover {
+      background: #e53935;
+      transform: scale(1.1);
+    }
+
+    /* LINK INPUT */
+    .link-input-container {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .link-input {
+      width: 100%;
+      padding: 6px 8px;
+      border: 2px solid #1a73e8;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    .link-input:focus {
+      border-color: #0d47a1;
+      box-shadow: 0 0 0 3px rgba(26,115,232,0.1);
+    }
+
+    .link-input-buttons {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .link-input-buttons button {
+      flex: 1;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .link-save-btn {
+      background: #4caf50;
+      color: white;
+    }
+
+    .link-save-btn:hover {
+      background: #45a049;
+    }
+
+    .link-cancel-btn {
+      background: #f44336;
+      color: white;
+    }
+
+    .link-cancel-btn:hover {
+      background: #e53935;
+    }
+
+    /* PHOTO STATUS DROPDOWN */
+    .photo-status-btn {
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+
+    .photo-status-cekildi {
+      background: #4caf50;
+      color: white;
+    }
+
+    .photo-status-cektirmiyor {
+      background: #ff5722;
+      color: white;
+    }
+
+    .photo-status-cekilmedi {
+      background: #f44336;
+      color: white;
+    }
+
+    .photo-status-cekilemiyor {
+      background: #9e9e9e;
+      color: white;
+    }
+
+    .photo-status-menu {
+      min-width: 150px;
+    }
+
+    .photo-status-menu .dropdown-item {
+      padding: 8px 16px;
+      font-size: 0.875rem;
+    }
+
+    .photo-opt-cekildi {
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-weight: 600;
+    }
+
+    .photo-opt-cektirmiyor {
+      background: #fbe9e7;
+      color: #d84315;
+      font-weight: 600;
+    }
+
+    .photo-opt-cekilmedi {
+      background: #ffebee;
+      color: #c62828;
+      font-weight: 600;
+    }
+
+    .photo-opt-cekilemiyor {
+      background: #f5f5f5;
+      color: #616161;
+      font-weight: 600;
+    }
+
+    .photo-status-menu .dropdown-item:hover {
+      opacity: 0.8;
+    }
+
+    /* BANNER STATUS DROPDOWN */
+    .banner-status-btn {
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+
+    .banner-status-asildi {
+      background: #4caf50;
+      color: white;
+    }
+
+    .banner-status-asilmadi {
+      background: #ff9800;
+      color: white;
+    }
+
+    .banner-status-astirmiyor {
+      background: #ff5722;
+      color: white;
+    }
+
+    .banner-status-asmadim {
+      background: #f44336;
+      color: white;
+    }
+
+    .banner-status-menu {
+      min-width: 150px;
+    }
+
+    .banner-status-menu .dropdown-item {
+      padding: 8px 16px;
+      font-size: 0.875rem;
+    }
+
+    .banner-opt-asildi {
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-weight: 600;
+    }
+
+    .banner-opt-asilmadi {
+      background: #fff3e0;
+      color: #f57c00;
+      font-weight: 600;
+    }
+
+    .banner-opt-astirmiyor {
+      background: #fbe9e7;
+      color: #d84315;
+      font-weight: 600;
+    }
+
+    .banner-opt-asmadim {
+      background: #ffebee;
+      color: #c62828;
+      font-weight: 600;
+    }
+
+    .banner-status-menu .dropdown-item:hover {
+      opacity: 0.8;
+    }
+
+    /* NUMBER CELLS */
+    .number-cell {
+      text-align: right;
+      font-weight: 500;
+    }
+
+    /* PRICE */
+    .price-cell {
+      font-weight: 600;
+      color: #202124;
+    }
+
+    /* NEIGHBORHOOD HEADER */
+    .neighborhood-header {
+      background: #f8f9fa;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e9ecef;
+      font-weight: 600;
+      color: #5f6368;
+      font-size: 0.875rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .neighborhood-header:hover {
+      background: #e9ecef;
+    }
+
+    .group-count {
+      background: #e9ecef;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      margin-left: 10px;
+    }
+
+    .group-content {
+      display: block;
+    }
+
+    .group-content.collapsed {
+      display: none;
+    }
+
+    /* DROPDOWN */
+    .dropdown-toggle {
+      background: transparent;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #5f6368;
+    }
+
+    .dropdown-toggle:hover {
+      background: #f1f3f4;
+    }
+
+    /* HIDDEN ROW */
+    .hidden-row {
+      display: none;
+    }
+
+    /* FLOATING ACTION MENU */
+    .floating-action-menu {
+      position: fixed;
+      bottom: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      box-shadow: 0 -2px 20px rgba(0,0,0,0.15);
+      border-radius: 12px 12px 0 0;
+      padding: 12px 20px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      z-index: 1000;
+      transition: bottom 0.3s ease;
+      min-width: 500px;
+    }
+
+    .floating-action-menu.show {
+      bottom: 0;
+    }
+
+    .floating-action-menu .selected-count {
+      font-size: 0.875rem;
+      color: #5f6368;
+      font-weight: 600;
+      margin-right: 12px;
+      padding-right: 12px;
+      border-right: 1px solid #e0e0e0;
+    }
+
+    .floating-action-menu .action-btn {
+      background: transparent;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: #5f6368;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .floating-action-menu .action-btn:hover {
+      background: #f1f3f4;
+      color: #202124;
+    }
+
+    .floating-action-menu .action-btn.danger {
+      color: #d32f2f;
+    }
+
+    .floating-action-menu .action-btn.danger:hover {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .floating-action-menu .action-btn i {
+      font-size: 1rem;
+    }
+
+    .floating-action-menu .close-btn {
+      margin-left: auto;
+      padding: 4px 8px;
+      color: #9aa0a6;
+    }
+
+    .floating-action-menu .close-btn:hover {
+      background: #f8f9fa;
+      color: #5f6368;
+    }
+
+    /* FİLTRE PANELİ */
+    .filter-toggle-bar {
+      background: white;
+      border-bottom: 1px solid #e9ecef;
+      padding: 10px 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-filter-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: white;
+      border: 1.5px solid #dadce0;
+      color: #202124;
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-filter-toggle:hover {
+      border-color: #9d2235;
+      color: #9d2235;
+    }
+
+    .btn-filter-toggle.active {
+      background: #9d2235;
+      border-color: #9d2235;
+      color: white;
+    }
+
+    .filter-active-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      display: inline-block;
+    }
+
+    .filter-panel {
+      background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      padding: 16px 40px;
+      display: none;
+    }
+
+    .filter-panel.open {
+      display: block;
+    }
+
+    .filter-panel form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 130px;
+    }
+
+    .filter-group label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .filter-group input,
+    .filter-group select {
+      border: 1px solid #dadce0;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 0.83rem;
+      color: #202124;
+      background: #fafafa;
+      outline: none;
+      transition: border 0.2s;
+      height: 36px;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+      border-color: #9d2235;
+      background: white;
+    }
+
+    .filter-group.price-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .price-inputs {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .price-inputs input {
+      width: 105px;
+    }
+
+    .price-inputs span {
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      margin-left: auto;
+    }
+
+    .btn-filter {
+      background: #9d2235;
+      color: white;
+      border: none;
+      padding: 0 18px;
+      border-radius: 6px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      cursor: pointer;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-filter:hover { background: #7a1a29; }
+
+    .btn-clear-filter {
+      background: transparent;
+      color: #64748b;
+      border: 1px solid #dadce0;
+      padding: 0 14px;
+      border-radius: 6px;
+      font-size: 0.83rem;
+      cursor: pointer;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-clear-filter:hover {
+      border-color: #9d2235;
+      color: #9d2235;
+    }
+
+    .filter-badge {
+      display: inline-block;
+      background: #9d2235;
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 1px 6px;
+      margin-left: 4px;
+    }
+
+
+    /* NOT BUTONU */
+    .note-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: 1.5px solid #dadce0;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.65rem;
+      margin-left: 6px;
+      transition: all 0.2s;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .note-btn:hover {
+      background: #9d2235;
+      border-color: #9d2235;
+      color: white;
+    }
+    .note-btn.has-note {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #d97706;
+    }
+    .note-btn.has-note:hover {
+      background: #9d2235;
+      border-color: #9d2235;
+      color: white;
+    }
+
+    /* NOT MODAL */
+    #noteModal .modal-content {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    #noteModal .modal-header {
+      background: #9d2235;
+      color: white;
+      border-radius: 12px 12px 0 0;
+      padding: 16px 20px;
+    }
+    #noteModal .modal-header .btn-close {
+      filter: invert(1);
+    }
+    #noteModal .modal-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .note-item {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      border-left: 3px solid #9d2235;
+    }
+    .note-item .note-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .note-item .note-user {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #9d2235;
+    }
+    .note-item .note-date {
+      font-size: 0.7rem;
+      color: #94a3b8;
+    }
+    .note-item .note-text {
+      font-size: 0.83rem;
+      color: #374151;
+      line-height: 1.5;
+    }
+    .note-delete-btn {
+      background: none;
+      border: none;
+      color: #cbd5e1;
+      cursor: pointer;
+      padding: 0 4px;
+      font-size: 0.7rem;
+      transition: color 0.2s;
+    }
+    .note-delete-btn:hover { color: #ef4444; }
+    #notesList { max-height: 320px; overflow-y: auto; padding-right: 4px; }
+    #notesList:empty::after {
+      content: 'Henüz not eklenmemiş.';
+      display: block;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.83rem;
+      padding: 20px 0;
+    }
+    #noteTextarea {
+      border: 1.5px solid #dadce0;
+      border-radius: 8px;
+      resize: vertical;
+      font-size: 0.85rem;
+      padding: 10px 12px;
+    }
+    #noteTextarea:focus {
+      border-color: #9d2235;
+      box-shadow: 0 0 0 3px rgba(157,34,53,0.1);
+      outline: none;
+    }
+    .btn-save-note {
+      background: #9d2235;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-save-note:hover { background: #7a1a29; }
+    .btn-save-note:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+    /* PORTAL BİLDİRİM BANNER */
+    .portal-notif-banner {
+      background: #fff8e1;
+      border-bottom: 2px solid #f59e0b;
+      padding: 12px 40px;
+      display: none;
+    }
+    .portal-notif-banner.visible { display: block; }
+    .portal-notif-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .portal-notif-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #92400e;
+    }
+    .portal-notif-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .portal-notif-item {
+      background: white;
+      border: 1px solid #fcd34d;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      color: #78350f;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .portal-notif-item .dismiss-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #d97706;
+      padding: 0;
+      font-size: 0.7rem;
+      transition: color 0.2s;
+    }
+    .portal-notif-item .dismiss-btn:hover { color: #ef4444; }
+    .btn-read-all-notif {
+      background: none;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-read-all-notif:hover {
+      background: #f59e0b;
+      color: white;
+    }
+  </style>
+  
+  <!-- CSRF Token -->
+  <script>
+    // CSRF Token'ı global olarak tanımla
+    window.CSRF_TOKEN = '{{ csrf_token }}';
+  </script>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <h1 class="page-title">
+      <i class="fas fa-building"></i>
+      Gayrimenkul Portföyü
+    </h1>
+    <div>
+      <a href="/gayrimenkul/ekle/" class="btn-primary-koc">
+        <i class="fas fa-plus"></i> Yeni Ekle
+      </a>
+    </div>
+  </div>
+
+  <!-- View Switcher -->
+  <div style="padding: 15px 40px 0;">
+    <div class="view-switcher">
+      <a href="/gayrimenkul/" class="view-tab">
+        <i class="fas fa-th"></i> Grid
+      </a>
+      <a href="/gayrimenkul/liste-gruplu/" class="view-tab active">
+        <i class="fas fa-list"></i> Liste
+      </a>
+    </div>
+  </div>
+
+  <!-- Portal Bildirim Banner -->
+  <div class="portal-notif-banner" id="portalNotifBanner">
+    <div class="portal-notif-header">
+      <span class="portal-notif-title">
+        <i class="fas fa-exclamation-triangle me-2" style="color:#f59e0b;"></i>
+        Süresi Dolan Portal İlanları
+      </span>
+      <button class="btn-read-all-notif" onclick="readAllNotifications()">
+        Tümünü Okundu İşaretle
+      </button>
+    </div>
+    <div class="portal-notif-list" id="portalNotifList"></div>
+  </div>
+
+  <!-- Filtre Toggle Bar -->
+  <div class="filter-toggle-bar">
+    <button type="button" class="btn-filter-toggle{% if has_active_filter %} active{% endif %}" id="filterToggleBtn" onclick="toggleFilterPanel()">
+      <i class="fas fa-sliders-h"></i>
+      Filtrele
+      {% if has_active_filter %}<span class="filter-active-dot"></span>{% endif %}
+      <i class="fas fa-chevron-down" id="filterChevron" style="font-size:0.7rem; transition: transform 0.2s;"></i>
+    </button>
+    {% if has_active_filter %}
+    <a href="?" style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;color:#9d2235;text-decoration:none;">
+      <i class="fas fa-times-circle"></i> Filtreyi Temizle
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Filtre Paneli -->
+  <div class="filter-panel{% if has_active_filter %} open{% endif %}" id="filterPanel">
+    <form method="GET" action="">
+      <!-- Gayrimenkul Adı -->
+      <div class="filter-group">
+        <label><i class="fas fa-search" style="margin-right:3px;"></i>Gayrimenkul Adı</label>
+        <input type="text" name="search" placeholder="Ara..." value="{{ filter_search }}">
+      </div>
+
+      <!-- Mahalle -->
+      <div class="filter-group">
+        <label><i class="fas fa-map-marker-alt" style="margin-right:3px;"></i>Mahalle</label>
+        <select name="neighborhood">
+          <option value="">Tümü</option>
+          {% for n in neighborhoods %}
+            <option value="{{ n.id }}" {% if filter_neighborhood == n.id|stringformat:"s" %}selected{% endif %}>{{ n.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Fiyat Aralığı -->
+      <div class="filter-group price-group">
+        <label><i class="fas fa-lira-sign" style="margin-right:3px;"></i>Fiyat Aralığı</label>
+        <div class="price-inputs">
+          <input type="number" name="min_price" placeholder="Min" value="{{ filter_min_price }}" min="0" step="50000">
+          <span>—</span>
+          <input type="number" name="max_price" placeholder="Max" value="{{ filter_max_price }}" min="0" step="50000">
+        </div>
+      </div>
+
+      <!-- Danışman -->
+      {% if user_role in 'admin manager secretary' %}
+      <div class="filter-group">
+        <label><i class="fas fa-user" style="margin-right:3px;"></i>Danışman</label>
+        <select name="consultant">
+          <option value="">Tümü</option>
+          {% for c in consultants %}
+            <option value="{{ c.id }}" {% if filter_consultant == c.id|stringformat:"s" %}selected{% endif %}>{{ c.get_full_name|default:c.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <!-- Kullanım -->
+      <div class="filter-group">
+        <label><i class="fas fa-home" style="margin-right:3px;"></i>Kullanım</label>
+        <select name="status">
+          <option value="">Tümü</option>
+          <option value="satilik" {% if filter_status == 'satilik' %}selected{% endif %}>Satılık</option>
+          <option value="kiralik" {% if filter_status == 'kiralik' %}selected{% endif %}>Kiralık</option>
+        </select>
+      </div>
+
+      <!-- Branda -->
+      <div class="filter-group">
+        <label><i class="fas fa-flag" style="margin-right:3px;"></i>Branda</label>
+        <select name="banner_status">
+          <option value="">Tümü</option>
+          <option value="asildi" {% if filter_banner_status == 'asildi' %}selected{% endif %}>Asıldı</option>
+          <option value="asilmadi" {% if filter_banner_status == 'asilmadi' %}selected{% endif %}>Asılmadı</option>
+          <option value="astirmiyor" {% if filter_banner_status == 'astirmiyor' %}selected{% endif %}>Astırmıyor</option>
+        </select>
+      </div>
+
+      <!-- Fotoğraf -->
+      <div class="filter-group">
+        <label><i class="fas fa-camera" style="margin-right:3px;"></i>Fotoğraf</label>
+        <select name="photo_status">
+          <option value="">Tümü</option>
+          <option value="cekme" {% if filter_photo_status == 'cekme' %}selected{% endif %}>Çekildi</option>
+          <option value="cekilmedi" {% if filter_photo_status == 'cekilmedi' %}selected{% endif %}>Çekilmedi</option>
+        </select>
+      </div>
+
+      <!-- Butonlar -->
+      <div class="filter-actions">
+        <button type="submit" class="btn-filter">
+          <i class="fas fa-filter"></i> Filtrele
+          {% if has_active_filter %}<span class="filter-badge">!</span>{% endif %}
+        </button>
+        {% if has_active_filter %}
+        <a href="?" class="btn-clear-filter">
+          <i class="fas fa-times"></i> Temizle
+        </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div>
+      <i class="fas fa-home"></i>
+      Toplam: <strong>{{ total_count }}</strong>
+    </div>
+    <div>
+      <i class="fas fa-tag text-success"></i>
+      Satılık: <strong>{{ satilik_count }}</strong>
+    </div>
+    <div>
+      <i class="fas fa-key text-primary"></i>
+      Kiralık: <strong>{{ kiralik_count }}</strong>
+    </div>
+  </div>
+
+  <!-- Excel Table -->
+  <div class="excel-container">
+    {% if grouped_properties %}
+      {% for neighborhood, data in grouped_properties.items %}
+        <!-- Neighborhood Header -->
+        <div class="neighborhood-header" onclick="toggleNeighborhood(this)">
+          <div>
+            <i class="fas fa-map-marker-alt text-danger me-2"></i>
+            {{ neighborhood }}
+            <span class="group-count">{{ data.total_count }}</span>
+          </div>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+
+        <!-- Table -->
+        <div class="group-content">
+          <table class="excel-table">
+            <thead>
+              <tr>
+                <th class="cell-checkbox"><input type="checkbox"></th>
+                <th>Gayrimenkul</th>
+                <th>Adı Soyadı</th>
+                <th>Telefon</th>
+                <th>Oda</th>
+                <th>Fiyat</th>
+                <th>Brüt m²</th>
+                <th>Net m²</th>
+                <th>B.Kat</th>
+                <th>Kat</th>
+                <th>Fotoğraf</th>
+                <th>Branda</th>
+                <th>Danışman</th>
+                <th>Mahalle</th>
+                <th>Kullanım</th>
+                <th>Sahibinden</th>
+                <th>Emlakjet</th>
+                <th>Hepsiemlak</th>
+                <th>Sosyal Medya</th>
+                <th>Bina Yaşı</th>
+                <th>Tarih</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Grouped Items -->
+              {% for item in data.grouped_items %}
+                <!-- Main Row (Group Header) -->
+                <tr class="group-row" onclick="toggleGroup(this, event)">
+                  <td class="cell-checkbox" onclick="event.stopPropagation()">
+                    <span class="group-toggle">
+                      <i class="fas fa-chevron-right"></i>
+                    </span>
+                  </td>
+                  <td class="property-name-cell" colspan="2">
+                    <span class="property-name">{{ item.main_property.apartment_name }}</span>
+                    <button class="note-btn {% if item.main_property.notes.count > 0 %}has-note{% endif %}" onclick="openNoteModal({{ item.main_property.id }}, '{{ item.main_property.apartment_name|escapejs }}'); event.stopPropagation();" title="Notlar ({{ item.main_property.notes.count }})"><i class="fas fa-sticky-note"></i></button>
+                    <span class="group-badge">{{ item.count }}</span>
+                  </td>
+                  <td>{{ item.main_property.owner_phone|default:"-" }}</td>
+                  <td class="number-cell">{{ item.main_property.room_count|default:"-" }}</td>
+                  <td class="price-cell number-cell">{{ item.main_property.price|floatformat:0|intcomma }} ₺</td>
+                  <td class="number-cell">{{ item.main_property.gross_area|floatformat:0|default:"-" }}</td>
+                  <td class="number-cell">{{ item.main_property.net_area|floatformat:0|default:"-" }}</td>
+                  <td class="number-cell">{{ item.main_property.floor|default:"-" }}</td>
+                  <td class="number-cell">{{ item.main_property.floor_count|default:"-" }}</td>
+                  <td class="photo-status-cell" style="text-align: center;"
+                      data-property-id="{{ item.main_property.id }}"
+                      data-status="{{ item.main_property.photo_status }}"
+                      onclick="event.stopPropagation()">
+                    <div class="dropdown">
+                      <button class="photo-status-btn photo-status-{{ item.main_property.photo_status }}" 
+                              type="button" 
+                              data-bs-toggle="dropdown">
+                        {% if item.main_property.photo_status == 'cekildi' %}
+                          Çekildi
+                        {% elif item.main_property.photo_status == 'cektirmiyor' %}
+                          Çektirmiyor
+                        {% elif item.main_property.photo_status == 'cekilmedi' %}
+                          Çekilmedi
+                        {% else %}
+                          Çekilemiyor
+                        {% endif %}
+                      </button>
+                      <ul class="dropdown-menu photo-status-menu">
+                        <li><a class="dropdown-item photo-opt-cekildi" href="#" onclick="updatePhotoStatus({{ item.main_property.id }}, 'cekildi'); return false;">Çekildi</a></li>
+                        <li><a class="dropdown-item photo-opt-cektirmiyor" href="#" onclick="updatePhotoStatus({{ item.main_property.id }}, 'cektirmiyor'); return false;">Çektirmiyor</a></li>
+                        <li><a class="dropdown-item photo-opt-cekilmedi" href="#" onclick="updatePhotoStatus({{ item.main_property.id }}, 'cekilmedi'); return false;">Çekilmedi</a></li>
+                        <li><a class="dropdown-item photo-opt-cekilemiyor" href="#" onclick="updatePhotoStatus({{ item.main_property.id }}, 'cekilemiyor'); return false;">Çekilemiyor</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                  <td class="banner-status-cell" style="text-align: center;"
+                      data-property-id="{{ item.main_property.id }}"
+                      data-status="{{ item.main_property.banner_status }}"
+                      onclick="event.stopPropagation()">
+                    <div class="dropdown">
+                      <button class="banner-status-btn banner-status-{{ item.main_property.banner_status }}" 
+                              type="button" 
+                              data-bs-toggle="dropdown">
+                        {% if item.main_property.banner_status == 'asildi' %}
+                          Asıldı
+                        {% elif item.main_property.banner_status == 'asilmadi' %}
+                          Asılmadı
+                        {% elif item.main_property.banner_status == 'astirmiyor' %}
+                          Astırmıyor
+                        {% else %}
+                          Asmadım
+                        {% endif %}
+                      </button>
+                      <ul class="dropdown-menu banner-status-menu">
+                        <li><a class="dropdown-item banner-opt-asildi" href="#" onclick="updateBannerStatus({{ item.main_property.id }}, 'asildi'); return false;">Asıldı</a></li>
+                        <li><a class="dropdown-item banner-opt-asilmadi" href="#" onclick="updateBannerStatus({{ item.main_property.id }}, 'asilmadi'); return false;">Asılmadı</a></li>
+                        <li><a class="dropdown-item banner-opt-astirmiyor" href="#" onclick="updateBannerStatus({{ item.main_property.id }}, 'astirmiyor'); return false;">Astırmıyor</a></li>
+                        <li><a class="dropdown-item banner-opt-asmadim" href="#" onclick="updateBannerStatus({{ item.main_property.id }}, 'asmadim'); return false;">Asmadım</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                  <td>{{ item.main_property.consultant.get_full_name|default:"-" }}</td>
+                  <td>{{ item.main_property.neighborhood.name|default:"-" }}</td>
+                  <td>{% if item.main_property.status == 'satilik' %}Satılık{% else %}Kiralık{% endif %}</td>
+                  <td class="portal-link-cell" style="text-align: center;" 
+                      data-property-id="{{ item.main_property.id }}" 
+                      data-portal="sahibinden"
+                      data-link="{% if item.main_property.owner_listing_number %}{{ item.main_property.owner_listing_number }}{% endif %}"
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    {% if item.main_property.owner_listing_number %}
+                      <span class="status-icon status-yes" title="{{ item.main_property.owner_listing_number }}"><i class="fas fa-check"></i></span>
+                    {% else %}
+                      <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                    {% endif %}
+                  </td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ item.main_property.id }}"
+                      data-portal="emlakjet"
+                      data-link="{% if item.main_property.emlakjet_listing_number %}{{ item.main_property.emlakjet_listing_number }}{% endif %}"
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    {% if item.main_property.emlakjet_listing_number %}
+                      <span class="status-icon status-yes" title="{{ item.main_property.emlakjet_listing_number }}"><i class="fas fa-check"></i></span>
+                    {% else %}
+                      <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                    {% endif %}
+                  </td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ item.main_property.id }}"
+                      data-portal="hepsiemlak"
+                      data-link="{% if item.main_property.hepsiemlak_listing_number %}{{ item.main_property.hepsiemlak_listing_number }}{% endif %}"
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    {% if item.main_property.hepsiemlak_listing_number %}
+                      <span class="status-icon status-yes" title="{{ item.main_property.hepsiemlak_listing_number }}"><i class="fas fa-check"></i></span>
+                    {% else %}
+                      <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                    {% endif %}
+                  </td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ item.main_property.id }}"
+                      data-portal="social_media"
+                      data-link=""
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                  </td>
+                  <td class="number-cell">{{ item.main_property.building_age|default:"-" }}</td>
+                  <td>{{ item.main_property.created_at|date:"d.m.Y" }}</td>
+                  <td onclick="event.stopPropagation()">
+                    <div class="dropdown">
+                      <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/gayrimenkul/{{ item.main_property.id }}/">Görüntüle</a></li>
+                        <li><a class="dropdown-item" href="/gayrimenkul/duzenle/{{ item.main_property.id }}/">Düzenle</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="if(confirm('Silmek istediğinize emin misiniz?')) { window.location.href='/gayrimenkul/sil/{{ item.main_property.id }}/'; } return false;">Sil</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Sub Rows (Hidden by default) -->
+                {% for sub_prop in item.sub_properties %}
+                <tr class="sub-row hidden-row" data-group="{{ forloop.parentloop.counter }}">
+                  <td class="cell-checkbox" onclick="event.stopPropagation()">
+                    <input type="checkbox" name="property_select" value="{{ sub_prop.id }}">
+                  </td>
+                  <td class="property-name-cell indent-cell" colspan="2">
+                    <span class="property-name">{{ sub_prop.apartment_name }}</span>
+                    <button class="note-btn {% if sub_prop.notes.count > 0 %}has-note{% endif %}" onclick="openNoteModal({{ sub_prop.id }}, '{{ sub_prop.apartment_name|escapejs }}'); event.stopPropagation();" title="Notlar ({{ sub_prop.notes.count }})"><i class="fas fa-sticky-note"></i></button>
+                  </td>
+                  <td>{{ sub_prop.owner_phone|default:"-" }}</td>
+                  <td class="number-cell">{{ sub_prop.room_count|default:"-" }}</td>
+                  <td class="price-cell number-cell">{{ sub_prop.price|floatformat:0|intcomma }} ₺</td>
+                  <td class="number-cell">{{ sub_prop.gross_area|floatformat:0|default:"-" }}</td>
+                  <td class="number-cell">{{ sub_prop.net_area|floatformat:0|default:"-" }}</td>
+                  <td class="number-cell">{{ sub_prop.floor|default:"-" }}</td>
+                  <td class="number-cell">{{ sub_prop.floor_count|default:"-" }}</td>
+                  <td class="photo-status-cell" style="text-align: center;"
+                      data-property-id="{{ sub_prop.id }}"
+                      data-status="{{ sub_prop.photo_status }}"
+                      onclick="event.stopPropagation()">
+                    <div class="dropdown">
+                      <button class="photo-status-btn photo-status-{{ sub_prop.photo_status }}" 
+                              type="button" 
+                              data-bs-toggle="dropdown">
+                        {% if sub_prop.photo_status == 'cekildi' %}
+                          Çekildi
+                        {% elif sub_prop.photo_status == 'cektirmiyor' %}
+                          Çektirmiyor
+                        {% elif sub_prop.photo_status == 'cekilmedi' %}
+                          Çekilmedi
+                        {% else %}
+                          Çekilemiyor
+                        {% endif %}
+                      </button>
+                      <ul class="dropdown-menu photo-status-menu">
+                        <li><a class="dropdown-item photo-opt-cekildi" href="#" onclick="updatePhotoStatus({{ sub_prop.id }}, 'cekildi'); return false;">Çekildi</a></li>
+                        <li><a class="dropdown-item photo-opt-cektirmiyor" href="#" onclick="updatePhotoStatus({{ sub_prop.id }}, 'cektirmiyor'); return false;">Çektirmiyor</a></li>
+                        <li><a class="dropdown-item photo-opt-cekilmedi" href="#" onclick="updatePhotoStatus({{ sub_prop.id }}, 'cekilmedi'); return false;">Çekilmedi</a></li>
+                        <li><a class="dropdown-item photo-opt-cekilemiyor" href="#" onclick="updatePhotoStatus({{ sub_prop.id }}, 'cekilemiyor'); return false;">Çekilemiyor</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                  <td class="banner-status-cell" style="text-align: center;"
+                      data-property-id="{{ sub_prop.id }}"
+                      data-status="{{ sub_prop.banner_status }}"
+                      onclick="event.stopPropagation()">
+                    <div class="dropdown">
+                      <button class="banner-status-btn banner-status-{{ sub_prop.banner_status }}" 
+                              type="button" 
+                              data-bs-toggle="dropdown">
+                        {% if sub_prop.banner_status == 'asildi' %}
+                          Asıldı
+                        {% elif sub_prop.banner_status == 'asilmadi' %}
+                          Asılmadı
+                        {% elif sub_prop.banner_status == 'astirmiyor' %}
+                          Astırmıyor
+                        {% else %}
+                          Asmadım
+                        {% endif %}
+                      </button>
+                      <ul class="dropdown-menu banner-status-menu">
+                        <li><a class="dropdown-item banner-opt-asildi" href="#" onclick="updateBannerStatus({{ sub_prop.id }}, 'asildi'); return false;">Asıldı</a></li>
+                        <li><a class="dropdown-item banner-opt-asilmadi" href="#" onclick="updateBannerStatus({{ sub_prop.id }}, 'asilmadi'); return false;">Asılmadı</a></li>
+                        <li><a class="dropdown-item banner-opt-astirmiyor" href="#" onclick="updateBannerStatus({{ sub_prop.id }}, 'astirmiyor'); return false;">Astırmıyor</a></li>
+                        <li><a class="dropdown-item banner-opt-asmadim" href="#" onclick="updateBannerStatus({{ sub_prop.id }}, 'asmadim'); return false;">Asmadım</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                  <td>{{ sub_prop.consultant.get_full_name|default:"-" }}</td>
+                  <td>{{ sub_prop.neighborhood.name|default:"-" }}</td>
+                  <td>{% if sub_prop.status == 'satilik' %}Satılık{% else %}Kiralık{% endif %}</td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ sub_prop.id }}"
+                      data-portal="sahibinden"
+                      data-link="{% if sub_prop.owner_listing_number %}{{ sub_prop.owner_listing_number }}{% endif %}"
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    {% if sub_prop.owner_listing_number %}
+                      <span class="status-icon status-yes" title="{{ sub_prop.owner_listing_number }}"><i class="fas fa-check"></i></span>
+                    {% else %}
+                      <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                    {% endif %}
+                  </td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ sub_prop.id }}"
+                      data-portal="emlakjet"
+                      data-link="{% if sub_prop.emlakjet_listing_number %}{{ sub_prop.emlakjet_listing_number }}{% endif %}"
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    {% if sub_prop.emlakjet_listing_number %}
+                      <span class="status-icon status-yes" title="{{ sub_prop.emlakjet_listing_number }}"><i class="fas fa-check"></i></span>
+                    {% else %}
+                      <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                    {% endif %}
+                  </td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ sub_prop.id }}"
+                      data-portal="hepsiemlak"
+                      data-link="{% if sub_prop.hepsiemlak_listing_number %}{{ sub_prop.hepsiemlak_listing_number }}{% endif %}"
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    {% if sub_prop.hepsiemlak_listing_number %}
+                      <span class="status-icon status-yes" title="{{ sub_prop.hepsiemlak_listing_number }}"><i class="fas fa-check"></i></span>
+                    {% else %}
+                      <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                    {% endif %}
+                  </td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ sub_prop.id }}"
+                      data-portal="social_media"
+                      data-link=""
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                  </td>
+                  <td class="number-cell">{{ sub_prop.building_age|default:"-" }}</td>
+                  <td>{{ sub_prop.created_at|date:"d.m.Y" }}</td>
+                  <td onclick="event.stopPropagation()">
+                    <div class="dropdown">
+                      <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/gayrimenkul/{{ sub_prop.id }}/">Görüntüle</a></li>
+                        <li><a class="dropdown-item" href="/gayrimenkul/duzenle/{{ sub_prop.id }}/">Düzenle</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="if(confirm('Silmek istediğinize emin misiniz?')) { window.location.href='/gayrimenkul/sil/{{ sub_prop.id }}/'; } return false;">Sil</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% endfor %}
+
+              <!-- Standalone Items -->
+              {% for prop in data.standalone_items %}
+                <tr onclick="window.location.href='/gayrimenkul/{{ prop.id }}/'">
+                  <td class="cell-checkbox" onclick="event.stopPropagation()">
+                    <input type="checkbox" name="property_select" value="{{ prop.id }}">
+                  </td>
+                  <td class="property-name-cell" colspan="2">
+                    <span class="property-name">{{ prop.apartment_name }}</span>
+                    <button class="note-btn {% if prop.notes.count > 0 %}has-note{% endif %}" onclick="openNoteModal({{ prop.id }}, '{{ prop.apartment_name|escapejs }}'); event.stopPropagation();" title="Notlar ({{ prop.notes.count }})"><i class="fas fa-sticky-note"></i></button>
+                  </td>
+                  <td>{{ prop.owner_phone|default:"-" }}</td>
+                  <td class="number-cell">{{ prop.room_count|default:"-" }}</td>
+                  <td class="price-cell number-cell">{{ prop.price|floatformat:0|intcomma }} ₺</td>
+                  <td class="number-cell">{{ prop.gross_area|floatformat:0|default:"-" }}</td>
+                  <td class="number-cell">{{ prop.net_area|floatformat:0|default:"-" }}</td>
+                  <td class="number-cell">{{ prop.floor|default:"-" }}</td>
+                  <td class="number-cell">{{ prop.floor_count|default:"-" }}</td>
+                  <td class="photo-status-cell" style="text-align: center;"
+                      data-property-id="{{ prop.id }}"
+                      data-status="{{ prop.photo_status }}"
+                      onclick="event.stopPropagation()">
+                    <div class="dropdown">
+                      <button class="photo-status-btn photo-status-{{ prop.photo_status }}" 
+                              type="button" 
+                              data-bs-toggle="dropdown">
+                        {% if prop.photo_status == 'cekildi' %}
+                          Çekildi
+                        {% elif prop.photo_status == 'cektirmiyor' %}
+                          Çektirmiyor
+                        {% elif prop.photo_status == 'cekilmedi' %}
+                          Çekilmedi
+                        {% else %}
+                          Çekilemiyor
+                        {% endif %}
+                      </button>
+                      <ul class="dropdown-menu photo-status-menu">
+                        <li><a class="dropdown-item photo-opt-cekildi" href="#" onclick="updatePhotoStatus({{ prop.id }}, 'cekildi'); return false;">Çekildi</a></li>
+                        <li><a class="dropdown-item photo-opt-cektirmiyor" href="#" onclick="updatePhotoStatus({{ prop.id }}, 'cektirmiyor'); return false;">Çektirmiyor</a></li>
+                        <li><a class="dropdown-item photo-opt-cekilmedi" href="#" onclick="updatePhotoStatus({{ prop.id }}, 'cekilmedi'); return false;">Çekilmedi</a></li>
+                        <li><a class="dropdown-item photo-opt-cekilemiyor" href="#" onclick="updatePhotoStatus({{ prop.id }}, 'cekilemiyor'); return false;">Çekilemiyor</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                  <td class="banner-status-cell" style="text-align: center;"
+                      data-property-id="{{ prop.id }}"
+                      data-status="{{ prop.banner_status }}"
+                      onclick="event.stopPropagation()">
+                    <div class="dropdown">
+                      <button class="banner-status-btn banner-status-{{ prop.banner_status }}" 
+                              type="button" 
+                              data-bs-toggle="dropdown">
+                        {% if prop.banner_status == 'asildi' %}
+                          Asıldı
+                        {% elif prop.banner_status == 'asilmadi' %}
+                          Asılmadı
+                        {% elif prop.banner_status == 'astirmiyor' %}
+                          Astırmıyor
+                        {% else %}
+                          Asmadım
+                        {% endif %}
+                      </button>
+                      <ul class="dropdown-menu banner-status-menu">
+                        <li><a class="dropdown-item banner-opt-asildi" href="#" onclick="updateBannerStatus({{ prop.id }}, 'asildi'); return false;">Asıldı</a></li>
+                        <li><a class="dropdown-item banner-opt-asilmadi" href="#" onclick="updateBannerStatus({{ prop.id }}, 'asilmadi'); return false;">Asılmadı</a></li>
+                        <li><a class="dropdown-item banner-opt-astirmiyor" href="#" onclick="updateBannerStatus({{ prop.id }}, 'astirmiyor'); return false;">Astırmıyor</a></li>
+                        <li><a class="dropdown-item banner-opt-asmadim" href="#" onclick="updateBannerStatus({{ prop.id }}, 'asmadim'); return false;">Asmadım</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                  <td>{{ prop.consultant.get_full_name|default:"-" }}</td>
+                  <td>{{ prop.neighborhood.name|default:"-" }}</td>
+                  <td>{% if prop.status == 'satilik' %}Satılık{% else %}Kiralık{% endif %}</td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ prop.id }}"
+                      data-portal="sahibinden"
+                      data-link="{% if prop.owner_listing_number %}{{ prop.owner_listing_number }}{% endif %}"
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    {% if prop.owner_listing_number %}
+                      <span class="status-icon status-yes" title="{{ prop.owner_listing_number }}"><i class="fas fa-check"></i></span>
+                    {% else %}
+                      <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                    {% endif %}
+                  </td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ prop.id }}"
+                      data-portal="emlakjet"
+                      data-link="{% if prop.emlakjet_listing_number %}{{ prop.emlakjet_listing_number }}{% endif %}"
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    {% if prop.emlakjet_listing_number %}
+                      <span class="status-icon status-yes" title="{{ prop.emlakjet_listing_number }}"><i class="fas fa-check"></i></span>
+                    {% else %}
+                      <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                    {% endif %}
+                  </td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ prop.id }}"
+                      data-portal="hepsiemlak"
+                      data-link="{% if prop.hepsiemlak_listing_number %}{{ prop.hepsiemlak_listing_number }}{% endif %}"
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    {% if prop.hepsiemlak_listing_number %}
+                      <span class="status-icon status-yes" title="{{ prop.hepsiemlak_listing_number }}"><i class="fas fa-check"></i></span>
+                    {% else %}
+                      <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                    {% endif %}
+                  </td>
+                  <td class="portal-link-cell" style="text-align: center;"
+                      data-property-id="{{ prop.id }}"
+                      data-portal="social_media"
+                      data-link=""
+                      onclick="handlePortalClick(event, this)"
+                      ondblclick="handlePortalDoubleClick(event, this)">
+                    <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                  </td>
+                  <td class="number-cell">{{ prop.building_age|default:"-" }}</td>
+                  <td>{{ prop.created_at|date:"d.m.Y" }}</td>
+                  <td onclick="event.stopPropagation()">
+                    <div class="dropdown">
+                      <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/gayrimenkul/{{ prop.id }}/">Görüntüle</a></li>
+                        <li><a class="dropdown-item" href="/gayrimenkul/duzenle/{{ prop.id }}/">Düzenle</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="if(confirm('Silmek istediğinize emin misiniz?')) { window.location.href='/gayrimenkul/sil/{{ prop.id }}/'; } return false;">Sil</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endfor %}
+
+      <!-- Yeni Gelenler -->
+      {% if new_properties %}
+      <div class="neighborhood-header" onclick="toggleNeighborhood(this)" style="margin-top: 20px;">
+        <div>
+          <i class="fas fa-star text-warning me-2"></i>
+          Yeni Gelenler
+          <span class="group-count">{{ new_properties|length }}</span>
+        </div>
+        <i class="fas fa-chevron-down"></i>
+      </div>
+
+      <div class="group-content">
+        <table class="excel-table">
+          <thead>
+            <tr>
+              <th class="cell-checkbox"><input type="checkbox"></th>
+              <th>Gayrimenkul</th>
+              <th>Adı Soyadı</th>
+              <th>Telefon</th>
+              <th>Oda</th>
+              <th>Fiyat</th>
+              <th>Brüt m²</th>
+              <th>Net m²</th>
+              <th>B.Kat</th>
+              <th>Kat</th>
+              <th>Fotoğraf</th>
+              <th>Branda</th>
+              <th>Danışman</th>
+              <th>Mahalle</th>
+              <th>Kullanım</th>
+              <th>Sahibinden</th>
+              <th>Emlakjet</th>
+              <th>Hepsiemlak</th>
+              <th>Sosyal Medya</th>
+              <th>Bina Yaşı</th>
+              <th>Tarih</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for prop in new_properties %}
+            <tr onclick="window.location.href='/gayrimenkul/{{ prop.id }}/'">
+              <td class="cell-checkbox" onclick="event.stopPropagation()">
+                <input type="checkbox" name="property_select" value="{{ prop.id }}">
+              </td>
+              <td class="property-name-cell" colspan="2">
+                <span class="property-name">{{ prop.apartment_name }}</span>
+              </td>
+              <td>{{ prop.owner_phone|default:"-" }}</td>
+              <td class="number-cell">{{ prop.room_count|default:"-" }}</td>
+              <td class="price-cell number-cell">{{ prop.price|floatformat:0|intcomma }} ₺</td>
+              <td class="number-cell">{{ prop.gross_area|floatformat:0|default:"-" }}</td>
+              <td class="number-cell">{{ prop.net_area|floatformat:0|default:"-" }}</td>
+              <td class="number-cell">{{ prop.floor|default:"-" }}</td>
+              <td class="number-cell">{{ prop.floor_count|default:"-" }}</td>
+              <td class="photo-status-cell" style="text-align: center;"
+                  data-property-id="{{ prop.id }}"
+                  data-status="{{ prop.photo_status }}"
+                  onclick="event.stopPropagation()">
+                <div class="dropdown">
+                  <button class="photo-status-btn photo-status-{{ prop.photo_status }}" 
+                          type="button" 
+                          data-bs-toggle="dropdown">
+                    {% if prop.photo_status == 'cekildi' %}
+                      Çekildi
+                    {% elif prop.photo_status == 'cektirmiyor' %}
+                      Çektirmiyor
+                    {% elif prop.photo_status == 'cekilmedi' %}
+                      Çekilmedi
+                    {% else %}
+                      Çekilemiyor
+                    {% endif %}
+                  </button>
+                  <ul class="dropdown-menu photo-status-menu">
+                    <li><a class="dropdown-item photo-opt-cekildi" href="#" onclick="updatePhotoStatus({{ prop.id }}, 'cekildi'); return false;">Çekildi</a></li>
+                    <li><a class="dropdown-item photo-opt-cektirmiyor" href="#" onclick="updatePhotoStatus({{ prop.id }}, 'cektirmiyor'); return false;">Çektirmiyor</a></li>
+                    <li><a class="dropdown-item photo-opt-cekilmedi" href="#" onclick="updatePhotoStatus({{ prop.id }}, 'cekilmedi'); return false;">Çekilmedi</a></li>
+                    <li><a class="dropdown-item photo-opt-cekilemiyor" href="#" onclick="updatePhotoStatus({{ prop.id }}, 'cekilemiyor'); return false;">Çekilemiyor</a></li>
+                  </ul>
+                </div>
+              </td>
+              <td class="banner-status-cell" style="text-align: center;"
+                  data-property-id="{{ prop.id }}"
+                  data-status="{{ prop.banner_status }}"
+                  onclick="event.stopPropagation()">
+                <div class="dropdown">
+                  <button class="banner-status-btn banner-status-{{ prop.banner_status }}" 
+                          type="button" 
+                          data-bs-toggle="dropdown">
+                    {% if prop.banner_status == 'asildi' %}
+                      Asıldı
+                    {% elif prop.banner_status == 'asilmadi' %}
+                      Asılmadı
+                    {% elif prop.banner_status == 'astirmiyor' %}
+                      Astırmıyor
+                    {% else %}
+                      Asmadım
+                    {% endif %}
+                  </button>
+                  <ul class="dropdown-menu banner-status-menu">
+                    <li><a class="dropdown-item banner-opt-asildi" href="#" onclick="updateBannerStatus({{ prop.id }}, 'asildi'); return false;">Asıldı</a></li>
+                    <li><a class="dropdown-item banner-opt-asilmadi" href="#" onclick="updateBannerStatus({{ prop.id }}, 'asilmadi'); return false;">Asılmadı</a></li>
+                    <li><a class="dropdown-item banner-opt-astirmiyor" href="#" onclick="updateBannerStatus({{ prop.id }}, 'astirmiyor'); return false;">Astırmıyor</a></li>
+                    <li><a class="dropdown-item banner-opt-asmadim" href="#" onclick="updateBannerStatus({{ prop.id }}, 'asmadim'); return false;">Asmadım</a></li>
+                  </ul>
+                </div>
+              </td>
+              <td>{{ prop.consultant.get_full_name|default:"-" }}</td>
+              <td>{{ prop.neighborhood.name|default:"-" }}</td>
+              <td>{% if prop.status == 'satilik' %}Satılık{% else %}Kiralık{% endif %}</td>
+              <td class="portal-link-cell" style="text-align: center;"
+                  data-property-id="{{ prop.id }}"
+                  data-portal="sahibinden"
+                  data-link="{% if prop.owner_listing_number %}{{ prop.owner_listing_number }}{% endif %}"
+                  onclick="handlePortalClick(event, this)"
+                  ondblclick="handlePortalDoubleClick(event, this)">
+                {% if prop.owner_listing_number %}
+                  <span class="status-icon status-yes" title="{{ prop.owner_listing_number }}"><i class="fas fa-check"></i></span>
+                {% else %}
+                  <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                {% endif %}
+              </td>
+              <td class="portal-link-cell" style="text-align: center;"
+                  data-property-id="{{ prop.id }}"
+                  data-portal="emlakjet"
+                  data-link="{% if prop.emlakjet_listing_number %}{{ prop.emlakjet_listing_number }}{% endif %}"
+                  onclick="handlePortalClick(event, this)"
+                  ondblclick="handlePortalDoubleClick(event, this)">
+                {% if prop.emlakjet_listing_number %}
+                  <span class="status-icon status-yes" title="{{ prop.emlakjet_listing_number }}"><i class="fas fa-check"></i></span>
+                {% else %}
+                  <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                {% endif %}
+              </td>
+              <td class="portal-link-cell" style="text-align: center;"
+                  data-property-id="{{ prop.id }}"
+                  data-portal="hepsiemlak"
+                  data-link="{% if prop.hepsiemlak_listing_number %}{{ prop.hepsiemlak_listing_number }}{% endif %}"
+                  onclick="handlePortalClick(event, this)"
+                  ondblclick="handlePortalDoubleClick(event, this)">
+                {% if prop.hepsiemlak_listing_number %}
+                  <span class="status-icon status-yes" title="{{ prop.hepsiemlak_listing_number }}"><i class="fas fa-check"></i></span>
+                {% else %}
+                  <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+                {% endif %}
+              </td>
+              <td class="portal-link-cell" style="text-align: center;"
+                  data-property-id="{{ prop.id }}"
+                  data-portal="social_media"
+                  data-link=""
+                  onclick="handlePortalClick(event, this)"
+                  ondblclick="handlePortalDoubleClick(event, this)">
+                <span class="status-icon status-no"><i class="fas fa-times"></i></span>
+              </td>
+              <td class="number-cell">{{ prop.building_age|default:"-" }}</td>
+              <td>{{ prop.created_at|date:"d.m.Y" }}</td>
+              <td onclick="event.stopPropagation()">
+                <div class="dropdown">
+                  <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-ellipsis-v"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="/gayrimenkul/{{ prop.id }}/">Görüntüle</a></li>
+                    <li><a class="dropdown-item" href="/gayrimenkul/duzenle/{{ prop.id }}/">Düzenle</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="if(confirm('Silmek istediğinize emin misiniz?')) { window.location.href='/gayrimenkul/sil/{{ prop.id }}/'; } return false;">Sil</a></li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+    {% else %}
+      <div style="padding: 60px; text-align: center; color: #9aa0a6;">
+        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 16px; opacity: 0.5;"></i>
+        <h5>Henüz gayrimenkul yok</h5>
+        <p>Yeni gayrimenkul eklemek için yukarıdaki "Yeni Ekle" butonunu kullanın.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    // MAHALLE AÇMA/KAPAMA
+    function toggleNeighborhood(header) {
+      const content = header.nextElementSibling;
+      const icon = header.querySelector('.fa-chevron-down');
+      
+      if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        icon.style.transform = 'rotate(0deg)';
+      } else {
+        content.classList.add('collapsed');
+        icon.style.transform = 'rotate(-90deg)';
+      }
+    }
+
+    // GRUP AÇMA/KAPAMA (Bina grupları)
+    function toggleGroup(row, event) {
+      event.stopPropagation();
+      
+      const icon = row.querySelector('.fa-chevron-right');
+      const nextSibling = row.nextElementSibling;
+      
+      // Aynı gruptaki tüm sub-row'ları bul
+      let currentRow = nextSibling;
+      let isExpanded = !currentRow.classList.contains('hidden-row');
+      
+      while (currentRow && currentRow.classList.contains('sub-row')) {
+        if (isExpanded) {
+          currentRow.classList.add('hidden-row');
+        } else {
+          currentRow.classList.remove('hidden-row');
+        }
+        currentRow = currentRow.nextElementSibling;
+      }
+      
+      // İkonu değiştir
+      if (isExpanded) {
+        icon.className = 'fas fa-chevron-right';
+      } else {
+        icon.className = 'fas fa-chevron-down';
+      }
+    }
+
+    // FLOATING ACTION MENU
+    let selectedItems = new Set();
+
+    function updateFloatingMenu() {
+      const menu = document.getElementById('floatingActionMenu');
+      const count = document.getElementById('selectedCount');
+      
+      if (selectedItems.size > 0) {
+        count.textContent = `${selectedItems.size} seçildi`;
+        menu.classList.add('show');
+      } else {
+        menu.classList.remove('show');
+      }
+    }
+
+    function closeFloatingMenu() {
+      // Tüm checkbox'ları temizle
+      document.querySelectorAll('input[name="property_select"]:checked').forEach(cb => {
+        cb.checked = false;
+      });
+      selectedItems.clear();
+      updateFloatingMenu();
+    }
+
+    // Checkbox değişikliklerini dinle
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('input[name="property_select"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          if (this.checked) {
+            selectedItems.add(this.value);
+          } else {
+            selectedItems.delete(this.value);
+          }
+          updateFloatingMenu();
+        });
+      });
+    });
+
+    // ACTIONS
+    function copySelected() {
+      if (selectedItems.size === 0) return;
+      alert(`${selectedItems.size} gayrimenkul kopyalanıyor...`);
+      // TODO: Implement copy functionality
+    }
+
+    function exportSelected() {
+      if (selectedItems.size === 0) return;
+      const ids = Array.from(selectedItems).join(',');
+      window.open(`/gayrimenkul/export-pdf/?ids=${ids}`, '_blank');
+    }
+
+    function archiveSelected() {
+      if (selectedItems.size === 0) return;
+      if (confirm(`${selectedItems.size} gayrimenkul arşivlenecek. Emin misiniz?`)) {
+        // TODO: Implement archive functionality
+        alert('Arşivleme özelliği yakında eklenecek.');
+      }
+    }
+
+    function moveSelected() {
+      if (selectedItems.size === 0) return;
+      // Modal'ı aç
+      const modal = new bootstrap.Modal(document.getElementById('moveGroupModal'));
+      modal.show();
+    }
+
+    function editSelected() {
+      if (selectedItems.size === 0) return;
+      if (selectedItems.size === 1) {
+        const id = Array.from(selectedItems)[0];
+        window.location.href = `/gayrimenkul/duzenle/${id}/`;
+      } else {
+        // TODO: Bulk edit modal
+        alert('Toplu düzenleme özelliği yakında eklenecek.');
+      }
+    }
+
+    function deleteSelected() {
+      if (selectedItems.size === 0) return;
+      if (confirm(`${selectedItems.size} gayrimenkul silinecek. Bu işlem geri alınamaz. Emin misiniz?`)) {
+        const ids = Array.from(selectedItems).join(',');
+        // TODO: Implement delete functionality
+        fetch('/gayrimenkul/bulk-delete/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: `ids=${ids}`
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Silme işlemi başarılı!');
+            window.location.reload();
+          } else {
+            alert('Hata: ' + (data.error || 'Silinemedi'));
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Bir hata oluştu!');
+        });
+      }
+    }
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    // PORTAL LINK CLICK - Tek tıklama: Linke git
+    function handlePortalClick(event, cell) {
+      event.stopPropagation();
+      
+      // Eğer düzenleme modunda değilse
+      if (!cell.querySelector('input')) {
+        const link = cell.getAttribute('data-link');
+        if (link && link.trim() !== '') {
+          window.open(link, '_blank');
+        }
+      }
+    }
+
+    // PORTAL LINK DOUBLE CLICK - Çift tıklama: Link düzenle
+    function handlePortalDoubleClick(event, cell) {
+      event.stopPropagation();
+      
+      // Zaten düzenleme modundaysa çık
+      if (cell.querySelector('input')) return;
+      
+      const propertyId = cell.getAttribute('data-property-id');
+      const portal = cell.getAttribute('data-portal');
+      const currentLink = cell.getAttribute('data-link') || '';
+      
+      // Hücre içeriğini temizle
+      const icon = cell.querySelector('.status-icon');
+      icon.style.display = 'none';
+      
+      // Input ve butonlar oluştur
+      const inputContainer = document.createElement('div');
+      inputContainer.className = 'link-input-container';
+      inputContainer.innerHTML = `
+        <input type="text" class="link-input" value="${currentLink}" placeholder="Link giriniz" autofocus>
+        <div class="link-input-buttons">
+          <button class="link-save-btn" onclick="savePortalLink(${propertyId}, '${portal}', this.parentElement.previousElementSibling)">
+            <i class="fas fa-check"></i> Kaydet
+          </button>
+          <button class="link-cancel-btn" onclick="cancelPortalEdit(this.closest('.link-input-container'))">
+            <i class="fas fa-times"></i> İptal
+          </button>
+        </div>
+      `;
+      
+      cell.appendChild(inputContainer);
+      
+      // Input'a focus
+      const input = inputContainer.querySelector('input');
+      input.focus();
+      input.select();
+      
+      // Enter tuşu ile kaydet
+      input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          savePortalLink(propertyId, portal, input);
+        }
+      });
+      
+      // ESC tuşu ile iptal
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          cancelPortalEdit(inputContainer);
+        }
+      });
+    }
+
+    // PORTAL LİNK KAYDET
+    function savePortalLink(propertyId, portal, input) {
+      const newLink = input.value.trim();
+      const cell = input.closest('.portal-link-cell');
+      
+      console.log('Saving portal link:', {propertyId, portal, link: newLink});
+      
+      // Backend'e kaydet
+      fetch('/update-portal-link/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `property_id=${propertyId}&portal=${portal}&link=${encodeURIComponent(newLink)}`
+      })
+      .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Response data:', data);
+        
+        if (data.success) {
+          // Link'i güncelle
+          cell.setAttribute('data-link', newLink);
+          
+          // Input container'ı kaldır
+          const container = input.closest('.link-input-container');
+          container.remove();
+          
+          // İkonu göster ve güncelle
+          const icon = cell.querySelector('.status-icon');
+          icon.style.display = 'inline-block';
+          
+          if (newLink) {
+            icon.className = 'status-icon status-yes';
+            icon.innerHTML = '<i class="fas fa-check"></i>';
+            icon.title = newLink;
+          } else {
+            icon.className = 'status-icon status-no';
+            icon.innerHTML = '<i class="fas fa-times"></i>';
+            icon.title = '';
+          }
+          
+          // Success animation
+          cell.style.background = '#d4edda';
+          setTimeout(() => {
+            cell.style.background = '';
+          }, 500);
+        } else {
+          alert('Hata: ' + (data.error || 'Kaydedilemedi'));
+          console.error('Save failed:', data);
+          cancelPortalEdit(input.closest('.link-input-container'));
+        }
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Bir hata oluştu! Konsolu kontrol edin: ' + error.message);
+        cancelPortalEdit(input.closest('.link-input-container'));
+      });
+    }
+
+    // PORTAL EDİT İPTAL
+    function cancelPortalEdit(container) {
+      const cell = container.closest('.portal-link-cell');
+      container.remove();
+      
+      // İkonu tekrar göster
+      const icon = cell.querySelector('.status-icon');
+      icon.style.display = 'inline-block';
+    }
+
+    // FOTOĞRAF DURUMU GÜNCELLE
+    function updatePhotoStatus(propertyId, status) {
+      console.log('Updating photo status:', {propertyId, status});
+      
+      // Dropdown'ı kapat
+      const cell = document.querySelector(`.photo-status-cell[data-property-id="${propertyId}"]`);
+      const dropdownBtn = cell?.querySelector('.photo-status-btn');
+      if (dropdownBtn) {
+        const bsDropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+        if (bsDropdown) {
+          bsDropdown.hide();
+        }
+      }
+      
+      fetch('/update-photo-status/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `property_id=${propertyId}&status=${status}`
+      })
+      .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Response data:', data);
+        
+        if (data.success) {
+          // Buton rengini güncelle
+          const btn = document.querySelector(`[data-property-id="${propertyId}"] .photo-status-btn`);
+          if (btn) {
+            // Eski class'ları temizle
+            btn.className = 'photo-status-btn photo-status-' + status;
+            
+            // Text'i güncelle
+            const statusText = {
+              'cekildi': 'Çekildi',
+              'asilmadi': 'Asılmadı',
+              'cektirmiyor': 'Çektirmiyor',
+              'cekilmedi': 'Çekilmedi',
+              'cekilemiyor': 'Çekilemiyor'
+            };
+            btn.textContent = statusText[status] || status;
+            
+            // Success animation
+            btn.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+              btn.style.transform = 'scale(1)';
+            }, 200);
+          }
+        } else {
+          alert('Hata: ' + (data.error || 'Güncellenemedi'));
+        }
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Bir hata oluştu! Konsolu kontrol edin: ' + error.message);
+      });
+    }
+
+    // BRANDA DURUMU GÜNCELLE
+    function updateBannerStatus(propertyId, status) {
+      console.log('Updating banner status:', {propertyId, status});
+      
+      // Dropdown'ı kapat
+      const cell = document.querySelector(`.banner-status-cell[data-property-id="${propertyId}"]`);
+      const dropdownBtn = cell?.querySelector('.banner-status-btn');
+      if (dropdownBtn) {
+        const bsDropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+        if (bsDropdown) {
+          bsDropdown.hide();
+        }
+      }
+      
+      fetch('/update-banner-status/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `property_id=${propertyId}&status=${status}`
+      })
+      .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Response data:', data);
+        
+        if (data.success) {
+          // Buton rengini güncelle
+          const btn = document.querySelector(`.banner-status-cell[data-property-id="${propertyId}"] .banner-status-btn`);
+          if (btn) {
+            // Eski class'ları temizle
+            btn.className = 'banner-status-btn banner-status-' + status;
+            
+            // Text'i güncelle
+            const statusText = {
+              'asildi': 'Asıldı',
+              'asilmadi': 'Asılmadı',
+              'astirmiyor': 'Astırmıyor',
+              'asmadim': 'Asmadım'
+            };
+            btn.textContent = statusText[status] || status;
+            
+            // Success animation
+            btn.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+              btn.style.transform = 'scale(1)';
+            }, 200);
+          }
+        } else {
+          alert('Hata: ' + (data.error || 'Güncellenemedi'));
+        }
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Bir hata oluştu! Konsolu kontrol edin: ' + error.message);
+      });
+    }
+  </script>
+
+  <!-- Floating Action Menu -->
+  <div id="floatingActionMenu" class="floating-action-menu">
+    <span id="selectedCount" class="selected-count">0 seçildi</span>
+    
+    <button class="action-btn" onclick="copySelected()" title="Kopyala">
+      <i class="fas fa-copy"></i>
+      <span>Kopyala</span>
+    </button>
+    
+    <button class="action-btn" onclick="exportSelected()" title="PDF Olarak Dışa Aktar">
+      <i class="fas fa-file-pdf"></i>
+      <span>PDF</span>
+    </button>
+    
+    <button class="action-btn" onclick="archiveSelected()" title="Arşivle">
+      <i class="fas fa-archive"></i>
+      <span>Arşiv</span>
+    </button>
+    
+    <button class="action-btn" onclick="moveSelected()" title="Taşı">
+      <i class="fas fa-arrows-alt"></i>
+      <span>Taşı</span>
+    </button>
+    
+    <button class="action-btn" onclick="editSelected()" title="Düzenle">
+      <i class="fas fa-edit"></i>
+      <span>Düzenle</span>
+    </button>
+    
+    <button class="action-btn danger" onclick="deleteSelected()" title="Sil">
+      <i class="fas fa-trash"></i>
+      <span>Sil</span>
+    </button>
+    
+    <button class="action-btn close-btn" onclick="closeFloatingMenu()" title="Kapat">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Move to Group Modal -->
+  <div class="modal fade" id="moveGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 12px; border: none;">
+        <div class="modal-header" style="border-bottom: 1px solid #e9ecef; padding: 20px;">
+          <h5 class="modal-title" style="font-weight: 600; color: #202124;">Grup seçin</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" style="padding: 0;">
+          <!-- Search Box -->
+          <div style="padding: 16px 20px; border-bottom: 1px solid #e9ecef;">
+            <div style="position: relative;">
+              <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9aa0a6; font-size: 0.875rem;"></i>
+              <input type="text" id="groupSearch" class="form-control" placeholder="Grup ara" 
+                     style="padding-left: 36px; border-radius: 8px; border: 1px solid #dadce0; font-size: 0.875rem;"
+                     onkeyup="filterGroups()">
+            </div>
+          </div>
+          
+          <!-- Group List -->
+          <div id="groupList" style="max-height: 400px; overflow-y: auto;">
+            <!-- Dinamik gruplar buraya gelecek -->
+            <div class="group-item" data-group="cekmeyen" onclick="selectGroup('cekmeyen', 'Çekilmeyen')">
+              <div class="group-color" style="background: #9c27b0;"></div>
+              <span class="group-name">Çekilmeyen</span>
+            </div>
+            
+            <div class="group-item" data-group="kiralik" onclick="selectGroup('kiralik', 'Kiralık')">
+              <div class="group-color" style="background: #ff9800;"></div>
+              <span class="group-name">Kiralık</span>
+            </div>
+            
+            <div class="group-item" data-group="fistiklik-2-1" onclick="selectGroup('fistiklik-2-1', 'FISTIKLIK 2+1')">
+              <div class="group-color" style="background: #2196f3;"></div>
+              <span class="group-name">FISTIKLIK 2+1</span>
+            </div>
+            
+            <div class="group-item" data-group="fistiklik-3-1" onclick="selectGroup('fistiklik-3-1', 'FISTIKLIK 3+1')">
+              <div class="group-color" style="background: #8bc34a;"></div>
+              <span class="group-name">FISTIKLIK 3+1</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 16px 20px;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 6px;">Geri</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .group-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+      border-bottom: 1px solid #f1f3f4;
+    }
+
+    .group-item:hover {
+      background: #f8f9fa;
+    }
+
+    .group-item:last-child {
+      border-bottom: none;
+    }
+
+    .group-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .group-name {
+      font-size: 0.875rem;
+      color: #202124;
+      font-weight: 500;
+    }
+
+    .modal-content {
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+  </style>
+
+  <script>
+    // GRUP FİLTRELEME
+    function filterGroups() {
+      const searchValue = document.getElementById('groupSearch').value.toLowerCase();
+      const groups = document.querySelectorAll('.group-item');
+      
+      groups.forEach(group => {
+        const groupName = group.querySelector('.group-name').textContent.toLowerCase();
+        if (groupName.includes(searchValue)) {
+          group.style.display = 'flex';
+        } else {
+          group.style.display = 'none';
+        }
+      });
+    }
+
+    // GRUP SEÇİMİ
+    function selectGroup(groupId, groupName) {
+      if (selectedItems.size === 0) return;
+      
+      if (confirm(`${selectedItems.size} gayrimenkul "${groupName}" grubuna taşınacak. Emin misiniz?`)) {
+        const ids = Array.from(selectedItems).join(',');
+        
+        fetch('/gayrimenkul/move-to-group/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: `ids=${ids}&group=${groupId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Modal'ı kapat
+            const modal = bootstrap.Modal.getInstance(document.getElementById('moveGroupModal'));
+            modal.hide();
+            
+            // Success message
+            alert(`${selectedItems.size} gayrimenkul "${groupName}" grubuna taşındı!`);
+            
+            // Sayfayı yenile
+            window.location.reload();
+          } else {
+            alert('Hata: ' + (data.error || 'Taşınamadı'));
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Bir hata oluştu!');
+        });
+      }
+    }
+
+
+
+    // ─── PORTAL BİLDİRİMLERİ ─────────────────────────────────────────────────
+    function loadPortalNotifications() {
+      fetch('/portal-bildirimleri/')
+        .then(r => r.json())
+        .then(data => {
+          if (!data.success || data.count === 0) return;
+
+          const banner = document.getElementById('portalNotifBanner');
+          const list   = document.getElementById('portalNotifList');
+
+          list.innerHTML = data.notifications.map(n => `
+            <div class="portal-notif-item" id="pnotif-${n.id}">
+              <i class="fas fa-store"></i>
+              <strong>${n.portal}</strong> — ${n.property_name}
+              <span style="color:#94a3b8;font-size:0.7rem;">${n.created_at}</span>
+              <button class="dismiss-btn" onclick="readNotification(${n.id})" title="Okundu">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          `).join('');
+
+          banner.classList.add('visible');
+        })
+        .catch(() => {});
+    }
+
+    function readNotification(id) {
+      const formData = new FormData();
+      formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+      fetch(`/portal-bildirim-oku/${id}/`, { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            const el = document.getElementById(`pnotif-${id}`);
+            if (el) el.remove();
+            // Liste boşaldıysa banner'ı gizle
+            if (document.getElementById('portalNotifList').children.length === 0) {
+              document.getElementById('portalNotifBanner').classList.remove('visible');
+            }
+          }
+        });
+    }
+
+    function readAllNotifications() {
+      const formData = new FormData();
+      formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+      fetch('/portal-bildirimleri-hepsini-oku/', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('portalNotifBanner').classList.remove('visible');
+          }
+        });
+    }
+
+    // Sayfa açılınca bildirimleri yükle
+    document.addEventListener('DOMContentLoaded', loadPortalNotifications);
+    // ──────────────────────────────────────────────────────────────────────────
+    // ─── NOT SİSTEMİ ───────────────────────────────────────────────────────
+    let currentNotePropertyId = null;
+
+    function openNoteModal(propertyId, propertyName) {
+      currentNotePropertyId = propertyId;
+      document.getElementById('noteModalTitle').textContent = propertyName || 'Notlar';
+      document.getElementById('noteTextarea').value = '';
+      document.getElementById('notesList').innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:0.83rem;"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>';
+
+      const modal = new bootstrap.Modal(document.getElementById('noteModal'));
+      modal.show();
+
+      loadNotes(propertyId);
+    }
+
+    function loadNotes(propertyId) {
+      fetch(`/gayrimenkul/${propertyId}/notlar/`)
+        .then(r => r.json())
+        .then(data => {
+          const list = document.getElementById('notesList');
+          if (!data.success || data.notes.length === 0) {
+            list.innerHTML = '';
+            return;
+          }
+          list.innerHTML = data.notes.map(n => `
+            <div class="note-item" id="note-${n.id}">
+              <div class="note-meta">
+                <span class="note-user"><i class="fas fa-user-circle me-1"></i>${n.user}</span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span class="note-date"><i class="fas fa-clock me-1"></i>${n.created_at}</span>
+                  <button class="note-delete-btn" onclick="deleteNote(${n.id})" title="Sil"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>
+              <div class="note-text">${n.note.replace(/\n/g, '<br>')}</div>
+            </div>
+          `).join('');
+        })
+        .catch(() => {
+          document.getElementById('notesList').innerHTML = '<div style="color:#ef4444;font-size:0.83rem;">Notlar yüklenemedi.</div>';
+        });
+    }
+
+    function saveNote() {
+      const text = document.getElementById('noteTextarea').value.trim();
+      if (!text) { alert('Lütfen bir not yazın.'); return; }
+
+      const btn = document.getElementById('saveNoteBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Kaydediliyor...';
+
+      const formData = new FormData();
+      formData.append('note', text);
+      formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+      fetch(`/gayrimenkul/${currentNotePropertyId}/not-ekle/`, {
+        method: 'POST',
+        body: formData,
+      })
+      .then(r => r.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save me-1"></i> Kaydet';
+        if (data.success) {
+          document.getElementById('noteTextarea').value = '';
+          // Yeni notu listenin başına ekle
+          const list = document.getElementById('notesList');
+          const n = data.note;
+          const div = document.createElement('div');
+          div.className = 'note-item';
+          div.id = `note-${n.id}`;
+          div.innerHTML = `
+            <div class="note-meta">
+              <span class="note-user"><i class="fas fa-user-circle me-1"></i>${n.user}</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="note-date"><i class="fas fa-clock me-1"></i>${n.created_at}</span>
+                <button class="note-delete-btn" onclick="deleteNote(${n.id})" title="Sil"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+            <div class="note-text">${n.note.replace(/\n/g, '<br>')}</div>
+          `;
+          list.prepend(div);
+          // Butonu sarıya çevir (not var)
+          document.querySelectorAll('.note-btn').forEach(btn => {
+            if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`openNoteModal(${currentNotePropertyId},`)) {
+              btn.classList.add('has-note');
+            }
+          });
+        } else {
+          alert('Hata: ' + (data.error || 'Not kaydedilemedi.'));
+        }
+      })
+      .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save me-1"></i> Kaydet';
+        alert('Bir hata oluştu!');
+      });
+    }
+
+    function deleteNote(noteId) {
+      if (!confirm('Bu notu silmek istediğinize emin misiniz?')) return;
+
+      const formData = new FormData();
+      formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+      fetch(`/gayrimenkul/not-sil/${noteId}/`, {
+        method: 'POST',
+        body: formData,
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          const el = document.getElementById(`note-${noteId}`);
+          if (el) el.remove();
+        } else {
+          alert('Hata: ' + (data.error || 'Silinemedi.'));
+        }
+      });
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+    // FİLTRE PANEL TOGGLE
+    function toggleFilterPanel() {
+      const panel = document.getElementById('filterPanel');
+      const btn   = document.getElementById('filterToggleBtn');
+      const chevron = document.getElementById('filterChevron');
+      const isOpen = panel.classList.contains('open');
+
+      if (isOpen) {
+        panel.classList.remove('open');
+        btn.classList.remove('active');
+        chevron.style.transform = 'rotate(0deg)';
+      } else {
+        panel.classList.add('open');
+        btn.classList.add('active');
+        chevron.style.transform = 'rotate(180deg)';
+      }
+    }
+
+    // Aktif filtre varsa panel açık başlasın - chevron'ı da ayarla
+    document.addEventListener('DOMContentLoaded', function() {
+      const panel = document.getElementById('filterPanel');
+      const chevron = document.getElementById('filterChevron');
+      if (panel && panel.classList.contains('open') && chevron) {
+        chevron.style.transform = 'rotate(180deg)';
+      }
+    });
+
+  </script>
+
+  <!-- Not Modal -->
+  <div class="modal fade" id="noteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-sticky-note me-2"></i><span id="noteModalTitle">Notlar</span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+          <!-- Mevcut notlar -->
+          <div id="notesList"></div>
+
+          <!-- Not ekleme alanı -->
+          <div style="margin-top: 14px; border-top: 1px solid #e9ecef; padding-top: 14px;">
+            <label style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">
+              <i class="fas fa-plus-circle me-1"></i>Yeni Not Ekle
+            </label>
+            <textarea id="noteTextarea" class="form-control" rows="3" placeholder="Notunuzu buraya yazın..."></textarea>
+            <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+              <button class="btn-save-note" id="saveNoteBtn" onclick="saveNote()">
+                <i class="fas fa-save me-1"></i> Kaydet
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

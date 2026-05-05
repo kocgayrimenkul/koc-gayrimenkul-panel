@@ -1,623 +1,158 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+{% block title %}Yeni Etkinlik{% endblock %}
 
-{% block title %} Yeni Etkinlik Oluştur {% endblock %}
-
-{% block stylesheets %}
-{{ block.super }}
-<link rel="stylesheet" href="/static/assets/vendor/select2/dist/css/select2.min.css">
-<link rel="stylesheet" href="/static/assets/vendor/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" href="/static/assets/vendor/flatpickr/dist/themes/material_blue.css">
+{% block extra_css %}
 <style>
-  /* Koç Gayrimenkul kurumsal renkleri */
-  :root {
-    --koc-red: #9d2235;
-    --koc-red-light: #b82e42;
-    --koc-red-dark: #7a1a29;
-    --koc-black: #212529;
-    --koc-red-rgb: 157, 34, 53;
-  }
-  
-  .bg-koc-red {
-    background-color: var(--koc-red) !important;
-  }
-  
-  .bg-gradient-koc-red {
-    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
-  }
-  
-  .text-koc-red {
-    color: var(--koc-red) !important;
-  }
-  
-  .btn-koc-red {
-    color: #fff;
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .btn-koc-red:hover {
-    color: #fff;
-    background-color: var(--koc-red-light);
-    border-color: var(--koc-red-light);
-  }
-  
-  .border-koc-red {
-    border-color: var(--koc-red) !important;
-  }
-  
-  /* Form elemanları */
-  .form-control:focus {
-    border-color: var(--koc-red-light);
-    box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
-  }
-  
-  /* Kartlar */
-  .card {
-    border-radius: 0.75rem;
-    border: none;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    overflow: hidden;
-  }
-  
-  .card:hover {
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  }
-  
-  .card-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    background-color: #fff;
-  }
-  
-  .card-header h3 {
-    margin-bottom: 0;
-    font-weight: 600;
-  }
-  
-  /* Bilgi kutuları */
-  .info-box {
-    background-color: #f8f9fe;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-  }
-  
-  .info-box i {
-    font-size: 1.5rem;
-    margin-right: 10px;
-  }
-  
-  .info-box h5 {
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-  
-  .info-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #f8f9fe;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 15px;
-  }
-  
-  .info-icon i {
-    font-size: 18px;
-  }
-  
-  /* Timeline kutuları */
-  .timeline {
-    position: relative;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  
-  .timeline-block {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 1.5rem;
-  }
-  
-  .timeline-block:last-child {
-    margin-bottom: 0;
-  }
-  
-  .timeline-step {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: #fff;
-  }
-  
-  .timeline-step i {
-    font-size: 1rem;
-  }
-  
-  .timeline-content {
-    margin-left: 1rem;
-    flex: 1;
-  }
-  
-  /* Form grupları */
-  .form-group label {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: #525f7f;
-  }
-  
-  .input-group-text {
-    background-color: #f8f9fe;
-    border: 1px solid #e9ecef;
-  }
-  
-  /* Select2 özelleştirmeleri */
-  .select2-container--default .select2-selection--single {
-    border: 1px solid #e9ecef;
-    border-radius: 0.375rem;
-    height: calc(1.5em + 1.25rem + 2px);
-    padding: 0.625rem 0.75rem;
-  }
-  
-  .select2-container--default .select2-selection--single .select2-selection__rendered {
-    line-height: 1.5;
-    color: #8898aa;
-    padding-left: 0;
-  }
-  
-  .select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: calc(1.5em + 1.25rem + 2px);
-  }
-  
-  .select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background-color: var(--koc-red);
-  }
+  .fi { width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:.85rem;outline:none;transition:border-color .15s;background:#fff;color:#1e293b; }
+  .fi:focus { border-color:#9d2235;box-shadow:0 0 0 3px rgba(157,34,53,.1); }
+  textarea.fi { resize:vertical; }
+  label.lbl { font-size:.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px; }
+  .sec-title { font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:22px 0 14px; }
+  .sec-title:first-child { margin-top:0; }
+  .tur-item { display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid #f8fafc; }
+  .tur-item:last-child { border-bottom:none; }
+  .tur-dot { width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#fff;margin-top:2px; }
 </style>
-{% endblock stylesheets %}
+{% endblock %}
 
 {% block content %}
+<div class="px-6 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Yeni Etkinlik</h1>
+      <p class="text-sm text-slate-500 mt-1">Ajanda / Yeni Etkinlik Ekle</p>
+    </div>
+    <a href="{% url 'calendar' %}" class="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">
+      <i class="fas fa-arrow-left"></i> Ajandaya Dön
+    </a>
+  </div>
 
-<div class="header bg-gradient-koc-red pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Yeni Etkinlik</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="{% url 'calendar' %}">Ajanda</a></li>
-              <li class="breadcrumb-item active" aria-current="page">Yeni Etkinlik</li>
-            </ol>
-          </nav>
+  <div class="flex gap-6 items-start">
+    <!-- Form -->
+    <div class="flex-1 bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+      <form method="post" action="{% url 'event_create' %}" id="event-form">
+        {% csrf_token %}
+
+        <div class="sec-title">Temel Bilgiler</div>
+        <div class="mb-4">
+          <label class="lbl">Başlık <span class="text-red-500">*</span></label>
+          <input type="text" name="title" id="title" class="fi" placeholder="Etkinlik başlığı" required>
         </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{% url 'calendar' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-arrow-left mr-1"></i> Ajandaya Dön
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="lbl">Etkinlik Türü <span class="text-red-500">*</span></label>
+            <select name="event_type" id="event_type" class="fi" required>
+              <option value="">-- Seçiniz --</option>
+              {% for value, label in event_types %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="lbl">Konum</label>
+            <input type="text" name="location" id="location" class="fi" placeholder="Etkinlik konumu">
+          </div>
+        </div>
+
+        <div class="sec-title">Tarih &amp; Saat</div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="lbl">Başlangıç Tarihi <span class="text-red-500">*</span></label>
+            <input type="date" name="start_date" id="start_date" class="fi" required>
+          </div>
+          <div>
+            <label class="lbl">Başlangıç Saati <span class="text-red-500">*</span></label>
+            <input type="time" name="start_time" id="start_time" class="fi" required>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="lbl">Bitiş Tarihi <span class="text-slate-400 font-normal">(isteğe bağlı)</span></label>
+            <input type="date" name="end_date" id="end_date" class="fi">
+          </div>
+          <div>
+            <label class="lbl">Bitiş Saati <span class="text-slate-400 font-normal">(isteğe bağlı)</span></label>
+            <input type="time" name="end_time" id="end_time" class="fi">
+          </div>
+        </div>
+
+        <div class="sec-title">İlişkili Kayıtlar</div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="lbl">Müşteri</label>
+            <select name="customer" id="customer" class="fi">
+              <option value="">-- Seçiniz --</option>
+              {% for c in customers %}
+              <option value="{{ c.id }}">{{ c.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="lbl">Gayrimenkul</label>
+            <select name="property" id="property" class="fi">
+              <option value="">-- Seçiniz --</option>
+              {% for p in properties %}
+              <option value="{{ p.id }}">{{ p.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="sec-title">Açıklama</div>
+        <div class="mb-6">
+          <textarea name="description" id="description" class="fi" rows="4" placeholder="Etkinlik açıklaması..."></textarea>
+        </div>
+
+        <div class="flex gap-3">
+          <button type="submit" class="flex-1 bg-red-800 hover:bg-red-900 text-white font-semibold rounded-lg py-2.5 text-sm transition flex items-center justify-center gap-2">
+            <i class="fas fa-save"></i> Kaydet
+          </button>
+          <a href="{% url 'calendar' %}" class="px-6 bg-slate-100 text-slate-600 font-semibold rounded-lg py-2.5 text-sm hover:bg-slate-200 transition flex items-center gap-2">
+            <i class="fas fa-times"></i> İptal
           </a>
         </div>
+      </form>
+    </div>
+
+    <!-- Sağ panel -->
+    <div class="w-72 flex-shrink-0 space-y-4">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Etkinlik Türleri</div>
+        <div class="tur-item"><div class="tur-dot" style="background:#9d2235"><i class="fas fa-handshake"></i></div><div><div class="text-sm font-semibold text-slate-700">Toplantı</div><div class="text-xs text-slate-400 mt-0.5">İş ortakları ile toplantılar</div></div></div>
+        <div class="tur-item"><div class="tur-dot" style="background:#3b82f6"><i class="fas fa-building"></i></div><div><div class="text-sm font-semibold text-slate-700">Gayrimenkul Gösterimi</div><div class="text-xs text-slate-400 mt-0.5">Alıcı/kiracıya gösterim</div></div></div>
+        <div class="tur-item"><div class="tur-dot" style="background:#f59e0b"><i class="fas fa-phone"></i></div><div><div class="text-sm font-semibold text-slate-700">Görüşme</div><div class="text-xs text-slate-400 mt-0.5">Müşteri görüşmeleri</div></div></div>
+        <div class="tur-item"><div class="tur-dot" style="background:#10b981"><i class="fas fa-calendar-check"></i></div><div><div class="text-sm font-semibold text-slate-700">Randevu</div><div class="text-xs text-slate-400 mt-0.5">İş randevuları</div></div></div>
+        <div class="tur-item"><div class="tur-dot" style="background:#8b5cf6"><i class="fas fa-tasks"></i></div><div><div class="text-sm font-semibold text-slate-700">Görev</div><div class="text-xs text-slate-400 mt-0.5">Yapılacak görevler</div></div></div>
+        <div class="tur-item"><div class="tur-dot" style="background:#64748b"><i class="fas fa-bell"></i></div><div><div class="text-sm font-semibold text-slate-700">Hatırlatıcı</div><div class="text-xs text-slate-400 mt-0.5">Önemli hatırlatmalar</div></div></div>
+      </div>
+      <div class="bg-amber-50 border border-amber-100 rounded-xl p-4">
+        <div class="text-sm font-semibold text-amber-700 mb-2"><i class="fas fa-exclamation-circle mr-1"></i>Önemli</div>
+        <ul class="text-xs text-amber-700 space-y-1 leading-relaxed list-disc list-inside">
+          <li>Başlık, tarih ve tür zorunludur.</li>
+          <li>Bitiş saati girilmezse otomatik hesaplanır.</li>
+          <li>Müşteri veya gayrimenkul ile ilişkilendirin.</li>
+        </ul>
       </div>
     </div>
   </div>
 </div>
-
-<div class="container-fluid mt--6">
-  <div class="row">
-    <div class="col-lg-8">
-      <div class="card">
-        <div class="card-header">
-          <div class="row align-items-center">
-            <div class="col-8">
-              <h3 class="mb-0">Etkinlik Bilgileri</h3>
-              <p class="text-sm text-muted mb-0">Ajandanıza yeni bir etkinlik ekleyin</p>
-            </div>
-            <div class="col-4 text-right">
-              <span class="badge badge-koc-red">Yeni</span>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <form method="post" action="{% url 'event_create' %}" id="event-form">
-            {% csrf_token %}
-            
-            <h6 class="heading-small text-muted mb-4">Temel Bilgiler</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="form-group">
-                    <label class="form-control-label" for="title">Başlık <span class="text-danger">*</span></label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-heading"></i></span>
-                      </div>
-                      <input type="text" id="title" name="title" class="form-control" placeholder="Etkinlik başlığı" required>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="start_date">Başlangıç Tarihi <span class="text-danger">*</span></label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                      </div>
-                      <input type="date" id="start_date" name="start_date" class="form-control datepicker" required>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="start_time">Başlangıç Saati <span class="text-danger">*</span></label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-clock"></i></span>
-                      </div>
-                      <input type="time" id="start_time" name="start_time" class="form-control" required>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="end_date">Bitiş Tarihi</label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
-                      </div>
-                      <input type="date" id="end_date" name="end_date" class="form-control datepicker">
-                    </div>
-                    <small class="form-text text-muted">İsteğe bağlı</small>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="end_time">Bitiş Saati</label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-hourglass-end"></i></span>
-                      </div>
-                      <input type="time" id="end_time" name="end_time" class="form-control">
-                    </div>
-                    <small class="form-text text-muted">İsteğe bağlı. Belirtilmezse başlangıç zamanından 1 saat sonrası olarak hesaplanır.</small>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="event_type">Etkinlik Türü <span class="text-danger">*</span></label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-tag"></i></span>
-                      </div>
-                      <select id="event_type" name="event_type" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        {% for value, label in event_types %}
-                          <option value="{{ value }}">{{ label }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="location">Konum</label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                      </div>
-                      <input type="text" id="location" name="location" class="form-control" placeholder="Etkinlik konumu">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <hr class="my-4">
-            
-            <h6 class="heading-small text-muted mb-4">Detaylar</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="form-group">
-                    <label class="form-control-label" for="description">Açıklama</label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-align-left"></i></span>
-                      </div>
-                      <textarea id="description" name="description" class="form-control" rows="4" placeholder="Etkinlik açıklaması"></textarea>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <hr class="my-4">
-            
-            <h6 class="heading-small text-muted mb-4">İlişkili Kayıtlar</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="customer">Müşteri</label>
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                      </div>
-                      <select id="customer" name="customer" class="custom-select select2" style="width: calc(100% - 42px);">
-                        <option value="">Seçiniz</option>
-                        {% for customer in customers %}
-                          <option value="{{ customer.id }}">{{ customer.full_name }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="property">Gayrimenkul</label>
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-home"></i></span>
-                      </div>
-                      <select id="property" name="property" class="custom-select select2" style="width: calc(100% - 42px);">
-                        <option value="">Seçiniz</option>
-                        {% for property in properties %}
-                          <option value="{{ property.id }}">{{ property.title }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <hr class="my-4">
-            
-            <div class="row justify-content-center">
-              <div class="col-md-6">
-                <a href="{% url 'calendar' %}" class="btn btn-secondary btn-block">
-                  <i class="fas fa-times mr-2"></i> İptal
-                </a>
-              </div>
-              <div class="col-md-6">
-                <button type="submit" class="btn btn-koc-red btn-block">
-                  <i class="fas fa-save mr-2"></i> Kaydet
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-lg-4">
-      <div class="card">
-        <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <h3 class="mb-0">Etkinlik Türleri</h3>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="timeline timeline-one-side" data-timeline-content="axis">
-            <div class="timeline-block">
-              <span class="timeline-step badge-primary" style="background-color: var(--koc-red);">
-                <i class="ni ni-chart-pie-35"></i>
-              </span>
-              <div class="timeline-content">
-                <h5 class="mb-1">Toplantı</h5>
-                <p class="text-sm mb-0">İş ortakları veya müşteriler ile yapılacak toplantılar için kullanılır.</p>
-              </div>
-            </div>
-            
-            <div class="timeline-block">
-              <span class="timeline-step badge-info">
-                <i class="ni ni-building"></i>
-              </span>
-              <div class="timeline-content">
-                <h5 class="mb-1">Gayrimenkul Gösterimi</h5>
-                <p class="text-sm mb-0">Potansiyel alıcı veya kiracılara gayrimenkul gösterimi için kullanılır.</p>
-              </div>
-            </div>
-            
-            <div class="timeline-block">
-              <span class="timeline-step badge-warning">
-                <i class="ni ni-mobile-button"></i>
-              </span>
-              <div class="timeline-content">
-                <h5 class="mb-1">Görüşme</h5>
-                <p class="text-sm mb-0">Müşteriler veya iş ortakları ile yapılacak görüşmeler için kullanılır.</p>
-              </div>
-            </div>
-            
-            <div class="timeline-block">
-              <span class="timeline-step" style="background-color: #ffd600; color: #212529;">
-                <i class="ni ni-bell-55"></i>
-              </span>
-              <div class="timeline-content">
-                <h5 class="mb-1">Hatırlatıcı</h5>
-                <p class="text-sm mb-0">Kendinize önemli hatırlatmalar eklemek için kullanılır.</p>
-              </div>
-            </div>
-            
-            <div class="timeline-block">
-              <span class="timeline-step badge-success">
-                <i class="ni ni-calendar-grid-58"></i>
-              </span>
-              <div class="timeline-content">
-                <h5 class="mb-1">Randevu</h5>
-                <p class="text-sm mb-0">İş ile ilgili randevular için kullanılır.</p>
-              </div>
-            </div>
-            
-            <div class="timeline-block">
-              <span class="timeline-step" style="background-color: #8965e0;">
-                <i class="ni ni-check-bold"></i>
-              </span>
-              <div class="timeline-content">
-                <h5 class="mb-1">Görev</h5>
-                <p class="text-sm mb-0">Yapılması gereken görevleri eklemek için kullanılır.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Bilgilendirme Kartı -->
-      <div class="card mt-4">
-        <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <h3 class="mb-0">Bilgilendirme</h3>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <!-- Bilgilendirme kutusu 1 -->
-          <div class="info-box d-flex align-items-start mb-4">
-            <div class="info-icon bg-info">
-              <i class="fas fa-info text-white"></i>
-            </div>
-            <div>
-              <h5 class="text-info">Etkinlik Bilgileri</h5>
-              <p class="text-sm mb-0">
-                Etkinlikler takvimde görünecek ve size hatırlatma olarak gelecektir.
-              </p>
-            </div>
-          </div>
-          
-          <!-- Bilgilendirme kutusu 2 -->
-          <div class="info-box d-flex align-items-start mb-4">
-            <div class="info-icon bg-warning">
-              <i class="fas fa-exclamation text-white"></i>
-            </div>
-            <div>
-              <h5 class="text-warning">Önemli Notlar</h5>
-              <ul class="pl-3 mb-0 text-sm">
-                <li>Başlık, başlangıç zamanı ve tür zorunlu alanlardır.</li>
-                <li>Bitiş zamanı belirtmezseniz, sistem otomatik hesaplayacaktır.</li>
-                <li>Müşteri ve gayrimenkul seçenerek, ilgili kayıtlarla bağlantı kurabilirsiniz.</li>
-              </ul>
-            </div>
-          </div>
-          
-          <!-- Bilgilendirme kutusu 3 -->
-          <div class="info-box d-flex align-items-start">
-            <div class="info-icon bg-success">
-              <i class="fas fa-check text-white"></i>
-            </div>
-            <div>
-              <h5 class="text-success">Senkronizasyon</h5>
-              <p class="text-sm mb-0">
-                Oluşturduğunuz etkinlikler, takvim görünümünde anında görüntülenecektir.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-{% include "includes/footer.html" %}
-
-{% endblock content %}
-
-{% block javascripts %}
-{{ block.super }}
-<script src="/static/assets/vendor/select2/dist/js/select2.min.js"></script>
-<script src="/static/assets/vendor/flatpickr/dist/flatpickr.min.js"></script>
-<script src="/static/assets/vendor/flatpickr/dist/l10n/tr.js"></script>
 
 <script>
-  $(document).ready(function() {
-    // Select2 için ayarlar
-    $('.select2').select2({
-      placeholder: "Seçiniz",
-      allowClear: true,
-      language: "tr",
-      width: '100%',
-      dropdownParent: $('body')
-    });
-    
-    // Select2 elementleri için özel stil düzenlemeleri
-    $('.select2-container--default').css('width', '100%');
-    
-    // Flatpickr tarih seçici için ayarlar
-    $(".datepicker").flatpickr({
-      dateFormat: "Y-m-d",
-      locale: "tr",
-      altInput: true,
-      altFormat: "d F Y",
-      minDate: "today"
-    });
-    
-    // Etkinlik türüne göre alanların durumunu değiştirme
-    $('#event_type').on('change', function() {
-      let selectedType = $(this).val();
-      
-      // Etkinlik türüne göre belirli alanları zorunlu yap
-      if (selectedType === 'viewing') {
-        // Gayrimenkul gösterimi için location ve property alanlarını zorunlu yap
-        $('#location').parent().parent().parent().find('label').html('Konum <span class="text-danger">*</span>');
-        $('#property').parent().parent().parent().find('label').html('Gayrimenkul <span class="text-danger">*</span>');
-        $('#location').attr('required', true);
-        $('#property').attr('required', true);
-      } else {
-        // Diğer etkinlik türleri için bu alanları isteğe bağlı yap
-        $('#location').parent().parent().parent().find('label').html('Konum');
-        $('#property').parent().parent().parent().find('label').html('Gayrimenkul');
-        $('#location').removeAttr('required');
-        $('#property').removeAttr('required');
-      }
-      
-      if (selectedType === 'call') {
-        // Telefon görüşmesi için müşteri alanını zorunlu yap
-        $('#customer').parent().parent().parent().find('label').html('Müşteri <span class="text-danger">*</span>');
-        $('#customer').attr('required', true);
-      } else {
-        $('#customer').parent().parent().parent().find('label').html('Müşteri');
-        $('#customer').removeAttr('required');
-      }
-    });
-    
-    // Başlangıç tarihi değiştiğinde bitiş tarihini güncelle
-    $('#start_date').on('change', function() {
-      if (!$('#end_date').val()) {
-        $('#end_date').val($(this).val());
-      }
-    });
-    
-    // Başlangıç saati değiştiğinde bitiş saatini güncelle
-    $('#start_time').on('change', function() {
-      if (!$('#end_time').val()) {
-        // Başlangıç saatini al
-        let startHour = parseInt($(this).val().split(':')[0]);
-        let startMinute = $(this).val().split(':')[1];
-        
-        // Bir saat ekle
-        let endHour = (startHour + 1) % 24;
-        
-        // Bitiş saatini formatla ve ata
-        let endTime = (endHour < 10 ? '0' + endHour : endHour) + ':' + startMinute;
-        $('#end_time').val(endTime);
-      }
-    });
+document.addEventListener('DOMContentLoaded', function() {
+  const sd = document.getElementById('start_date');
+  const st = document.getElementById('start_time');
+  const ed = document.getElementById('end_date');
+  const et = document.getElementById('end_time');
+
+  sd.addEventListener('change', function() { if (!ed.value) ed.value = this.value; });
+  st.addEventListener('change', function() {
+    if (!et.value && this.value) {
+      const [h, m] = this.value.split(':').map(Number);
+      const eh = (h + 1) % 24;
+      et.value = String(eh).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+    }
   });
+});
 </script>
-{% endblock javascripts %} 
+{% endblock %}

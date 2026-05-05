@@ -1,9 +1,9 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/modern_base.html" %}
 {% load static %}
 
 {% block title %} {{ title }} {% endblock %}
 
-{% block stylesheets %}
+{% block extra_css %}
 <style>
 /* Koç Gayrimenkul kurumsal renkleri */
 :root {
@@ -194,278 +194,199 @@
     }
 }
 </style>
-{% endblock stylesheets %}
+{% endblock extra_css %}
 
 {% block content %}
-<div class="header bg-gradient-koc-red pb-6">
-    <div class="container-fluid">
-        <div class="header-body">
-            <div class="row align-items-center py-4">
-                <div class="col-lg-6 col-7">
-                    <h6 class="h2 text-white d-inline-block mb-0">{{ title }}</h6>
-                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-                        <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-                            <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Satış Süreç Yönetimi</li>
-                        </ol>
-                    </nav>
-                </div>
-                <div class="col-lg-6 col-5 text-right">
-                    <a href="{% url 'sales_process:lead_create' %}" class="btn btn-sm btn-neutral">
-                        <i class="fas fa-plus"></i> Yeni Müşteri
-                    </a>
-                </div>
+<div class="p-4">
+
+    <!-- Sayfa Başlığı -->
+    <div class="bg-white rounded-2xl p-4 custom-shadow mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">{{ title }}</h1>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    <a href="/" class="text-blue-500 hover:underline"><i class="fas fa-home"></i></a>
+                    <span class="mx-1 text-slate-300">/</span>
+                    Satış Süreç Yönetimi
+                </p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{% url 'sales_process:lead_create' %}" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg flex items-center hover:bg-emerald-700 transition shadow-sm no-underline">
+                    <i class="fas fa-plus mr-2"></i> Yeni Müşteri
+                </a>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Page content -->
-<div class="container-fluid mt--6">
-    <!-- İstatistikler -->
-    <div class="stats-grid">
+    <!-- İstatistik Kartları -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <div class="dashboard-card position-relative">
             <div class="dashboard-number">{{ active_leads_count }}</div>
             <div class="dashboard-label">Aktif Müşteriler</div>
-            <div class="dashboard-icon">
-                <i class="fas fa-users"></i>
-            </div>
+            <div class="dashboard-icon"><i class="fas fa-users"></i></div>
         </div>
-        
         <div class="dashboard-card position-relative">
             <div class="dashboard-number">{{ completed_leads_count }}</div>
             <div class="dashboard-label">Tamamlanan Süreçler</div>
-            <div class="dashboard-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
+            <div class="dashboard-icon"><i class="fas fa-check-circle"></i></div>
         </div>
-        
         <div class="dashboard-card position-relative">
             <div class="dashboard-number">{{ pending_tasks_count }}</div>
             <div class="dashboard-label">Bekleyen Görevler</div>
-            <div class="dashboard-icon">
-                <i class="fas fa-tasks"></i>
-            </div>
+            <div class="dashboard-icon"><i class="fas fa-tasks"></i></div>
         </div>
-        
         <div class="dashboard-card position-relative">
             <div class="dashboard-number">{{ success_rate }}%</div>
             <div class="dashboard-label">Başarı Oranı</div>
-            <div class="dashboard-icon">
-                <i class="fas fa-chart-line"></i>
-            </div>
+            <div class="dashboard-icon"><i class="fas fa-chart-line"></i></div>
         </div>
     </div>
-    
-    <div class="row">
+
+    <!-- Alt İki Kolon -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         <!-- Hızlı İşlemler -->
-        <div class="col-xl-4 col-lg-6 mb-4">
-            <div class="quick-actions">
-                <h4 class="mb-4">Hızlı İşlemler</h4>
-                
-                <a href="{% url 'sales_process:staff_kanban' %}" class="action-btn btn-staff">
-                    <i class="fas fa-user-tie mr-2"></i>
-                    Personel Satış Akışı
-                </a>
-                
-                <a href="{% url 'sales_process:manager_kanban' %}" class="action-btn btn-manager">
-                    <i class="fas fa-user-cog mr-2"></i>
-                    Müdür Satış Sonrası Akışı
-                </a>
-                
-                <a href="{% url 'sales_process:sales_reports' %}" class="action-btn btn-reports">
-                    <i class="fas fa-chart-bar mr-2"></i>
-                    Satış Raporları
-                </a>
-                
-                <a href="{% url 'sales_process:lead_create' %}" class="action-btn btn-settings">
-                    <i class="fas fa-plus mr-2"></i>
-                    Yeni Müşteri Ekle
-                </a>
-            </div>
+        <div class="bg-white rounded-2xl p-5 custom-shadow">
+            <h4 class="text-base font-bold text-slate-800 mb-4">Hızlı İşlemler</h4>
+            <a href="{% url 'sales_process:staff_kanban' %}" class="action-btn btn-staff">
+                <i class="fas fa-user-tie mr-2"></i> Personel Satış Akışı
+            </a>
+            <a href="{% url 'sales_process:manager_kanban' %}" class="action-btn btn-manager">
+                <i class="fas fa-user-cog mr-2"></i> Müdür Satış Sonrası Akışı
+            </a>
+            <a href="{% url 'sales_process:sales_reports' %}" class="action-btn btn-reports">
+                <i class="fas fa-chart-bar mr-2"></i> Satış Raporları
+            </a>
+            <a href="{% url 'sales_process:lead_create' %}" class="action-btn btn-settings">
+                <i class="fas fa-plus mr-2"></i> Yeni Müşteri Ekle
+            </a>
         </div>
-        
+
         <!-- Son Aktiviteler -->
-        <div class="col-xl-8 col-lg-6 mb-4">
-            <div class="recent-activity">
-                <h4 class="mb-4">Son Aktiviteler</h4>
-                
-                {% if can_view_activities %}
-                    {% if recent_activities %}
-                        {% for activity in recent_activities %}
-                        <div class="activity-item">
-                            <div class="activity-icon {% if activity.is_successful %}success{% elif activity.action_type in 'CALL_FAIL,OFFER_REJECTED' %}danger{% elif activity.action_type in 'APPT_SET,FOLLOW_UP' %}warning{% else %}info{% endif %}">
-                                {% if activity.action_type == 'CONTRACT_SIGNED' %}
-                                    <i class="fas fa-handshake"></i>
-                                {% elif activity.action_type in 'CALL_OK,CALL_FAIL' %}
-                                    <i class="fas fa-phone"></i>
-                                {% elif activity.action_type == 'APPT_SET' %}
-                                    <i class="fas fa-calendar-alt"></i>
-                                {% elif activity.action_type == 'WHATSAPP_SENT' %}
-                                    <i class="fas fa-whatsapp"></i>
-                                {% elif activity.action_type == 'DEED_TRANSFER' %}
-                                    <i class="fas fa-file-contract"></i>
-                                {% elif activity.action_type == 'OFFER_SENT' %}
-                                    <i class="fas fa-paper-plane"></i>
-                                {% elif activity.action_type == 'STAGE_CHANGED' %}
-                                    <i class="fas fa-arrow-right"></i>
-                                {% elif activity.action_type == 'LEAD_CREATED' %}
-                                    <i class="fas fa-user-plus"></i>
-                                {% elif activity.action_type == 'TASK_COMPLETED' %}
-                                    <i class="fas fa-check-circle"></i>
-                                {% else %}
-                                    <i class="fas fa-info-circle"></i>
-                                {% endif %}
-                            </div>
-                            <div class="activity-content">
-                                <div class="activity-title">{{ activity.get_action_type_display }}</div>
-                                <div class="activity-time">
-                                    {% if activity.lead %}
-                                        {{ activity.lead.customer_name }} - 
-                                    {% endif %}
-                                    {{ activity.performed_by.get_full_name|default:"Sistem" }} - 
-                                    {{ activity.created_at|timesince }} önce
-                                </div>
+        <div class="lg:col-span-2 bg-white rounded-2xl p-5 custom-shadow">
+            <h4 class="text-base font-bold text-slate-800 mb-4">Son Aktiviteler</h4>
+            {% if can_view_activities %}
+                {% if recent_activities %}
+                    {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="activity-icon {% if activity.is_successful %}success{% elif activity.action_type in 'CALL_FAIL,OFFER_REJECTED' %}danger{% elif activity.action_type in 'APPT_SET,FOLLOW_UP' %}warning{% else %}info{% endif %}">
+                            {% if activity.action_type == 'CONTRACT_SIGNED' %}<i class="fas fa-handshake"></i>
+                            {% elif activity.action_type in 'CALL_OK,CALL_FAIL' %}<i class="fas fa-phone"></i>
+                            {% elif activity.action_type == 'APPT_SET' %}<i class="fas fa-calendar-alt"></i>
+                            {% elif activity.action_type == 'WHATSAPP_SENT' %}<i class="fab fa-whatsapp"></i>
+                            {% elif activity.action_type == 'DEED_TRANSFER' %}<i class="fas fa-file-contract"></i>
+                            {% elif activity.action_type == 'OFFER_SENT' %}<i class="fas fa-paper-plane"></i>
+                            {% elif activity.action_type == 'STAGE_CHANGED' %}<i class="fas fa-arrow-right"></i>
+                            {% elif activity.action_type == 'LEAD_CREATED' %}<i class="fas fa-user-plus"></i>
+                            {% elif activity.action_type == 'TASK_COMPLETED' %}<i class="fas fa-check-circle"></i>
+                            {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">{{ activity.get_action_type_display }}</div>
+                            <div class="activity-time">
+                                {% if activity.lead %}{{ activity.lead.customer_name }} - {% endif %}
+                                {{ activity.performed_by.get_full_name|default:"Sistem" }} - {{ activity.created_at|timesince }} önce
                             </div>
                         </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
-                            <p class="text-muted">Henüz aktivite bulunmuyor.</p>
-                        </div>
-                    {% endif %}
+                    </div>
+                    {% endfor %}
                 {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-lock fa-2x text-muted mb-2"></i>
-                        <p class="text-muted">Bu bölümü görüntüleme yetkiniz bulunmuyor.</p>
-                        <small class="text-muted">Sadece yöneticiler ve santral personeli son aktiviteleri görebilir.</small>
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fas fa-inbox text-3xl mb-3 block"></i>
+                        <p class="text-sm">Henüz aktivite bulunmuyor.</p>
                     </div>
                 {% endif %}
-            </div>
+            {% else %}
+                <div class="text-center py-8 text-slate-400">
+                    <i class="fas fa-lock text-3xl mb-3 block"></i>
+                    <p class="text-sm">Bu bölümü görüntüleme yetkiniz bulunmuyor.</p>
+                    <p class="text-xs text-slate-400 mt-1">Sadece yöneticiler ve santral personeli son aktiviteleri görebilir.</p>
+                </div>
+            {% endif %}
         </div>
     </div>
-    
+
     <!-- Süreç Akış Özeti -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">Satış Süreç Akışı</h3>
+    <div class="bg-white rounded-2xl p-5 custom-shadow">
+        <h3 class="text-base font-bold text-slate-800 mb-5">Satış Süreç Akışı</h3>
+        <div class="grid grid-cols-3 md:grid-cols-6 gap-4 text-center mb-6">
+            <div>
+                <div class="w-14 h-14 rounded-full flex items-center justify-content-center mx-auto mb-2" style="background:#9d2235">
+                    <i class="fas fa-phone text-white fa-lg"></i>
                 </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <div class="bg-koc-red text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                    <i class="fas fa-phone fa-lg"></i>
-                                </div>
-                            </div>
-                            <h6>Müşteri Araması</h6>
-                            <p class="text-muted small">İlk temas ve bilgi verme</p>
-                        </div>
-                        
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <div style="background-color: #11cdef;" class="text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                    <i class="fas fa-search fa-lg"></i>
-                                </div>
-                            </div>
-                            <h6>İhtiyaç Analizi</h6>
-                            <p class="text-muted small">Detaylı görüşme ve analiz</p>
-                        </div>
-                        
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <div style="background-color: #fb6340;" class="text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                    <i class="fas fa-file-alt fa-lg"></i>
-                                </div>
-                            </div>
-                            <h6>Teklif Gönderimi</h6>
-                            <p class="text-muted small">WhatsApp ile teklif paylaşımı</p>
-                        </div>
-                        
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <div style="background-color: #2dce89;" class="text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                    <i class="fas fa-home fa-lg"></i>
-                                </div>
-                            </div>
-                            <h6>Daire Sunumu</h6>
-                            <p class="text-muted small">Randevu ve sunum</p>
-                        </div>
-                        
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <div style="background-color: #8898aa;" class="text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                    <i class="fas fa-clock fa-lg"></i>
-                                </div>
-                            </div>
-                            <h6>Cevap Bekleme</h6>
-                            <p class="text-muted small">Müşteri kararı bekleniyor</p>
-                        </div>
-                        
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <div class="bg-koc-red text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                    <i class="fas fa-handshake fa-lg"></i>
-                                </div>
-                            </div>
-                            <h6>Sözleşme</h6>
-                            <p class="text-muted small">Anlaşma ve imza</p>
-                        </div>
+                <p class="text-xs font-semibold text-slate-700">Müşteri Araması</p>
+                <p class="text-xs text-slate-400">İlk temas ve bilgi verme</p>
+            </div>
+            <div>
+                <div class="w-14 h-14 rounded-full flex items-center justify-content-center mx-auto mb-2" style="background:#11cdef">
+                    <i class="fas fa-search text-white fa-lg"></i>
+                </div>
+                <p class="text-xs font-semibold text-slate-700">İhtiyaç Analizi</p>
+                <p class="text-xs text-slate-400">Detaylı görüşme ve analiz</p>
+            </div>
+            <div>
+                <div class="w-14 h-14 rounded-full flex items-center justify-content-center mx-auto mb-2" style="background:#fb6340">
+                    <i class="fas fa-file-alt text-white fa-lg"></i>
+                </div>
+                <p class="text-xs font-semibold text-slate-700">Teklif Gönderimi</p>
+                <p class="text-xs text-slate-400">WhatsApp ile teklif paylaşımı</p>
+            </div>
+            <div>
+                <div class="w-14 h-14 rounded-full flex items-center justify-content-center mx-auto mb-2" style="background:#2dce89">
+                    <i class="fas fa-home text-white fa-lg"></i>
+                </div>
+                <p class="text-xs font-semibold text-slate-700">Daire Sunumu</p>
+                <p class="text-xs text-slate-400">Randevu ve sunum</p>
+            </div>
+            <div>
+                <div class="w-14 h-14 rounded-full flex items-center justify-content-center mx-auto mb-2" style="background:#8898aa">
+                    <i class="fas fa-clock text-white fa-lg"></i>
+                </div>
+                <p class="text-xs font-semibold text-slate-700">Cevap Bekleme</p>
+                <p class="text-xs text-slate-400">Müşteri kararı bekleniyor</p>
+            </div>
+            <div>
+                <div class="w-14 h-14 rounded-full flex items-center justify-content-center mx-auto mb-2" style="background:#9d2235">
+                    <i class="fas fa-handshake text-white fa-lg"></i>
+                </div>
+                <p class="text-xs font-semibold text-slate-700">Sözleşme</p>
+                <p class="text-xs text-slate-400">Anlaşma ve imza</p>
+            </div>
+        </div>
+        <div class="border-t border-slate-100 pt-5">
+            <h5 class="text-sm font-bold text-slate-700 text-center mb-4">Satış Sonrası Süreç (Müdür Akışı)</h5>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                    <div class="w-12 h-12 rounded-full flex items-center justify-content-center mx-auto mb-2" style="background:#9d2235">
+                        <i class="fas fa-credit-card text-white"></i>
                     </div>
-                    
-                    <hr class="my-4">
-                    
-                    <div class="text-center">
-                        <h5 class="mb-3">Satış Sonrası Süreç (Müdür Akışı)</h5>
-                        <div class="row text-center">
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <div class="bg-koc-red text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                        <i class="fas fa-credit-card fa-sm"></i>
-                                    </div>
-                                </div>
-                                <h6 class="small">Ödeme Tipi</h6>
-                            </div>
-                            
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <div style="background-color: #11cdef;" class="text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                        <i class="fas fa-file-signature fa-sm"></i>
-                                    </div>
-                                </div>
-                                <h6 class="small">Tapu/Kredi İşlemi</h6>
-                            </div>
-                            
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <div style="background-color: #2dce89;" class="text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                        <i class="fas fa-check fa-sm"></i>
-                                    </div>
-                                </div>
-                                <h6 class="small">Hizmet Tamamlandı</h6>
-                            </div>
-                            
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <div style="background-color: #fb6340;" class="text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                        <i class="fas fa-star fa-sm"></i>
-                                    </div>
-                                </div>
-                                <h6 class="small">Memnuniyet Anketi</h6>
-                            </div>
-                        </div>
+                    <p class="text-xs font-semibold text-slate-700">Ödeme Tipi</p>
+                </div>
+                <div>
+                    <div class="w-12 h-12 rounded-full flex items-center justify-content-center mx-auto mb-2" style="background:#11cdef">
+                        <i class="fas fa-file-signature text-white"></i>
                     </div>
+                    <p class="text-xs font-semibold text-slate-700">Tapu/Kredi İşlemi</p>
+                </div>
+                <div>
+                    <div class="w-12 h-12 rounded-full flex items-center justify-content-center mx-auto mb-2" style="background:#2dce89">
+                        <i class="fas fa-check text-white"></i>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-700">Hizmet Tamamlandı</p>
+                </div>
+                <div>
+                    <div class="w-12 h-12 rounded-full flex items-center justify-content-center mx-auto mb-2" style="background:#fb6340">
+                        <i class="fas fa-star text-white"></i>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-700">Memnuniyet Anketi</p>
                 </div>
             </div>
         </div>
     </div>
+
 </div>
 {% endblock content %}
 
-{% block javascripts %}
+{% block extra_js %}
 <script>
 // Dashboard işlemleri
 document.addEventListener('DOMContentLoaded', function() {
@@ -512,4 +433,4 @@ window.addEventListener('load', function() {
     });
 });
 </script>
-{% endblock javascripts %}
+{% endblock extra_js %}

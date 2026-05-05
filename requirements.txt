@@ -18,3 +18,9 @@ typing_extensions==4.13.2
 Unipath==1.1
 urllib3==2.5.0
 whitenoise==6.9.0
+
+# Celery
+celery==5.3.6
+django-celery-beat==2.6.0
+django-celery-results==2.5.1
+redis==5.0.3

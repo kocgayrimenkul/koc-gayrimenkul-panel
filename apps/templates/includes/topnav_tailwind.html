@@ -1,0 +1,80 @@
+{% load static %}
+<!-- ========== TAILWIND ÜST BAR ========== -->
+<header class="bg-white border-b border-slate-200 px-6 py-2 flex items-center justify-between sticky top-0 z-30" style="font-family: 'Inter', sans-serif;">
+    <!-- Sol: Arama -->
+    <div class="flex items-center space-x-4 flex-1">
+        <div class="relative w-1/2 max-w-md">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Portföy, müşteri, görev veya lead ara...">
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center space-x-1">
+                <span class="text-[10px] bg-slate-100 border border-slate-200 rounded px-1 text-slate-400">⌘</span>
+                <span class="text-[10px] bg-slate-100 border border-slate-200 rounded px-1 text-slate-400">K</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sağ: Bildirim, Takvim, Profil -->
+    <div class="flex items-center space-x-4">
+        <!-- Bildirimler / Hatırlatmalar -->
+        <div class="relative" x-data="{ open: false }">
+            <a href="{% url 'customer_reminders' %}" class="relative inline-block p-2 text-slate-500 hover:bg-slate-50 rounded-full">
+                <i class="far fa-bell text-xl"></i>
+                {% if customer_reminders %}
+                <span class="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center">{{ customer_reminders|length }}</span>
+                {% endif %}
+            </a>
+        </div>
+
+        <!-- Takvim -->
+        <a href="{% url 'calendar' %}" class="p-2 text-slate-500 hover:bg-slate-50 rounded-full relative inline-block">
+            <i class="far fa-calendar-alt text-xl"></i>
+            <span class="absolute -mt-3 ml-3 bg-white border border-slate-200 rounded px-1 text-[8px] font-bold">{% now "j" %}</span>
+        </a>
+
+        <!-- Profil Dropdown -->
+        <div class="relative" id="profile-dropdown-wrapper">
+            <button type="button" onclick="document.getElementById('profile-dropdown-menu').classList.toggle('hidden')" class="flex items-center space-x-2 cursor-pointer hover:bg-slate-50 p-1 rounded-lg">
+                <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
+                    <img src="{% static 'assets/img/theme/team-4.jpg' %}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fas fa-user text-slate-400" style="display:none;"></i>
+                </div>
+                <span class="text-sm font-medium text-slate-700">{{ request.user.get_full_name|default:request.user.username|default:"Kullanıcı" }}</span>
+                <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+            </button>
+
+            <div id="profile-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-50">
+                <div class="px-4 py-3 border-b border-slate-100">
+                    <p class="text-xs text-slate-500">Hoş Geldiniz!</p>
+                    <p class="text-sm font-semibold text-slate-700">{{ request.user.get_full_name|default:request.user.username }}</p>
+                </div>
+                <a href="{% url 'profile' %}" class="flex items-center space-x-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                    <i class="fas fa-user w-4 text-blue-500"></i><span>Profilim</span>
+                </a>
+                <a href="#" class="flex items-center space-x-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                    <i class="fas fa-cog w-4 text-slate-500"></i><span>Ayarlar</span>
+                </a>
+                <a href="#" class="flex items-center space-x-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                    <i class="fas fa-life-ring w-4 text-amber-500"></i><span>Destek</span>
+                </a>
+                <div class="border-t border-slate-100"></div>
+                <a href="{% url 'logout' %}" class="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                    <i class="fas fa-sign-out-alt w-4"></i><span>Çıkış Yap</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<script>
+    // Profil dropdown'ı dışarı tıklayınca kapansın
+    document.addEventListener('click', function (e) {
+        var wrapper = document.getElementById('profile-dropdown-wrapper');
+        var menu = document.getElementById('profile-dropdown-menu');
+        if (wrapper && menu && !wrapper.contains(e.target)) {
+            menu.classList.add('hidden');
+        }
+    });
+</script>
+<!-- ========== /TAILWIND ÜST BAR ========== -->

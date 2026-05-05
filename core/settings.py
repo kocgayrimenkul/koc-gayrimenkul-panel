@@ -1,19 +1,18 @@
 # -*- encoding: utf-8 -*-
 """
-Koç Gayrimenkul Panel 
+Koç Gayrimenkul Panel - Ayarlar
 """
 
 import os
 import environ
 from unipath import Path
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+# Build paths
 BASE_DIR = Path(__file__).parent
 CORE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # django-environ kurulumu
 env = environ.Env(
-    # varsayılan değerler
     DEBUG=(bool, True),
     SECRET_KEY=(str, 'S#perS3crEt_1122'),
     SERVER=(str, '127.0.0.1'),
@@ -23,40 +22,39 @@ env = environ.Env(
     DB_HOST=(str, 'localhost'),
     DB_PORT=(str, '3306'),
     GOOGLE_MAPS_API_KEY=(str, ''),
+    OPENAI_API_KEY=(str, ''),
 )
 
-# .env dosyasının yolu
+# .env dosyasını oku
 env_file = os.path.join(CORE_DIR, '.env')
-
-# .env dosyasını oku (varsa)
 environ.Env.read_env(env_file=env_file)
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# ─────────────────────────────────────────────
+# Güvenlik
+# ─────────────────────────────────────────────
 SECRET_KEY = env('SECRET_KEY')
-
-# SECURITY WARNING: don't run with debug turned on in production!
+OPENAI_API_KEY = env('OPENAI_API_KEY')
 DEBUG = env('DEBUG')
 
-# load production server from .env
-# Prefer ALLOWED_HOSTS from environment (comma separated). Keep localhost and SERVER by default.
 raw_allowed = env('ALLOWED_HOSTS', default='localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in raw_allowed.split(',') if h.strip()]
 
-# Ensure SERVER is present
+# SERVER ekle
 try:
     server_host = env('SERVER')
+    if server_host and server_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(server_host)
 except Exception:
-    server_host = None
-if server_host and server_host not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(server_host)
+    pass
 
-# Allow common ngrok domains (use leading dot to permit any subdomain)
+# Ngrok/Cloudflare tünelleri için
 for _p in ['.ngrok.io', '.ngrok-free.app', '.trycloudflare.com']:
     if _p not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(_p)
 
-# Application definition
-
+# ─────────────────────────────────────────────
+# Uygulamalar
+# ─────────────────────────────────────────────
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -64,40 +62,45 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.humanize',  # Fiyat formatlaması için humanize filter'ları
-    
-    # Django REST Framework
+    'django.contrib.humanize',
+
+    # Third-party
     'rest_framework',
     'corsheaders',
     'django_filters',
-    
-    'apps.api',              # REST API uygulaması
-    'apps.home',             # Ana sayfa
-    'apps.authentication',   # Kimlik doğrulama
-    'apps.customers',        # Müşteri yönetimi
-    'apps.portfolio',        # Portföy yönetimi
-    'apps.calendar',         # Takvim/ajanda
-    'apps.employees',        # Çalışan yönetimi
-    'apps.presentation',     # Daire sunumu
-    'apps.fsbo',             # FSBO yönetimi
-    'apps.careers',          # Kariyer yönetimi
-    'apps.contact',          # İletişim yönetimi
-    'apps.team',             # Ekip yönetimi
-    'apps.sales_process',    # Satış Süreç Yönetimi
+    'django_celery_beat',
+    'django_celery_results',
+
+    # Local apps
+    'apps.api',
+    'apps.home',
+    'apps.authentication',
+    'apps.customers',
+    'apps.portfolio',
+    'apps.calendar',
+    'apps.employees',
+    'apps.presentation',
+    'apps.fsbo',
+    'apps.careers',
+    'apps.contact',
+    'apps.team',
+    'apps.sales_process',
+    'apps.calls',
+    'apps.saha',
+    'apps.sahibinden',
 ]
 
-# Django 3.2+ için modellerdeki otomatik primary key tipi ayarı
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Özel kullanıcı modeli
 AUTH_USER_MODEL = 'authentication.CustomUser'
 
-# Kimlik doğrulama backend'leri
 AUTHENTICATION_BACKENDS = [
     'apps.authentication.backends.EmailOrUsernameBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+# ─────────────────────────────────────────────
+# Middleware
+# ─────────────────────────────────────────────
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -111,9 +114,13 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'core.urls'
-LOGIN_REDIRECT_URL = "calendar"  # Route defined in calendar/urls.py
-LOGOUT_REDIRECT_URL = "home"  # Route defined in home/urls.py
-TEMPLATE_DIR = os.path.join(CORE_DIR, "apps/templates")  # ROOT dir for templates
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "home"
+
+# ─────────────────────────────────────────────
+# Templates
+# ─────────────────────────────────────────────
+TEMPLATE_DIR = os.path.join(CORE_DIR, "apps/templates")
 
 TEMPLATES = [
     {
@@ -126,8 +133,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'apps.customers.views.customer_reminders_processor',  # Müşteri hatırlatmaları
-                'apps.home.context_processors.settings_context',  # Settings değişkenlerine erişim
+                'apps.customers.views.customer_reminders_processor',
+                'apps.home.context_processors.settings_context',
             ],
         },
     },
@@ -135,9 +142,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
+# ─────────────────────────────────────────────
+# Veritabanı
+# ─────────────────────────────────────────────
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -148,88 +155,83 @@ DATABASES = {
         'PORT': env('DB_PORT', default='3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
-        }
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES', time_zone='+00:00';",
+        },
     }
 }
 
-# Password validation
-# https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
-
+# ─────────────────────────────────────────────
+# Şifre Doğrulama
+# ─────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization
-# https://docs.djangoproject.com/en/3.0/topics/i18n/
-
-LANGUAGE_CODE = 'tr-tr'
-
+# ─────────────────────────────────────────────
+# Dil & Zaman
+# ─────────────────────────────────────────────
+LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Europe/Istanbul'
-
-USE_I18N = True
-
+USE_I18N = False
 USE_L10N = True
-
 USE_TZ = True
 
-#############################################################
-# SRC: https://devcenter.heroku.com/articles/django-assets
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.9/howto/static-files/
+# ─────────────────────────────────────────────
+# Static & Media
+# ─────────────────────────────────────────────
 STATIC_ROOT = os.path.join(CORE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
+STATICFILES_DIRS = (os.path.join(CORE_DIR, 'apps/static'),)
 
-# Extra places for collectstatic to find static files.
-STATICFILES_DIRS = (
-    os.path.join(CORE_DIR, 'apps/static'),
-)
-
-# Media dosyaları için yapılandırma
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(CORE_DIR, 'media')
 
-# Mesaj çerçevesi
-from django.contrib.messages import constants as messages
+# ─────────────────────────────────────────────
+# Messages
+# ─────────────────────────────────────────────
+from django.contrib.messages import constants as msg_constants
 MESSAGE_TAGS = {
-    messages.DEBUG: 'alert-secondary',
-    messages.INFO: 'alert-info',
-    messages.SUCCESS: 'alert-success',
-    messages.WARNING: 'alert-warning',
-    messages.ERROR: 'alert-danger',
+    msg_constants.DEBUG:   'alert-secondary',
+    msg_constants.INFO:    'alert-info',
+    msg_constants.SUCCESS: 'alert-success',
+    msg_constants.WARNING: 'alert-warning',
+    msg_constants.ERROR:   'alert-danger',
 }
 
-# Koç Gayrimenkul Özel Ayarlar
+# ─────────────────────────────────────────────
+# Özel Ayarlar
+# ─────────────────────────────────────────────
 SITE_TITLE = "Koç Gayrimenkul Panel"
-
-# Google Maps API Anahtarı
 GOOGLE_MAPS_API_KEY = env('GOOGLE_MAPS_API_KEY')
 
-# Dosya Yükleme Limitleri
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 MB
 
-# CSRF Ayarları ve Güvenli Cookie
-CSRF_TRUSTED_ORIGINS = ['https://panelkocgayrimenkul.com', 'http://panelkocgayrimenkul.com']
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# ─────────────────────────────────────────────
+# CSRF & Cookie Güvenliği
+# DEBUG=True ise güvensiz (local) modda çalış
+# ─────────────────────────────────────────────
+CSRF_TRUSTED_ORIGINS = [
+    'https://panelkocgayrimenkul.com',
+    'http://panelkocgayrimenkul.com',
+    'https://www.panelkocgayrimenkul.com',
+    'http://www.panelkocgayrimenkul.com',
+]
 
-#############################################################
-#############################################################
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
 
-# Django REST Framework Ayarları
+# ─────────────────────────────────────────────
+# REST Framework
+# ─────────────────────────────────────────────
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
@@ -248,60 +250,109 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
-    ]
+    ],
 }
 
-# CORS Ayarları (Next.js için)
+# ─────────────────────────────────────────────
+# CORS
+# ─────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Next.js development server
+    "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://yourdomain.com",  # Production Next.js domain
+    "https://panelkocgayrimenkul.com",
 ]
-
 CORS_ALLOW_CREDENTIALS = True
-
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Sadece development'ta tüm origin'lere izin ver
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+    'accept', 'accept-encoding', 'authorization', 'content-type',
+    'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with',
 ]
 
-# WhatsApp Business Cloud API Settings
+# ─────────────────────────────────────────────
+# WhatsApp
+# ─────────────────────────────────────────────
 WHATSAPP_ACCESS_TOKEN = env('WHATSAPP_ACCESS_TOKEN', default='')
 WHATSAPP_PHONE_NUMBER_ID = env('WHATSAPP_PHONE_NUMBER_ID', default='')
 WHATSAPP_BUSINESS_ACCOUNT_ID = env('WHATSAPP_BUSINESS_ACCOUNT_ID', default='')
 WHATSAPP_WEBHOOK_VERIFY_TOKEN = env('WHATSAPP_WEBHOOK_VERIFY_TOKEN', default='koc_gayrimenkul_webhook_token')
 WHATSAPP_API_VERSION = env('WHATSAPP_API_VERSION', default='v18.0')
 WHATSAPP_API_BASE_URL = f'https://graph.facebook.com/{WHATSAPP_API_VERSION}'
+WHATSAPP_MOCK_MODE = env('WHATSAPP_MOCK_MODE', default=True)
 
-# WhatsApp Mock Mode - Gerçek entegrasyon aktif olmadığında simülasyon için
-WHATSAPP_MOCK_MODE =False
+# ─────────────────────────────────────────────
+# NetGSM
+# ─────────────────────────────────────────────
+NETGSM_USERCODE = env('NETGSM_USERCODE', default='')
+NETGSM_PASSWORD = env('NETGSM_PASSWORD', default='')
 
-# Celery Configuration (for async tasks)
+# ─────────────────────────────────────────────
+# Celery
+# ─────────────────────────────────────────────
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
-# Netgsm API Settings (for call center integration)
-NETGSM_ENABLED = False  # NetGSM entegrasyonunu aktif/pasif yapmak için
-NETGSM_USERNAME = env('NETGSM_USERNAME', default='8508850860')  # Santral numarası
-NETGSM_PASSWORD = '72B5*C8'
-NETGSM_API_KEY = env('NETGSM_API_KEY', default='')
-NETGSM_WEBHOOK_SECRET = env('NETGSM_WEBHOOK_SECRET', default='netgsm_webhook_secret')
-NETGSM_PBX_NUMBER = env('NETGSM_PBX_NUMBER', default='8508850860')  # Santral numarası
-NETGSM_CRM_BASE_URL = env('NETGSM_CRM_BASE_URL', default='http://crmsntrl.netgsm.com.tr:9111')  # CRM API Base URL
-NETGSM_API_BASE_URL = env('NETGSM_API_BASE_URL', default='https://api.netgsm.com.tr')  # Main API Base URL
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'expire-portal-listings-daily': {
+        'task': 'portfolio.expire_portal_listings',
+        'schedule': crontab(hour=3, minute=0),
+    },
+}
 
-#############################################################
-#############################################################
+# ─────────────────────────────────────────────
+# Logging
+# ─────────────────────────────────────────────
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '[{levelname}] {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'apps': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+    },
+}
+def customer_reminders_processor(request):
+    """Context processor - her sayfada müşteri hatırlatmalarını sağlar"""
+    if not request.user.is_authenticated:
+        return {'customer_reminders': [], 'customer_reminders_count': 0}
+    try:
+        from .models import CustomerReminder
+        reminders = CustomerReminder.objects.filter(
+            customer__consultant=request.user,
+            is_read=False,
+        ).select_related('customer')[:10]
+        return {
+            'customer_reminders': reminders,
+            'customer_reminders_count': reminders.count(),
+        }
+    except Exception:
+        return {'customer_reminders': [], 'customer_reminders_count': 0}

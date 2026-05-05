@@ -1,9 +1,9 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/modern_base.html" %}
 {% load static %}
 
 {% block title %} Müdür Satış Sonrası Akışı {% endblock %}
 
-{% block stylesheets %}
+{% block extra_css %}
 <style>
 /* Koç Gayrimenkul kurumsal renkleri */
 :root {
@@ -400,40 +400,36 @@
 </style>
 <!-- SweetAlert2 CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-{% endblock stylesheets %}
+{% endblock extra_css %}
 
 {% block content %}
-<div class="header bg-gradient-koc-red pb-6">
-    <div class="container-fluid">
-        <div class="header-body">
-            <div class="row align-items-center py-4">
-                <div class="col-lg-6 col-7">
-                    <h6 class="h2 text-white d-inline-block mb-0">Müdür Satış Sonrası Akışı</h6>
-                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-                        <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-                            <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}"><i class="fas fa-tachometer-alt"></i></a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Müdür Akışı</li>
-                        </ol>
-                    </nav>
-                </div>
-                <div class="col-lg-6 col-5 text-right">
-                    <button class="btn btn-sm btn-neutral" onclick="refreshBoard()">
-                        <i class="fas fa-sync-alt"></i> Yenile
-                    </button>
-                    <a href="{% url 'sales_process:sales_reports' %}" class="btn btn-sm btn-neutral ml-2">
-                        <i class="fas fa-chart-bar"></i> Raporlar
-                    </a>
-                    <a href="{% url 'sales_process:manager_kanban_fullscreen' %}" class="btn btn-sm btn-primary ml-2">
-                        <i class="fas fa-expand"></i> Tam Ekran
-                    </a>
-                </div>
+<div class="p-4">
+
+    <!-- Sayfa Başlığı -->
+    <div class="bg-white rounded-2xl p-4 custom-shadow mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">Müdür Satış Sonrası Akışı</h1>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    <a href="{% url 'sales_process:dashboard' %}" class="text-blue-500 hover:underline"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <span class="mx-1 text-slate-300">/</span>
+                    Müdür Akışı
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="refreshBoard()" class="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg flex items-center hover:bg-slate-200 transition">
+                    <i class="fas fa-sync-alt mr-1.5"></i> Yenile
+                </button>
+                <a href="{% url 'sales_process:sales_reports' %}" class="px-3 py-1.5 bg-slate-600 text-white text-xs font-semibold rounded-lg flex items-center hover:bg-slate-700 transition shadow-sm no-underline">
+                    <i class="fas fa-chart-bar mr-1.5"></i> Raporlar
+                </a>
+                <a href="{% url 'sales_process:manager_kanban_fullscreen' %}" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg flex items-center hover:bg-blue-700 transition shadow-sm no-underline">
+                    <i class="fas fa-expand mr-1.5"></i> Tam Ekran
+                </a>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Page content -->
-<div class="container-fluid mt--6">
     <div class="kanban-board" id="managerKanbanBoard">
         <!-- Sözleşme Yapıldı -->
         <div class="kanban-column">
@@ -770,10 +766,11 @@
     <button class="refresh-btn" onclick="refreshBoard()" title="Panoyu Yenile">
         <i class="fas fa-sync-alt"></i>
     </button>
+
 </div>
 {% endblock content %}
 
-{% block javascripts %}
+{% block extra_js %}
 <script>
 // Panoyu yenile (sayfa yenilemeden)
 function refreshBoard() { return refreshBoardAjax(); }
@@ -1571,4 +1568,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <!-- SweetAlert2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{% endblock javascripts %}
+{% endblock extra_js %}

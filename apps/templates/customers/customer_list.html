@@ -1,868 +1,751 @@
 {% extends "layouts/base.html" %}
-
 {% block title %} Müşteri Listesi {% endblock %}
 
-<!-- Specific CSS goes HERE -->
 {% block stylesheets %}
 <style>
-  /* Koç Gayrimenkul kurumsal renkleri */
-  :root {
-    --koc-red: #9d2235;
-    --koc-red-light: #b82e42;
-    --koc-red-dark: #7a1a29;
-    --koc-black: #212529;
-    --koc-red-rgb: 157, 34, 53;
-    --koc-gray: #f5f5f5;
-  }
-  
-  .bg-koc-red {
-    background-color: var(--koc-red) !important;
-  }
-  
-  .bg-gradient-koc-red {
-    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
-  }
-  
-  .text-koc-red {
-    color: var(--koc-red) !important;
-  }
-  
-  .btn-koc-red {
-    color: #fff;
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .btn-koc-red:hover {
-    color: #fff;
-    background-color: var(--koc-red-light);
-    border-color: var(--koc-red-light);
-  }
-  
-  .btn-outline-koc-red {
-    color: var(--koc-red);
-    border-color: var(--koc-red);
-    background-color: transparent;
-  }
-  
-  .btn-outline-koc-red:hover {
-    color: #fff;
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .border-koc-red {
-    border-color: var(--koc-red) !important;
-  }
-  
-  /* Sayfa özel stilleri */
-  .card {
-    border-radius: 0.75rem;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    border: none;
-  }
-  
-  .card:hover {
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  }
-  
-  .customer-filter-card {
-    border-radius: 0.75rem;
-    overflow: hidden;
-  }
-  
-  .filter-header {
-    background: linear-gradient(45deg, var(--koc-red-dark), var(--koc-red));
-    border-bottom: none;
-    padding: 1.25rem 1.5rem;
-  }
-  
-  .badge-koc-red {
-    background-color: var(--koc-red);
-    color: white;
-  }
-  
-  .badge-koc-dark {
-    background-color: var(--koc-red-dark);
-    color: white;
-  }
-  
-  .badge-koc-light {
-    background-color: var(--koc-red-light);
-    color: white;
-  }
-  
-  .badge-success {
-    background-color: #2dce89;
-    color: white;
-  }
-  
-  .badge-warning {
-    background-color: #ffc107;
-    color: #212529;
-  }
-  
-  .badge-danger {
-    background-color: #dc3545;
-    color: white;
-  }
-  
-  .table thead th {
-    border-top: none;
-    border-bottom: 2px solid var(--koc-red);
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-  }
-  
-  .table-hover tbody tr:hover {
-    background-color: rgba(var(--koc-red-rgb), 0.04);
-  }
-  
-  .dropdown-item:hover {
-    background-color: rgba(var(--koc-red-rgb), 0.1);
-    color: var(--koc-red);
-  }
-  
-  /* Müşteri kartı stilleri */
-  .customer-card {
-    height: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    margin-bottom: 20px;
-    border: none;
-  }
-  
-  .customer-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-  }
-  
-  .customer-card .card-body {
-    padding: 1.5rem;
-  }
-  
-  .customer-card .avatar {
-    width: 64px;
-    height: 64px;
-    background-color: var(--koc-red);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    font-weight: 600;
-    border-radius: 50%;
-    margin-bottom: 1rem;
-  }
-  
-  .customer-card .customer-info {
-    margin-bottom: 1rem;
-  }
-  
-  .customer-card .customer-status {
-    padding: 0.5rem 0;
-    border-top: 1px solid rgba(0,0,0,0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .customer-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.35rem 0.75rem;
-    border-radius: 50rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-  
-  .customer-feature {
-    display: inline-flex;
-    align-items: center;
-    background-color: #f8f9fe;
-    border-radius: 12px;
-    padding: 4px 8px;
-    font-size: 12px;
-    color: #525f7f;
-    margin-right: 5px;
-    margin-bottom: 5px;
-  }
-  
-  .customer-feature i {
-    margin-right: 4px;
-    color: var(--koc-red);
-  }
-  
-  /* Görünüm değiştirme butonları */
-  .view-toggle .btn {
-    width: 42px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-  }
-  
-  .view-toggle .btn i {
-    font-size: 18px;
-  }
-  
-  .view-toggle .btn.active {
-    background-color: var(--koc-red);
-    color: white;
-    border-color: var(--koc-red);
-  }
-  
-  /* Boş liste mesajı */
-  .empty-list {
-    padding: 60px 0;
-    text-align: center;
-  }
-  
-  .empty-list i {
-    font-size: 5rem;
-    color: #f0f0f0;
-    margin-bottom: 20px;
-  }
-  
-  .empty-list h4 {
-    font-weight: 600;
-    color: #8898aa;
-    margin-bottom: 15px;
-  }
-  
-  .empty-list p {
-    color: #adb5bd;
-    max-width: 600px;
-    margin: 0 auto 20px;
-  }
-  
-  /* Pagination */
-  .pagination .page-item.active .page-link {
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .pagination .page-link {
-    color: var(--koc-red);
-  }
-  
-  /* Animasyonlar */
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  
-  .fade-in {
-    animation: fadeIn 0.5s ease-in-out;
-  }
-  
-  /* Mobil buton */
-  .btn-float {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-  
-  .btn-float i {
-    font-size: 24px;
-  }
-  
-  /* Durum rozeti stilleri */
-  .badge-status {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    font-weight: 600;
-    border-radius: 30px;
-  }
-  
-  .badge-bekliyor {
-    background-color: #ffc107;
-    color: #212529;
-  }
-  
-  .badge-olumlu {
-    background-color: #2dce89;
-    color: white;
-  }
-  
-  .badge-olumsuz {
-    background-color: #f5365c;
-    color: white;
-  }
-  
-  /* Müşteri detay kutucuğu */
-  .customer-detail-box {
-    background-color: #f8f9fe;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-  }
-  
-  .customer-detail-box h6 {
-    margin-bottom: 15px;
-    font-weight: 600;
-    color: #8898aa;
-  }
-  
-  /* Filtreleme bölümü stilleri */
-  .filter-section {
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    background-color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  }
-  
-  .filter-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--koc-red-dark);
-    display: flex;
-    align-items: center;
-    padding: 10px 0;
-    cursor: pointer;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    transition: all 0.2s ease;
-  }
-  
-  .filter-title:hover {
-    color: var(--koc-red);
-  }
-  
-  .filter-title i.ni {
-    margin-right: 8px;
-    font-size: 1rem;
-  }
-  
-  .filter-title i.fas {
-    font-size: 0.8rem;
-    transition: transform 0.2s ease;
-  }
-  
-  .filter-title i.fa-chevron-up {
-    transform: rotate(180deg);
-  }
-  
-  /* Filtreleri aç/kapat düğmesi */
-  #collapseAllFilters {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-  
-  #collapseAllFilters:hover {
-    transform: scale(1.1);
-  }
-  
-  #collapseAllFilters i {
-    transition: transform 0.2s ease;
-  }
-  
-  #collapseAllFilters i.fa-chevron-up {
-    transform: rotate(180deg);
-  }
+:root {
+  --koc-red: #9d2235;
+  --koc-red-light: #b82e42;
+  --koc-red-dark: #7a1a29;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+body { background: #f8f9fe; }
+
+/* HEADER */
+.page-header {
+  background: linear-gradient(135deg, var(--koc-red-dark) 0%, var(--koc-red) 100%);
+  border-radius: 20px;
+  padding: 36px 40px 28px;
+  color: white;
+  margin-bottom: 28px;
+  box-shadow: 0 8px 30px rgba(157,34,53,0.3);
+  position: relative;
+  overflow: hidden;
+}
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -40px;
+  width: 350px; height: 350px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 50%;
+}
+.page-header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 6px; position: relative; z-index: 1; }
+.page-header p  { opacity: .85; margin: 0; position: relative; z-index: 1; }
+
+/* STAT CARDS */
+.stat-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px 24px;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid transparent;
+}
+.stat-card.total   { border-color: #6c757d; }
+.stat-card.missed  { border-color: #f5365c; }
+.stat-card.ok      { border-color: #2dce89; }
+.stat-card.pending { border-color: #fb6340; }
+.stat-card.records { border-color: #5e72e4; }
+.stat-card .label  { font-size: .75rem; font-weight: 600; color: #8898aa; text-transform: uppercase; letter-spacing: .5px; }
+.stat-card .value  { font-size: 2rem; font-weight: 700; color: #32325d; line-height: 1.2; margin-top: 4px; }
+.stat-card.missed .value  { color: #f5365c; }
+.stat-card.ok .value      { color: #2dce89; }
+.stat-card.pending .value { color: #fb6340; }
+.stat-card.records .value { color: #5e72e4; }
+
+/* FILTER BAR */
+.filter-topbar {
+  background: white;
+  border-radius: 14px;
+  padding: 12px 20px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.filter-topbar .search-wrap { position: relative; flex: 1; }
+.filter-topbar .search-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #adb5bd; }
+.filter-topbar input {
+  height: 42px; width: 100%;
+  border: 2px solid #e9ecef; border-radius: 10px;
+  font-size: .9rem; padding: 0 14px 0 38px;
+  transition: border-color .2s; background: white; color: #32325d;
+}
+.filter-topbar input:focus { border-color: var(--koc-red); outline: none; box-shadow: 0 0 0 3px rgba(157,34,53,.1); }
+
+/* Açılır panel */
+.filter-panel {
+  background: white;
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .35s ease, padding .35s ease;
+  padding: 0 20px;
+}
+.filter-panel.open {
+  max-height: 300px;
+  padding: 20px;
+}
+.filter-panel-inner {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.filter-panel select, .filter-panel input[type=date] {
+  height: 42px;
+  border: 2px solid #e9ecef; border-radius: 10px;
+  font-size: .88rem; padding: 0 12px;
+  background: white; color: #32325d; cursor: pointer;
+  min-width: 150px;
+  transition: border-color .2s;
+}
+.filter-panel select:focus, .filter-panel input[type=date]:focus { border-color: var(--koc-red); outline: none; }
+.filter-panel label { font-size: .72rem; font-weight: 700; color: #8898aa; text-transform: uppercase; letter-spacing: .4px; display: block; margin-bottom: 5px; }
+.filter-group { display: flex; flex-direction: column; }
+
+.btn-koc { background: linear-gradient(135deg, var(--koc-red), var(--koc-red-light)); color: white; border: none; border-radius: 10px; padding: 0 20px; height: 42px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all .2s; white-space: nowrap; text-decoration: none; }
+.btn-koc:hover { color: white; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(157,34,53,.35); }
+.btn-clear { background: #f6f9fc; color: #8898aa; border: 2px solid #e9ecef; border-radius: 10px; padding: 0 16px; height: 42px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: all .2s; white-space: nowrap; }
+.btn-clear:hover { color: var(--koc-red); border-color: var(--koc-red); }
+.btn-filter { background: #f6f9fc; color: #32325d; border: 2px solid #e9ecef; border-radius: 10px; padding: 0 18px; height: 42px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all .2s; white-space: nowrap; }
+.btn-filter:hover, .btn-filter.active { border-color: var(--koc-red); color: var(--koc-red); background: rgba(157,34,53,.05); }
+.btn-filter .arrow { transition: transform .3s; }
+.btn-filter.active .arrow { transform: rotate(180deg); }
+
+/* TABLE */
+.table-wrap { background: white; border-radius: 16px; box-shadow: var(--shadow-sm); overflow: hidden; }
+.table-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid #f0f0f0; }
+.table-toolbar .title { font-weight: 700; color: #32325d; font-size: 1rem; }
+.table-search { position: relative; }
+.table-search input { height: 36px; border: 2px solid #e9ecef; border-radius: 8px; padding: 0 12px 0 32px; font-size: .85rem; width: 200px; }
+.table-search i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #adb5bd; font-size: .8rem; }
+
+table { width: 100%; border-collapse: collapse; }
+thead th { background: #f8f9fe; padding: 14px 18px; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #8898aa; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+thead th.sortable { cursor: pointer; user-select: none; }
+thead th.sortable:hover { color: var(--koc-red); }
+tbody tr { border-bottom: 1px solid #f6f9fc; transition: background .15s; }
+tbody tr:hover { background: rgba(157,34,53,.03); }
+tbody tr:last-child { border-bottom: none; }
+tbody td { padding: 14px 18px; vertical-align: middle; color: #32325d; font-size: .9rem; }
+
+/* AVATAR */
+.avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--koc-red), var(--koc-red-light));
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(157,34,53,.25);
+}
+
+/* BADGES */
+.badge-status { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.badge-bekliyor { background: #fff3cd; color: #856404; }
+.badge-olumlu   { background: #d1fae5; color: #065f46; }
+.badge-olumsuz  { background: #fee2e2; color: #991b1b; }
+
+/* SOURCE BADGE */
+.badge-source { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: .68rem; font-weight: 600; background: #e9ecef; color: #495057; }
+
+/* ACTION BUTTONS */
+.actions { display: flex; gap: 6px; align-items: center; }
+.action-btn { width: 34px; height: 34px; border-radius: 8px; border: 2px solid transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem; text-decoration: none; }
+.action-btn.view   { border-color: var(--koc-red); color: var(--koc-red); background: transparent; }
+.action-btn.edit   { border-color: #5e72e4; color: #5e72e4; background: transparent; }
+.action-btn.call   { border-color: #2dce89; color: #2dce89; background: transparent; }
+.action-btn:hover  { color: white !important; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,.15); }
+.action-btn.view:hover  { background: var(--koc-red); border-color: var(--koc-red); }
+.action-btn.edit:hover  { background: #5e72e4; border-color: #5e72e4; }
+.action-btn.call:hover  { background: #2dce89; border-color: #2dce89; }
+
+/* PLAY BUTTON (Kayıt sütunu) */
+.play-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #fb6340, #e8521f);
+  color: white;
+  font-size: .8rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 3px 10px rgba(251,99,64,.4);
+}
+.play-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 6px 18px rgba(251,99,64,.5);
+}
+.play-btn i { margin-left: 2px; } /* optik hizalama */
+.no-record { color: #dee2e6; font-size: 1.1rem; }
+
+/* AUDIO PLAYER MODAL */
+/* audio modal inline style kullanıyor */
+
+/* EMPTY */
+.empty-state { text-align: center; padding: 70px 20px; }
+.empty-state i { font-size: 3rem; color: #dee2e6; margin-bottom: 20px; display: block; }
+.empty-state h5 { font-weight: 700; color: #32325d; }
+.empty-state p  { color: #8898aa; }
+
+/* PAGINATION */
+.pagination-wrap { display: flex; justify-content: center; padding: 20px; gap: 6px; }
+.page-btn { width: 38px; height: 38px; border-radius: 9px; border: 2px solid #e9ecef; background: white; color: #32325d; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 600; text-decoration: none; transition: all .2s; font-size: .85rem; }
+.page-btn:hover { border-color: var(--koc-red); color: var(--koc-red); }
+.page-btn.active { background: var(--koc-red); border-color: var(--koc-red); color: white; }
+.page-btn.disabled { opacity: .4; pointer-events: none; }
+
+/* CALL TOAST */
+.call-toast { position: fixed; bottom: 24px; right: 24px; background: #32325d; color: white; border-radius: 14px; padding: 16px 22px; display: none; z-index: 9998; box-shadow: 0 8px 30px rgba(0,0,0,.25); min-width: 280px; }
+.call-toast.show { display: flex; align-items: center; gap: 14px; animation: slideUp .3s ease; }
+@keyframes slideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+
+@media (max-width: 768px) {
+  .stat-cards { grid-template-columns: repeat(2, 1fr); }
+  .filter-bar { flex-direction: column; }
+  .filter-bar input, .filter-bar select { width: 100%; }
+}
+
+/* Daire popup */
+.daire-popup-wrap { position: relative; display: inline-block; }
+.daire-popup {
+  display: none;
+  position: absolute;
+  left: 50%; top: calc(100% + 8px);
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  padding: 12px 16px;
+  min-width: 210px;
+  z-index: 9999;
+  font-size: .82rem;
+  color: #32325d;
+}
+.daire-popup::before {
+  content: '';
+  position: absolute;
+  top: -7px; left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-bottom-color: #e2e8f0;
+  border-top: none;
+}
+.daire-popup-wrap:hover .daire-popup { display: block; }
+.daire-popup .dp-title { font-weight: 700; font-size: .88rem; color: #9d2235; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 6px; }
+.daire-popup .dp-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.daire-popup .dp-label { color: #8898aa; }
+.daire-popup .dp-val { font-weight: 600; }
 </style>
 {% endblock stylesheets %}
 
 {% block content %}
+<div class="container-fluid mt--7">
 
-<div class="header bg-gradient-koc-red pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Müşteri Yönetimi</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="{% url 'customer_list' %}">Müşteriler</a></li>
-              <li class="breadcrumb-item active" aria-current="page">Müşteri Listesi</li>
-            </ol>
-          </nav>
-        </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{% url 'customer_create' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-user-plus mr-1"></i> Yeni Müşteri Ekle
-          </a>
-          <div class="btn-group" role="group">
-            <button id="btnGroupDrop1" type="button" class="btn btn-sm btn-neutral dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="fas fa-ellipsis-v"></i>
-            </button>
-            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="btnGroupDrop1">
-              <a class="dropdown-item" href="#">
-                <i class="fas fa-file-export mr-2"></i> Dışarı Aktar
-              </a>
-              <a class="dropdown-item" href="#">
-                <i class="fas fa-print mr-2"></i> Yazdır
-              </a>
-              <a class="dropdown-item" href="{% url 'neighborhood_list' %}">
-                <i class="fas fa-map-marker-alt mr-2"></i> Mahalleleri Yönet
-              </a>
-            </div>
-          </div>
-        </div>
+  <!-- Header -->
+  <div class="page-header">
+    <h1>👥 Müşteriler</h1>
+    <p>Tüm müşterilerinizi buradan yönetin, arayın ve takip edin</p>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stat-cards">
+    <div class="stat-card total">
+      <div class="label">Toplam</div>
+      <div class="value">{{ stats.total|default:"0" }}</div>
+    </div>
+    <div class="stat-card missed">
+      <div class="label">Olumsuz</div>
+      <div class="value">{{ stats.olumsuz|default:"0" }}</div>
+    </div>
+    <div class="stat-card ok">
+      <div class="label">Olumlu</div>
+      <div class="value">{{ stats.olumlu|default:"0" }}</div>
+    </div>
+    <div class="stat-card pending">
+      <div class="label">Bekleyen</div>
+      <div class="value">{{ stats.bekliyor|default:"0" }}</div>
+    </div>
+    <div class="stat-card records">
+      <div class="label">Filtrelenen</div>
+      <div class="value">{{ total_count|default:"0" }}</div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <form method="GET" action="{% url 'customer_list' %}" id="filterForm">
+
+    <!-- Üst satır: arama + butonlar -->
+    <div class="filter-topbar">
+      <div class="search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" name="q" placeholder="Müşteri adı veya telefon ara..." value="{{ query }}">
       </div>
-      
-      <!-- İstatistik Kartları -->
-      <div class="row">
-        <div class="col-xl-3 col-md-6">
-          <div class="card card-stats">
-            <div class="card-body">
-              <div class="row">
-                <div class="col">
-                  <h5 class="card-title text-uppercase text-muted mb-0">Toplam Müşteri</h5>
-                  <span class="h2 font-weight-bold mb-0">{{ customers.count }}</span>
-                </div>
-                <div class="col-auto">
-                  <div class="icon icon-shape bg-gradient-koc-red text-white rounded-circle shadow">
-                    <i class="ni ni-single-02"></i>
-                  </div>
+      <button type="button" class="btn-filter {% if status or source or contact_type or neighborhood_id or date_from or date_to %}active{% endif %}" id="filterToggle" onclick="toggleFilter()">
+        <i class="fas fa-sliders-h"></i> Filtrele
+        <i class="fas fa-chevron-down arrow"></i>
+      </button>
+      <button type="submit" class="btn-koc"><i class="fas fa-search"></i> Ara</button>
+      <a href="{% url 'customer_list' %}" class="btn-clear"><i class="fas fa-times"></i> Temizle</a>
+      <a href="{% url 'customer_create' %}" class="btn-koc"><i class="fas fa-plus"></i> Yeni Müşteri</a>
+    </div>
+
+    <!-- Açılır filtre paneli -->
+    <div class="filter-panel {% if status or source or contact_type or neighborhood_id or date_from or date_to %}open{% endif %}" id="filterPanel">
+      <div class="filter-panel-inner">
+
+        <div class="filter-group">
+          <label>Durum</label>
+          <select name="status">
+            <option value="">Tüm Durumlar</option>
+            <option value="bekliyor" {% if status == 'bekliyor' %}selected{% endif %}>Bekliyor</option>
+            <option value="olumlu"   {% if status == 'olumlu'   %}selected{% endif %}>Olumlu</option>
+            <option value="olumsuz"  {% if status == 'olumsuz'  %}selected{% endif %}>Olumsuz</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Kaynak</label>
+          <select name="source">
+            <option value="">Tüm Kaynaklar</option>
+            {% for val, label in source_choices %}
+            <option value="{{ val }}" {% if source == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>İletişim Türü</label>
+          <select name="contact_type">
+            <option value="">Tüm İletişim</option>
+            {% for val, label in contact_type_choices %}
+            <option value="{{ val }}" {% if contact_type == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {% if user_role in 'admin,manager,secretary' or request.user.is_superuser %}
+        <div class="filter-group">
+          <label>Mahalle</label>
+          <select name="neighborhood">
+            <option value="">Tüm Mahalleler</option>
+            {% for n in neighborhoods %}
+            <option value="{{ n.id }}" {% if neighborhood_id == n.id|stringformat:"s" %}selected{% endif %}>{{ n.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <div class="filter-group">
+          <label>Başlangıç Tarihi</label>
+          <input type="date" name="date_from" value="{{ date_from }}">
+        </div>
+
+        <div class="filter-group">
+          <label>Bitiş Tarihi</label>
+          <input type="date" name="date_to" value="{{ date_to }}">
+        </div>
+
+        <div class="filter-group" style="justify-content:flex-end;">
+          <button type="submit" class="btn-koc" style="margin-top:22px;">
+            <i class="fas fa-filter"></i> Uygula
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <div class="table-toolbar">
+      <span class="title">
+        <i class="fas fa-users mr-2" style="color:var(--koc-red)"></i>
+        Müşteri Listesi
+        <span style="color:#adb5bd; font-weight:400; font-size:.85rem; margin-left:8px;">({{ total_count }} kayıt)</span>
+      </span>
+      <div class="table-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="tableSearch" placeholder="Tabloda ara...">
+      </div>
+    </div>
+
+    <table id="customerTable">
+      <thead>
+        <tr>
+          <th>Müşteri</th>
+          <th>Telefon</th>
+          <th>Daire</th>
+          <th>Kaynak</th>
+          <th>Kayıt</th>
+          <th>Son Görüşme</th>
+          <th class="text-right">İşlemler</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for customer in customers %}
+        <tr>
+          <!-- Müşteri -->
+          <td>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="avatar">{{ customer.full_name|slice:":1"|upper }}</div>
+              <div>
+                <a href="{% url 'customer_detail' customer.id %}" style="font-weight:700; color:#32325d; text-decoration:none;">{{ customer.full_name }}</a>
+                <div style="font-size:.78rem; color:#adb5bd;">{{ customer.consultant.get_full_name|default:"Atanmadı" }}</div>
+              </div>
+            </div>
+          </td>
+
+          <!-- Telefon -->
+          <td>
+            <div style="font-weight:600;">{{ customer.phone }}</div>
+          </td>
+
+          <!-- Daire -->
+          <td>
+            {% with customer.offers.first as ilk_teklif %}
+            {% if ilk_teklif and ilk_teklif.related_property %}
+              {% with ilk_teklif.related_property as p %}
+              <div class="daire-popup-wrap">
+                <span style="cursor:pointer; color:#32325d; font-weight:600; border-bottom:1px dashed #adb5bd;">
+                  <i class="fas fa-building" style="color:var(--koc-red); margin-right:5px; font-size:.8rem;"></i>
+                  {{ p.apartment_name|default:'-'|truncatechars:22 }}
+                </span>
+                <div class="daire-popup">
+                  <div class="dp-title">{{ p.apartment_name|default:'Daire' }}</div>
+                  <div class="dp-row"><span class="dp-label">Mahalle</span><span class="dp-val">{{ p.neighborhood.name|default:'-' }}</span></div>
+                  <div class="dp-row"><span class="dp-label">Oda</span><span class="dp-val">{{ p.room_count|default:'-' }}</span></div>
+                  <div class="dp-row"><span class="dp-label">Kat</span><span class="dp-val">{{ p.floor|default:'-' }}</span></div>
+                  <div class="dp-row"><span class="dp-label">Net m²</span><span class="dp-val">{{ p.net_area|default:'-' }}</span></div>
+                  <div class="dp-row"><span class="dp-label">Brüt m²</span><span class="dp-val">{{ p.gross_area|default:'-' }}</span></div>
+                  <div class="dp-row"><span class="dp-label">Fiyat</span><span class="dp-val">{{ p.price|default:'-' }}</span></div>
                 </div>
               </div>
-              <p class="mt-3 mb-0 text-sm">
-                <span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 3.48%</span>
-                <span class="text-nowrap">Son 30 günde</span>
-              </p>
+              {% endwith %}
+            {% else %}
+              <span style="color:#dee2e6;">-</span>
+            {% endif %}
+            {% endwith %}
+          </td>
+
+          <!-- Kaynak -->
+          <td>
+            {% if customer.source %}
+            <span class="badge-source">{{ customer.get_source_display }}</span>
+            {% else %}-{% endif %}
+          </td>
+
+
+
+          <!-- Kayıt -->
+          <td style="text-align:center;">
+            {% with customer.call_logs.first as last_call %}
+            {% if last_call and last_call.recording_url %}
+            <button class="play-btn" title="Kaydı Dinle"
+              onclick="playRecording('{{ last_call.recording_url }}', '{{ customer.full_name }}', '{{ last_call.start_time|date:"d.m.Y H:i" }}', '{{ last_call.duration_formatted }}', '{{ last_call.get_direction_display }}')">
+              <i class="fas fa-play"></i>
+            </button>
+            {% else %}
+            <span class="no-record" title="Kayıt yok">—</span>
+            {% endif %}
+            {% endwith %}
+          </td>
+
+
+
+          <!-- Son görüşme notu -->
+          <td style="max-width:180px;">
+            {% if customer.meeting_result %}
+            <span title="{{ customer.meeting_result }}" style="color:#555; font-size:.82rem; cursor:help;">
+              {{ customer.meeting_result|truncatechars:40 }}
+            </span>
+            {% elif customer.notes %}
+            <span style="color:#adb5bd; font-size:.82rem;">{{ customer.notes|truncatechars:35 }}</span>
+            {% else %}
+            <span style="color:#dee2e6;">-</span>
+            {% endif %}
+          </td>
+
+          <!-- İşlemler -->
+          <td>
+            <div class="actions">
+              <a href="{% url 'customer_detail' customer.id %}" class="action-btn view" title="Detay">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a href="{% url 'customer_edit' customer.id %}" class="action-btn edit" title="Düzenle">
+                <i class="fas fa-edit"></i>
+              </a>
+              {% if customer.phone %}
+              <button class="action-btn call" title="Ara" onclick="clickToCall('{{ customer.phone }}', '{{ customer.full_name }}')">
+                <i class="fas fa-phone"></i>
+              </button>
+              {% endif %}
             </div>
-          </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-          <div class="card card-stats">
-            <div class="card-body">
-              <div class="row">
-                <div class="col">
-                  <h5 class="card-title text-uppercase text-muted mb-0">Olumlu Görüşme</h5>
-                  <span class="h2 font-weight-bold mb-0">
-                    {% if olumlu_musteri_sayisi %}{{ olumlu_musteri_sayisi }}{% else %}0{% endif %}
-                  </span>
-                </div>
-                <div class="col-auto">
-                  <div class="icon icon-shape bg-gradient-success text-white rounded-circle shadow">
-                    <i class="ni ni-check-bold"></i>
-                  </div>
-                </div>
-              </div>
-              <p class="mt-3 mb-0 text-sm">
-                <span class="text-success mr-2"><i class="fa fa-arrow-up"></i> 5.4%</span>
-                <span class="text-nowrap">Son 30 günde</span>
-              </p>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9">
+            <div class="empty-state">
+              <i class="fas fa-users"></i>
+              <h5>Müşteri bulunamadı</h5>
+              <p>Filtrelere uyan müşteri yok veya henüz kayıt eklenmedi.</p>
+              <a href="{% url 'customer_create' %}" class="btn-koc" style="text-decoration:none; border-radius:10px; padding: 10px 24px;">
+                <i class="fas fa-user-plus"></i> Yeni Müşteri Ekle
+              </a>
             </div>
-          </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-          <div class="card card-stats">
-            <div class="card-body">
-              <div class="row">
-                <div class="col">
-                  <h5 class="card-title text-uppercase text-muted mb-0">Bekleyen</h5>
-                  <span class="h2 font-weight-bold mb-0">
-                    {% if bekleyen_musteri_sayisi %}{{ bekleyen_musteri_sayisi }}{% else %}0{% endif %}
-                  </span>
-                </div>
-                <div class="col-auto">
-                  <div class="icon icon-shape bg-gradient-warning text-white rounded-circle shadow">
-                    <i class="ni ni-time-alarm"></i>
-                  </div>
-                </div>
-              </div>
-              <p class="mt-3 mb-0 text-sm">
-                <span class="text-warning mr-2"><i class="fa fa-arrow-down"></i> 1.10%</span>
-                <span class="text-nowrap">Son 30 günde</span>
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-          <div class="card card-stats">
-            <div class="card-body">
-              <div class="row">
-                <div class="col">
-                  <h5 class="card-title text-uppercase text-muted mb-0">Olumsuz</h5>
-                  <span class="h2 font-weight-bold mb-0">
-                    {% if olumsuz_musteri_sayisi %}{{ olumsuz_musteri_sayisi }}{% else %}0{% endif %}
-                  </span>
-                </div>
-                <div class="col-auto">
-                  <div class="icon icon-shape bg-gradient-danger text-white rounded-circle shadow">
-                    <i class="ni ni-fat-remove"></i>
-                  </div>
-                </div>
-              </div>
-              <p class="mt-3 mb-0 text-sm">
-                <span class="text-danger mr-2"><i class="fa fa-arrow-down"></i> 2.4%</span>
-                <span class="text-nowrap">Son 30 günde</span>
-              </p>
-            </div>
-          </div>
-        </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if customers.has_other_pages %}
+    <div class="pagination-wrap">
+      {% if customers.has_previous %}
+      <a class="page-btn" href="?q={{ query }}&status={{ status }}&source={{ source }}&page={{ customers.previous_page_number }}">
+        <i class="fas fa-chevron-left"></i>
+      </a>
+      {% else %}
+      <span class="page-btn disabled"><i class="fas fa-chevron-left"></i></span>
+      {% endif %}
+
+      {% for num in customers.paginator.page_range %}
+        {% if customers.number == num %}
+        <span class="page-btn active">{{ num }}</span>
+        {% elif num > customers.number|add:'-3' and num < customers.number|add:'3' %}
+        <a class="page-btn" href="?q={{ query }}&status={{ status }}&source={{ source }}&page={{ num }}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if customers.has_next %}
+      <a class="page-btn" href="?q={{ query }}&status={{ status }}&source={{ source }}&page={{ customers.next_page_number }}">
+        <i class="fas fa-chevron-right"></i>
+      </a>
+      {% else %}
+      <span class="page-btn disabled"><i class="fas fa-chevron-right"></i></span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  
+<!-- Gelen Arama Bildirimi -->
+<div id="incomingCallPanel" style="display:none; position:fixed; top:80px; right:24px; z-index:9990; width:340px;">
+  <div style="background:white; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,.2); overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#2dce89,#26af74); padding:14px 18px; display:flex; align-items:center; gap:12px;">
+      <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-phone-volume" style="color:white;font-size:1rem;animation:pulse-icon 1s infinite;"></i>
+      </div>
+      <div>
+        <div style="color:white;font-weight:700;font-size:.9rem;">📞 Gelen Çağrı</div>
+        <div style="color:rgba(255,255,255,.85);font-size:.78rem;" id="incomingTime">—</div>
+      </div>
+      <button onclick="dismissIncoming()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.7);font-size:1.3rem;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div style="padding:16px 18px;">
+      <div style="font-size:1.3rem;font-weight:700;color:#32325d;margin-bottom:4px;" id="incomingNumber">—</div>
+      <div style="font-size:.82rem;color:#adb5bd;margin-bottom:16px;" id="incomingCustomerInfo">Müşteri bilgisi kontrol ediliyor...</div>
+      <div style="display:flex;gap:10px;">
+        <a id="convertBtn" href="#"
+           style="flex:1;background:linear-gradient(135deg,#9d2235,#b82e42);color:white;border:none;border-radius:10px;padding:10px;font-weight:700;text-align:center;text-decoration:none;font-size:.88rem;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <i class="fas fa-user-plus"></i> Müşteriye Dönüştür
+        </a>
+        <button onclick="dismissIncoming()"
+                style="background:#f6f9fc;color:#8898aa;border:2px solid #e9ecef;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;font-size:.88rem;">
+          Kapat
+        </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Page content -->
-<div class="container-fluid mt--6">
-  <div class="row">
-    <!-- Filtreler (sol sütun) -->
-    {% include "components/customer_filters.html" %}
-    
-    <!-- Ana içerik (sağ sütun) -->
-    <div id="contentColumn" class="col-xl-9 col-md-8">
-      <!-- Görünüm seçenekleri -->
-      <div class="card mb-4">
-        <div class="card-body py-3">
-          <div class="row align-items-center">
-            <div class="col-md-6">
-              <h5 class="mb-0">Müşteriler <span class="text-muted text-sm">({{ customers.paginator.count }} kayıt)</span></h5>
-            </div>
-            <div class="col-md-6 text-md-right">
-              <button id="toggleFilters" class="btn btn-sm btn-outline-secondary mr-2">
-                <i class="fas fa-filter mr-1"></i> Filtreler
-              </button>
-              <div class="btn-group view-toggle">
-                <button type="button" class="btn btn-sm btn-outline-primary active" data-view="grid">
-                  <i class="fas fa-th-large"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-primary" data-view="list">
-                  <i class="fas fa-list"></i>
-                </button>
-              </div>
-              <div class="btn-group ml-2">
-                <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                  <i class="fas fa-sort mr-1"></i> Sırala
-                </button>
-                <div class="dropdown-menu dropdown-menu-right">
-                  <a class="dropdown-item {% if sort_by == '-created_at' %}active{% endif %}" href="?{% if query_params %}{{ query_params }}&{% endif %}sort=-created_at">Yakın tarihli</a>
-                  <a class="dropdown-item {% if sort_by == 'created_at' %}active{% endif %}" href="?{% if query_params %}{{ query_params }}&{% endif %}sort=created_at">Eski tarihli</a>
-                  <a class="dropdown-item {% if sort_by == 'full_name' %}active{% endif %}" href="?{% if query_params %}{{ query_params }}&{% endif %}sort=full_name">İsim (A-Z)</a>
-                  <a class="dropdown-item {% if sort_by == '-full_name' %}active{% endif %}" href="?{% if query_params %}{{ query_params }}&{% endif %}sort=-full_name">İsim (Z-A)</a>
-                  <a class="dropdown-item {% if sort_by == 'meeting_status' %}active{% endif %}" href="?{% if query_params %}{{ query_params }}&{% endif %}sort=meeting_status">Durum</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Müşteri Listesi (Kart Görünümü) -->
-      <div id="gridView">
-        <div class="row">
-          {% for customer in customers %}
-          <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card customer-card h-100">
-              <div class="card-body">
-                <div class="text-center mb-3">
-                  <div class="avatar mx-auto">
-                    {{ customer.full_name|slice:":1" }}
-                  </div>
-                  <h5 class="mt-3 mb-0">{{ customer.full_name }}</h5>
-                  <p class="text-muted mb-0">{{ customer.neighborhood.name }}</p>
-                </div>
-                
-                <!-- Müşteri Kart Bilgileri -->
-                <div class="customer-info">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-sm text-muted"><i class="ni ni-mobile-button mr-2"></i> Telefon:</span>
-                    <span class="text-sm font-weight-bold">{{ customer.phone }}</span>
-                  </div>
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-sm text-muted"><i class="ni ni-calendar-grid-58 mr-2"></i> Kayıt:</span>
-                    <span class="text-sm font-weight-bold">{{ customer.created_at|date:"d.m.Y" }}</span>
-                  </div>
-                  {% if customer.response_date %}
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-sm text-muted"><i class="ni ni-time-alarm mr-2"></i> Geri Dönüş:</span>
-                    <span class="text-sm font-weight-bold badge badge-info">{{ customer.response_date|date:"d.m.Y" }}</span>
-                  </div>
-                  {% endif %}
-                  {% if customer.reminder_date %}
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-sm text-muted"><i class="ni ni-bell-55 mr-2"></i> Hatırlatma:</span>
-                    <span class="text-sm font-weight-bold badge badge-danger">{{ customer.reminder_date|date:"d.m.Y" }}</span>
-                  </div>
-                  {% endif %}
-                  
-                  {% if customer.property %}
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-sm text-muted"><i class="ni ni-building mr-2"></i> Gayrimenkul:</span>
-                    <a href="{% url 'property_detail' customer.property.id %}" class="text-sm font-weight-bold badge badge-primary">
-                      {{ customer.property.apartment_name|truncatechars:15 }}
-                    </a>
-                  </div>
-                  {% endif %}
-                </div>
-                
-                <div class="customer-status">
-                  <div>
-                    {% if customer.meeting_status == 'bekliyor' %}
-                    <span class="badge badge-status badge-bekliyor">Bekliyor</span>
-                    {% elif customer.meeting_status == 'olumlu' %}
-                    <span class="badge badge-status badge-olumlu">Olumlu</span>
-                    {% elif customer.meeting_status == 'olumsuz' %}
-                    <span class="badge badge-status badge-olumsuz">Olumsuz</span>
-                    {% endif %}
-                  </div>
-                  <div>
-                    <a href="{% url 'customer_detail' customer.id %}" class="btn btn-sm btn-outline-koc-red">
-                      <i class="fas fa-eye"></i>
-                    </a>
-                    <a href="{% url 'customer_edit' customer.id %}" class="btn btn-sm btn-outline-primary">
-                      <i class="fas fa-edit"></i>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          {% empty %}
-          <div class="col-12">
-            <div class="empty-list">
-              <i class="ni ni-user-run"></i>
-              <h4>Henüz müşteri kaydı yok</h4>
-              <p>Hiç müşteri kaydı bulunmuyor veya seçilen filtrelere uyan müşteri yok.</p>
-              <a href="{% url 'customer_create' %}" class="btn btn-koc-red">
-                <i class="fas fa-user-plus mr-2"></i> Yeni Müşteri Ekle
-              </a>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      
-      <!-- Müşteri Listesi (Tablo Görünümü) -->
-      <div id="listView" class="d-none">
-        <div class="card">
-        <div class="table-responsive">
-            <table class="table align-items-center table-flush table-hover">
-            <thead class="thead-light">
-              <tr>
-                  <th scope="col">Müşteri</th>
-                  <th scope="col">Telefon</th>
-                  <th scope="col">Mahalle</th>
-                <th scope="col">Kayıt Tarihi</th>
-                <th scope="col">Hatırlatma</th>
-                <th scope="col">Durum</th>
-                  <th scope="col">Gayrimenkul</th>
-                  <th scope="col" class="text-right">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for customer in customers %}
-              <tr>
-                  <td>
-                    <div class="d-flex align-items-center">
-                      <div class="avatar avatar-sm mr-3 bg-koc-red">
-                        {{ customer.full_name|slice:":1" }}
-                      </div>
-                      <div>
-                      <span class="name mb-0 text-sm">{{ customer.full_name }}</span>
-                    </div>
-                  </div>
-                  </td>
-                  <td>{{ customer.phone }}</td>
-                <td>{{ customer.neighborhood.name }}</td>
-                  <td>{{ customer.created_at|date:"d.m.Y" }}</td>
-                  <td>
-                    {% if customer.reminder_date %}
-                      <span class="badge badge-pill badge-danger">{{ customer.reminder_date|date:"d.m.Y" }}</span>
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if customer.meeting_status == 'bekliyor' %}
-                    <span class="badge badge-status badge-bekliyor">Bekliyor</span>
-                    {% elif customer.meeting_status == 'olumlu' %}
-                    <span class="badge badge-status badge-olumlu">Olumlu</span>
-                  {% elif customer.meeting_status == 'olumsuz' %}
-                    <span class="badge badge-status badge-olumsuz">Olumsuz</span>
-                  {% endif %}
-                </td>
-                  <td>
-                    {% if customer.property %}
-                      <a href="{% url 'property_detail' customer.property.id %}" class="badge badge-primary">
-                        {{ customer.property.apartment_name|truncatechars:15 }}
-                      </a>
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </td>
-                  <td class="text-right">
-                    <a href="{% url 'customer_detail' customer.id %}" class="btn btn-sm btn-outline-koc-red">
-                      <i class="fas fa-eye"></i>
-                    </a>
-                    <a href="{% url 'customer_edit' customer.id %}" class="btn btn-sm btn-outline-primary">
-                      <i class="fas fa-edit"></i>
-                    </a>
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                  <td colspan="8" class="text-center py-5">
-                    <i class="ni ni-user-run" style="font-size: 2rem; color: #f0f0f0;"></i>
-                    <h4 class="mt-3">Henüz müşteri kaydı yok</h4>
-                    <p class="text-muted">Hiç müşteri kaydı bulunmuyor veya seçilen filtrelere uyan müşteri yok.</p>
-                    <a href="{% url 'customer_create' %}" class="btn btn-sm btn-koc-red">
-                      <i class="fas fa-user-plus mr-2"></i> Yeni Müşteri Ekle
-                    </a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      </div>
-      
-      <!-- Pagination -->
-      {% if customers.has_other_pages %}
-      <div class="card mt-4">
-        <div class="card-body py-2">
-          <nav aria-label="Sayfalama">
-            <ul class="pagination justify-content-center mb-0">
-              {% if customers.has_previous %}
-                <li class="page-item">
-                  <a class="page-link" href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ customers.previous_page_number }}">
-                    <i class="fas fa-angle-left"></i>
-                    <span class="sr-only">Önceki</span>
-                  </a>
-                </li>
-              {% else %}
-                <li class="page-item disabled">
-                  <a class="page-link" href="#" tabindex="-1">
-                    <i class="fas fa-angle-left"></i>
-                    <span class="sr-only">Önceki</span>
-                  </a>
-                </li>
-              {% endif %}
-              
-              {% for num in customers.paginator.page_range %}
-                {% if customers.number == num %}
-                  <li class="page-item active">
-                    <a class="page-link" href="#">{{ num }}</a>
-                  </li>
-                {% elif num > customers.number|add:'-3' and num < customers.number|add:'3' %}
-                  <li class="page-item">
-                    <a class="page-link" href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ num }}">{{ num }}</a>
-                  </li>
-                {% endif %}
-              {% endfor %}
-              
-              {% if customers.has_next %}
-                <li class="page-item">
-                  <a class="page-link" href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ customers.next_page_number }}">
-                    <i class="fas fa-angle-right"></i>
-                    <span class="sr-only">Sonraki</span>
-                  </a>
-                </li>
-              {% else %}
-                <li class="page-item disabled">
-                  <a class="page-link" href="#" tabindex="-1">
-                    <i class="fas fa-angle-right"></i>
-                    <span class="sr-only">Sonraki</span>
-                  </a>
-                </li>
-              {% endif %}
-            </ul>
-          </nav>
-        </div>
-      </div>
-      {% endif %}
-    </div>
-  </div>
+<style>
+@keyframes pulse-icon { 0%,100%{opacity:1;} 50%{opacity:.5;} }
+</style>
 
   {% include "includes/footer.html" %}
 </div>
 
-<!-- Mobil Ekleme Butonu -->
-<a href="{% url 'customer_create' %}" class="btn btn-koc-red btn-float d-md-none">
-  <i class="fas fa-plus"></i>
-</a>
+<!-- Ses Kaydı Modal -->
+<div id="audioModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center;" onclick="if(event.target===this) closeAudio()">
+  <div style="background:white; border-radius:16px; padding:28px 32px; width:440px; max-width:95vw; box-shadow:0 20px 60px rgba(0,0,0,.25); position:relative;">
+    
+    <!-- Kapat -->
+    <button onclick="closeAudio()" style="position:absolute; top:16px; right:18px; background:none; border:none; font-size:1.4rem; color:#adb5bd; cursor:pointer; line-height:1;">×</button>
+
+    <!-- Başlık -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:.75rem; font-weight:700; color:#adb5bd; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px;">Ses Kaydı</div>
+      <div style="font-weight:700; font-size:1.1rem; color:#32325d;" id="modalCustomerName">—</div>
+      <div style="font-size:.82rem; color:#adb5bd; margin-top:2px;" id="modalCallDate">Çağrı kaydını dinleyebilirsiniz.</div>
+    </div>
+
+    <!-- Audio Player -->
+    <audio id="audioPlayer" controls style="width:100%; border-radius:10px; outline:none; margin-bottom:20px;">
+      <source id="audioSource" src="" type="audio/wav">
+      Tarayıcınız ses oynatmayı desteklemiyor.
+    </audio>
+
+    <!-- Butonlar -->
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <a id="downloadLink" href="#" target="_blank"
+         style="background:#f6f9fc; color:#32325d; border:2px solid #e9ecef; border-radius:10px; padding:0 18px; height:40px; font-weight:600; display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-size:.88rem; transition:all .2s;"
+         onmouseover="this.style.borderColor='#9d2235';this.style.color='#9d2235';"
+         onmouseout="this.style.borderColor='#e9ecef';this.style.color='#32325d';">
+        <i class="fas fa-external-link-alt"></i> Kaydı Aç
+      </a>
+      <button onclick="closeAudio()"
+              style="background:linear-gradient(135deg,#9d2235,#b82e42); color:white; border:none; border-radius:10px; padding:0 22px; height:40px; font-weight:600; cursor:pointer; font-size:.88rem;">
+        Kapat
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Arama Toast -->
+<div class="call-toast" id="callToast">
+  <i class="fas fa-phone-volume fa-lg" style="color:#2dce89;"></i>
+  <div>
+    <div style="font-weight:700;" id="toastName">—</div>
+    <div style="font-size:.82rem; opacity:.75;" id="toastMsg">Aranıyor...</div>
+  </div>
+  <button onclick="document.getElementById('callToast').classList.remove('show')"
+          style="background:none; border:none; color:white; margin-left:auto; cursor:pointer; font-size:1.2rem;">×</button>
+</div>
 
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
 {% block javascripts %}
 <script>
-  $(document).ready(function() {
-    // Görünüm değiştirme
-    $('.view-toggle .btn').on('click', function() {
-      $('.view-toggle .btn').removeClass('active');
-      $(this).addClass('active');
-      
-      var view = $(this).data('view');
-      if (view === 'grid') {
-        $('#gridView').removeClass('d-none');
-        $('#listView').addClass('d-none');
-      } else if (view === 'list') {
-        $('#gridView').addClass('d-none');
-        $('#listView').removeClass('d-none');
-      }
-    });
-    
-    // FILTRELEME BÖLÜMÜ YÖNETİMİ
-    
-    // Sayfa yüklendiğinde filtreleme tercihlerini ayarla
-    var isFilterCollapsed = localStorage.getItem('isFilterCollapsed');
-    if (isFilterCollapsed === 'true') {
-      $('#filterColumn').addClass('d-none');
-      $('#contentColumn').removeClass('col-xl-9 col-md-8').addClass('col-xl-12 col-md-12');
-    }
-    
-    // Filtreleme bölümünü açıp kapatma
-    $('#toggleFilters').click(function() {
-      $('#filterColumn').toggleClass('d-none');
-      
-      if ($('#filterColumn').hasClass('d-none')) {
-        $('#contentColumn').removeClass('col-xl-9 col-md-8').addClass('col-xl-12 col-md-12');
-        localStorage.setItem('isFilterCollapsed', 'true');
-      } else {
-        $('#contentColumn').removeClass('col-xl-12 col-md-12').addClass('col-xl-9 col-md-8');
-        localStorage.setItem('isFilterCollapsed', 'false');
-      }
-    });
-    
-    // Filtre başlık tıklamaları stil düzenlemesi
-    $('.filter-title').click(function() {
-      $(this).find('i.fas.fa-chevron-down').toggleClass('fa-chevron-down fa-chevron-up');
-    });
-    
-    // Tüm filtreleri aç/kapat
-    $('#collapseAllFilters').click(function() {
-      var $icon = $(this).find('i');
-      var isCollapsed = $icon.hasClass('fa-chevron-down');
-      
-      if (isCollapsed) {
-        // Tüm filtreleri aç
-        $('.collapse').collapse('show');
-        $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
-        $('.filter-title i.fas.fa-chevron-down').removeClass('fa-chevron-down').addClass('fa-chevron-up');
-      } else {
-        // Tüm filtreleri kapat
-        $('.collapse').collapse('hide');
-        $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-        $('.filter-title i.fas.fa-chevron-up').removeClass('fa-chevron-up').addClass('fa-chevron-down');
-      }
-    });
+// ── Filtre paneli aç/kapat ────────────────────────────────
+function toggleFilter() {
+  const panel  = document.getElementById('filterPanel');
+  const toggle = document.getElementById('filterToggle');
+  panel.classList.toggle('open');
+  toggle.classList.toggle('active');
+}
+
+// ── Anlık tablo arama ──────────────────────────────────────
+document.getElementById('tableSearch').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#customerTable tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
+});
+
+// ── Click-to-Call ──────────────────────────────────────────
+function clickToCall(phone, name) {
+  fetch('/api/calls/click/' + phone + '/', { method: 'GET', headers: {'X-Requested-With': 'XMLHttpRequest'} })
+    .then(r => r.json())
+    .then(data => {
+      const toast = document.getElementById('callToast');
+      document.getElementById('toastName').textContent = name;
+      if (data.success) {
+        document.getElementById('toastMsg').textContent = '✅ Telefon çalıyor...';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 5000);
+      } else {
+        document.getElementById('toastMsg').textContent = '❌ ' + (data.error || 'Hata');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 4000);
+      }
+    })
+    .catch(() => alert('Arama başlatılamadı.'));
+}
+
+// ── Ses Kaydı Oynat ───────────────────────────────────────
+function playRecording(url, name, date, duration, direction) {
+  document.getElementById('modalCustomerName').textContent = name;
+  document.getElementById('modalCallDate').textContent =
+    (date || '') + (duration ? '  ·  ' + duration : '') + (direction ? '  ·  ' + direction : '');
+  document.getElementById('audioSource').src = url;
+  document.getElementById('downloadLink').href = url;
+  const player = document.getElementById('audioPlayer');
+  player.load();
+  player.play();
+  const modal = document.getElementById('audioModal');
+  modal.style.display = 'flex';
+}
+
+function closeAudio() {
+  document.getElementById('audioPlayer').pause();
+  document.getElementById('audioModal').style.display = 'none';
+}
+
+// Klavye ile kapat
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAudio(); });
+
+// ── Gelen Arama Polling ────────────────────────────────────
+let lastCallId = null;
+let incomingCallId = null;
+
+function checkIncomingCalls() {
+  fetch('/api/recent-calls/')
+    .then(r => r.json())
+    .then(data => {
+      if (data.calls && data.calls.length > 0) {
+        const call = data.calls[0];
+        // Yeni bir çağrı mı?
+        if (call.call_id !== lastCallId) {
+          lastCallId = call.call_id;
+          showIncomingCall(call);
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+function showIncomingCall(call) {
+  incomingCallId = call.call_id;
+  document.getElementById('incomingNumber').textContent = call.caller;
+  document.getElementById('incomingTime').textContent = call.start_time;
+  document.getElementById('convertBtn').href = call.convert_url;
+
+  if (call.customer_exists) {
+    document.getElementById('incomingCustomerInfo').innerHTML =
+      `<span style="color:#2dce89;font-weight:600;">✓ Kayıtlı Müşteri: ${call.customer_name}</span>`;
+    document.getElementById('convertBtn').style.display = 'none';
+  } else {
+    document.getElementById('incomingCustomerInfo').textContent = 'Bilinmeyen numara — müşteriye dönüştür';
+    document.getElementById('convertBtn').style.display = 'flex';
+  }
+
+  document.getElementById('incomingCallPanel').style.display = 'block';
+
+  // Ses bildirimi
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch(e) {}
+}
+
+function dismissIncoming() {
+  document.getElementById('incomingCallPanel').style.display = 'none';
+}
+
+// Her 10 saniyede bir kontrol et
+setInterval(checkIncomingCalls, 10000);
+checkIncomingCalls(); // Sayfa açılışında da çalıştır
 </script>
-{% endblock javascripts %} 
+{% endblock javascripts %}

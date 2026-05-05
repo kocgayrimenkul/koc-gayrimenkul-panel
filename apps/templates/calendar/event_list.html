@@ -1,561 +1,104 @@
-{% extends "layouts/base.html" %}
-
-{% block title %} Etkinlik Listesi {% endblock %}
-
-{% block stylesheets %}
-{{ block.super }}
-<link rel="stylesheet" href="/static/assets/vendor/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
-<link rel="stylesheet" href="/static/assets/vendor/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css">
-<link rel="stylesheet" href="/static/assets/vendor/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css">
-<style>
-  /* Koç Gayrimenkul kurumsal renkleri */
-  :root {
-    --koc-red: #9d2235;
-    --koc-red-light: #b82e42;
-    --koc-red-dark: #7a1a29;
-    --koc-black: #212529;
-    --koc-red-rgb: 157, 34, 53;
-  }
-  
-  .bg-koc-red {
-    background-color: var(--koc-red) !important;
-  }
-  
-  .bg-gradient-koc-red {
-    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
-  }
-  
-  .text-koc-red {
-    color: var(--koc-red) !important;
-  }
-  
-  .btn-koc-red {
-    color: #fff;
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .btn-koc-red:hover {
-    color: #fff;
-    background-color: var(--koc-red-light);
-    border-color: var(--koc-red-light);
-  }
-  
-  .border-koc-red {
-    border-color: var(--koc-red) !important;
-  }
-  
-  /* Kartlar */
-  .card {
-    border-radius: 0.75rem;
-    border: none;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    overflow: hidden;
-  }
-  
-  .card:hover {
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  }
-  
-  .card-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    background-color: #fff;
-  }
-  
-  .card-header h3 {
-    margin-bottom: 0;
-    font-weight: 600;
-  }
-  
-  /* DataTables özelleştirmeleri */
-  .dataTables_wrapper .dataTables_paginate .paginate_button.current, 
-  .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-    color: #fff !important;
-    background: var(--koc-red) !important;
-    border-color: var(--koc-red) !important;
-  }
-  
-  .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-    color: #fff !important;
-    background: var(--koc-red-light) !important;
-    border-color: var(--koc-red-light) !important;
-  }
-  
-  .table thead th {
-    font-weight: 600;
-    color: #525f7f;
-  }
-  
-  .table-actions {
-    white-space: nowrap;
-  }
-  
-  .table-action {
-    color: #8898aa;
-    font-size: 0.875rem;
-    margin-right: 0.5rem;
-    transition: all 0.15s ease;
-  }
-  
-  .table-action:hover {
-    color: var(--koc-red);
-  }
-  
-  .table-action-delete:hover {
-    color: #f5365c;
-  }
-  
-  /* Badges */
-  .badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.35rem 0.5rem;
-    text-transform: none;
-  }
-  
-  .badge-primary {
-    background-color: var(--koc-red);
-    color: white !important;
-  }
-  
-  .badge-info {
-    background-color: #11cdef;
-    color: white !important;
-  }
-  
-  .badge-warning {
-    background-color: #fb6340;
-    color: white !important;
-  }
-  
-  .badge-yellow {
-    background-color: #ffd600;
-    color: #212529 !important;
-    font-weight: 700;
-  }
-  
-  .badge-success {
-    background-color: #2dce89;
-    color: white !important;
-  }
-  
-  .badge-purple {
-    background-color: #8965e0;
-    color: white !important;
-  }
-  
-  .badge-default {
-    background-color: #6c757d;
-    color: white !important;
-  }
-  
-  /* Modal özelleştirmeleri */
-  .modal-content {
-    border-radius: 0.75rem;
-    border: none;
-    box-shadow: 0 15px 35px rgba(50, 50, 93, 0.2), 0 5px 15px rgba(0, 0, 0, 0.1);
-  }
-  
-  .modal-header {
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    padding: 1.5rem;
-  }
-  
-  .modal-footer {
-    border-top: 1px solid rgba(0,0,0,0.05);
-    padding: 1.5rem;
-  }
-  
-  /* Pagination'daki önceki/sonraki ikonlarını düzelt */
-  .dataTables_wrapper .dataTables_paginate .previous,
-  .dataTables_wrapper .dataTables_paginate .next {
-    font-size: 0;
-  }
-  
-  .dataTables_wrapper .dataTables_paginate .previous:before {
-    content: "«";
-    font-size: 16px;
-  }
-  
-  .dataTables_wrapper .dataTables_paginate .next:before {
-    content: "»";
-    font-size: 16px;
-  }
-</style>
-{% endblock stylesheets %}
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+{% block title %}Etkinlik Listesi{% endblock %}
 
 {% block content %}
-
-<div class="header bg-gradient-koc-red pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Etkinlik Listesi</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="{% url 'calendar' %}">Ajanda</a></li>
-              <li class="breadcrumb-item active" aria-current="page">Etkinlikler</li>
-            </ol>
-          </nav>
-        </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{% url 'event_create_form' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-plus mr-1"></i> Yeni Etkinlik
-          </a>
-          <a href="{% url 'calendar' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-calendar mr-1"></i> Takvim Görünümü
-          </a>
-        </div>
-      </div>
-      
-      <!-- Etkinlik İstatistikleri -->
-      <div class="row">
-        <div class="col-xl-3 col-md-6">
-          <div class="card card-stats">
-            <div class="card-body">
-              <div class="row">
-                <div class="col">
-                  <h5 class="card-title text-uppercase text-muted mb-0">Toplam Etkinlik</h5>
-                  <span class="h2 font-weight-bold mb-0">{{ events|length }}</span>
-                </div>
-                <div class="col-auto">
-                  <div class="icon icon-shape bg-gradient-koc-red text-white rounded-circle shadow">
-                    <i class="ni ni-calendar-grid-58"></i>
-                  </div>
-                </div>
-              </div>
-              <p class="mt-3 mb-0 text-sm">
-                <span class="text-success mr-2"><i class="fa fa-calendar"></i></span>
-                <span class="text-nowrap">Tüm zamanlar</span>
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-          <div class="card card-stats">
-            <div class="card-body">
-              <div class="row">
-                <div class="col">
-                  <h5 class="card-title text-uppercase text-muted mb-0">Tamamlanan</h5>
-                  <span class="h2 font-weight-bold mb-0">{{ events|dictsort:"is_completed"|last }}</span>
-                </div>
-                <div class="col-auto">
-                  <div class="icon icon-shape bg-gradient-success text-white rounded-circle shadow">
-                    <i class="ni ni-check-bold"></i>
-                  </div>
-                </div>
-              </div>
-              <p class="mt-3 mb-0 text-sm">
-                <span class="text-success mr-2"><i class="fa fa-check"></i></span>
-                <span class="text-nowrap">Tamamlanan etkinlikler</span>
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-          <div class="card card-stats">
-            <div class="card-body">
-              <div class="row">
-                <div class="col">
-                  <h5 class="card-title text-uppercase text-muted mb-0">Bekleyen</h5>
-                  <span class="h2 font-weight-bold mb-0">{{ events|dictsort:"is_completed"|first }}</span>
-                </div>
-                <div class="col-auto">
-                  <div class="icon icon-shape bg-gradient-warning text-white rounded-circle shadow">
-                    <i class="ni ni-time-alarm"></i>
-                  </div>
-                </div>
-              </div>
-              <p class="mt-3 mb-0 text-sm">
-                <span class="text-warning mr-2"><i class="fa fa-clock"></i></span>
-                <span class="text-nowrap">Devam eden etkinlikler</span>
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-          <div class="card card-stats">
-            <div class="card-body">
-              <div class="row">
-                <div class="col">
-                  <h5 class="card-title text-uppercase text-muted mb-0">Bu Hafta</h5>
-                  <span class="h2 font-weight-bold mb-0">--</span>
-                </div>
-                <div class="col-auto">
-                  <div class="icon icon-shape bg-gradient-info text-white rounded-circle shadow">
-                    <i class="ni ni-calendar-grid-58"></i>
-                  </div>
-                </div>
-              </div>
-              <p class="mt-3 mb-0 text-sm">
-                <span class="text-info mr-2"><i class="fa fa-calendar-week"></i></span>
-                <span class="text-nowrap">Bu haftaki etkinlikler</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+<div class="px-6 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Etkinlikler</h1>
+      <p class="text-sm text-slate-500 mt-1">Tüm ajanda etkinlikleri</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'event_create' %}" class="flex items-center gap-2 bg-red-800 hover:bg-red-900 text-white rounded-lg px-4 py-2 text-sm font-semibold transition">
+        <i class="fas fa-plus"></i> Yeni Etkinlik
+      </a>
+      <a href="{% url 'calendar' %}" class="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">
+        <i class="fas fa-calendar"></i> Ajanda
+      </a>
     </div>
   </div>
-</div>
 
-<div class="container-fluid mt--6">
-  <div class="row">
-    <div class="col">
-      <div class="card">
-        <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <h3 class="mb-0">Tüm Etkinlikler</h3>
-              <p class="text-sm text-muted mb-0">
-                Bu sayfada sisteme kaydedilmiş tüm etkinlikleri görüntüleyebilir ve yönetebilirsiniz.
-              </p>
-            </div>
-            <div class="col text-right">
-              <div class="dropdown">
-                <button class="btn btn-sm btn-koc-red dropdown-toggle" type="button" id="filterDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="fas fa-filter mr-1"></i> Filtrele
-                </button>
-                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="filterDropdown">
-                  <a class="dropdown-item" href="#">Tümü</a>
-                  <a class="dropdown-item" href="#">Tamamlananlar</a>
-                  <a class="dropdown-item" href="#">Bekleyenler</a>
-                  <a class="dropdown-item" href="#">Bugün</a>
-                  <a class="dropdown-item" href="#">Bu Hafta</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="table-responsive py-4">
-          <table class="table table-flush" id="datatable-events">
-            <thead class="thead-light">
-              <tr>
-                <th>ID</th>
-                <th>Başlık</th>
-                <th>Etkinlik Türü</th>
-                <th>Başlangıç</th>
-                <th>Bitiş</th>
-                <th>Durum</th>
-                <th>Müşteri</th>
-                <th>Gayrimenkul</th>
-                <th>İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for event in events %}
-                <tr>
-                  <td>{{ event.id }}</td>
-                  <td>
-                    <a href="{% url 'event_detail' event.id %}" class="font-weight-bold text-koc-red">
-                      {{ event.title }}
-                    </a>
-                  </td>
-                  <td>
-                    {% if event.event_type == 'meeting' %}
-                      <span class="badge badge-primary">Toplantı</span>
-                    {% elif event.event_type == 'viewing' %}
-                      <span class="badge badge-info">Gayrimenkul Gösterimi</span>
-                    {% elif event.event_type == 'call' %}
-                      <span class="badge badge-warning">Telefon Görüşmesi</span>
-                    {% elif event.event_type == 'reminder' %}
-                      <span class="badge badge-yellow">Hatırlatıcı</span>
-                    {% elif event.event_type == 'appointment' %}
-                      <span class="badge badge-success">Randevu</span>
-                    {% elif event.event_type == 'task' %}
-                      <span class="badge badge-purple">Görev</span>
-                    {% else %}
-                      <span class="badge badge-default">Diğer</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <span data-toggle="tooltip" data-placement="top" title="{{ event.start_time|date:'d F Y H:i' }}">
-                      {{ event.start_time|date:"d.m.Y H:i" }}
-                    </span>
-                  </td>
-                  <td>
-                    {% if event.end_time %}
-                      <span data-toggle="tooltip" data-placement="top" title="{{ event.end_time|date:'d F Y H:i' }}">
-                        {{ event.end_time|date:"d.m.Y H:i" }}
-                      </span>
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if event.is_completed %}
-                      <span class="badge badge-success">Tamamlandı</span>
-                    {% else %}
-                      <span class="badge badge-warning">Devam Ediyor</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if event.customer %}
-                      <a href="{% url 'customer_detail' event.customer.id %}" class="text-primary">
-                        {{ event.customer.full_name }}
-                      </a>
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if event.property %}
-                      <a href="{% url 'property_detail' event.property.id %}" class="text-primary">
-                        {{ event.property.title }}
-                      </a>
-                    {% else %}
-                      <span class="text-muted">-</span>
-                    {% endif %}
-                  </td>
-                  <td class="table-actions">
-                    <a href="{% url 'event_detail' event.id %}" class="table-action" data-toggle="tooltip" data-original-title="Görüntüle">
-                      <i class="fas fa-eye"></i>
-                    </a>
-                    <a href="{% url 'event_update' event.id %}" class="table-action" data-toggle="tooltip" data-original-title="Düzenle">
-                      <i class="fas fa-edit"></i>
-                    </a>
-                    <a href="#" class="table-action table-action-delete" data-toggle="modal" data-target="#modal-delete-{{ event.id }}" data-original-title="Sil">
-                      <i class="fas fa-trash"></i>
-                    </a>
-                    
-                    <!-- Silme onay modalı -->
-                    <div class="modal fade" id="modal-delete-{{ event.id }}" tabindex="-1" role="dialog" aria-labelledby="modal-delete-{{ event.id }}" aria-hidden="true">
-                      <div class="modal-dialog modal-danger modal-dialog-centered" role="document">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h6 class="modal-title" id="modal-title-delete">Etkinliği Sil</h6>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                              <span aria-hidden="true">×</span>
-                            </button>
-                          </div>
-                          <div class="modal-body">
-                            <div class="py-3 text-center">
-                              <i class="ni ni-bell-55 ni-3x"></i>
-                              <h4 class="heading mt-4">Dikkat! Bu işlemi geri alamazsınız.</h4>
-                              <p>
-                                <strong>{{ event.title }}</strong> etkinliğini silmek istediğinizden emin misiniz?
-                              </p>
-                            </div>
-                          </div>
-                          <div class="modal-footer">
-                            <form action="{% url 'event_delete' event.id %}" method="post">
-                              {% csrf_token %}
-                              <button type="submit" class="btn btn-danger">Evet, sil</button>
-                            </form>
-                            <button type="button" class="btn btn-link ml-auto" data-dismiss="modal">İptal</button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              {% empty %}
-                <tr>
-                  <td colspan="9" class="text-center">
-                    <div class="my-5">
-                      <div class="icon icon-shape icon-lg bg-gradient-koc-red rounded-circle shadow text-white mb-4">
-                        <i class="fas fa-calendar-alt"></i>
-                      </div>
-                      <h4 class="text-muted mb-3">Henüz etkinlik kaydı bulunmamaktadır.</h4>
-                      <a href="{% url 'event_create_form' %}" class="btn btn-sm btn-koc-red">
-                        <i class="fas fa-plus mr-1"></i> Yeni Etkinlik Ekle
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+  <!-- Filtreler -->
+  <div class="flex gap-2 mb-5 flex-wrap">
+    <a href="?filter=all" class="px-4 py-1.5 rounded-full text-xs font-semibold border transition {% if not request.GET.filter or request.GET.filter == 'all' %}bg-red-800 text-white border-red-800{% else %}bg-white text-slate-600 border-slate-200 hover:border-red-800 hover:text-red-800{% endif %}">Hepsi</a>
+    <a href="?filter=today" class="px-4 py-1.5 rounded-full text-xs font-semibold border transition {% if request.GET.filter == 'today' %}bg-red-800 text-white border-red-800{% else %}bg-white text-slate-600 border-slate-200 hover:border-red-800 hover:text-red-800{% endif %}">Bugün</a>
+    <a href="?filter=tomorrow" class="px-4 py-1.5 rounded-full text-xs font-semibold border transition {% if request.GET.filter == 'tomorrow' %}bg-red-800 text-white border-red-800{% else %}bg-white text-slate-600 border-slate-200 hover:border-red-800 hover:text-red-800{% endif %}">Yarın</a>
+    <a href="?filter=week" class="px-4 py-1.5 rounded-full text-xs font-semibold border transition {% if request.GET.filter == 'week' %}bg-red-800 text-white border-red-800{% else %}bg-white text-slate-600 border-slate-200 hover:border-red-800 hover:text-red-800{% endif %}">Bu Hafta</a>
+    <a href="?filter=month" class="px-4 py-1.5 rounded-full text-xs font-semibold border transition {% if request.GET.filter == 'month' %}bg-red-800 text-white border-red-800{% else %}bg-white text-slate-600 border-slate-200 hover:border-red-800 hover:text-red-800{% endif %}">Bu Ay</a>
+    <a href="?completed=1" class="px-4 py-1.5 rounded-full text-xs font-semibold border transition {% if request.GET.completed %}bg-emerald-600 text-white border-emerald-600{% else %}bg-white text-slate-600 border-slate-200 hover:border-emerald-600 hover:text-emerald-600{% endif %}">Tamamlananlar</a>
   </div>
-  
-  {% include "includes/footer.html" %}
-  
+
+  <!-- Liste -->
+  <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+    {% if events %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-slate-50 border-b border-slate-100">
+          <th class="text-left px-5 py-3 text-xs font-700 text-slate-400 uppercase tracking-wider">Etkinlik</th>
+          <th class="text-left px-4 py-3 text-xs font-700 text-slate-400 uppercase tracking-wider">Tür</th>
+          <th class="text-left px-4 py-3 text-xs font-700 text-slate-400 uppercase tracking-wider">Tarih</th>
+          <th class="text-left px-4 py-3 text-xs font-700 text-slate-400 uppercase tracking-wider">Müşteri</th>
+          <th class="text-left px-4 py-3 text-xs font-700 text-slate-400 uppercase tracking-wider">Durum</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-50">
+        {% for event in events %}
+        <tr class="hover:bg-slate-50 transition">
+          <td class="px-5 py-3">
+            <a href="{% url 'event_detail' event.id %}" class="font-semibold text-slate-800 hover:text-red-700 transition">{{ event.title }}</a>
+            {% if event.location %}<div class="text-xs text-slate-400 mt-0.5"><i class="fas fa-map-marker-alt mr-1"></i>{{ event.location }}</div>{% endif %}
+          </td>
+          <td class="px-4 py-3">
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full
+              {% if event.event_type == 'meeting' %}bg-red-100 text-red-700
+              {% elif event.event_type == 'viewing' %}bg-blue-100 text-blue-700
+              {% elif event.event_type == 'call' %}bg-amber-100 text-amber-700
+              {% elif event.event_type == 'appointment' %}bg-emerald-100 text-emerald-700
+              {% elif event.event_type == 'task' %}bg-purple-100 text-purple-700
+              {% else %}bg-slate-100 text-slate-600{% endif %}">
+              {{ event.get_event_type_display|default:event.event_type }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-slate-600 text-xs">
+            {{ event.start_date|date:"d.m.Y" }}{% if event.start_time %} {{ event.start_time|time:"H:i" }}{% endif %}
+          </td>
+          <td class="px-4 py-3 text-xs text-slate-600">
+            {% if event.customer %}<a href="{% url 'customer_detail' event.customer.id %}" class="hover:text-red-700">{{ event.customer.full_name }}</a>{% else %}—{% endif %}
+          </td>
+          <td class="px-4 py-3">
+            {% if event.is_completed %}
+            <span class="inline-block bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Tamamlandı</span>
+            {% else %}
+            <span class="inline-block bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Devam Ediyor</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <div class="flex items-center gap-2 justify-end">
+              <a href="{% url 'event_detail' event.id %}" class="text-slate-400 hover:text-slate-700 transition"><i class="fas fa-eye"></i></a>
+              <a href="{% url 'event_update' event.id %}" class="text-slate-400 hover:text-blue-600 transition"><i class="fas fa-edit"></i></a>
+              <form action="{% url 'event_delete' event.id %}" method="post" class="inline"
+                    onsubmit="return confirm('{{ event.title }} etkinliğini silmek istediğinize emin misiniz?')">
+                {% csrf_token %}
+                <button type="submit" class="text-slate-400 hover:text-red-600 transition border-0 bg-transparent cursor-pointer"><i class="fas fa-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+      <i class="fas fa-calendar-times text-5xl mb-4 opacity-30"></i>
+      <p class="text-base font-semibold">Etkinlik bulunamadı</p>
+      <p class="text-sm mt-1">Filtreyi değiştirin veya yeni etkinlik ekleyin.</p>
+      <a href="{% url 'event_create' %}" class="mt-4 bg-red-800 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-red-900 transition">
+        <i class="fas fa-plus mr-1"></i> Yeni Etkinlik
+      </a>
+    </div>
+    {% endif %}
+  </div>
 </div>
-
-{% endblock content %}
-
-{% block javascripts %}
-{{ block.super }}
-<script src="/static/assets/vendor/datatables.net/js/jquery.dataTables.min.js"></script>
-<script src="/static/assets/vendor/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
-<script src="/static/assets/vendor/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
-<script src="/static/assets/vendor/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js"></script>
-<script src="/static/assets/vendor/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
-<script src="/static/assets/vendor/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
-
-<script>
-  $(document).ready(function() {
-    var eventTable = $('#datatable-events').DataTable({
-      language: {
-        url: '/static/assets/vendor/datatables.net/i18n/tr.json',
-        paginate: {
-          previous: '',
-          next: ''
-        }
-      },
-      responsive: true,
-      order: [[3, 'desc']], // Başlangıç tarihine göre sırala (en yakın en üstte)
-      columnDefs: [
-        { targets: 0, visible: false }, // ID kolonunu gizle
-        { targets: 8, orderable: false } // İşlemler kolonunda sıralama olmasın
-      ],
-      lengthMenu: [
-        [10, 25, 50, -1],
-        [10, 25, 50, "Tümü"]
-      ],
-      dom: 'lfrtip',
-      buttons: [
-        {
-          extend: 'excel',
-          text: '<i class="fas fa-file-excel"></i> Excel',
-          className: 'btn btn-sm btn-neutral',
-          title: 'Koç Gayrimenkul - Etkinlik Listesi'
-        },
-        {
-          extend: 'pdf',
-          text: '<i class="fas fa-file-pdf"></i> PDF',
-          className: 'btn btn-sm btn-neutral',
-          title: 'Koç Gayrimenkul - Etkinlik Listesi'
-        },
-        {
-          extend: 'print',
-          text: '<i class="fas fa-print"></i> Yazdır',
-          className: 'btn btn-sm btn-neutral',
-          title: 'Koç Gayrimenkul - Etkinlik Listesi'
-        }
-      ]
-    });
-    
-    // Tooltips
-    $('[data-toggle="tooltip"]').tooltip();
-    
-    // Filtre dropdown işlevi
-    $('#filterDropdown a').on('click', function(e) {
-      e.preventDefault();
-      var filterValue = $(this).text().trim();
-      var filterColumn = eventTable.column(5); // Durum kolonu
-      
-      switch(filterValue) {
-        case 'Tümü':
-          filterColumn.search('').draw();
-          break;
-        case 'Tamamlananlar':
-          filterColumn.search('Tamamlandı').draw();
-          break;
-        case 'Bekleyenler':
-          filterColumn.search('Devam Ediyor').draw();
-          break;
-        // Diğer filtreler için implementasyon yapılabilir
-      }
-    });
-  });
-</script>
-{% endblock javascripts %} 
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends "layouts/modern_base.html" %}
+{% load static humanize %}
+
+{% block title %}Sahibinden Entegrasyonu{% endblock %}
+
+{% block extra_css %}
+<style>
+.toggle-switch { position:relative; width:44px; height:24px; }
+.toggle-switch input { opacity:0; width:0; height:0; }
+.slider { position:absolute; cursor:pointer; inset:0; background:#cbd5e1; border-radius:24px; transition:.3s; }
+.slider:before { content:''; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+input:checked + .slider { background:#ff6000; }
+input:checked + .slider:before { transform:translateX(20px); }
+.prop-row { display:flex; align-items:center; gap:16px; padding:14px 20px; border-bottom:1px solid #f1f5f9; transition:background .15s; }
+.prop-row:hover { background:#fffaf7; }
+.prop-row:last-child { border-bottom:none; }
+.prop-thumb { width:52px; height:52px; border-radius:10px; object-fit:cover; background:#f1f5f9; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:1.1rem; overflow:hidden; }
+.url-input { border:1px solid #e2e8f0; border-radius:8px; padding:6px 10px; font-size:.78rem; color:#334155; width:160px; min-width:0; outline:none; font-family:inherit; }
+.url-input:focus { border-color:#ff6000; box-shadow:0 0 0 3px rgba(255,96,0,.1); }
+.badge-active { background:#fff3e0; color:#e65100; font-size:.65rem; font-weight:700; padding:2px 8px; border-radius:20px; border:1px solid #ffcc80; white-space:nowrap; }
+.badge-passive { background:#f1f5f9; color:#94a3b8; font-size:.65rem; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="p-6" style="max-width:100%;overflow-x:hidden;">
+
+  <!-- Header -->
+  <div class="rounded-2xl mb-5 overflow-hidden" style="background:linear-gradient(135deg,#ff6000 0%,#ff8c42 100%);">
+    <div class="p-6 flex items-center justify-between flex-wrap gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center font-black text-2xl text-white" style="background:rgba(255,255,255,.2);">S</div>
+        <div>
+          <h2 class="text-white font-bold text-xl m-0">Sahibinden Entegrasyonu</h2>
+          <p class="text-white text-sm mt-1 mb-0" style="opacity:.85;">Yayındaki ilanları yönetin ve XML dosyası indirin</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <div class="rounded-xl px-5 py-3 text-center" style="background:rgba(255,255,255,.18);">
+          <div class="text-white font-black text-2xl">{{ total_active }}</div>
+          <div class="text-white text-xs font-semibold uppercase tracking-wider mt-0.5" style="opacity:.85;">Yayında</div>
+        </div>
+        <div class="rounded-xl px-5 py-3 text-center" style="background:rgba(255,255,255,.18);">
+          <div class="text-white font-black text-2xl">{{ total_all }}</div>
+          <div class="text-white text-xs font-semibold uppercase tracking-wider mt-0.5" style="opacity:.85;">Toplam İlan</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- XML İndir Kutusu -->
+  <div class="bg-white rounded-2xl mb-5" style="box-shadow:0 1px 3px rgba(0,0,0,.08); border:1px solid #f1f5f9;">
+    <div class="p-5 flex items-center justify-between flex-wrap gap-4">
+      <div>
+        <h5 class="font-bold text-slate-800 text-base mb-1">XML Dosyası İndir</h5>
+        <p class="text-slate-500 text-sm mb-0">
+          Yayında işaretli <strong class="text-slate-700">{{ total_active }} ilan</strong> XML olarak dışa aktarılacak.
+          Bu dosyayı Sahibinden Pro Ofis → İlan Transferi → Dosya ile Transfer sayfasına yükleyin.
+        </p>
+      </div>
+      <div class="flex gap-2 flex-shrink-0">
+        <a href="{% url 'sahibinden_xml_feed' %}"
+           class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white no-underline"
+           style="background:#ff6000;">
+          <i class="fas fa-download"></i> XML İndir
+        </a>
+        <a href="https://ofisim.sahibinden.com" target="_blank"
+           class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 no-underline hover:bg-slate-50">
+          <i class="fas fa-external-link-alt"></i> Sahibinden Pro Ofis
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nasıl Kullanılır -->
+  <div class="bg-white rounded-2xl mb-5 p-5" style="box-shadow:0 1px 3px rgba(0,0,0,.08); border:1px solid #f1f5f9;">
+    <h6 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2">
+      <i class="fas fa-list-ol" style="color:#f59e0b;"></i> Nasıl Kullanılır?
+    </h6>
+    <div class="flex gap-6 flex-wrap">
+      {% for step in "1234"|make_list %}
+      <div class="text-center" style="flex:1;min-width:150px;">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm mx-auto mb-2"
+             style="background:#fff3e0;color:#ff6000;">{{ step }}</div>
+        <div class="text-xs text-slate-500 font-semibold">
+          {% if step == "1" %}Aşağıdan ilanları Sahibinden'e ekle{% endif %}
+          {% if step == "2" %}Sahibinden ilan linkini girin{% endif %}
+          {% if step == "3" %}XML İndir butonuna tıklayın{% endif %}
+          {% if step == "4" %}Dosyayı Sahibinden'e yükleyin{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- İlan Listesi -->
+  <div class="bg-white rounded-2xl mb-5" style="box-shadow:0 1px 3px rgba(0,0,0,.08); border:1px solid #f1f5f9;">
+    <div class="px-5 py-4 flex items-center justify-between" style="border-bottom:1px solid #f1f5f9;">
+      <h5 class="font-bold text-slate-800 text-base m-0">Tüm Aktif İlanlar</h5>
+      <span class="text-xs text-slate-400">Yayında olanlar XML'e dahil edilir</span>
+    </div>
+
+    <div id="property-list">
+      {% for prop in all_properties %}
+      <div class="prop-row" id="row-{{ prop.id }}">
+        <!-- Fotoğraf -->
+        <div class="prop-thumb">
+          {% with prop.images.first as img %}
+          {% if img and img.image %}
+            <img src="{{ img.image.url }}" style="width:100%;height:100%;object-fit:cover;" alt="">
+          {% else %}
+            <i class="fas fa-building"></i>
+          {% endif %}
+          {% endwith %}
+        </div>
+
+        <!-- Bilgi -->
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:.88rem;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ prop.apartment_name|default:"İsimsiz" }}
+          </div>
+          <div style="font-size:.72rem;color:#64748b;margin-top:2px;">
+            {{ prop.neighborhood.name|default:"" }}{% if prop.room_count %} · {{ prop.room_count }}{% endif %}{% if prop.net_area %} · {{ prop.net_area|floatformat:0 }} m²{% endif %}
+            · <strong style="color:#059669;">₺{{ prop.price|intcomma }}</strong>
+          </div>
+        </div>
+
+        <!-- Durum badge -->
+        <div style="flex-shrink:0;">
+          {% if prop.sahibinden_active %}
+            <span class="badge-active" id="badge-{{ prop.id }}">● Yayında</span>
+          {% else %}
+            <span class="badge-passive" id="badge-{{ prop.id }}">Yayında Değil</span>
+          {% endif %}
+        </div>
+
+        <!-- Sahibinden Link + Toggle yan yana -->
+        <div style="flex-shrink:0; display:flex; align-items:center; gap:10px;">
+          <input type="url" class="url-input" id="url-{{ prop.id }}"
+                 value="{{ prop.sahibinden_url }}"
+                 placeholder="sahibinden.com/ilan/..."
+                 onchange="saveUrl({{ prop.id }})">
+          <label class="toggle-switch" title="Sahibinden'de Yayına Al/Kaldır" style="flex-shrink:0;">
+            <input type="checkbox" {% if prop.sahibinden_active %}checked{% endif %}
+                   onchange="toggleSahibinden({{ prop.id }}, this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      {% empty %}
+      <div style="padding:60px;text-align:center;color:#94a3b8;">
+        <i class="fas fa-building fa-3x mb-3 d-block" style="opacity:.3;"></i>
+        Aktif ilan bulunamadı.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+
+function toggleSahibinden(propId, active) {
+    const url = document.getElementById('url-' + propId).value.trim();
+    fetch('/sahibinden/toggle/' + propId + '/', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+        body: JSON.stringify({ active: active, url: url })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const badge = document.getElementById('badge-' + propId);
+            if (active) {
+                badge.className = 'badge-active';
+                badge.textContent = '● Yayında';
+            } else {
+                badge.className = 'badge-passive';
+                badge.textContent = 'Yayında Değil';
+            }
+        }
+    });
+}
+
+function saveUrl(propId) {
+    const cb = document.querySelector('#row-' + propId + ' input[type=checkbox]');
+    toggleSahibinden(propId, cb.checked);
+}
+</script>
+{% endblock %}

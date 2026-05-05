@@ -224,7 +224,12 @@ class LeadNote(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma Tarihi")
     
     def __str__(self):
-        return f"{self.lead.customer_name} - {self.title}"
+        try:
+            lead_name = self.lead.customer_name if self.lead and self.lead.customer_name else "Bilinmeyen Müşteri"
+            title = self.title if self.title else "Başlıksız Not"
+            return f"{lead_name} - {title}"
+        except Exception:
+            return f"LeadNote #{self.pk if self.pk else 'Yeni'}"
     
     class Meta:
         verbose_name = "Lead Notu"

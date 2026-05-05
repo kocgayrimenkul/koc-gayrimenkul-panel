@@ -1,0 +1,677 @@
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+
+{% block title %}Çağrı Kayıtları{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-[1600px] mx-auto">
+
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Çağrı Kayıtları</h1>
+            <p class="text-sm text-slate-400 mt-1">NetGSM santral üzerinden gelen tüm çağrıları görüntüle ve müşteriye dönüştür</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-5 gap-4 mb-6">
+        <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+            <div class="flex justify-between items-center mb-2"><span class="text-[10px] font-bold text-blue-600 uppercase">Toplam</span><i class="fas fa-phone-alt text-blue-200"></i></div>
+            <div class="text-2xl font-bold text-slate-800">{{ stats.total|intcomma }}</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+            <div class="flex justify-between items-center mb-2"><span class="text-[10px] font-bold text-emerald-600 uppercase">Tamamlandı</span><i class="fas fa-check-circle text-emerald-200"></i></div>
+            <div class="text-2xl font-bold text-slate-800">{{ stats.completed|intcomma }}</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+            <div class="flex justify-between items-center mb-2"><span class="text-[10px] font-bold text-red-600 uppercase">Cevapsız</span><i class="fas fa-phone-slash text-red-200"></i></div>
+            <div class="text-2xl font-bold text-slate-800">{{ stats.missed|intcomma }}</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+            <div class="flex justify-between items-center mb-2"><span class="text-[10px] font-bold text-amber-600 uppercase">Eşleşmemiş</span><i class="fas fa-user-slash text-amber-200"></i></div>
+            <div class="text-2xl font-bold text-slate-800">{{ stats.unmatched|intcomma }}</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+            <div class="flex justify-between items-center mb-2"><span class="text-[10px] font-bold text-purple-600 uppercase">Ses Kaydı</span><i class="fas fa-microphone text-purple-200"></i></div>
+            <div class="text-2xl font-bold text-slate-800">{{ stats.with_recording|intcomma }}</div>
+        </div>
+    </div>
+
+    <form method="GET" class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100 mb-6">
+        <div class="grid grid-cols-12 gap-3">
+            <div class="col-span-3"><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Telefon</label><input type="text" name="q" value="{{ query }}" placeholder="Numara..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"></div>
+            <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Yön</label>
+                <select name="direction" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+                    <option value="">Tümü</option>
+                    <option value="inbound" {% if direction == 'inbound' %}selected{% endif %}>Gelen</option>
+                    <option value="outbound" {% if direction == 'outbound' %}selected{% endif %}>Giden</option>
+                </select>
+            </div>
+            <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Durum</label>
+                <select name="status" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+                    <option value="">Tümü</option>
+                    <option value="completed" {% if status == 'completed' %}selected{% endif %}>Tamamlandı</option>
+                    <option value="missed" {% if status == 'missed' %}selected{% endif %}>Cevapsız</option>
+                </select>
+            </div>
+            <div class="col-span-3"><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Müşteri Eşleşmesi</label>
+                <select name="match" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+                    <option value="">Tümü</option>
+                    <option value="matched" {% if match == 'matched' %}selected{% endif %}>Eşleşmiş</option>
+                    <option value="unmatched" {% if match == 'unmatched' %}selected{% endif %}>Eşleşmemiş</option>
+                </select>
+            </div>
+            <div class="col-span-2 flex items-end space-x-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium"><i class="fas fa-filter mr-1"></i> Filtrele</button>
+                <a href="{% url 'call_list' %}" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600"><i class="fas fa-times"></i></a>
+            </div>
+        </div>
+    </form>
+
+    <div class="bg-white rounded-2xl custom-shadow border border-slate-100 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 text-sm">
+            <span class="font-semibold text-slate-700">{{ total_count|intcomma }}</span>
+            <span class="text-slate-400">çağrı bulundu</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <tr>
+                        <th class="px-5 py-3 text-left">Yön</th>
+                        <th class="px-5 py-3 text-left">Arayan</th>
+                        <th class="px-5 py-3 text-left">Aranan</th>
+                        <th class="px-5 py-3 text-left">Müşteri</th>
+                        <th class="px-5 py-3 text-left">Durum</th>
+                        <th class="px-5 py-3 text-center">Süre</th>
+                        <th class="px-5 py-3 text-left">Tarih</th>
+                        <th class="px-5 py-3 text-center">Kayıt</th>
+                        <th class="px-5 py-3 text-right">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for call in calls %}
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-5 py-3">
+                            {% if call.direction == 'inbound' %}<span class="inline-flex items-center space-x-1 px-2 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded"><i class="fas fa-arrow-down"></i><span>Gelen</span></span>
+                            {% elif call.direction == 'outbound' %}<span class="inline-flex items-center space-x-1 px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded"><i class="fas fa-arrow-up"></i><span>Giden</span></span>
+                            {% else %}<span class="inline-flex items-center space-x-1 px-2 py-1 bg-purple-50 text-purple-600 text-[10px] font-bold rounded"><i class="fas fa-exchange-alt"></i><span>İç</span></span>{% endif %}
+                        </td>
+                        <td class="px-5 py-3 font-mono text-xs text-slate-700">{{ call.caller|default:"—" }}</td>
+                        <td class="px-5 py-3 font-mono text-xs text-slate-700">{{ call.called|default:"—" }}</td>
+                        <td class="px-5 py-3">
+                            {% if call.customer %}<a href="{% url 'customer_detail' call.customer.pk %}" class="text-sm font-medium text-blue-600 hover:underline">{{ call.customer.full_name|default:call.customer.display_name }}</a>
+                            {% else %}<span class="text-xs text-amber-600"><i class="fas fa-user-slash mr-1"></i>Eşleşmemiş</span>{% endif %}
+                        </td>
+                        <td class="px-5 py-3">
+                            {% if call.status == 'completed' or call.status == 'answered' %}<span class="inline-block px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded uppercase">{{ call.get_status_display }}</span>
+                            {% elif call.status == 'missed' %}<span class="inline-block px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold rounded uppercase">Cevapsız</span>
+                            {% else %}<span class="inline-block px-2 py-0.5 bg-slate-50 text-slate-500 text-[10px] font-bold rounded uppercase">{{ call.get_status_display }}</span>{% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-center text-xs font-mono text-slate-600">{{ call.duration_formatted }}</td>
+                        <td class="px-5 py-3 text-xs text-slate-500">{{ call.start_time|date:"d.m.Y H:i:s" }}</td>
+                        <td class="px-5 py-3 text-center">
+                            {% if call.recording_url %}
+                            <button onclick="openRecordingModal('{{ call.recording_url|escapejs }}', '{{ call.caller|default:""|escapejs }}', '{{ call.start_time|date:"d.m.Y H:i" }}', '{{ call.duration_formatted|default:""|escapejs }}')"
+                                class="inline-flex items-center justify-center w-8 h-8 bg-purple-50 text-purple-600 rounded-full hover:bg-purple-100 transition" title="Kaydı Dinle">
+                                <i class="fas fa-play text-xs"></i>
+                            </button>
+                            {% else %}<span class="text-slate-300 text-[10px]">—</span>{% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                {% if call.recording_url and call.customer %}
+                                <button onclick="runAiSummary({{ call.id }}, this)"
+                                        title="AI ile özet çıkar"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-violet-50 text-violet-600 border border-violet-200 text-xs font-bold rounded-lg hover:bg-violet-100 transition">
+                                    <i class="fas fa-magic text-[10px]"></i> AI Özet
+                                </button>
+                                {% endif %}
+                                {% if call.customer %}
+                                <a href="{% url 'customer_detail' call.customer.pk %}" class="inline-flex items-center px-3 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-lg">Müşteri <i class="fas fa-arrow-right ml-1 text-[10px]"></i></a>
+                                {% else %}
+                                <button type="button" onclick="openConvertModal({{ call.id }}, '{{ call.caller|escapejs }}', '{{ call.start_time|date:"d.m.Y H:i" }}')" class="inline-flex items-center px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700"><i class="fas fa-user-plus mr-1"></i>Müşteriye Dönüştür</button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="9" class="px-5 py-16 text-center">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4"><i class="fas fa-phone-alt text-2xl"></i></div>
+                            <h4 class="text-md font-bold text-slate-700 mb-1">Çağrı Bulunamadı</h4>
+                            <p class="text-xs text-slate-400">Henüz çağrı kaydı yok.</p>
+                        </div>
+                    </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if calls.has_other_pages %}
+        <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+            <div class="text-xs text-slate-500">Sayfa <span class="font-semibold text-slate-700">{{ calls.number }}</span> / {{ calls.paginator.num_pages }}</div>
+            <div class="flex space-x-1">
+                {% if calls.has_previous %}<a href="?page={{ calls.previous_page_number }}" class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs"><i class="fas fa-chevron-left text-[10px]"></i></a>{% endif %}
+                <span class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold">{{ calls.number }}</span>
+                {% if calls.has_next %}<a href="?page={{ calls.next_page_number }}" class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs"><i class="fas fa-chevron-right text-[10px]"></i></a>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- AI ÖZET MODALI -->
+<div id="ai-modal" onclick="if(event.target===this)closeAiModal()"
+     class="hidden fixed inset-0 z-[80] flex items-center justify-center"
+     style="background:rgba(15,23,42,.55);backdrop-filter:blur(4px);">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+    <!-- Başlık -->
+    <div style="background:linear-gradient(135deg,#7c3aed,#4f46e5);" class="px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+          <i class="fas fa-magic text-white text-lg"></i>
+        </div>
+        <div>
+          <div class="text-white font-bold text-sm">AI Çağrı Özeti</div>
+          <div class="text-purple-200 text-[11px] mt-0.5" id="ai-modal-meta">Analiz ediliyor...</div>
+        </div>
+      </div>
+      <button onclick="closeAiModal()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 text-white transition">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <!-- İçerik -->
+    <div class="px-6 py-6">
+      <!-- Yükleniyor -->
+      <div id="ai-loading" class="flex flex-col items-center py-8 gap-4">
+        <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe);">
+          <i class="fas fa-spinner fa-spin text-violet-600 text-2xl"></i>
+        </div>
+        <div class="text-center">
+          <div class="text-sm font-bold text-slate-700" id="ai-loading-step">Ses kaydı indiriliyor...</div>
+          <div class="text-xs text-slate-400 mt-1">Bu işlem 15-30 saniye sürebilir</div>
+        </div>
+      </div>
+      <!-- Sonuç -->
+      <div id="ai-result-box" class="hidden">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-check text-white text-[10px]"></i>
+          </div>
+          <span class="text-xs font-bold text-emerald-600 uppercase tracking-wide">Müşteri kartına kaydedildi</span>
+        </div>
+        <div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-700 leading-relaxed whitespace-pre-line border border-slate-100" id="ai-summary-text"></div>
+      </div>
+      <!-- Hata -->
+      <div id="ai-error-box" class="hidden">
+        <div class="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-xl">
+          <i class="fas fa-exclamation-circle text-red-500 mt-0.5 flex-shrink-0"></i>
+          <div>
+            <div class="text-sm font-bold text-red-700 mb-1">Hata oluştu</div>
+            <div class="text-xs text-red-600" id="ai-error-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Alt -->
+    <div class="px-6 pb-5 flex justify-between items-center">
+      <div id="ai-customer-link" class="hidden">
+        <a id="ai-customer-href" href="#" class="inline-flex items-center gap-1 text-xs text-violet-600 font-semibold hover:underline">
+          <i class="fas fa-user text-[10px]"></i> Müşteri kartına git
+        </a>
+      </div>
+      <div class="ml-auto">
+        <button onclick="closeAiModal()" class="px-5 py-2.5 text-sm font-bold text-white rounded-xl transition" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">
+          Kapat
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SES KAYDI MODALI -->
+<div id="recording-modal" onclick="if(event.target===this)closeRecordingModal()"
+     class="hidden fixed inset-0 z-[70] flex items-center justify-center"
+     style="background:rgba(15,23,42,.55); backdrop-filter:blur(4px);">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+
+    <!-- Başlık -->
+    <div style="background:linear-gradient(135deg,#7c3aed,#6d28d9);" class="px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+          <i class="fas fa-headphones text-white text-lg"></i>
+        </div>
+        <div>
+          <div class="text-white font-bold text-sm">Ses Kaydı</div>
+          <div class="text-purple-200 text-[11px] mt-0.5" id="rec-meta">—</div>
+        </div>
+      </div>
+      <button onclick="closeRecordingModal()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 text-white transition">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Player -->
+    <div class="px-6 py-6">
+      <audio id="rec-player" controls class="w-full" style="border-radius:10px; outline:none;">
+        <source id="rec-source" src="" type="audio/mpeg">
+        <source id="rec-source-wav" src="" type="audio/wav">
+        Tarayıcınız ses oynatmayı desteklemiyor.
+      </audio>
+    </div>
+
+    <!-- Alt Butonlar -->
+    <div class="px-6 pb-6 flex items-center justify-between">
+      <a id="rec-download" href="#" download
+         class="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:border-purple-400 hover:text-purple-600 transition">
+        <i class="fas fa-download"></i> İndir
+      </a>
+      <button onclick="closeRecordingModal()"
+              class="px-5 py-2.5 text-sm font-bold text-white rounded-xl transition"
+              style="background:linear-gradient(135deg,#7c3aed,#6d28d9);">
+        Kapat
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MÜŞTERİYE DÖNÜŞTÜR MODALI -->
+<div id="convert-modal" class="hidden fixed inset-0 z-[60] overflow-y-auto">
+  <div class="flex items-start justify-center min-h-screen p-4 pt-12 bg-slate-900/60 backdrop-blur-sm">
+    <form method="POST" id="convert-form"
+          class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden">
+      {% csrf_token %}
+
+      <!-- Başlık -->
+      <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-7 py-5 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center">
+            <i class="fas fa-user-plus text-white text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-white font-bold text-base">Çağrıyı Müşteriye Dönüştür</h3>
+            <p class="text-emerald-100 text-xs mt-0.5">Mahalle seçince danışman otomatik atanır</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeConvertModal()"
+                class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Otomatik Alanlar (salt okunur bant) -->
+      <div class="px-7 py-4 bg-slate-50 border-b border-slate-100 flex gap-6">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <i class="fas fa-phone-alt text-emerald-600 text-xs"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Telefon (Otomatik)</div>
+            <div id="modal-phone-display" class="text-sm font-mono font-bold text-slate-800">—</div>
+          </div>
+        </div>
+        <div class="w-px bg-slate-200"></div>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+            <i class="fas fa-calendar-alt text-blue-600 text-xs"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Çağrı Tarihi (Otomatik)</div>
+            <div id="modal-date-display" class="text-sm font-bold text-slate-800">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Alanları -->
+      <div class="px-7 py-6 space-y-5 max-h-[56vh] overflow-y-auto">
+
+        <!-- Ad Soyad -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">
+            Müşteri Adı Soyadı
+            <span class="normal-case font-normal text-slate-400 ml-1">(opsiyonel)</span>
+          </label>
+          <input type="text" name="full_name" id="modal-full-name"
+                 class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm
+                        focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                 placeholder="Örn: Ahmet Yılmaz">
+        </div>
+
+        <!-- Bölge / Mahalle -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">
+            <i class="fas fa-map-marker-alt text-rose-500 mr-1"></i>
+            Bölge / Mahalle <span class="text-rose-500">*</span>
+          </label>
+          <select name="neighborhood_id" id="modal-neighborhood" required
+                  onchange="onNeighborhoodChange()"
+                  class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white
+                         focus:outline-none focus:ring-2 focus:ring-emerald-300">
+            <option value="">— Mahalle seçin —</option>
+            {% for n in neighborhoods %}
+            <option value="{{ n.id }}"
+                    data-consultant="{% if n.consultant %}{{ n.consultant.get_full_name|default:n.consultant.username }}{% endif %}">
+              {{ n.name }}{% if n.district %} · {{ n.district }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <!-- Danışman önizleme -->
+          <div id="consultant-preview"
+               class="hidden mt-2 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
+            <div class="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center">
+              <i class="fas fa-user-tie text-sm"></i>
+            </div>
+            <div class="flex-1">
+              <div class="text-[10px] font-bold text-emerald-600 uppercase">Otomatik Atanacak Danışman</div>
+              <div id="consultant-name" class="text-sm font-semibold text-emerald-900"></div>
+            </div>
+            <i class="fas fa-check-circle text-emerald-500 text-lg"></i>
+          </div>
+          <div id="no-consultant-msg"
+               class="hidden mt-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle"></i>
+            Bu mahalleye atanmış danışman yok, danışmansız kaydedilecek.
+          </div>
+        </div>
+
+        <!-- Daire Seçimi (AJAX ile filtreli) -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">
+            <i class="fas fa-building text-amber-500 mr-1"></i>
+            İlgilendiği Daire
+            <span class="normal-case font-normal text-slate-400 ml-1">(opsiyonel)</span>
+          </label>
+          <div class="relative">
+            <select name="property_id" id="modal-property"
+                    class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white
+                           focus:outline-none focus:ring-2 focus:ring-emerald-300">
+              <option value="">— Daire seçilmedi —</option>
+            </select>
+            <div id="property-loading"
+                 class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+              <i class="fas fa-spinner fa-spin"></i>
+            </div>
+          </div>
+          <p id="property-hint" class="mt-1 text-[11px] text-slate-400">
+            Mahalle seçince daireler otomatik filtrelenir.
+          </p>
+        </div>
+
+        <!-- Kaynak -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">Kaynak</label>
+          <select name="source"
+                  class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300">
+            <option value="">— Belirtilmedi —</option>
+            {% for value, label in source_choices %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <input type="hidden" name="customer_type" value="bireysel">
+
+        <!-- Not / Arama Nedeni -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1.5">
+            <i class="fas fa-comment-dots text-purple-500 mr-1"></i>
+            Arama Nedeni / Not
+          </label>
+          <textarea name="reason" rows="3"
+                    class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    placeholder="Ne için aradığını, hangi ilana ilgi duyduğunu yazın..."></textarea>
+        </div>
+
+        <!-- Bilgi Notu -->
+        <div class="flex items-start gap-2 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700">
+          <i class="fas fa-info-circle mt-0.5 text-blue-400 flex-shrink-0"></i>
+          <span>
+            Kayıt sonrası müşteri <strong>Potansiyel</strong> statüsüyle oluşturulur,
+            seçilen daire <em>talep</em> olarak eklenir ve mahallenin danışmanına otomatik atanır.
+          </span>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-7 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+        <button type="button" onclick="closeConvertModal()"
+                class="px-5 py-2.5 border border-slate-200 bg-white rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 transition">
+          İptal
+        </button>
+        <button type="submit" id="convert-submit-btn"
+                class="px-7 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-md shadow-emerald-200">
+          <i class="fas fa-user-check"></i>
+          <span>Müşteriyi Oluştur</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+// ── AI Özet ───────────────────────────────────────────────────────────────────
+const AI_SUMMARIZE_URL = "{% url 'ai_summarize_call' 0 %}";
+
+function runAiSummary(callId, btn) {
+  // Modalı aç, yükleniyor durumuna getir
+  document.getElementById('ai-loading').classList.remove('hidden');
+  document.getElementById('ai-result-box').classList.add('hidden');
+  document.getElementById('ai-error-box').classList.add('hidden');
+  document.getElementById('ai-customer-link').classList.add('hidden');
+  document.getElementById('ai-modal-meta').textContent = 'Analiz ediliyor...';
+  document.getElementById('ai-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+
+  // Butonu devre dışı bırak
+  var origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> Bekle...';
+
+  // Adım mesajlarını animasyonla göster
+  var steps = ['Ses kaydı indiriliyor...', 'Whisper ile metne çevriliyor...', 'GPT analiz yapıyor...', 'Not kaydediliyor...'];
+  var stepEl = document.getElementById('ai-loading-step');
+  var stepIdx = 0;
+  var stepTimer = setInterval(function() {
+    stepIdx = (stepIdx + 1) % steps.length;
+    stepEl.textContent = steps[stepIdx];
+  }, 4000);
+
+  var url = AI_SUMMARIZE_URL.replace('/0/', '/' + callId + '/');
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json',
+    },
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    clearInterval(stepTimer);
+    document.getElementById('ai-loading').classList.add('hidden');
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+
+    if (data.success) {
+      document.getElementById('ai-summary-text').textContent = data.summary;
+      document.getElementById('ai-modal-meta').textContent = data.customer_name + ' · Nota kaydedildi';
+      document.getElementById('ai-result-box').classList.remove('hidden');
+      // Müşteri kartı linki
+      if (data.customer_name) {
+        document.getElementById('ai-customer-link').classList.remove('hidden');
+        btn.innerHTML = '<i class="fas fa-check text-[10px]"></i> Özet Alındı';
+        btn.style.background = '#f0fdf4';
+        btn.style.color = '#16a34a';
+        btn.style.borderColor = '#bbf7d0';
+      }
+    } else {
+      document.getElementById('ai-error-text').textContent = data.error || 'Bilinmeyen hata.';
+      document.getElementById('ai-error-box').classList.remove('hidden');
+      document.getElementById('ai-modal-meta').textContent = 'Hata oluştu';
+    }
+  })
+  .catch(function(err) {
+    clearInterval(stepTimer);
+    document.getElementById('ai-loading').classList.add('hidden');
+    document.getElementById('ai-error-text').textContent = 'Ağ hatası: ' + err.message;
+    document.getElementById('ai-error-box').classList.remove('hidden');
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+  });
+}
+
+function closeAiModal() {
+  document.getElementById('ai-modal').classList.add('hidden');
+  document.body.style.overflow = 'auto';
+}
+
+// ── Ses Kaydı Modal ───────────────────────────────────────────────────────────
+function openRecordingModal(url, caller, date, duration) {
+  var meta = [];
+  if (caller) meta.push(caller);
+  if (date)   meta.push(date);
+  if (duration && duration !== '00:00:00') meta.push(duration);
+  document.getElementById('rec-meta').textContent = meta.join('  ·  ') || '—';
+
+  var src = document.getElementById('rec-source');
+  var srcWav = document.getElementById('rec-source-wav');
+  src.src = url;
+  srcWav.src = url;
+  document.getElementById('rec-download').href = url;
+
+  var player = document.getElementById('rec-player');
+  player.load();
+  player.play();
+
+  document.getElementById('recording-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRecordingModal() {
+  var player = document.getElementById('rec-player');
+  player.pause();
+  player.currentTime = 0;
+  document.getElementById('recording-modal').classList.add('hidden');
+  document.body.style.overflow = 'auto';
+}
+
+const PROPERTIES_API_URL = "{% url 'properties_by_neighborhood_api' %}";
+const CONVERT_BASE_URL   = "{% url 'convert_call_to_customer' 0 %}";
+
+// ── Mahalle değişince: danışman önizle + daireleri AJAX yükle ────────────────
+function onNeighborhoodChange() {
+  const sel = document.getElementById('modal-neighborhood');
+  const preview = document.getElementById('consultant-preview');
+  const noMsg   = document.getElementById('no-consultant-msg');
+  const nameEl  = document.getElementById('consultant-name');
+  const hint    = document.getElementById('property-hint');
+
+  if (!sel.value) {
+    preview.classList.add('hidden');
+    noMsg.classList.add('hidden');
+    setPropertyOptions([]);
+    hint.textContent = 'Mahalle seçince daireler otomatik filtrelenir.';
+    return;
+  }
+
+  const consultant = sel.options[sel.selectedIndex].getAttribute('data-consultant');
+  if (consultant) {
+    nameEl.textContent = consultant;
+    preview.classList.remove('hidden');
+    noMsg.classList.add('hidden');
+  } else {
+    preview.classList.add('hidden');
+    noMsg.classList.remove('hidden');
+  }
+
+  // AJAX: daireleri yükle
+  const loading = document.getElementById('property-loading');
+  const propSel = document.getElementById('modal-property');
+  loading.classList.remove('hidden');
+  propSel.disabled = true;
+  hint.textContent = 'Daireler yükleniyor…';
+
+  fetch(PROPERTIES_API_URL + '?neighborhood_id=' + sel.value)
+    .then(r => r.json())
+    .then(data => {
+      setPropertyOptions(data.properties || []);
+      hint.textContent = data.properties && data.properties.length
+        ? data.properties.length + ' daire listelendi.'
+        : 'Bu mahallede aktif daire bulunamadı.';
+    })
+    .catch(() => {
+      hint.textContent = 'Daireler yüklenemedi.';
+    })
+    .finally(() => {
+      loading.classList.add('hidden');
+      propSel.disabled = false;
+    });
+}
+
+function setPropertyOptions(properties) {
+  const propSel = document.getElementById('modal-property');
+  propSel.innerHTML = '<option value="">— Daire seçilmedi —</option>';
+  properties.forEach(function(p) {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    let label = p.name || 'Daire';
+    if (p.room_count) label += ' · ' + p.room_count;
+    if (p.floor)      label += ' · ' + p.floor + '. kat';
+    opt.textContent = label.length > 60 ? label.slice(0, 57) + '…' : label;
+    propSel.appendChild(opt);
+  });
+}
+
+// ── Modal aç ─────────────────────────────────────────────────────────────────
+function openConvertModal(callId, phone, dateStr) {
+  const form = document.getElementById('convert-form');
+  form.action = CONVERT_BASE_URL.replace('/0/', '/' + callId + '/');
+  form.reset();
+
+  // Otomatik alanları doldur
+  document.getElementById('modal-phone-display').textContent = phone || '—';
+  document.getElementById('modal-date-display').textContent  = dateStr || '—';
+
+  // Danışman + property sıfırla
+  document.getElementById('consultant-preview').classList.add('hidden');
+  document.getElementById('no-consultant-msg').classList.add('hidden');
+  document.getElementById('property-hint').textContent = 'Mahalle seçince daireler otomatik filtrelenir.';
+  setPropertyOptions([]);
+
+  // Butonu sıfırla
+  const btn = document.getElementById('convert-submit-btn');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-user-check"></i><span>Müşteriyi Oluştur</span>';
+
+  document.getElementById('convert-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setTimeout(function() { document.getElementById('modal-full-name').focus(); }, 150);
+}
+
+// ── Modal kapat ───────────────────────────────────────────────────────────────
+function closeConvertModal() {
+  document.getElementById('convert-modal').classList.add('hidden');
+  document.body.style.overflow = 'auto';
+}
+
+// Dışarı tıkla veya ESC → kapat
+document.getElementById('convert-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeConvertModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeConvertModal();
+    closeRecordingModal();
+    closeAiModal();
+  }
+});
+
+// Submit → loading state
+document.getElementById('convert-form').addEventListener('submit', function() {
+  const btn = document.getElementById('convert-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Kaydediliyor…</span>';
+});
+</script>
+{% endblock extra_js %}

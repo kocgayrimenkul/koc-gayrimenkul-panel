@@ -1,0 +1,96 @@
+{% extends "layouts/base.html" %}
+{% block title %} Rol Yönetimi {% endblock %}
+
+{% block stylesheets %}
+<style>
+  :root { --koc-red: #9d2235; --koc-red-dark: #7a1a29; }
+  .bg-gradient-koc-red { background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important; }
+  .text-koc-red { color: var(--koc-red) !important; }
+  .role-card { border-left: 4px solid var(--koc-red); transition: transform .2s; }
+  .role-card:hover { transform: translateY(-2px); }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center">
+        <div class="col">
+          <h6 class="h2 text-white d-inline-block mb-0">Rol Yönetimi</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item"><a href="{% url 'employee_list' %}">Çalışanlar</a></li>
+              <li class="breadcrumb-item active">Roller</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--7">
+  <div class="row mb-4">
+    {% for role_key, role_data in role_stats.items %}
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card shadow role-card">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col">
+              <h5 class="card-title text-uppercase text-muted mb-0 small">{{ role_data.title }}</h5>
+              <span class="h2 font-weight-bold mb-0">{{ role_data.count }}</span>
+              <p class="text-muted text-sm mt-1 mb-0">{{ role_data.description }}</p>
+            </div>
+            <div class="col-auto">
+              <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
+                <i class="fas fa-user-shield"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-white border-0">
+          <h3 class="mb-0">Rol & Yetki Detayları</h3>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-items-center table-flush">
+            <thead class="thead-light">
+              <tr>
+                <th>Rol</th>
+                <th>Açıklama</th>
+                <th>Aktif Çalışan</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for role_key, role_data in role_stats.items %}
+              <tr>
+                <td>
+                  <span class="badge badge-pill badge-danger px-3 py-2">{{ role_data.title }}</span>
+                </td>
+                <td class="text-muted">{{ role_data.description }}</td>
+                <td>
+                  <span class="badge badge-pill badge-info">{{ role_data.count }} kişi</span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-4">Rol verisi bulunamadı.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

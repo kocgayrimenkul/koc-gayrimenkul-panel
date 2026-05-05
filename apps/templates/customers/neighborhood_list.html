@@ -1,188 +1,257 @@
-{% extends "layouts/base.html" %}
-
-{% block title %} Mahalle Yönetimi {% endblock %}
-
-<!-- Specific CSS goes HERE -->
-{% block stylesheets %}
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+{% block title %}Mahalle Yönetimi{% endblock %}
+{% block extra_css %}
 <style>
-  /* Koç Gayrimenkul kurumsal renkleri */
-  :root {
-    --koc-red: #9d2235;
-    --koc-red-light: #b82e42;
-    --koc-red-dark: #7a1a29;
-    --koc-black: #212529;
-    --koc-red-rgb: 157, 34, 53;
-  }
-  
-  .bg-koc-red {
-    background-color: var(--koc-red) !important;
-  }
-  
-  .bg-gradient-koc-red {
-    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
-  }
-  
-  .text-koc-red {
-    color: var(--koc-red) !important;
-  }
-  
-  .btn-koc-red {
-    color: #fff;
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .btn-koc-red:hover {
-    color: #fff;
-    background-color: var(--koc-red-light);
-    border-color: var(--koc-red-light);
-  }
-  
-  .border-koc-red {
-    border-color: var(--koc-red) !important;
-  }
-  
-  /* Kartlar */
-  .card {
-    border-radius: 0.75rem;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    border: none;
-  }
-  
-  .card:hover {
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  }
-  
-  /* Tablo stilleri */
-  .table thead th {
-    border-top: none;
-    border-bottom: 2px solid var(--koc-red);
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-  }
-  
-  .table-hover tbody tr:hover {
-    background-color: rgba(var(--koc-red-rgb), 0.04);
-  }
+  .fi { width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:.85rem;outline:none;transition:border-color .15s;background:#fff;color:#1e293b; }
+  .fi:focus { border-color:#9d2235;box-shadow:0 0 0 3px rgba(157,34,53,.1); }
+  label.lbl { font-size:.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px; }
 </style>
-{% endblock stylesheets %}
-
+{% endblock %}
 {% block content %}
+<div class="px-6 py-6">
 
-<div class="header bg-gradient-koc-red pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Mahalle Yönetimi</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item active" aria-current="page">Mahalle Yönetimi</li>
-            </ol>
-          </nav>
-        </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{% url 'neighborhood_add' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-plus mr-1"></i> Yeni Mahalle Ekle
-          </a>
-        </div>
-      </div>
+  <!-- Başlık -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Mahalle Yönetimi</h1>
+      <p class="text-sm text-slate-500 mt-1">Toplam {{ total }} mahalle · {{ bos_count }} danışmansız</p>
     </div>
+    <button onclick="document.getElementById('modal-ekle').classList.remove('hidden')"
+      class="flex items-center gap-2 bg-red-800 hover:bg-red-700 text-white text-sm font-semibold rounded-lg px-4 py-2.5 transition">
+      <i class="fas fa-plus"></i> Mahalle Ekle
+    </button>
+  </div>
+
+  <!-- Filtreler -->
+  <form method="get" class="bg-white rounded-xl border border-slate-100 shadow-sm p-4 mb-5 flex flex-wrap gap-3 items-end">
+    <div class="flex-1 min-w-48">
+      <label class="lbl">Ara</label>
+      <input type="text" name="q" value="{{ q }}" placeholder="Mahalle adı..." class="fi">
+    </div>
+    <div class="w-44">
+      <label class="lbl">İlçe</label>
+      <select name="ilce" class="fi">
+        <option value="">Tümü</option>
+        {% for ilce in ilceler %}
+          <option value="{{ ilce }}" {% if ilce_filter == ilce %}selected{% endif %}>{{ ilce }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="w-52">
+      <label class="lbl">Danışman</label>
+      <select name="danisman" class="fi">
+        <option value="">Tümü</option>
+        <option value="__bos__" {% if danisman_filter == '__bos__' %}selected{% endif %}>— Atanmamış</option>
+        {% for c in consultants %}
+          <option value="{{ c.id }}" {% if danisman_filter == c.id|stringformat:"s" %}selected{% endif %}>
+            {{ c.get_full_name|default:c.username }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-lg px-4 py-2 transition">
+      <i class="fas fa-search mr-1"></i> Filtrele
+    </button>
+    {% if q or ilce_filter or danisman_filter %}
+    <a href="{% url 'neighborhood_list' %}" class="text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-4 py-2 transition">
+      <i class="fas fa-times mr-1"></i> Temizle
+    </a>
+    {% endif %}
+  </form>
+
+  <!-- Tablo -->
+  <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+    {% if neighborhoods %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-xs text-slate-400 border-b border-slate-100 bg-slate-50">
+          <th class="px-5 py-3 font-semibold">Mahalle Adı</th>
+          <th class="px-4 py-3 font-semibold">İlçe</th>
+          <th class="px-4 py-3 font-semibold">Bağlı Danışman</th>
+          <th class="px-4 py-3 font-semibold text-right">İşlem</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-50">
+        {% for nb in neighborhoods %}
+        <tr class="hover:bg-slate-50 transition group">
+          <td class="px-5 py-3">
+            <span class="font-semibold text-slate-800">{{ nb.name }}</span>
+          </td>
+          <td class="px-4 py-3">
+            {% if nb.district %}
+              <span class="text-xs bg-blue-50 text-blue-700 font-semibold px-2.5 py-1 rounded-full">{{ nb.district }}</span>
+            {% else %}
+              <span class="text-slate-300 text-xs">—</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            {% if nb.consultant %}
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <span class="text-xs font-bold text-red-700">{{ nb.consultant.first_name|first|upper }}{{ nb.consultant.last_name|first|upper }}</span>
+                </div>
+                <span class="text-sm text-slate-700">{{ nb.consultant.get_full_name|default:nb.consultant.username }}</span>
+              </div>
+            {% else %}
+              <span class="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full font-semibold">
+                <i class="fas fa-exclamation-triangle text-xs"></i> Atanmamış
+              </span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition">
+              <button onclick="openEdit({{ nb.pk }}, '{{ nb.name|escapejs }}', '{{ nb.district|escapejs }}', '{{ nb.consultant_id|default:'' }}')"
+                class="text-xs text-blue-600 hover:text-blue-800 border border-blue-200 rounded-md px-2.5 py-1 hover:bg-blue-50 transition">
+                <i class="fas fa-edit mr-1"></i>Düzenle
+              </button>
+              <button onclick="confirmDelete({{ nb.pk }}, '{{ nb.name|escapejs }}')"
+                class="text-xs text-red-500 hover:text-red-700 border border-red-200 rounded-md px-2.5 py-1 hover:bg-red-50 transition">
+                <i class="fas fa-trash mr-1"></i>Sil
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="py-16 text-center">
+      <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+        <i class="fas fa-map-marker-alt text-slate-300 text-xl"></i>
+      </div>
+      <p class="text-sm font-semibold text-slate-500">Mahalle bulunamadı</p>
+      <p class="text-xs text-slate-400 mt-1">Filtrelerinizi değiştirin veya yeni mahalle ekleyin</p>
+    </div>
+    {% endif %}
   </div>
 </div>
 
-<!-- Page content -->
-<div class="container-fluid mt--6">
-  <!-- Uyarı mesajları -->
-  {% if messages %}
-  <div class="row">
-    <div class="col">
-      {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        <span class="alert-icon"><i class="ni ni-bell-55"></i></span>
-        <span class="alert-text">{{ message }}</span>
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
+<!-- Modal: Mahalle Ekle -->
+<div id="modal-ekle" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-base font-bold text-slate-800">Yeni Mahalle Ekle</h2>
+      <button onclick="document.getElementById('modal-ekle').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form method="post" action="{% url 'neighborhood_create' %}">
+      {% csrf_token %}
+      <div class="mb-4">
+        <label class="lbl">Mahalle Adı <span class="text-red-500">*</span></label>
+        <input type="text" name="name" class="fi" placeholder="Mahalle adını girin" required autofocus>
+      </div>
+      <div class="mb-4">
+        <label class="lbl">İlçe</label>
+        <input type="text" name="district" class="fi" placeholder="Şahinbey / Şehitkamil" list="ilce-list">
+        <datalist id="ilce-list">
+          {% for ilce in ilceler %}<option value="{{ ilce }}">{% endfor %}
+        </datalist>
+      </div>
+      <div class="mb-5">
+        <label class="lbl">Bağlı Danışman</label>
+        <select name="consultant_id" class="fi">
+          <option value="">Seçiniz (isteğe bağlı)</option>
+          {% for c in consultants %}
+            <option value="{{ c.id }}">{{ c.get_full_name|default:c.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" onclick="document.getElementById('modal-ekle').classList.add('hidden')"
+          class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-4 py-2.5 transition">
+          İptal
+        </button>
+        <button type="submit"
+          class="flex-1 bg-red-800 hover:bg-red-700 text-white text-sm font-semibold rounded-lg px-4 py-2.5 transition">
+          <i class="fas fa-plus mr-1"></i> Ekle
         </button>
       </div>
-      {% endfor %}
-    </div>
+    </form>
   </div>
-  {% endif %}
-
-  <div class="row">
-    <div class="col">
-      <div class="card">
-        <div class="card-header border-0">
-          <h3 class="mb-0">Mahalle Listesi</h3>
-          <p class="text-sm text-muted mb-0">Sistem üzerinde kayıtlı mahalleler ve ilgili danışmanlar</p>
-        </div>
-        <div class="table-responsive">
-          <table class="table align-items-center table-flush table-hover">
-            <thead class="thead-light">
-              <tr>
-                <th scope="col">Mahalle Adı</th>
-                <th scope="col">İlçe</th>
-                <th scope="col">Bağlı Danışman</th>
-                <th scope="col" class="text-right">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for neighborhood in neighborhoods %}
-              <tr>
-                <td>
-                  <span class="font-weight-bold">{{ neighborhood.name }}</span>
-                </td>
-                <td>{{ neighborhood.district|default:"-" }}</td>
-                <td>
-                  {% if neighborhood.consultant %}
-                    <span class="badge badge-primary">
-                      {{ neighborhood.consultant.get_full_name|default:neighborhood.consultant.username }}
-                    </span>
-                  {% else %}
-                    <span class="badge badge-warning">Atanmamış</span>
-                  {% endif %}
-                </td>
-                <td class="text-right">
-                  <a href="{% url 'neighborhood_edit' neighborhood.id %}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-edit"></i> Düzenle
-                  </a>
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="4" class="text-center py-5">
-                  <i class="ni ni-map-big" style="font-size: 2rem; color: #f0f0f0;"></i>
-                  <h4 class="mt-3">Henüz mahalle kaydı yok</h4>
-                  <p class="text-muted">Sisteme kayıtlı mahalle bulunmuyor.</p>
-                  <a href="{% url 'neighborhood_add' %}" class="btn btn-sm btn-koc-red">
-                    <i class="fas fa-plus mr-2"></i> Yeni Mahalle Ekle
-                  </a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {% include "includes/footer.html" %}
-
 </div>
 
-{% endblock content %}
+<!-- Modal: Mahalle Düzenle -->
+<div id="modal-edit" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-base font-bold text-slate-800">Mahalle Düzenle</h2>
+      <button onclick="document.getElementById('modal-edit').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form id="edit-form" method="post" action="">
+      {% csrf_token %}
+      <div class="mb-4">
+        <label class="lbl">Mahalle Adı <span class="text-red-500">*</span></label>
+        <input type="text" id="edit-name" name="name" class="fi" required>
+      </div>
+      <div class="mb-4">
+        <label class="lbl">İlçe</label>
+        <input type="text" id="edit-district" name="district" class="fi" list="ilce-list">
+      </div>
+      <div class="mb-5">
+        <label class="lbl">Bağlı Danışman</label>
+        <select id="edit-consultant" name="consultant_id" class="fi">
+          <option value="">Seçiniz (isteğe bağlı)</option>
+          {% for c in consultants %}
+            <option value="{{ c.id }}">{{ c.get_full_name|default:c.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" onclick="document.getElementById('modal-edit').classList.add('hidden')"
+          class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-4 py-2.5 transition">
+          İptal
+        </button>
+        <button type="submit"
+          class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg px-4 py-2.5 transition">
+          <i class="fas fa-save mr-1"></i> Güncelle
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
-<!-- Specific JS goes HERE --> 
-{% block javascripts %}
+<!-- Silme Formu (gizli) -->
+<form id="delete-form" method="post" action="" class="hidden">{% csrf_token %}</form>
+
+{% if messages %}
+<div class="fixed bottom-5 right-5 z-50 flex flex-col gap-2">
+  {% for msg in messages %}
+  <div class="bg-slate-800 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
+    <i class="fas fa-check-circle text-green-400"></i> {{ msg }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
 <script>
-  $(document).ready(function() {
-    // JavaScript işlemleri buraya eklenebilir
-  });
+function openEdit(pk, name, district, consultantId) {
+  document.getElementById('edit-form').action = `/mahalleler/${pk}/guncelle/`;
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-district').value = district;
+  const sel = document.getElementById('edit-consultant');
+  for (let opt of sel.options) {
+    opt.selected = (opt.value == consultantId);
+  }
+  document.getElementById('modal-edit').classList.remove('hidden');
+}
+
+function confirmDelete(pk, name) {
+  if (!confirm(`"${name}" mahallesini silmek istediğinizden emin misiniz?`)) return;
+  const form = document.getElementById('delete-form');
+  form.action = `/mahalleler/${pk}/sil/`;
+  form.submit();
+}
+
+// Toast otomatik kapat
+setTimeout(() => {
+  document.querySelectorAll('.animate-fade-in').forEach(el => el.remove());
+}, 3000);
 </script>
-{% endblock javascripts %} 
+{% endblock %}

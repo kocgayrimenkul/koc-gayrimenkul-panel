@@ -1,0 +1,175 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Ekip Performans Raporu{% endblock %}
+
+{% block stylesheets %}
+<style>
+  :root { --koc-red: #9d2235; --koc-red-dark: #7a1a29; }
+  .bg-gradient-koc-red { background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important; }
+  .stat-card { border-left: 4px solid var(--koc-red); }
+  .progress { height: 8px; }
+  .progress-bar-koc { background-color: var(--koc-red); }
+  .perf-badge-high { background: #d4edda; color: #155724; }
+  .perf-badge-mid  { background: #fff3cd; color: #856404; }
+  .perf-badge-low  { background: #f8d7da; color: #721c24; }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-gradient-koc-red pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6">
+          <h6 class="h2 text-white d-inline-block mb-0">Ekip Performans Raporu</h6>
+          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+              <li class="breadcrumb-item"><a href="{% url 'sales_process:dashboard' %}"><i class="fas fa-home"></i></a></li>
+              <li class="breadcrumb-item active">Ekip Performansı</li>
+            </ol>
+          </nav>
+        </div>
+        <div class="col-lg-6 text-right">
+          <form method="get" class="d-inline-flex align-items-center">
+            <label class="text-white small mr-2 mb-0">Tarih Aralığı:</label>
+            <input type="date" name="start_date" class="form-control form-control-sm mr-2"
+                   value="{{ start_date }}" style="width:140px;">
+            <input type="date" name="end_date" class="form-control form-control-sm mr-2"
+                   value="{{ end_date }}" style="width:140px;">
+            <button type="submit" class="btn btn-sm btn-white">
+              <i class="fas fa-sync mr-1"></i> Güncelle
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--7">
+  <!-- Özet Kartlar -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card shadow stat-card">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col">
+              <h5 class="card-title text-uppercase text-muted mb-0 small">Aktif Danışman</h5>
+              <span class="h2 font-weight-bold mb-0">{{ agents|length }}</span>
+            </div>
+            <div class="col-auto">
+              <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
+                <i class="fas fa-users"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card shadow stat-card">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col">
+              <h5 class="card-title text-uppercase text-muted mb-0 small">Toplam Atanan Lead</h5>
+              <span class="h2 font-weight-bold mb-0">
+                {% with total=0 %}
+                  {% for a in agents %}{% with total=total|add:a.total_assigned %}{% endwith %}{% endfor %}
+                  {{ agents|length|default:0 }}
+                {% endwith %}
+              </span>
+            </div>
+            <div class="col-auto">
+              <div class="icon icon-shape bg-info text-white rounded-circle shadow">
+                <i class="fas fa-user-plus"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ekip Performans Tablosu -->
+  <div class="card shadow">
+    <div class="card-header bg-white border-0">
+      <div class="row align-items-center">
+        <div class="col"><h3 class="mb-0">Danışman Bazlı Performans</h3></div>
+        <div class="col text-right">
+          <span class="text-muted small">{{ start_date }} — {{ end_date }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-items-center table-flush">
+        <thead class="thead-light">
+          <tr>
+            <th>Danışman</th>
+            <th>Atanan</th>
+            <th>Kazanılan</th>
+            <th>Kaybedilen</th>
+            <th>Başarı Oranı</th>
+            <th>Performans</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for agent in agents %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="avatar rounded-circle bg-gradient-danger text-white mr-3"
+                     style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">
+                  {{ agent.get_full_name|default:agent.username|first|upper }}
+                </div>
+                <div>
+                  <span class="font-weight-bold d-block">{{ agent.get_full_name|default:agent.username }}</span>
+                  <span class="text-muted small">{{ agent.email }}</span>
+                </div>
+              </div>
+            </td>
+            <td>{{ agent.total_assigned|default:0 }}</td>
+            <td><span class="text-success font-weight-bold">{{ agent.closed_won|default:0 }}</span></td>
+            <td><span class="text-danger">{{ agent.closed_lost|default:0 }}</span></td>
+            <td>
+              {% if agent.total_assigned > 0 %}
+                {% widthratio agent.closed_won|default:0 agent.total_assigned 100 as pct %}
+                <div class="d-flex align-items-center">
+                  <span class="mr-2">{{ pct }}%</span>
+                  <div class="progress flex-grow-1">
+                    <div class="progress-bar progress-bar-koc" style="width: {{ pct }}%"></div>
+                  </div>
+                </div>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if agent.total_assigned > 0 %}
+                {% widthratio agent.closed_won|default:0 agent.total_assigned 100 as pct %}
+                {% if pct >= 60 %}
+                  <span class="badge perf-badge-high px-3 py-1">Yüksek</span>
+                {% elif pct >= 30 %}
+                  <span class="badge perf-badge-mid px-3 py-1">Orta</span>
+                {% else %}
+                  <span class="badge perf-badge-low px-3 py-1">Düşük</span>
+                {% endif %}
+              {% else %}
+                <span class="badge badge-light px-3 py-1">Veri Yok</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-5">
+              <i class="fas fa-users fa-2x mb-2 d-block"></i>
+              Seçilen tarih aralığında veri bulunamadı.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock content %}

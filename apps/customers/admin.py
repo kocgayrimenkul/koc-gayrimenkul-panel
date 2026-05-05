@@ -1,14 +1,13 @@
-# -*- encoding: utf-8 -*-
+﻿# -*- encoding: utf-8 -*-
 """
 Koç Gayrimenkul Panel - Müşteri Yönetimi Admin Yapılandırması
 """
-
 from django.contrib import admin
 from .models import Customer, Neighborhood, CustomerReminder
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'phone', 'neighborhood', 'consultant', 'created_at', 'meeting_status', 'response_date', 'reminder_date')
+    list_display = ('full_name', 'phone', 'neighborhood', 'consultant', 'real_estate', 'created_at', 'meeting_status', 'response_date', 'reminder_date')
     list_filter = ('meeting_status', 'neighborhood', 'consultant', 'source')
     search_fields = ('full_name', 'phone', 'notes')
     date_hierarchy = 'created_at'
@@ -16,7 +15,7 @@ class CustomerAdmin(admin.ModelAdmin):
     
     fieldsets = (
         (None, {
-            'fields': ('full_name', 'phone', 'neighborhood', 'consultant')
+            'fields': ('full_name', 'phone', 'neighborhood', 'consultant', 'real_estate')
         }),
         ('Görüşme Bilgileri', {
             'fields': ('meeting_status', 'meeting_result', 'response_date', 'reminder_date', 'source', 'notes')
@@ -38,4 +37,4 @@ class CustomerReminderAdmin(admin.ModelAdmin):
     list_filter = ('reminder_date', 'is_sent', 'is_read')
     search_fields = ('customer__full_name', 'message')
     date_hierarchy = 'reminder_date'
-    readonly_fields = ('created_at',) 
+    readonly_fields = ('created_at',)

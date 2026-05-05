@@ -1,38 +1,32 @@
-# -*- encoding: utf-8 -*-
-"""
-Koç Gayrimenkul Panel - Müşteriler URL Yapılandırması
-"""
+﻿# -*- encoding: utf-8 -*-
+"""Musteri URL rotalari"""
 
-from django.urls import path, re_path
+from django.urls import path
+from django.shortcuts import redirect
 from . import views
 
+
+def customer_reminders_placeholder(request):
+    return redirect('/admin/customers/customerreminder/')
+
+
 urlpatterns = [
-    # Müşteri listeleme ve filtreleme
+    # Musteri listesi (yeni) - kok route
     path('musteri/', views.customer_list, name='customer_list'),
-    
-    # Müşteri detay görünümü
-    path('musteri/<int:customer_id>/', views.customer_detail, name='customer_detail'),
-    
-    # Müşteri oluşturma görünümü
-    path('musteri/ekle/', views.customer_create, name='customer_create'),
-    
-    # Müşteri düzenleme görünümü
-    path('musteri/duzenle/<int:customer_id>/', views.customer_edit, name='customer_edit'),
-    
-    # Müşteri kayıt (Santral için)
-    path('musteri-kayit/', views.customer_register, name='customer_register'),
-    
-    # Müşteri hatırlatmaları sayfası
-    path('musteri/hatirlatmalar/', views.customer_reminders, name='customer_reminders'),
-    
-    # AJAX ile müşteri durumu güncelleme
-    path('musteri/durum/<int:customer_id>/', views.update_meeting_status, name='update_meeting_status'),
-    
-    # Mahalle yönetimi
-    path('mahalle/', views.neighborhood_list, name='neighborhood_list'),
-    path('mahalle/ekle/', views.neighborhood_edit, name='neighborhood_add'),
-    path('mahalle/duzenle/<int:neighborhood_id>/', views.neighborhood_edit, name='neighborhood_edit'),
-    
-    # Danışmanlar JSON
-    path('api/mahalle/<int:neighborhood_id>/danismanlar/', views.consultants_by_neighborhood, name='consultants_by_neighborhood'),
+    path('musteri/quick-create/', views.customer_quick_create, name='customer_quick_create'),
+    path('musteri/<int:pk>/quick-update/', views.customer_quick_update, name='customer_quick_update'),
+
+    # Musteri detay ve POST route'lari
+    path('<int:pk>/', views.customer_detail, name='customer_detail'),
+    path('<int:pk>/workflow/create/', views.customer_workflow_create, name='workflow_create'),
+    path('<int:pk>/offer/create/', views.customer_offer_create, name='offer_create'),
+    path('<int:pk>/note/create/', views.customer_note_create, name='note_create'),
+
+    # call_list URL'i apps/calls/urls.py'den geliyor (cagrilar/ -> calls.views.call_list)
+    # Eski sidebar placeholder'lar (admin'e yonlendiren)
+    path('hatirlatmalar/', views.customer_reminders_view, name='customer_reminders'),
+    path('mahalleler/', views.neighborhood_list, name='neighborhood_list'),
+    path('mahalleler/olustur/', views.neighborhood_create, name='neighborhood_create'),
+    path('mahalleler/<int:pk>/guncelle/', views.neighborhood_update, name='neighborhood_update'),
+    path('mahalleler/<int:pk>/sil/', views.neighborhood_delete, name='neighborhood_delete'),
 ]

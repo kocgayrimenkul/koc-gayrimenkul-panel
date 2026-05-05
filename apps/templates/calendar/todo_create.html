@@ -1,543 +1,91 @@
-{% extends "layouts/base.html" %}
-
-{% block title %} Yeni Görev Oluştur {% endblock %}
-
-{% block stylesheets %}
-{{ block.super }}
-<link rel="stylesheet" href="/static/assets/vendor/select2/dist/css/select2.min.css">
-<link rel="stylesheet" href="/static/assets/vendor/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" href="/static/assets/vendor/flatpickr/dist/themes/material_blue.css">
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+{% block title %}Yeni Görev{% endblock %}
+{% block extra_css %}
 <style>
-  /* Koç Gayrimenkul kurumsal renkleri */
-  :root {
-    --koc-red: #9d2235;
-    --koc-red-light: #b82e42;
-    --koc-red-dark: #7a1a29;
-    --koc-black: #212529;
-    --koc-red-rgb: 157, 34, 53;
-  }
-  
-  .bg-koc-red {
-    background-color: var(--koc-red) !important;
-  }
-  
-  .bg-gradient-koc-red {
-    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
-  }
-  
-  .text-koc-red {
-    color: var(--koc-red) !important;
-  }
-  
-  .btn-koc-red {
-    color: #fff;
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .btn-koc-red:hover {
-    color: #fff;
-    background-color: var(--koc-red-light);
-    border-color: var(--koc-red-light);
-  }
-  
-  .border-koc-red {
-    border-color: var(--koc-red) !important;
-  }
-  
-  /* Form elemanları */
-  .form-control:focus {
-    border-color: var(--koc-red-light);
-    box-shadow: 0 0 0 0.2rem rgba(var(--koc-red-rgb), 0.25);
-  }
-  
-  /* Kartlar */
-  .card {
-    border-radius: 0.75rem;
-    border: none;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    overflow: hidden;
-  }
-  
-  .card:hover {
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  }
-  
-  .card-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    background-color: #fff;
-  }
-  
-  .card-header h3 {
-    margin-bottom: 0;
-    font-weight: 600;
-  }
-  
-  /* Bilgi kutuları */
-  .info-box {
-    background-color: #f8f9fe;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-  }
-  
-  .info-box i {
-    font-size: 1.5rem;
-    margin-right: 10px;
-  }
-  
-  .info-box h5 {
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-  
-  .info-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #f8f9fe;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 15px;
-    flex-shrink: 0;
-  }
-  
-  .info-icon i {
-    font-size: 18px;
-  }
-  
-  /* İkon arkaplanları için düzeltme */
-  .info-box .bg-info, 
-  .info-box .bg-warning, 
-  .info-box .bg-success, 
-  .info-box .bg-danger {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50% !important;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
-  }
-  
-  /* Timeline kutuları */
-  .timeline {
-    position: relative;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  
-  .timeline-block {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 1.5rem;
-  }
-  
-  .timeline-block:last-child {
-    margin-bottom: 0;
-  }
-  
-  .timeline-step {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: #fff;
-  }
-  
-  .timeline-step i {
-    font-size: 1rem;
-  }
-  
-  .timeline-content {
-    margin-left: 1rem;
-    flex: 1;
-  }
-  
-  /* Form grupları */
-  .form-group label {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: #525f7f;
-  }
-  
-  .input-group-text {
-    background-color: #f8f9fe;
-    border: 1px solid #e9ecef;
-  }
-  
-  /* Select2 özelleştirmeleri */
-  .select2-container--default .select2-selection--single {
-    border: 1px solid #e9ecef;
-    border-radius: 0.375rem;
-    height: calc(1.5em + 1.25rem + 2px);
-    padding: 0.625rem 0.75rem;
-  }
-  
-  .select2-container--default .select2-selection--single .select2-selection__rendered {
-    line-height: 1.5;
-    color: #8898aa;
-    padding-left: 0;
-  }
-  
-  .select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: calc(1.5em + 1.25rem + 2px);
-  }
-  
-  .select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background-color: var(--koc-red);
-  }
-  
-  /* Select2 input grup düzeltmeleri */
-  .input-group .select2-container {
-    flex: 1 1 auto;
-    width: auto !important;
-  }
-  
-  .input-group .select2-container .select2-selection {
-    height: 100%;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-left: 0;
-  }
-  
-  .input-group-text + .select2-container .select2-selection {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
+  .fi { width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:.85rem;outline:none;transition:border-color .15s;background:#fff;color:#1e293b; }
+  .fi:focus { border-color:#9d2235;box-shadow:0 0 0 3px rgba(157,34,53,.1); }
+  textarea.fi { resize:vertical; }
+  label.lbl { font-size:.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px; }
+  .sec-title { font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin:22px 0 14px; }
+  .sec-title:first-child { margin-top:0; }
 </style>
-{% endblock stylesheets %}
-
+{% endblock %}
 {% block content %}
+<div class="px-6 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Yeni Görev</h1>
+      <p class="text-sm text-slate-500 mt-1">Ajanda / Görev Ekle</p>
+    </div>
+    <a href="{% url 'todo_list' %}" class="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">
+      <i class="fas fa-arrow-left"></i> Görev Listesi
+    </a>
+  </div>
 
-<div class="header bg-gradient-koc-red pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Yeni Görev</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="{% url 'todo_list' %}">Görevler</a></li>
-              <li class="breadcrumb-item active" aria-current="page">Yeni Görev</li>
-            </ol>
-          </nav>
+  <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-6 max-w-2xl">
+    <form method="post" action="{% url 'todo_create' %}">
+      {% csrf_token %}
+      <input type="hidden" name="redirect_url" value="todo_list">
+
+      <div class="sec-title">Temel Bilgiler</div>
+      <div class="mb-4">
+        <label class="lbl">Başlık <span class="text-red-500">*</span></label>
+        <input type="text" name="title" class="fi" placeholder="Görev başlığı" required>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="lbl">Öncelik</label>
+          <select name="priority" class="fi">
+            <option value="low">Düşük</option>
+            <option value="medium" selected>Orta</option>
+            <option value="high">Yüksek</option>
+          </select>
         </div>
-        <div class="col-lg-6 col-5 text-right">
-          <a href="{% url 'todo_list' %}" class="btn btn-sm btn-neutral">
-            <i class="fas fa-arrow-left mr-1"></i> Görev Listesine Dön
-          </a>
+        <div>
+          <label class="lbl">Bitiş Tarihi</label>
+          <input type="date" name="due_date" class="fi">
         </div>
       </div>
-    </div>
+
+      <div class="sec-title">Açıklama</div>
+      <div class="mb-4">
+        <textarea name="description" class="fi" rows="3" placeholder="Görev açıklaması..."></textarea>
+      </div>
+
+      <div class="sec-title">İlişkili Kayıtlar</div>
+      <div class="grid grid-cols-1 gap-4 mb-6">
+        {% if consultants %}
+        <div>
+          <label class="lbl">Danışman</label>
+          <select name="consultant" class="fi">
+            <option value="">-- Seçiniz --</option>
+            {% for c in consultants %}
+            <option value="{{ c.id }}">{{ c.get_full_name|default:c.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+        <div>
+          <label class="lbl">Müşteri</label>
+          <select name="customer" class="fi">
+            <option value="">-- Seçiniz --</option>
+            {% for c in customers %}
+            <option value="{{ c.id }}">{{ c.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" class="flex-1 bg-red-800 hover:bg-red-900 text-white font-semibold rounded-lg py-2.5 text-sm transition flex items-center justify-center gap-2">
+          <i class="fas fa-save"></i> Kaydet
+        </button>
+        <a href="{% url 'todo_list' %}" class="px-6 bg-slate-100 text-slate-600 font-semibold rounded-lg py-2.5 text-sm hover:bg-slate-200 transition flex items-center gap-2">
+          <i class="fas fa-times"></i> İptal
+        </a>
+      </div>
+    </form>
   </div>
 </div>
-
-<div class="container-fluid mt--6">
-  <div class="row">
-    <div class="col-lg-8">
-      <div class="card">
-        <div class="card-header">
-          <div class="row align-items-center">
-            <div class="col-8">
-              <h3 class="mb-0">Görev Bilgileri</h3>
-              <p class="text-sm text-muted mb-0">Sisteme yeni bir görev ekleyin</p>
-            </div>
-            <div class="col-4 text-right">
-              <span class="badge badge-koc-red">Yeni</span>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <form method="post" action="{% url 'todo_create' %}" id="todo-form">
-            {% csrf_token %}
-            <input type="hidden" name="redirect_url" value="todo_list">
-            
-            <h6 class="heading-small text-muted mb-4">Temel Bilgiler</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="form-group">
-                    <label class="form-control-label" for="title">Başlık <span class="text-danger">*</span></label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-heading"></i></span>
-                      </div>
-                      <input type="text" id="title" name="title" class="form-control" placeholder="Görev başlığı" required>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="priority">Öncelik</label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-flag"></i></span>
-                      </div>
-                      <select id="priority" name="priority" class="form-control">
-                        {% for value, label in priority_choices %}
-                          <option value="{{ value }}">{{ label }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="due_date">Son Tarih</label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                      </div>
-                      <input type="date" id="due_date" name="due_date" class="form-control datepicker">
-                    </div>
-                    <small class="form-text text-muted">İsteğe bağlı</small>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <hr class="my-4">
-            
-            <h6 class="heading-small text-muted mb-4">Detaylar</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="form-group">
-                    <label class="form-control-label" for="description">Açıklama</label>
-                    <div class="input-group input-group-merge">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-align-left"></i></span>
-                      </div>
-                      <textarea id="description" name="description" class="form-control" rows="4" placeholder="Görev açıklaması"></textarea>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <hr class="my-4">
-            
-            <h6 class="heading-small text-muted mb-4">Atama Bilgileri</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="form-group">
-                    <label class="form-control-label" for="consultant">Atanan Danışman</label>
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                      </div>
-                      <select id="consultant" name="consultant" class="form-control select2">
-                        <option value="">Seçiniz</option>
-                        {% for user in consultants %}
-                          <option value="{{ user.id }}">{{ user.get_full_name }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <hr class="my-4">
-            
-            <h6 class="heading-small text-muted mb-4">İlişkili Kayıtlar</h6>
-            <div class="pl-lg-4">
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="customer">Müşteri</label>
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
-                      </div>
-                      <select id="customer" name="customer" class="form-control select2">
-                        <option value="">Seçiniz</option>
-                        {% for customer in customers %}
-                          <option value="{{ customer.id }}">{{ customer.full_name }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="form-group">
-                    <label class="form-control-label" for="property">Gayrimenkul</label>
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="fas fa-home"></i></span>
-                      </div>
-                      <select id="property" name="property" class="form-control select2">
-                        <option value="">Seçiniz</option>
-                        {% for property in properties %}
-                          <option value="{{ property.id }}">{{ property.title }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <hr class="my-4">
-            
-            <div class="row justify-content-center">
-              <div class="col-md-6">
-                <a href="{% url 'todo_list' %}" class="btn btn-secondary btn-block">
-                  <i class="fas fa-times mr-2"></i> İptal
-                </a>
-              </div>
-              <div class="col-md-6">
-                <button type="submit" class="btn btn-koc-red btn-block">
-                  <i class="fas fa-save mr-2"></i> Kaydet
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-lg-4">
-      <div class="card">
-        <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <h3 class="mb-0">Öncelik Seviyeleri</h3>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="timeline timeline-one-side" data-timeline-content="axis">
-            <div class="timeline-block">
-              <span class="timeline-step badge-danger">
-                <i class="ni ni-notification-70"></i>
-              </span>
-              <div class="timeline-content">
-                <h5 class="mb-1">Yüksek Öncelikli</h5>
-                <p class="text-sm mb-0">Acil ve kritik görevler için kullanılır. Gecikme kabul edilemez.</p>
-              </div>
-            </div>
-            
-            <div class="timeline-block">
-              <span class="timeline-step badge-warning">
-                <i class="ni ni-bell-55"></i>
-              </span>
-              <div class="timeline-content">
-                <h5 class="mb-1">Orta Öncelikli</h5>
-                <p class="text-sm mb-0">Önemli ancak acil olmayan görevler için kullanılır.</p>
-              </div>
-            </div>
-            
-            <div class="timeline-block">
-              <span class="timeline-step badge-info">
-                <i class="ni ni-time-alarm"></i>
-              </span>
-              <div class="timeline-content">
-                <h5 class="mb-1">Düşük Öncelikli</h5>
-                <p class="text-sm mb-0">Zaman kısıtlaması olmayan ve acil olmayan görevler için kullanılır.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Bilgilendirme Kartı -->
-      <div class="card mt-4">
-        <div class="card-header bg-transparent">
-          <div class="row align-items-center">
-            <div class="col">
-              <h3 class="mb-0">Bilgilendirme</h3>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <!-- Bilgilendirme kutusu 1 -->
-          <div class="info-box d-flex align-items-start mb-4">
-            <div class="info-icon bg-info">
-              <i class="fas fa-info text-white"></i>
-            </div>
-            <div>
-              <h5 class="text-info">Görev Bilgileri</h5>
-              <p class="text-sm mb-0">
-                Oluşturduğunuz görevler yapılacaklar listenizde görünecektir. Son tarihi geldiğinde hatırlatma alacaksınız.
-              </p>
-            </div>
-          </div>
-          
-          <!-- Bilgilendirme kutusu 2 -->
-          <div class="info-box d-flex align-items-start mb-4">
-            <div class="info-icon bg-warning">
-              <i class="fas fa-exclamation text-white"></i>
-            </div>
-            <div>
-              <h5 class="text-warning">Atama Bilgileri</h5>
-              <p class="text-sm mb-0">
-                Danışman seçerseniz, görev ilgili danışmanın görev listesinde de görünecektir. Danışman görevi tamamlandığında bildirim alacaksınız.
-              </p>
-            </div>
-          </div>
-          
-          <!-- Bilgilendirme kutusu 3 -->
-          <div class="info-box d-flex align-items-start">
-            <div class="info-icon bg-success">
-              <i class="fas fa-check text-white"></i>
-            </div>
-            <div>
-              <h5 class="text-success">İlişkili Kayıtlar</h5>
-              <p class="text-sm mb-0">
-                Müşteri ve gayrimenkul seçerek, görevin hangi işlemlerle ilgili olduğunu belirtebilirsiniz. Bu ilişkilendirme raporlamalarda faydalı olacaktır.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-{% include "includes/footer.html" %}
-
-{% endblock content %}
-
-{% block javascripts %}
-{{ block.super }}
-<script src="/static/assets/vendor/select2/dist/js/select2.min.js"></script>
-<script src="/static/assets/vendor/flatpickr/dist/flatpickr.min.js"></script>
-<script src="/static/assets/vendor/flatpickr/dist/l10n/tr.js"></script>
-
-<script>
-  $(document).ready(function() {
-    // Select2 için ayarlar
-    $('.select2').select2({
-      placeholder: "Seçiniz",
-      allowClear: true,
-      language: "tr",
-      dropdownParent: $('body'),
-      width: '100%'
-    });
-    
-    // Flatpickr tarih seçici için ayarlar
-    $(".datepicker").flatpickr({
-      dateFormat: "Y-m-d",
-      locale: "tr",
-      altInput: true,
-      altFormat: "d F Y",
-      minDate: "today"
-    });
-  });
-</script>
-{% endblock javascripts %} 
+{% endblock %}

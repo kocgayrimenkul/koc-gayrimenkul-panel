@@ -38,6 +38,9 @@ class LeadNoteInline(admin.TabularInline):
     extra = 0
     readonly_fields = ['created_at']
     fields = ['note_type', 'title', 'content', 'is_important', 'created_by', 'created_at']
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('created_by')
 
 
 class StageTransitionInline(admin.TabularInline):
@@ -110,12 +113,25 @@ class LeadAdmin(admin.ModelAdmin):
 
 @admin.register(LeadNote)
 class LeadNoteAdmin(admin.ModelAdmin):
-    list_display = ['lead', 'note_type', 'title', 'created_by', 'is_important', 'created_at']
+    list_display = ['lead_display', 'note_type', 'title', 'created_by', 'is_important', 'created_at']
     list_filter = ['note_type', 'is_important', 'created_at']
     search_fields = ['lead__customer_name', 'title', 'content']
     ordering = ['-created_at']
     readonly_fields = ['created_at']
     
+    def lead_display(self, obj):
+        """Güvenli lead gösterimi"""
+        try:
+            if obj.lead and obj.lead.customer_name:
+                return obj.lead.customer_name
+            elif obj.lead:
+                return f"Lead #{obj.lead.pk}"
+            else:
+                return "Bilinmeyen Lead"
+        except Exception:
+            return "Hata"
+    lead_display.short_description = 'Lead'
+
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('lead', 'created_by')
 

@@ -1,692 +1,525 @@
-# -*- encoding: utf-8 -*-
-"""
-Koç Gayrimenkul Panel - Müşteriler Görünümleri
-"""
-
-from django.shortcuts import render, redirect, get_object_or_404
+﻿# -*- encoding: utf-8 -*-
+"""Musteri Detay View"""
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
+from django.contrib.auth import get_user_model
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, JsonResponse
-from django.template import loader
-from django.urls import reverse
-from django.db.models import Q
 from django.contrib import messages
-from .models import Customer, Neighborhood, CustomerReminder
-from apps.portfolio.models import Property
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.utils import timezone
-from datetime import datetime, timedelta, date
-from django.db.models import Count
-from django.contrib.auth.models import Group
-from apps.authentication.models import CustomUser
-from apps.employees.models import EmployeeProfile
-from apps.employees.decorators import (
-    can_view_customers,
-    can_add_customers,
-    can_edit_customers,
-    can_delete_customers,
-    require_customer_permission
+
+from .models import (
+    Customer,
+    Neighborhood, CustomerNote, CustomerTask, CustomerWorkflow,
+    CustomerOffer, CustomerDemand, CustomerSmsLog, CustomerWhatsappLog,
+    CustomerActivity, CustomerReminder,
 )
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from apps.portfolio.models import Property
 
-def get_user_role(user):
-    """Kullanıcının rolünü döndürür"""
-    # Superuser ise admin rolünü döndür
-    if user.is_superuser:
-        return 'admin'
-    
+
+@login_required
+def customer_detail(request, pk):
+    customer = get_object_or_404(
+        Customer.objects.select_related('consultant', 'neighborhood', 'real_estate', 'financial_info'),
+        pk=pk,
+    )
+
+    notes_qs = customer.customer_notes.select_related('user').all()
+    tasks_qs = customer.tasks.select_related('assigned_to').all()
+    notes_stats = {
+        'total': notes_qs.count() + tasks_qs.count(),
+        'reminders': notes_qs.filter(note_type='hatirlatici').count(),
+        'completed': tasks_qs.filter(status='tamamlandi').count(),
+        'crm_comments': notes_qs.filter(note_type='yorum').count(),
+        'tasks': tasks_qs.count(),
+    }
+    notes = list(notes_qs[:50])
+    tasks = list(tasks_qs[:50])
+
+    workflows_qs = customer.workflows.select_related('created_by', 'related_property').all()
+    workflow_stats = {
+        'total': workflows_qs.count(),
+        'active': workflows_qs.filter(status='aktif').count(),
+        'completed': workflows_qs.filter(status='tamamlandi').count(),
+        'overdue': workflows_qs.filter(status='gecikmis').count(),
+        'archived': workflows_qs.filter(status='arsivlendi').count(),
+    }
+    workflows = list(workflows_qs[:50])
+
+    offers_qs = customer.offers.select_related('related_property', 'related_property__neighborhood', 'created_by').all()
+    offer_stats = {
+        'total': offers_qs.count(),
+        'pending': offers_qs.filter(status='bekliyor').count(),
+        'accepted': offers_qs.filter(status='kabul').count(),
+        'rejected': offers_qs.filter(status='red').count(),
+        'expired': offers_qs.filter(status='suresi_doldu').count(),
+    }
+    offers = list(offers_qs[:50])
+
+    demands_qs = customer.demands.all()
+    demand_stats = {
+        'total': demands_qs.count(),
+        'active': demands_qs.filter(status='aktif').count(),
+        'passive': demands_qs.filter(status='pasif').count(),
+        'completed': demands_qs.filter(status='tamamlandi').count(),
+        'cancelled': demands_qs.filter(status='iptal').count(),
+    }
+    demands = list(demands_qs)
+
+    call_logs_qs = customer.call_logs.select_related('user').all()
+    sms_logs_qs = customer.sms_logs.select_related('user').all()
+    whatsapp_logs_qs = customer.whatsapp_logs.select_related('user').all()
+
+    call_stats = {
+        'total': call_logs_qs.count(),
+        'answered': call_logs_qs.filter(status__in=['answered', 'completed']).count(),
+        'missed': call_logs_qs.filter(status='missed').count(),
+    }
+    sms_stats = {
+        'total': sms_logs_qs.count(),
+        'sent': sms_logs_qs.filter(status='gonderildi').count(),
+        'failed': sms_logs_qs.filter(status='basarisiz').count(),
+    }
+    wa_stats = {
+        'total': whatsapp_logs_qs.count(),
+        'sent': whatsapp_logs_qs.filter(status='gonderildi').count(),
+        'failed': whatsapp_logs_qs.filter(status='basarisiz').count(),
+    }
+    action_stats = {
+        'total': tasks_qs.count(),
+        'open': tasks_qs.filter(status='acik').count(),
+        'completed': tasks_qs.filter(status='tamamlandi').count(),
+    }
+
+    call_logs = list(call_logs_qs[:20])
+    sms_logs = list(sms_logs_qs[:20])
+    whatsapp_logs = list(whatsapp_logs_qs[:20])
+    activities = list(customer.activities.select_related('user').all()[:50])
+    available_properties = Property.objects.filter(is_active=True).order_by('-created_at')[:100]
+
+    context = {
+        'customer': customer,
+        'notes': notes, 'tasks': tasks, 'notes_stats': notes_stats,
+        'workflows': workflows, 'workflow_stats': workflow_stats,
+        'offers': offers, 'offer_stats': offer_stats,
+        'demands': demands, 'demand_stats': demand_stats,
+        'call_logs': call_logs, 'sms_logs': sms_logs, 'whatsapp_logs': whatsapp_logs,
+        'call_stats': call_stats, 'sms_stats': sms_stats, 'wa_stats': wa_stats, 'action_stats': action_stats,
+        'activities': activities,
+        'available_properties': available_properties,
+        'workflow_type_choices': CustomerWorkflow.WORKFLOW_TYPE_CHOICES,
+        'priority_choices': CustomerWorkflow.PRIORITY_CHOICES,
+        'currency_choices': CustomerOffer.CURRENCY_CHOICES,
+    }
+    return render(request, 'customers/customer_detail.html', context)
+
+
+@login_required
+@require_POST
+def customer_workflow_create(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    title = request.POST.get('title', '').strip()
+    if not title:
+        messages.error(request, "Baslik zorunludur.")
+        return redirect('customer_detail', pk=pk)
+    CustomerWorkflow.objects.create(
+        customer=customer, created_by=request.user, title=title,
+        workflow_type=request.POST.get('workflow_type', 'diger'),
+        priority=request.POST.get('priority', 'normal'),
+        description=request.POST.get('description', '').strip(),
+        due_date=request.POST.get('due_date') or None,
+        related_property_id=request.POST.get('property_id') or None,
+    )
+    CustomerActivity.objects.create(customer=customer, user=request.user, activity_type='surec_baslatildi', source_label='Manuel', description=f"Surec baslatildi: {title}")
+    messages.success(request, "Surec basariyla baslatildi.")
+    return redirect('customer_detail', pk=pk)
+
+
+@login_required
+@require_POST
+def customer_offer_create(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    property_id = request.POST.get('property_id')
+    if not property_id:
+        messages.error(request, "Portfoy secimi zorunludur.")
+        return redirect('customer_detail', pk=pk)
     try:
-        return user.employee_profile.role
-    except EmployeeProfile.DoesNotExist:
-        return None
+        offer_price_decimal = float(request.POST.get('offer_price', '0'))
+    except (TypeError, ValueError):
+        messages.error(request, "Gecerli bir teklif fiyati giriniz.")
+        return redirect('customer_detail', pk=pk)
+    CustomerOffer.objects.create(
+        customer=customer, related_property_id=property_id, created_by=request.user,
+        title=request.POST.get('title', '').strip(),
+        offer_price=offer_price_decimal,
+        currency=request.POST.get('currency', 'TRY'),
+        notes=request.POST.get('notes', '').strip(),
+        matterport_url=request.POST.get('matterport_url', '').strip() or None,
+    )
+    CustomerActivity.objects.create(customer=customer, user=request.user, activity_type='teklif_olusturuldu', source_label='Manuel', description=f"Yeni teklif: {offer_price_decimal}")
+    messages.success(request, "Teklif basariyla olusturuldu.")
+    return redirect('customer_detail', pk=pk)
 
-# Context Processor - Müşteri hatırlatmalarını tüm şablonlarda kullanılabilir hale getirir
+
+@login_required
+@require_POST
+def customer_note_create(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    content = request.POST.get('content', '').strip()
+    if not content:
+        return JsonResponse({'success': False, 'error': 'Icerik zorunludur.'}, status=400)
+    note = CustomerNote.objects.create(
+        customer=customer, user=request.user, content=content,
+        note_type=request.POST.get('note_type', 'not'),
+        priority=request.POST.get('priority', 'normal'),
+    )
+    CustomerActivity.objects.create(customer=customer, user=request.user, activity_type='not_eklendi', source_label='Manuel', description=f"Not eklendi: {content[:60]}")
+    return JsonResponse({'success': True, 'note': {'id': note.id, 'content': note.content, 'created_at': note.created_at.strftime('%d.%m.%Y %H:%M')}})
+
+
 def customer_reminders_processor(request):
-    """Giriş yapmış kullanıcının müşteri hatırlatmalarını context'e ekler"""
-    if hasattr(request, 'user') and request.user.is_authenticated:
-        today = timezone.now().date()
-        
-        # Kullanıcının rolünü al
-        role = get_user_role(request.user)
-        
-        # Bugün ve gelecekteki hatırlatmaları getir
-        if request.user.is_superuser or role in ['admin', 'manager']:
-            # Yöneticiler ve müdürler tüm hatırlatmaları görebilir
-            reminders = CustomerReminder.objects.filter(
-                reminder_date__gte=today,
-                is_sent=False
-            ).order_by('reminder_date')[:10]  # Sadece ilk 10 hatırlatma
-        else:
-            # Danışmanlar sadece kendi müşterilerine ait hatırlatmaları görebilir
-            reminders = CustomerReminder.objects.filter(
-                reminder_date__gte=today,
-                is_sent=False,
-                customer__consultant=request.user
-            ).order_by('reminder_date')[:10]  # Sadece ilk 10 hatırlatma
-        
-        return {
-            'customer_reminders': reminders
-        }
-    return {
-        'customer_reminders': []
-    }
-
-@login_required(login_url="/login/")
-@can_view_customers
-def customer_list(request):
-    """Müşteri listesi görünümü"""
-    
-    role = get_user_role(request.user)
-    
-    # Role göre müşterileri getir
-    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
-        # Yönetici, Müdür ve Santral tüm müşterileri görebilir
-        customers = Customer.objects.all()
-    else:
-        # Danışman sadece kendi mahallelerindeki müşterileri görebilir
-        consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
-        customers = Customer.objects.filter(neighborhood__in=consultant_neighborhoods)
-    
-    # Filtreleme işlemleri
-    filter_status = request.GET.get('status', '')
-    if filter_status:
-        customers = customers.filter(meeting_status=filter_status)
-    
-    filter_date = request.GET.get('date', '')
-    if filter_date == 'today':
-        today = timezone.now().date()
-        customers = customers.filter(created_at__date=today)
-    elif filter_date == 'week':
-        week_ago = timezone.now().date() - timedelta(days=7)
-        customers = customers.filter(created_at__date__gte=week_ago)
-    elif filter_date == 'month':
-        month_ago = timezone.now().date() - timedelta(days=30)
-        customers = customers.filter(created_at__date__gte=month_ago)
-    
-    # Geri dönüş tarihi filtreleme
-    filter_response = request.GET.get('response', '')
-    today = timezone.now().date()
-    if filter_response == 'yes':
-        customers = customers.filter(response_date__isnull=False)
-    elif filter_response == 'no':
-        customers = customers.filter(response_date__isnull=True)
-    elif filter_response == 'today':
-        customers = customers.filter(response_date=today)
-    elif filter_response == 'week':
-        week_ago = today - timedelta(days=7)
-        customers = customers.filter(response_date__gte=week_ago, response_date__lte=today)
-    
-    # Hatırlatma tarihi filtreleme
-    has_reminder = request.GET.get('has_reminder', '') == 'true'
-    if has_reminder:
-        customers = customers.filter(reminder_date__isnull=False)
-    
-    # Mahalle filtresi
-    if role in ['admin', 'manager', 'secretary']:
-        neighborhoods = Neighborhood.objects.all()
-    else:
-        neighborhoods = Neighborhood.objects.filter(consultant=request.user)
-    
-    filter_neighborhood = request.GET.get('neighborhood', '')
-    if filter_neighborhood:
-        if role == 'consultant':
-            if neighborhoods.filter(id=filter_neighborhood).exists():
-                customers = customers.filter(neighborhood_id=filter_neighborhood)
-        else:
-            customers = customers.filter(neighborhood_id=filter_neighborhood)
-    
-    # Kaynak filtresi
-    filter_source = request.GET.get('source', '')
-    if filter_source:
-        customers = customers.filter(source=filter_source)
-    
-    # İletişim türü filtresi
-    filter_contact_type = request.GET.get('contact_type', '')
-    if filter_contact_type:
-        customers = customers.filter(contact_type=filter_contact_type)
-    
-    # Sıralama
-    sort_by = request.GET.get('sort', '-created_at')  # Varsayılan olarak en yeni kayıtlar
-    customers = customers.order_by(sort_by)
-    
-    # İstatistikler
-    all_customers = customers
-    olumlu_musteri_sayisi = all_customers.filter(meeting_status='olumlu').count()
-    olumsuz_musteri_sayisi = all_customers.filter(meeting_status='olumsuz').count()
-    bekleyen_musteri_sayisi = all_customers.filter(meeting_status='bekliyor').count()
-    
-    # Müşteri kaynakları için istatistik
-    kaynak_istatistikleri = all_customers.values('source').annotate(toplam=Count('id')).order_by('-toplam')
-    
-    # Pagination
-    page = request.GET.get('page', 1)
-    paginator = Paginator(customers, 9)  # Her sayfada 9 müşteri
-    
+    if not request.user.is_authenticated:
+        return {'customer_reminders': [], 'customer_reminders_count': 0}
     try:
-        customers = paginator.page(page)
-    except PageNotAnInteger:
-        # Eğer sayfa bir tamsayı değilse, ilk sayfayı göster
-        customers = paginator.page(1)
-    except EmptyPage:
-        # Eğer sayfa sayıları dışında bir değerse, son sayfayı göster
-        customers = paginator.page(paginator.num_pages)
-    
-    # URL parametrelerini alma (pagination için)
-    query_params = request.GET.copy()
-    if 'page' in query_params:
-        del query_params['page']
-    
-    context = {
-        'segment': 'musteri',
-        'customers': customers,
-        'neighborhoods': neighborhoods,
-        'filter_status': filter_status,
-        'filter_date': filter_date,
-        'filter_response': filter_response,
-        'filter_neighborhood': filter_neighborhood,
-        'filter_source': filter_source,
-        'filter_contact_type': filter_contact_type,
-        'has_reminder': has_reminder,
-        'olumlu_musteri_sayisi': olumlu_musteri_sayisi,
-        'olumsuz_musteri_sayisi': olumsuz_musteri_sayisi,
-        'bekleyen_musteri_sayisi': bekleyen_musteri_sayisi,
-        'kaynak_istatistikleri': kaynak_istatistikleri,
-        'user_role': role,
-        'query_params': query_params.urlencode(),
-        'sort_by': sort_by,
-    }
-    
-    html_template = loader.get_template('customers/customer_list.html')
-    return HttpResponse(html_template.render(context, request))
+        reminders = CustomerReminder.objects.filter(customer__consultant=request.user, is_read=False).select_related('customer')[:10]
+        return {'customer_reminders': list(reminders), 'customer_reminders_count': reminders.count()}
+    except Exception:
+        return {'customer_reminders': [], 'customer_reminders_count': 0}
 
-@login_required(login_url="/login/")
-@can_view_customers
-def customer_detail(request, customer_id):
-    """Müşteri detay sayfası"""
-    
-    customer = get_object_or_404(Customer, id=customer_id)
-    role = get_user_role(request.user)
-    
-    # Yetki kontrolü
-    if not request.user.is_superuser and role not in ['admin', 'manager', 'secretary']:
-        if not Neighborhood.objects.filter(consultant=request.user, id=customer.neighborhood.id).exists():
-            messages.error(request, "Bu müşteri kaydını görüntüleme yetkiniz yok.")
-            return redirect('customer_list')
-    
-    # Görüşme sonucu güncelleme
-    if request.method == 'POST':
-        if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
-            messages.error(request, "Müşteri bilgilerini güncelleme yetkiniz yok.")
-            return redirect('customer_list')
-            
-        meeting_result = request.POST.get('meeting_result', '')
-        meeting_status = request.POST.get('meeting_status', 'bekliyor')
-        response_date_str = request.POST.get('response_date', '')
-        
-        customer.meeting_result = meeting_result
-        customer.meeting_status = meeting_status
-        
-        if response_date_str:
-            try:
-                response_date = timezone.datetime.strptime(response_date_str, '%Y-%m-%d').date()
-                customer.response_date = response_date
-            except ValueError:
-                messages.warning(request, "Geri dönüş tarihi geçerli bir format değil. Tarih bilgisi güncellenmedi.")
-        else:
-            customer.response_date = None
-            
-        customer.save()
-        messages.success(request, "Görüşme sonucu başarıyla kaydedildi.")
-        return redirect('customer_list')
-    
-    context = {
-        'segment': 'musteri',
-        'customer': customer,
-        'user_role': role,
-    }
-    
-    html_template = loader.get_template('customers/customer_detail.html')
-    return HttpResponse(html_template.render(context, request))
 
-@login_required(login_url="/login/")
-@can_edit_customers
-def customer_edit(request, customer_id):
-    """Müşteri düzenleme görünümü"""
-    
-    customer = get_object_or_404(Customer, id=customer_id)
-    role = get_user_role(request.user)
-    
-    # Yetki kontrolü
-    if not request.user.is_superuser and role not in ['admin', 'manager']:
-        if not Neighborhood.objects.filter(consultant=request.user, id=customer.neighborhood.id).exists():
-            messages.error(request, "Bu müşteri kaydını düzenleme yetkiniz yok.")
-            return redirect('customer_list')
-    
-    # Erişilebilir mahalleler
-    if request.user.is_superuser or role in ['admin', 'manager']:
-        neighborhoods = Neighborhood.objects.all().order_by('name')
-    else:
-        neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
-    
-    # Daire tipi portföyleri getir
-    properties = Property.objects.filter(is_active=True).order_by('-created_at')
-    
-    if request.method == 'POST':
-        full_name = request.POST.get('full_name', '')
-        phone = request.POST.get('phone', '')
-        neighborhood_id = request.POST.get('neighborhood', '')
-        source = request.POST.get('source', '')
-        notes = request.POST.get('notes', '')
-        meeting_status = request.POST.get('meeting_status', 'bekliyor')
-        response_date_str = request.POST.get('response_date', '')
-        property_id = request.POST.get('property_id', '')
-        reminder_date_str = request.POST.get('reminder_date', '')
-        contact_type = request.POST.get('contact_type', customer.contact_type)
-        
-        # Validation
-        if not full_name or not phone or not neighborhood_id:
-            messages.error(request, "Lütfen tüm zorunlu alanları doldurun.")
-            return render(request, 'customers/customer_edit.html', {
-                'segment': 'musteri',
-                'customer': customer,
-                'neighborhoods': neighborhoods,
-                'properties': properties,
-                'user_role': role,
-            })
-        
-        try:
-            # Danışman sadece kendi mahallelerindeki müşterileri düzenleyebilir
-            if role == 'consultant':
-                if not neighborhoods.filter(id=neighborhood_id).exists():
-                    messages.error(request, "Bu mahalleye müşteri atama yetkiniz yok.")
-                    return redirect('customer_list')
-            
-            neighborhood = Neighborhood.objects.get(id=neighborhood_id)
-            
-            # Müşteriyi güncelle
-            customer.full_name = full_name
-            customer.phone = phone
-            customer.neighborhood = neighborhood
-            customer.source = source
-            customer.notes = notes
-            customer.meeting_status = meeting_status
-            customer.contact_type = contact_type
-            
-            # İlgilendiği gayrimenkulü güncelle
-            if property_id:
-                try:
-                    property_obj = Property.objects.get(id=property_id)
-                    customer.property = property_obj
-                except Property.DoesNotExist:
-                    customer.property = None
-            else:
-                customer.property = None
-            
-            if response_date_str:
-                try:
-                    response_date = timezone.datetime.strptime(response_date_str, '%Y-%m-%d').date()
-                    customer.response_date = response_date
-                except ValueError:
-                    messages.warning(request, "Geri dönüş tarihi geçerli bir format değil. Tarih bilgisi güncellenmedi.")
-            else:
-                customer.response_date = None
-            
-            if reminder_date_str:
-                try:
-                    reminder_date = timezone.datetime.strptime(reminder_date_str, '%Y-%m-%d').date()
-                    customer.reminder_date = reminder_date
-                except ValueError:
-                    messages.warning(request, "Hatırlatma tarihi geçerli bir format değil.")
-            else:
-                customer.reminder_date = None
-                
-            customer.save()
-            
-            messages.success(request, "Müşteri bilgileri başarıyla güncellendi.")
-            return redirect('customer_detail', customer_id=customer.id)
-        
-        except Exception as e:
-            messages.error(request, f"Bir hata oluştu: {str(e)}")
-    
-    context = {
-        'segment': 'musteri',
-        'customer': customer,
-        'neighborhoods': neighborhoods,
-        'properties': properties,
-        'user_role': role,
-    }
-    
-    html_template = loader.get_template('customers/customer_edit.html')
-    return HttpResponse(html_template.render(context, request))
+def _kullanici_tum_musterileri_gorebilir(user):
+    """Yönetici, Santral veya Santral/Sekreter rolündeki kullanıcılar tüm müşterileri görebilir."""
+    if user.is_superuser:
+        return True
+    return user.groups.filter(name__in=['Yönetici', 'Santral', 'Santral/Sekreter']).exists()
 
-@login_required(login_url="/login/")
-@can_add_customers
-def customer_register(request):
-    """Müşteri kayıt sayfası (Genel site üzerinden)"""
-    
-    role = get_user_role(request.user)
-    
-    # Sadece Yönetici, Müdür ve Santral erişebilir
-    if not request.user.is_superuser and role not in ['admin', 'manager', 'secretary']:
-        messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
-        return redirect('home')
-    
-    neighborhoods = Neighborhood.objects.all().order_by('name')
-    
-    if request.method == 'POST':
-        full_name = request.POST.get('full_name', '')
-        phone = request.POST.get('phone', '')
-        neighborhood_id = request.POST.get('neighborhood', '')
-        source = request.POST.get('source', '')
-        
-        # Validation
-        if not full_name or not phone or not neighborhood_id:
-            messages.error(request, "Lütfen tüm zorunlu alanları doldurun.")
-            return render(request, 'customers/customer_register.html', {
-                'segment': 'musteri_kayit',
-                'neighborhoods': neighborhoods,
-                'form_data': request.POST,
-                'user_role': role,
-            })
-        
-        try:
-            neighborhood = Neighborhood.objects.get(id=neighborhood_id)
-            
-            # Yeni müşteri oluştur
-            customer = Customer(
-                full_name=full_name,
-                phone=phone,
-                neighborhood=neighborhood,
-                source=source,
-            )
-            customer.save()
-            
-            messages.success(request, "Müşteri başarıyla kaydedildi ve ilgili danışmana atandı.")
-            return redirect('customer_register')
-        
-        except Exception as e:
-            messages.error(request, f"Bir hata oluştu: {str(e)}")
-    
-    context = {
-        'segment': 'musteri_kayit',
-        'neighborhoods': neighborhoods,
-        'user_role': role,
-    }
-    
-    html_template = loader.get_template('customers/customer_register.html')
-    return HttpResponse(html_template.render(context, request))
 
-@login_required(login_url="/login/")
-@can_add_customers
-def customer_create(request):
-    """Müşteri oluşturma görünümü"""
-    
-    role = get_user_role(request.user)
-    
-    # Sadece Yönetici, Müdür ve Danışman erişebilir
-    if not request.user.is_superuser and role not in ['admin', 'manager', 'consultant']:
-        messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
-        return redirect('home')
-    
-    # Erişilebilir mahalleler
-    if request.user.is_superuser or role in ['admin', 'manager']:
-        neighborhoods = Neighborhood.objects.all().order_by('name')
-    else:
-        neighborhoods = Neighborhood.objects.filter(consultant=request.user).order_by('name')
-    
-    # Tüm aktif portföyleri getir (daire, işyeri, dublex vs.)
-    properties = Property.objects.filter(is_active=True).order_by('-created_at')
-    
-    if request.method == 'POST':
-        full_name = request.POST.get('full_name', '')
-        phone = request.POST.get('phone', '')
-        property_id = request.POST.get('property_id', '')
-        neighborhood_id = request.POST.get('neighborhood', '')
-        source = request.POST.get('source', '')
-        contact_type = request.POST.get('contact_type', 'bilgi_alma')
-        notes = request.POST.get('notes', '')
-        reminder_date_str = request.POST.get('reminder_date', '')
-        
-        # Validation
-        if not full_name or not phone or not neighborhood_id or not source:
-            messages.error(request, "Lütfen tüm zorunlu alanları doldurun.")
-            return render(request, 'customers/customer_create.html', {
-                'segment': 'musteri_ekle',
-                'neighborhoods': neighborhoods,
-                'properties': properties,
-                'form_data': request.POST,
-                'user_role': role,
-            })
-        
-        try:
-            # Danışman sadece kendi mahallelerindeki müşterileri ekleyebilir
-            if role == 'consultant':
-                if not neighborhoods.filter(id=neighborhood_id).exists():
-                    messages.error(request, "Bu mahalleye müşteri ekleme yetkiniz yok.")
-                    return redirect('customer_list')
-            
-            neighborhood = Neighborhood.objects.get(id=neighborhood_id)
-            
-            # Yeni müşteri oluştur
-            customer = Customer(
-                full_name=full_name,
-                phone=phone,
-                neighborhood=neighborhood,
-                consultant=request.user,
-                source=source,
-                contact_type=contact_type,
-                notes=notes,
-                meeting_status='bekliyor',
-            )
-            
-            # Seçilen gayrimenkul varsa ekle
-            if property_id:
-                try:
-                    property_obj = Property.objects.get(id=property_id)
-                    customer.property = property_obj
-                except Property.DoesNotExist:
-                    pass
-            
-            # Hatırlatma tarihi varsa ekle
-            if reminder_date_str:
-                try:
-                    reminder_date = timezone.datetime.strptime(reminder_date_str, '%Y-%m-%d').date()
-                    customer.reminder_date = reminder_date
-                except ValueError:
-                    pass
-            
-            customer.save()
-            
-            messages.success(request, "Müşteri başarıyla oluşturuldu.")
-            return redirect('customer_list')
-        
-        except Exception as e:
-            messages.error(request, f"Bir hata oluştu: {str(e)}")
-    
-    context = {
-        'segment': 'musteri_ekle',
-        'neighborhoods': neighborhoods,
-        'properties': properties,
-        'user_role': role,
-    }
-    
-    html_template = loader.get_template('customers/customer_create.html')
-    return HttpResponse(html_template.render(context, request))
+@login_required
+def customer_list(request):
+    """Musteri listesi sayfasi"""
+    qs = Customer.objects.select_related('consultant', 'neighborhood', 'real_estate').prefetch_related(
+        'offers__related_property__neighborhood'
+    ).all()
 
-@login_required(login_url="/login/")
-def neighborhood_list(request):
-    """Mahalle listesi görüntüleme"""
-    
-    role = get_user_role(request.user)
-    
-    # Sadece Yönetici ve Müdür erişebilir
-    if role not in ['admin', 'manager']:
-        messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
-        return redirect('home')
-    
-    neighborhoods = Neighborhood.objects.all().order_by('name')
-    
-    context = {
-        'segment': 'mahalleler',
-        'neighborhoods': neighborhoods,
-        'user_role': role,
-    }
-    
-    html_template = loader.get_template('customers/neighborhood_list.html')
-    return HttpResponse(html_template.render(context, request))
+    # Danışman sadece kendi müşterilerini görsün
+    sadece_kendisi = not _kullanici_tum_musterileri_gorebilir(request.user)
+    if sadece_kendisi:
+        qs = qs.filter(consultant=request.user)
 
-@login_required(login_url="/login/")
-def neighborhood_edit(request, neighborhood_id=None):
-    """Mahalle ekleme/düzenleme"""
-    
-    role = get_user_role(request.user)
-    
-    # Sadece Yönetici ve Müdür erişebilir
-    if role not in ['admin', 'manager']:
-        messages.error(request, "Bu sayfaya erişim yetkiniz bulunmamaktadır.")
-        return redirect('home')
-    
-    neighborhood = None
-    if neighborhood_id:
-        neighborhood = get_object_or_404(Neighborhood, id=neighborhood_id)
-    
-    if request.method == 'POST':
-        name = request.POST.get('name', '')
-        district = request.POST.get('district', '')
-        consultant_id = request.POST.get('consultant', '')
-        
-        if not name:
-            messages.error(request, "Mahalle adı zorunludur.")
-            return redirect('neighborhood_edit', neighborhood_id=neighborhood_id)
-        
-        if neighborhood:
-            # Mevcut mahalleyi güncelle
-            neighborhood.name = name
-            neighborhood.district = district
-            if consultant_id:
-                neighborhood.consultant_id = consultant_id
-            else:
-                neighborhood.consultant = None
-            neighborhood.save()
-            messages.success(request, "Mahalle başarıyla güncellendi.")
-        else:
-            # Yeni mahalle oluştur
-            new_neighborhood = Neighborhood(
-                name=name,
-                district=district,
-            )
-            if consultant_id:
-                new_neighborhood.consultant_id = consultant_id
-            new_neighborhood.save()
-            messages.success(request, "Mahalle başarıyla eklendi.")
-        
-        return redirect('neighborhood_list')
-    
-    # Danışmanları getir
-    consultants = CustomUser.objects.filter(
-        employee_profile__role='consultant',
-        is_active=True
-    ).distinct()
-    
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+
+    meeting_filter = request.GET.get('meeting_status', '').strip()
+    if meeting_filter:
+        qs = qs.filter(meeting_status=meeting_filter)
+
+    consultant_filter = request.GET.get('consultant', '').strip()
+    if consultant_filter:
+        qs = qs.filter(consultant_id=consultant_filter)
+
+    source_filter = request.GET.get('source', '').strip()
+    if source_filter:
+        qs = qs.filter(source=source_filter)
+
+    reminder_only = request.GET.get('reminder') == '1'
+    if reminder_only:
+        qs = qs.filter(reminder_date__lte=timezone.now().date())
+
+    search_query = request.GET.get('q', '').strip()
+    if search_query:
+        qs = qs.filter(
+            Q(full_name__icontains=search_query) |
+            Q(phone__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(city__icontains=search_query)
+        )
+
+    qs = qs.order_by('-created_at')
+
+    all_customers = Customer.objects.filter(consultant=request.user) if sadece_kendisi else Customer.objects.all()
+    now = timezone.now()
+    stats = {
+        'total': all_customers.count(),
+        'active': all_customers.filter(status='aktif').count(),
+        'potential': all_customers.filter(status='potansiyel').count(),
+        'this_month': all_customers.filter(created_at__year=now.year, created_at__month=now.month).count(),
+    }
+
+    qs = qs.annotate(offer_count=Count('offers'))
+
+    page_size = int(request.GET.get('page_size', 20))
+    paginator = Paginator(qs, page_size)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    User = get_user_model()
+    consultants = User.objects.filter(customers__isnull=False).distinct().order_by('first_name', 'username')
+
     context = {
-        'segment': 'mahalleler',
-        'neighborhood': neighborhood,
+        'page_obj': page_obj,
+        'customers': page_obj.object_list,
+        'stats': stats,
         'consultants': consultants,
-        'user_role': role,
+        'all_neighborhoods': Neighborhood.objects.all().order_by('name'),
+        'all_properties': Property.objects.all()[:300],
+        'status_choices': Customer.STATUS_CHOICES,
+        'meeting_status_choices': Customer.MEETING_STATUS_CHOICES,
+        'source_choices': Customer.SOURCE_CHOICES,
+        'sadece_kendisi': sadece_kendisi,
+        'current_filters': {
+            'status': status_filter,
+            'meeting_status': meeting_filter,
+            'consultant': consultant_filter,
+            'source': source_filter,
+            'reminder': reminder_only,
+            'q': search_query,
+        },
     }
-    
-    html_template = loader.get_template('customers/neighborhood_edit.html')
-    return HttpResponse(html_template.render(context, request))
+    return render(request, 'customers/customer_list_page.html', context)
 
-@login_required(login_url="/login/")
-def update_meeting_status(request, customer_id):
-    """AJAX ile görüşme durumunu güncelleme"""
-    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        customer = get_object_or_404(Customer, id=customer_id)
-        
-        # Süper kullanıcı değilse ve müşteri danışmanın değilse erişimi engelle
-        if not request.user.is_superuser and customer.consultant != request.user:
-            return JsonResponse({'status': 'error', 'message': 'Yetkiniz yok'}, status=403)
-        
-        meeting_result = request.POST.get('meeting_result', '')
-        meeting_status = request.POST.get('meeting_status', 'bekliyor')
-        
-        customer.meeting_result = meeting_result
-        customer.meeting_status = meeting_status
-        customer.save()
-        
-        return JsonResponse({'status': 'success'})
-    
-    return JsonResponse({'status': 'error', 'message': 'Geçersiz istek'}, status=400)
 
-@login_required(login_url="/login/")
-def consultants_by_neighborhood(request, neighborhood_id):
-    """Belirli bir mahalleye ait danışmanları JSON olarak döndürür"""
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        try:
-            neighborhood = Neighborhood.objects.get(id=neighborhood_id)
-            
-            # Eğer mahalleye özel bir danışman atanmışsa
-            if neighborhood.consultant:
-                consultants = [{
-                    'id': neighborhood.consultant.id,
-                    'name': neighborhood.consultant.get_full_name() or neighborhood.consultant.username
-                }]
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
+
+@login_required
+@require_POST
+def customer_quick_update(request, pk):
+    """AJAX: Listeden hizli alan guncelleme (danisman, arama durumu vb.)"""
+    try:
+        customer = Customer.objects.get(pk=pk)
+    except Customer.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Musteri bulunamadi'}, status=404)
+
+    field = request.POST.get('field', '').strip()
+    value = request.POST.get('value', '').strip()
+
+    ALLOWED_FIELDS = {
+        'consultant': 'consultant_id',
+        'meeting_status': 'meeting_status',
+        'status': 'status',
+    }
+
+    if field not in ALLOWED_FIELDS:
+        return JsonResponse({'success': False, 'error': 'Gecersiz alan'}, status=400)
+
+    db_field = ALLOWED_FIELDS[field]
+
+    try:
+        if field == 'consultant':
+            if value == '' or value == 'None':
+                setattr(customer, db_field, None)
             else:
-                # Tüm danışmanları getir
-                consultant_group = Group.objects.filter(name='Danışman').first()
-                if consultant_group:
-                    users = consultant_group.user_set.all()
-                    consultants = [{
-                        'id': user.id, 
-                        'name': user.get_full_name() or user.username
-                    } for user in users]
-                else:
-                    consultants = []
-            
-            return JsonResponse({'consultants': consultants})
-        except Neighborhood.DoesNotExist:
-            return JsonResponse({'error': 'Mahalle bulunamadı'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
-    return JsonResponse({'error': 'Geçersiz istek'}, status=400)
+                setattr(customer, db_field, int(value))
+        else:
+            setattr(customer, db_field, value if value else None)
 
-@login_required(login_url="/login/")
-def customer_reminders(request):
-    """Müşteri hatırlatmaları görünümü"""
-    
-    role = get_user_role(request.user)
-    today = timezone.now().date()
-    
-    # Role göre hatırlatmaları getir
-    if request.user.is_superuser or role in ['admin', 'manager', 'secretary']:
-        # Yönetici, Müdür ve Santral tüm hatırlatmaları görebilir
-        reminders = CustomerReminder.objects.all().order_by('reminder_date')
-    else:
-        # Danışman sadece kendi müşterilerine ait hatırlatmaları görebilir
-        reminders = CustomerReminder.objects.filter(
-            customer__consultant=request.user
-        ).order_by('reminder_date')
-    
-    # Duruma göre filtreleme
-    status = request.GET.get('status', '')
-    if status == 'today':
-        reminders = reminders.filter(reminder_date=today)
-    elif status == 'upcoming':
-        reminders = reminders.filter(reminder_date__gt=today)
-    elif status == 'past':
-        reminders = reminders.filter(reminder_date__lt=today)
-    elif status == 'sent':
-        reminders = reminders.filter(is_sent=True)
-    elif status == 'unsent':
-        reminders = reminders.filter(is_sent=False)
-    
+        customer.save(update_fields=[db_field, 'updated_at'])
+        return JsonResponse({'success': True, 'field': field, 'value': value})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def customer_quick_create(request):
+    """Liste sayfasindan hizli musteri olusturma"""
+    full_name = request.POST.get('full_name', '').strip()
+    phone = request.POST.get('phone', '').strip()
+    email = request.POST.get('email', '').strip()
+    customer_type = request.POST.get('customer_type', 'bireysel').strip()
+    source = request.POST.get('source', '').strip()
+    consultant_id = request.POST.get('consultant', '').strip()
+    neighborhood_id = request.POST.get('neighborhood', '').strip()
+    real_estate_id = request.POST.get('real_estate', '').strip()
+    notes = request.POST.get('notes', '').strip()
+
+    if not phone:
+        return JsonResponse({'success': False, 'error': 'Telefon numarasi zorunludur'}, status=400)
+
+    if Customer.objects.filter(phone=phone).exists():
+        return JsonResponse({
+            'success': False,
+            'error': f'Bu telefon numarasina ({phone}) sahip bir musteri zaten var'
+        }, status=400)
+
+    try:
+        customer = Customer(
+            full_name=full_name if full_name else None,
+            phone=phone,
+            customer_type=customer_type,
+            status='potansiyel',
+            meeting_status='bekliyor',
+        )
+        if email:
+            customer.email = email
+        if source:
+            customer.source = source
+        if notes:
+            customer.notes = notes
+        if consultant_id:
+            customer.consultant_id = int(consultant_id)
+        if neighborhood_id:
+            customer.neighborhood_id = int(neighborhood_id)
+        if real_estate_id:
+            customer.real_estate_id = int(real_estate_id)
+
+        customer.save()
+
+        return JsonResponse({
+            'success': True,
+            'customer_id': customer.pk,
+            'message': f'{customer.display_name} basariyla kaydedildi.',
+            'redirect': f'/{customer.pk}/'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def customer_reminders_view(request):
+    from django.utils import timezone as tz
+    from datetime import date as date_cls
+    user = request.user
+    bugun = date_cls.today()
+
+    is_manager = user.is_superuser or user.has_role('Mudur') or user.has_role('Yonetici')
+
+    qs = CustomerReminder.objects.select_related('customer__consultant')
+    if not is_manager:
+        qs = qs.filter(customer__consultant=user)
+
+    filtre = request.GET.get('filtre', 'hepsi')
+    if filtre == 'bugun':
+        qs = qs.filter(reminder_date=bugun)
+    elif filtre == 'yaklasan':
+        qs = qs.filter(reminder_date__gt=bugun, is_sent=False)
+    elif filtre == 'gecmis':
+        qs = qs.filter(reminder_date__lt=bugun, is_sent=False)
+    elif filtre == 'okunmamis':
+        qs = qs.filter(is_read=False)
+
+    qs = qs.order_by('reminder_date')
+
+    bugun_sayisi = CustomerReminder.objects.filter(reminder_date=bugun, is_sent=False)
+    if not is_manager:
+        bugun_sayisi = bugun_sayisi.filter(customer__consultant=user)
+    bugun_sayisi = bugun_sayisi.count()
+
+    gecmis_sayisi = CustomerReminder.objects.filter(reminder_date__lt=bugun, is_sent=False)
+    if not is_manager:
+        gecmis_sayisi = gecmis_sayisi.filter(customer__consultant=user)
+    gecmis_sayisi = gecmis_sayisi.count()
+
+    return render(request, 'customers/hatirlatmalar.html', {
+        'segment': 'musteri',
+        'hatirlatmalar': qs,
+        'filtre': filtre,
+        'bugun': bugun,
+        'bugun_sayisi': bugun_sayisi,
+        'gecmis_sayisi': gecmis_sayisi,
+        'is_manager': is_manager,
+    })
+
+
+# ─── MAHALLE YÖNETİMİ ──────────────────────────────────────────────
+
+@login_required
+def neighborhood_list(request):
+    """Mahalle listesi ve yönetimi"""
+    from .models import Neighborhood
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    # Tüm danışmanlar (dropdown için)
+    try:
+        from apps.employees.models import EmployeeProfile
+        consultants = User.objects.filter(
+            employeeprofile__role__in=['consultant', 'bolge_uzmani', 'employee']
+        ).order_by('first_name', 'last_name')
+    except Exception:
+        consultants = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+
+    neighborhoods = Neighborhood.objects.select_related('consultant').order_by('district', 'name')
+
+    # Filtre
+    ilce_filter = request.GET.get('ilce', '').strip()
+    danisman_filter = request.GET.get('danisman', '').strip()
+    q = request.GET.get('q', '').strip()
+
+    if ilce_filter:
+        neighborhoods = neighborhoods.filter(district__iexact=ilce_filter)
+    if danisman_filter:
+        if danisman_filter == '__bos__':
+            neighborhoods = neighborhoods.filter(consultant__isnull=True)
+        else:
+            neighborhoods = neighborhoods.filter(consultant_id=danisman_filter)
+    if q:
+        neighborhoods = neighborhoods.filter(name__icontains=q)
+
+    ilceler = Neighborhood.objects.values_list('district', flat=True).exclude(district='').distinct().order_by('district')
+
     context = {
-        'segment': 'musteri_hatirlatmalari',
-        'reminders': reminders,
-        'filter_status': status,
-        'today': today,
-        'user_role': role,
+        'segment': 'mahalleler',
+        'neighborhoods': neighborhoods,
+        'consultants': consultants,
+        'ilceler': ilceler,
+        'ilce_filter': ilce_filter,
+        'danisman_filter': danisman_filter,
+        'q': q,
+        'total': neighborhoods.count(),
+        'bos_count': Neighborhood.objects.filter(consultant__isnull=True).count(),
     }
-    
-    html_template = loader.get_template('customers/customer_reminders.html')
-    return HttpResponse(html_template.render(context, request))
+    return render(request, 'customers/neighborhood_list.html', context)
+
+
+@login_required
+def neighborhood_create(request):
+    from .models import Neighborhood
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        district = request.POST.get('district', '').strip()
+        consultant_id = request.POST.get('consultant_id') or None
+        if name:
+            obj, created = Neighborhood.objects.get_or_create(
+                name=name,
+                defaults={'district': district, 'consultant_id': consultant_id}
+            )
+            if not created:
+                obj.district = district
+                obj.consultant_id = consultant_id
+                obj.save()
+            messages.success(request, f"'{name}' mahallesi {'oluşturuldu' if created else 'güncellendi'}.")
+        else:
+            messages.error(request, 'Mahalle adı zorunludur.')
+    return redirect('neighborhood_list')
+
+
+@login_required
+def neighborhood_update(request, pk):
+    from .models import Neighborhood
+    obj = get_object_or_404(Neighborhood, pk=pk)
+    if request.method == 'POST':
+        obj.name = request.POST.get('name', obj.name).strip()
+        obj.district = request.POST.get('district', obj.district).strip()
+        consultant_id = request.POST.get('consultant_id') or None
+        obj.consultant_id = consultant_id
+        obj.save()
+        messages.success(request, f"'{obj.name}' güncellendi.")
+    return redirect('neighborhood_list')
+
+
+@login_required
+def neighborhood_delete(request, pk):
+    from .models import Neighborhood
+    obj = get_object_or_404(Neighborhood, pk=pk)
+    if request.method == 'POST':
+        name = obj.name
+        obj.delete()
+        messages.success(request, f"'{name}' silindi.")
+    return redirect('neighborhood_list')

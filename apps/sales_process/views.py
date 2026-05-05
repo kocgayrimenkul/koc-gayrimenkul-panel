@@ -559,9 +559,18 @@ def lead_update(request, lead_id):
                 'message': f'Hata: {str(e)}'
             })
     
+    # Mahalle ve emlak listelerini getir (lead_create ile aynı şekilde)
+    from apps.customers.models import Neighborhood
+    from apps.portfolio.models import Property
+    
+    neighborhoods = Neighborhood.objects.all().order_by('name')
+    properties = Property.objects.filter(is_active=True).order_by('apartment_name')
+    
     context = {
         'title': f'{lead.customer_name} - Güncelle',
         'lead': lead,
+        'neighborhoods': neighborhoods,
+        'properties': properties,
     }
     return render(request, 'sales_process/lead_update.html', context)
 
