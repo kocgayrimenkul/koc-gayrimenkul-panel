@@ -523,3 +523,49 @@ def neighborhood_delete(request, pk):
         obj.delete()
         messages.success(request, f"'{name}' silindi.")
     return redirect('neighborhood_list')
+
+
+@login_required
+def workflow_kanban(request):
+    """İş akışı türlerine göre kanban panosu"""
+    from .models import CustomerWorkflow
+
+    WORKFLOW_TYPES = CustomerWorkflow.WORKFLOW_TYPE_CHOICES
+    STATUS_CHOICES = CustomerWorkflow.STATUS_CHOICES
+
+    active_type = request.GET.get('type', 'satis')
+
+    # Her statü için kart listesi
+    workflows_by_status = {}
+    for status_key, status_label in STATUS_CHOICES:
+        qs = CustomerWorkflow.objects.filter(
+            workflow_type=active_type,
+            status=status_key
+        ).select_related('customer', 'related_property', 'created_by').order_by('-created_at')
+        workflows_by_status[status_key] = {
+            'label': status_label,
+            'items': list(qs),
+            'count': qs.count(),
+        }
+
+    # Sekme sayaçları
+    type_counts = {}
+    for wt_key, wt_label in WORKFLOW_TYPES:
+        type_counts[wt_key] = CustomerWorkflow.objects.filter(
+            workflow_type=wt_key, status='aktif'
+        ).count()
+
+    # Template'te kolay kullanım için (key, label, count) tuple listesi
+    workflow_type_tabs = [
+        (wt_key, wt_label, type_counts.get(wt_key, 0))
+        for wt_key, wt_label in WORKFLOW_TYPES
+    ]
+
+    context = {
+        'workflow_type_tabs': workflow_type_tabs,
+        'active_type': active_type,
+        'active_type_label': dict(WORKFLOW_TYPES).get(active_type, active_type),
+        'status_choices': STATUS_CHOICES,
+        'workflows_by_status': workflows_by_status,
+    }
+    return render(request, 'customers/workflow_kanban.html', context)

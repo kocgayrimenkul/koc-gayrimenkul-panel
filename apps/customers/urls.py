@@ -14,6 +14,7 @@ urlpatterns = [
     # Musteri listesi (yeni) - kok route
     path('musteri/', views.customer_list, name='customer_list'),
     path('musteri/quick-create/', views.customer_quick_create, name='customer_quick_create'),
+    path('musteri/is-akislari/kanban/', views.workflow_kanban, name='workflow_kanban'),
     path('musteri/<int:pk>/quick-update/', views.customer_quick_update, name='customer_quick_update'),
 
     # Musteri detay ve POST route'lari
