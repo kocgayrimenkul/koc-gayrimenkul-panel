@@ -544,7 +544,7 @@ def workflow_kanban(request):
         ).select_related('customer', 'related_property', 'created_by').order_by('-created_at')
         workflows_by_status[status_key] = {
             'label': status_label,
-            'items': list(qs),
+            'cards': list(qs),
             'count': qs.count(),
         }
 
