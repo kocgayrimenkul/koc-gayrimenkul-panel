@@ -67,6 +67,10 @@ def property_list(request):
     is_suitable_for_credit = request.GET.get('is_suitable_for_credit', '')
     is_bargainable = request.GET.get('is_bargainable', '')
     
+    # Danışman mahalle ID'leri ve kendi portföy ID'leri (sadece consultant için doldurulur)
+    consultant_neighborhood_ids = []
+    own_ids = []
+
     # Başlangıç sorgusu - yetki kontrolü ile
     if request.user.is_superuser or role in ['admin', 'manager']:
         properties_list = Property.objects.filter(is_active=True)\
@@ -77,22 +81,26 @@ def property_list(request):
             .select_related('neighborhood', 'consultant')\
             .prefetch_related('images')
     elif role == 'consultant':
-        consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
-        # Sekme kontrolu: ?tab=office ise ofis portfoyleri, yoksa kendi portfoyleri
+        consultant_neighborhood_ids = list(
+            Neighborhood.objects.filter(consultant=request.user).values_list('id', flat=True)
+        )
         requested_tab = request.GET.get('tab', 'own')
+        # "Kendi" portföy ID'leri: atanmış mahalledekiler VEYA danışman olarak atanmış portföyler
+        own_ids = list(
+            Property.objects.filter(is_active=True).filter(
+                Q(neighborhood_id__in=consultant_neighborhood_ids) | Q(consultant=request.user)
+            ).values_list('id', flat=True)
+        )
         if requested_tab == 'office':
-            # Diger mahalleler (kendi mahallesi disindaki tum portfoyler)
-            properties_list = Property.objects.filter(is_active=True)\
-                .exclude(neighborhood__in=consultant_neighborhoods)\
-                .select_related('neighborhood', 'consultant')\
-                .prefetch_related('images')
+            # Ofis portföyleri: kendi portföy ID'leri dışındaki TÜM aktif portföyler
+            properties_list = Property.objects.filter(is_active=True).exclude(
+                id__in=own_ids
+            ).select_related('neighborhood', 'consultant').prefetch_related('images')
         else:
-            # Kendi mahallesindeki portfoyler
+            # Kendi portföyleri: atanmış mahallelerdekiler + consultant olarak atanmışlar
             properties_list = Property.objects.filter(
-                is_active=True,
-                neighborhood__in=consultant_neighborhoods
-            ).select_related('neighborhood', 'consultant')\
-             .prefetch_related('images')
+                is_active=True, id__in=own_ids
+            ).select_related('neighborhood', 'consultant').prefetch_related('images')
     else:
         properties_list = Property.objects.none()
         messages.warning(request, "Gayrimenkul listesini görüntüleme yetkiniz sınırlıdır.")
@@ -209,9 +217,12 @@ def property_list(request):
         'active_properties': Property.objects.filter(is_active=True).count(),
         'satilik_count': Property.objects.filter(status='satilik', is_active=True).count(),
         'kiralik_count': Property.objects.filter(status='kiralik', is_active=True).count(),
-        # === YENI: Dan\u0131\u015fman i\u00e7in Kendi/Ofis portf\u00f6y sekmesi sayilari ===
-        'own_count': (Property.objects.filter(is_active=True, neighborhood__in=Neighborhood.objects.filter(consultant=request.user)).count() if role == 'consultant' else 0),
-        'office_count': (Property.objects.filter(is_active=True).exclude(neighborhood__in=Neighborhood.objects.filter(consultant=request.user)).count() if role == 'consultant' else 0),
+        # Dan\u0131\u015fman i\u00e7in Kendi/Ofis portf\u00f6y sekmesi say\u0131lar\u0131
+        'own_count': (len(own_ids) if role == 'consultant' else 0),
+        'office_count': (
+            Property.objects.filter(is_active=True).exclude(id__in=own_ids).count()
+            if role == 'consultant' else 0
+        ),
         'active_tab': request.GET.get('tab', 'own'),
         'is_office_view': (role == 'consultant' and request.GET.get('tab', 'own') == 'office'),
         'is_consultant': (role == 'consultant'),
@@ -255,31 +266,116 @@ def property_detail(request, property_id):
     role = get_user_role(request.user)
     
     # Yetki kontrolü
+    is_own_property = True  # Varsayılan: mülk sahibi bilgileri görünür
     if not request.user.is_superuser and role not in ['admin', 'manager', 'secretary']:
         if role == 'consultant':
-            # Danışman sadece kendi mahallelerindeki gayrimenkulleri görebilir
-            consultant_neighborhoods = Neighborhood.objects.filter(consultant=request.user)
-            if property_obj.neighborhood not in consultant_neighborhoods:
-                messages.error(request, f"Bu gayrimenkul {property_obj.neighborhood.name} mahallesinde bulunuyor ve bu mahalleye erişim yetkiniz bulunmamaktadır.")
-                return redirect('property_list')
+            # Danışman tüm portföyleri görebilir, ama iletişim bilgileri şu durumlarda görünür:
+            # 1) Portföy, danışmanın atandığı mahallede
+            # 2) Portföy, danışmanın kendisine atanmış (consultant alanı)
+            consultant_neighborhood_ids = list(
+                Neighborhood.objects.filter(consultant=request.user).values_list('id', flat=True)
+            )
+            in_own_neighborhood = (
+                property_obj.neighborhood_id is not None
+                and property_obj.neighborhood_id in consultant_neighborhood_ids
+            )
+            is_own_consultant = (property_obj.consultant_id == request.user.id)
+            is_own_property = in_own_neighborhood or is_own_consultant
         else:
             messages.error(request, f"Gayrimenkul detaylarını görüntüleme yetkiniz bulunmamaktadır. Mevcut rolünüz: {role or 'Tanımsız'}")
             return redirect('property_list')
-    
+
     # Çevre bilgileri
     environments = property_obj.environments.all()
-    
+
     # Resimler
     images = property_obj.images.all().order_by('order')
-    
+
+    # Sunulan müşteriler
+    customer_presentations = property_obj.customer_presentations.select_related(
+        'customer', 'created_by'
+    ).order_by('-created_at')
+
+    # Bu portföye sunum yapılan müşterilerin çağrıları
+    from apps.calls.models import CallLog
+    presented_customer_ids = list(
+        property_obj.customer_presentations.values_list('customer_id', flat=True).distinct()
+    )
+    property_calls = CallLog.objects.filter(
+        customer_id__in=presented_customer_ids
+    ).select_related('customer', 'user').order_by('-start_time')
+
+    # Son Aktiviteler — tüm kaynakları birleştir
+    activities = []
+
+    for note in property_obj.notes.select_related('user').all():
+        activities.append({
+            'type': 'note', 'icon': 'fas fa-sticky-note',
+            'color': '#f59e0b', 'bg': '#fef3c7',
+            'title': 'Not eklendi',
+            'description': note.note[:120] + ('…' if len(note.note) > 120 else ''),
+            'user': note.user.get_full_name() if note.user else '—',
+            'date': note.created_at,
+        })
+
+    for pres in customer_presentations:
+        name = pres.customer.display_name if pres.customer else '?'
+        activities.append({
+            'type': 'presentation', 'icon': 'fas fa-home',
+            'color': '#8b5cf6', 'bg': '#ede9fe',
+            'title': 'Daire sunumu yapıldı',
+            'description': f'{name} müşterisine sunum yapıldı.',
+            'user': pres.created_by.get_full_name() if pres.created_by else '—',
+            'date': pres.created_at,
+        })
+
+    for call in property_calls:
+        direction = 'Gelen' if call.direction == 'inbound' else 'Giden'
+        cname = call.customer.display_name if call.customer else call.caller
+        activities.append({
+            'type': 'call',
+            'icon': 'fas fa-phone-volume' if call.direction == 'inbound' else 'fas fa-phone-alt',
+            'color': '#ef4444' if call.status == 'missed' else ('#3b82f6' if call.direction == 'inbound' else '#10b981'),
+            'bg': '#fee2e2' if call.status == 'missed' else ('#dbeafe' if call.direction == 'inbound' else '#d1fae5'),
+            'title': f'{direction} çağrı — {call.get_status_display()}',
+            'description': f'{cname} · {call.caller} → {call.called}',
+            'user': call.user.get_full_name() if call.user else '—',
+            'date': call.start_time,
+        })
+
+    for notif in property_obj.portal_notifications.select_related('user').all():
+        activities.append({
+            'type': 'portal', 'icon': 'fas fa-bell',
+            'color': '#64748b', 'bg': '#f1f5f9',
+            'title': f'{notif.get_portal_display()} portal bildirimi',
+            'description': 'İlan süresi dolumu bildirimi alındı.',
+            'user': notif.user.get_full_name() if notif.user else '—',
+            'date': notif.created_at,
+        })
+
+    activities.append({
+        'type': 'created', 'icon': 'fas fa-plus-circle',
+        'color': '#10b981', 'bg': '#d1fae5',
+        'title': 'Portföy oluşturuldu',
+        'description': f'{property_obj.apartment_name or "Portföy"} sisteme eklendi.',
+        'user': '—',
+        'date': property_obj.created_at,
+    })
+
+    activities.sort(key=lambda x: x['date'], reverse=True)
+
     context = {
         'segment': 'gayrimenkul',
         'property': property_obj,
         'environments': environments,
         'images': images,
         'user_role': role,
+        'is_own_property': is_own_property,
+        'customer_presentations': customer_presentations,
+        'property_calls': property_calls,
+        'activities': activities,
     }
-    
+
     html_template = loader.get_template('portfolio/property_detail.html')
     return HttpResponse(html_template.render(context, request))
 
@@ -1230,6 +1326,23 @@ def move_property_to_group(request):
     
     try:
         data = json.loads(request.body)
+        prop.hepsiemlak_active = data.get('active', False)
+        if 'url' in data:
+            prop.hepsiemlak_url = data.get('url', '')
+        prop.save(update_fields=['hepsiemlak_active', 'hepsiemlak_url'])
+        return JR({'success': True, 'active': prop.hepsiemlak_active})
+    except Property.DoesNotExist:
+        return JR({'error': 'Bulunamıyor'}, status=404)
+    except Exception as e:
+        return JR({'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def move_property_to_group(request):
+    import json
+    data = json.loads(request.body)
+    try:
         property_id = data.get('property_id')
         target_group = data.get('group')
         
@@ -1466,6 +1579,23 @@ def move_property_to_group(request):
     
     try:
         data = json.loads(request.body)
+        prop.hepsiemlak_active = data.get('active', False)
+        if 'url' in data:
+            prop.hepsiemlak_url = data.get('url', '')
+        prop.save(update_fields=['hepsiemlak_active', 'hepsiemlak_url'])
+        return JR({'success': True, 'active': prop.hepsiemlak_active})
+    except Property.DoesNotExist:
+        return JR({'error': 'Bulunamıyor'}, status=404)
+    except Exception as e:
+        return JR({'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def move_property_to_group(request):
+    import json
+    data = json.loads(request.body)
+    try:
         property_id = data.get('property_id')
         target_group = data.get('group')
         
@@ -2026,6 +2156,7 @@ def sahibinden_xml_feed(request):
     return response
 
 
+
 @login_required
 def sahibinden_toggle(request, property_id):
     """Gayrimenkulü Sahibinden'de yayına al/kaldır"""
@@ -2047,26 +2178,16 @@ def sahibinden_toggle(request, property_id):
         return JR({'error': str(e)}, status=500)
 
 
-# ─────────────────────────────────────────────────────────────
-#  EMLAKJET ENTEGRASYONU
-# ─────────────────────────────────────────────────────────────
-
 @login_required
 def emlakjet_export(request):
-    """Emlakjet export sayfası"""
     all_properties = Property.objects.filter(is_active=True).select_related('neighborhood').prefetch_related('images').order_by('-created_at')
     total_active = all_properties.filter(emlakjet_active=True).count()
-    context = {
-        'all_properties': all_properties,
-        'total_active': total_active,
-        'total_all': all_properties.count(),
-    }
+    context = {'all_properties': all_properties, 'total_active': total_active, 'total_all': all_properties.count()}
     return render(request, 'portfolio/emlakjet_export.html', context)
 
 
 @login_required
 def emlakjet_toggle(request, property_id):
-    """Gayrimenkulü Emlakjet'te yayına al/kaldır"""
     from django.http import JsonResponse as JR
     if request.method != 'POST':
         return JR({'error': 'POST gerekli'}, status=405)
@@ -2085,26 +2206,16 @@ def emlakjet_toggle(request, property_id):
         return JR({'error': str(e)}, status=500)
 
 
-# ─────────────────────────────────────────────────────────────
-#  HEPSİEMLAK ENTEGRASYONU
-# ─────────────────────────────────────────────────────────────
-
 @login_required
 def hepsiemlak_export(request):
-    """Hepsiemlak export sayfası"""
     all_properties = Property.objects.filter(is_active=True).select_related('neighborhood').prefetch_related('images').order_by('-created_at')
     total_active = all_properties.filter(hepsiemlak_active=True).count()
-    context = {
-        'all_properties': all_properties,
-        'total_active': total_active,
-        'total_all': all_properties.count(),
-    }
+    context = {'all_properties': all_properties, 'total_active': total_active, 'total_all': all_properties.count()}
     return render(request, 'portfolio/hepsiemlak_export.html', context)
 
 
 @login_required
 def hepsiemlak_toggle(request, property_id):
-    """Gayrimenkulü Hepsiemlak'ta yayına al/kaldır"""
     from django.http import JsonResponse as JR
     if request.method != 'POST':
         return JR({'error': 'POST gerekli'}, status=405)

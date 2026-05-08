@@ -59,17 +59,17 @@
                         <div style="display:flex;align-items:center;gap:8px;">
                             <div style="width:10px;height:10px;border-radius:50%;background:
                                 {% if status_key == 'aktif' %}#10b981
-                                {% elif status_key == 'tamamlandi' %}#6366f1
-                                {% elif status_key == 'gecikmis' %}#f59e0b
-                                {% elif status_key == 'arsivlendi' %}#94a3b8
+                                {% elif status_key == 'geri_donus' %}#3b82f6
+                                {% elif status_key == 'daire_sunumu' %}#f59e0b
+                                {% elif status_key == 'satis' %}#8b5cf6
                                 {% else %}#ef4444{% endif %};"></div>
                             <span style="font-size:.78rem;font-weight:700;color:#334155;">{{ slabel }}</span>
                         </div>
                         <span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;
                             {% if status_key == 'aktif' %}background:#dcfce7;color:#16a34a;
-                            {% elif status_key == 'tamamlandi' %}background:#ede9fe;color:#7c3aed;
-                            {% elif status_key == 'gecikmis' %}background:#fef9c3;color:#d97706;
-                            {% elif status_key == 'arsivlendi' %}background:#f1f5f9;color:#94a3b8;
+                            {% elif status_key == 'geri_donus' %}background:#dbeafe;color:#1d4ed8;
+                            {% elif status_key == 'daire_sunumu' %}background:#fef9c3;color:#d97706;
+                            {% elif status_key == 'satis' %}background:#ede9fe;color:#7c3aed;
                             {% else %}background:#fee2e2;color:#dc2626;{% endif %}">
                             {{ scount }}
                         </span>

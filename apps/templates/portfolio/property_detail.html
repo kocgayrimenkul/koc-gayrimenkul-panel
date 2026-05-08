@@ -9,6 +9,9 @@
 <style>
     .property-swiper .swiper-button-next, .property-swiper .swiper-button-prev { color: white; }
     .property-swiper .swiper-pagination-bullet-active { background: #0087d1; }
+    .prop-tab-active  { background: white; color: #2563eb; box-shadow: 0 1px 4px rgba(0,0,0,.08); font-weight: 700; }
+    .prop-tab-inactive { background: transparent; color: #64748b; }
+    .prop-tab-inactive:hover { color: #2563eb; }
 </style>
 {% endblock %}
 
@@ -36,7 +39,7 @@
 
     <div class="grid grid-cols-12 gap-6">
 
-        <!-- SOL: Galeri + Açıklama + Çevre -->
+        <!-- SOL: Galeri + Sekmeler -->
         <div class="col-span-8 space-y-6">
 
             <!-- Galeri -->
@@ -114,82 +117,376 @@
                 </div>
             </div>
 
-            <!-- Detay Tablosu -->
-            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">İlan Detayları</h2>
-                <div class="grid grid-cols-2 gap-x-8 gap-y-3">
-                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
-                        <span class="text-slate-500">Kategori</span>
-                        <span class="font-semibold text-slate-700">{{ property.get_category_display|default:"—" }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
-                        <span class="text-slate-500">İlan Türü</span>
-                        <span class="font-semibold text-slate-700">{{ property.get_listing_type_display|default:"—" }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
-                        <span class="text-slate-500">Bina Yaşı</span>
-                        <span class="font-semibold text-slate-700">{{ property.building_age|default:"—" }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
-                        <span class="text-slate-500">Kat Sayısı</span>
-                        <span class="font-semibold text-slate-700">{{ property.floor_count|default:"—" }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
-                        <span class="text-slate-500">Isıtma</span>
-                        <span class="font-semibold text-slate-700">{{ property.get_heating_display|default:"—" }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
-                        <span class="text-slate-500">Tapu Durumu</span>
-                        <span class="font-semibold text-slate-700">{{ property.get_deed_status_display|default:"—" }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
-                        <span class="text-slate-500">Krediye Uygun</span>
-                        <span class="font-semibold {% if property.is_suitable_for_credit %}text-emerald-600{% else %}text-slate-400{% endif %}">
-                            {% if property.is_suitable_for_credit %}<i class="fas fa-check-circle"></i> Evet{% else %}<i class="fas fa-times-circle"></i> Hayır{% endif %}
-                        </span>
-                    </div>
-                    <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
-                        <span class="text-slate-500">Pazarlık</span>
-                        <span class="font-semibold {% if property.is_bargainable %}text-emerald-600{% else %}text-slate-400{% endif %}">
-                            {% if property.is_bargainable %}<i class="fas fa-check-circle"></i> Evet{% else %}<i class="fas fa-times-circle"></i> Hayır{% endif %}
-                        </span>
+            <!-- Tab Navigasyon -->
+            <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl flex-wrap">
+                <button onclick="switchPropTab('detaylar')" id="prop-tab-detaylar"
+                    class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition prop-tab-active">
+                    <i class="fas fa-list-ul text-xs"></i>
+                    <span>Portföy Detayları</span>
+                </button>
+                <button onclick="switchPropTab('musteriler')" id="prop-tab-musteriler"
+                    class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition prop-tab-inactive">
+                    <i class="fas fa-users text-xs"></i>
+                    <span>Sunulan Müşteriler</span>
+                    {% if customer_presentations %}
+                    <span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ customer_presentations|length }}</span>
+                    {% endif %}
+                </button>
+                <button onclick="switchPropTab('cagrilar')" id="prop-tab-cagrilar"
+                    class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition prop-tab-inactive">
+                    <i class="fas fa-phone-volume text-xs"></i>
+                    <span>Gelen Çağrılar</span>
+                    {% if property_calls %}
+                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ property_calls|length }}</span>
+                    {% endif %}
+                </button>
+                <button onclick="switchPropTab('aktiviteler')" id="prop-tab-aktiviteler"
+                    class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition prop-tab-inactive">
+                    <i class="fas fa-history text-xs"></i>
+                    <span>Son Aktiviteler</span>
+                    {% if activities %}
+                    <span class="bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ activities|length }}</span>
+                    {% endif %}
+                </button>
+            </div>
+
+            <!-- Tab İçerik: Portföy Detayları -->
+            <div id="prop-content-detaylar" class="space-y-6">
+
+                <!-- Detay Tablosu -->
+                <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4">İlan Detayları</h2>
+                    <div class="grid grid-cols-2 gap-x-8 gap-y-3">
+                        <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                            <span class="text-slate-500">Kategori</span>
+                            <span class="font-semibold text-slate-700">{{ property.get_category_display|default:"—" }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                            <span class="text-slate-500">İlan Türü</span>
+                            <span class="font-semibold text-slate-700">{{ property.get_listing_type_display|default:"—" }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                            <span class="text-slate-500">Bina Yaşı</span>
+                            <span class="font-semibold text-slate-700">{{ property.building_age|default:"—" }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                            <span class="text-slate-500">Kat Sayısı</span>
+                            <span class="font-semibold text-slate-700">{{ property.floor_count|default:"—" }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                            <span class="text-slate-500">Isıtma</span>
+                            <span class="font-semibold text-slate-700">{{ property.get_heating_display|default:"—" }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                            <span class="text-slate-500">Tapu Durumu</span>
+                            <span class="font-semibold text-slate-700">{{ property.get_deed_status_display|default:"—" }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                            <span class="text-slate-500">Krediye Uygun</span>
+                            <span class="font-semibold {% if property.is_suitable_for_credit %}text-emerald-600{% else %}text-slate-400{% endif %}">
+                                {% if property.is_suitable_for_credit %}<i class="fas fa-check-circle"></i> Evet{% else %}<i class="fas fa-times-circle"></i> Hayır{% endif %}
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                            <span class="text-slate-500">Pazarlık</span>
+                            <span class="font-semibold {% if property.is_bargainable %}text-emerald-600{% else %}text-slate-400{% endif %}">
+                                {% if property.is_bargainable %}<i class="fas fa-check-circle"></i> Evet{% else %}<i class="fas fa-times-circle"></i> Hayır{% endif %}
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Açıklama -->
-            {% if property.description %}
-            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
-                <h2 class="text-lg font-bold text-slate-800 mb-3">Açıklama</h2>
-                <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{{ property.description }}</p>
-            </div>
-            {% endif %}
+                <!-- Açıklama -->
+                {% if property.description %}
+                <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-3">Açıklama</h2>
+                    <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{{ property.description }}</p>
+                </div>
+                {% endif %}
 
-            <!-- Çevre -->
-            {% if environments %}
-            <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">Çevre Bilgileri</h2>
-                <div class="grid grid-cols-3 gap-3">
-                    {% for env in environments %}
-                    <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl">
-                        <div class="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-map-marker-alt text-xs"></i>
+                <!-- Çevre -->
+                {% if environments %}
+                <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4">Çevre Bilgileri</h2>
+                    <div class="grid grid-cols-3 gap-3">
+                        {% for env in environments %}
+                        <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl">
+                            <div class="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-map-marker-alt text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-slate-700">{{ env.name }}</div>
+                                <div class="text-[10px] text-slate-400">{{ env.distance|default:"—" }}</div>
+                            </div>
                         </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div><!-- /prop-content-detaylar -->
+
+            <!-- Tab İçerik: Sunulan Müşteriler -->
+            <div id="prop-content-musteriler" class="hidden">
+                <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                    <div class="flex justify-between items-center mb-5">
                         <div>
-                            <div class="text-sm font-semibold text-slate-700">{{ env.name }}</div>
-                            <div class="text-[10px] text-slate-400">{{ env.distance|default:"—" }}</div>
+                            <h2 class="text-lg font-bold text-slate-800">Sunulan Müşteriler</h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Bu portföyün sunulduğu müşteri listesi</p>
+                        </div>
+                        {% if customer_presentations %}
+                        <span style="font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:999px;background:#ede9fe;color:#7c3aed;">
+                            {{ customer_presentations|length }} sunum
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="space-y-3">
+                        {% for pres in customer_presentations %}
+                        <div class="border border-slate-100 rounded-xl p-4 bg-white hover:shadow-sm transition">
+                            <div class="flex items-start gap-3">
+                                <!-- Avatar -->
+                                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#dbeafe,#93c5fd);color:#1d4ed8;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:.85rem;">
+                                    {{ pres.customer.display_name|slice:":1"|upper|default:"?" }}
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <!-- Müşteri adı & link -->
+                                    <a href="{% url 'customer_detail' pres.customer.pk %}"
+                                       style="font-size:.9rem;font-weight:700;color:#1e293b;text-decoration:none;hover:text-decoration:underline;">
+                                        {{ pres.customer.display_name|default:"—" }}
+                                    </a>
+                                    <!-- Meta bilgiler -->
+                                    <div style="font-size:.72rem;color:#94a3b8;margin-top:3px;display:flex;flex-wrap:wrap;gap:8px;">
+                                        <span>
+                                            <i class="fas fa-user-tie" style="margin-right:3px;"></i>
+                                            {{ pres.created_by.get_full_name|default:pres.created_by.username|default:"—" }}
+                                        </span>
+                                        <span>·</span>
+                                        <span>
+                                            <i class="far fa-calendar" style="margin-right:3px;"></i>
+                                            {{ pres.created_at|date:"d.m.Y H:i" }}
+                                        </span>
+                                        {% if pres.customer.phone %}
+                                        <span>·</span>
+                                        <a href="tel:{{ pres.customer.phone }}" style="color:#3b82f6;text-decoration:none;">
+                                            <i class="fas fa-phone-alt" style="margin-right:3px;"></i>{{ pres.customer.phone }}
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    <!-- Görüşme notu -->
+                                    {% if pres.meeting_notes %}
+                                    <div style="margin-top:8px;padding:8px 10px;background:#f8fafc;border-radius:8px;border-left:3px solid #f59e0b;">
+                                        <div style="font-size:.7rem;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Görüşme Sonucu</div>
+                                        <div style="font-size:.8rem;color:#475569;">{{ pres.meeting_notes }}</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <!-- Müşteri detay linki -->
+                                <a href="{% url 'customer_detail' pres.customer.pk %}"
+                                   class="flex-shrink-0 text-slate-400 hover:text-blue-600 transition"
+                                   title="Müşteri Detayı">
+                                    <i class="fas fa-external-link-alt text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="text-align:center;padding:48px 0;">
+                            <div style="width:56px;height:56px;background:#f1f5f9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                                <i class="fas fa-users" style="font-size:1.3rem;color:#cbd5e1;"></i>
+                            </div>
+                            <h4 style="font-size:.9rem;font-weight:700;color:#1e293b;margin-bottom:4px;">Henüz sunum yapılmadı</h4>
+                            <p style="font-size:.78rem;color:#94a3b8;">Bu portföy henüz hiçbir müşteriye sunulmamıştır.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div><!-- /prop-content-musteriler -->
+
+            <!-- Tab İçerik: Gelen Çağrılar -->
+            <div id="prop-content-cagrilar" class="hidden">
+                <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                    <div class="flex justify-between items-center mb-5">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Gelen Çağrılar</h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Bu portföye sunum yapılan müşterilere ait çağrı kayıtları</p>
+                        </div>
+                        {% if property_calls %}
+                        <span style="font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:999px;background:#dbeafe;color:#1d4ed8;">
+                            {{ property_calls|length }} çağrı
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="space-y-3">
+                        {% for call in property_calls %}
+                        <div class="border border-slate-100 rounded-xl p-4 hover:shadow-sm transition bg-white">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <!-- Yön & Durum İkonu -->
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
+                                        {% if call.status == 'missed' %}bg-red-50 text-red-500
+                                        {% elif call.direction == 'inbound' %}bg-blue-50 text-blue-600
+                                        {% else %}bg-emerald-50 text-emerald-600{% endif %}">
+                                        {% if call.status == 'missed' %}
+                                            <i class="fas fa-phone-slash text-sm"></i>
+                                        {% elif call.direction == 'inbound' %}
+                                            <i class="fas fa-phone-volume text-sm"></i>
+                                        {% else %}
+                                            <i class="fas fa-phone-alt text-sm"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <!-- Müşteri adı -->
+                                            {% if call.customer %}
+                                            <a href="{% url 'customer_detail' call.customer.pk %}"
+                                               class="text-sm font-semibold text-slate-800 hover:text-blue-600 transition">
+                                                {{ call.customer.display_name|default:"—" }}
+                                            </a>
+                                            {% else %}
+                                            <span class="text-sm font-semibold text-slate-800">{{ call.caller|default:"Bilinmiyor" }}</span>
+                                            {% endif %}
+                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full
+                                                {% if call.status == 'missed' %}bg-red-50 text-red-500
+                                                {% else %}bg-emerald-50 text-emerald-600{% endif %}">
+                                                {{ call.get_status_display }}
+                                            </span>
+                                            <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-50 text-slate-500">
+                                                {{ call.get_direction_display }}
+                                            </span>
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 mt-0.5">
+                                            <i class="fas fa-arrow-right text-[8px] mr-1"></i>
+                                            {{ call.caller|default:"—" }} → {{ call.called|default:"—" }}
+                                            {% if call.duration_formatted %}
+                                            <span class="mx-1">·</span>
+                                            <i class="far fa-clock text-[8px]"></i> {{ call.duration_formatted }}
+                                            {% endif %}
+                                            {% if call.user %}
+                                            <span class="mx-1">·</span>
+                                            <i class="fas fa-user-tie text-[8px]"></i> {{ call.user.get_full_name|default:call.user.username }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    {% if call.recording_url %}
+                                    <button onclick="togglePropCallAudio('propcallrec-{{ call.id }}')"
+                                        id="prop-btn-callrec-{{ call.id }}"
+                                        style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:linear-gradient(135deg,#fb6340,#e8521f);color:white;border:none;border-radius:8px;font-size:.75rem;font-weight:600;cursor:pointer;">
+                                        <i class="fas fa-play text-[10px]"></i> Dinle
+                                    </button>
+                                    {% else %}
+                                    <span class="text-[10px] text-slate-300 italic">Kayıt yok</span>
+                                    {% endif %}
+                                    <div class="text-right">
+                                        <div class="text-xs font-medium text-slate-600">{{ call.start_time|date:"d.m.Y" }}</div>
+                                        <div class="text-[10px] text-slate-400">{{ call.start_time|date:"H:i" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Audio Player -->
+                            {% if call.recording_url %}
+                            <div id="propcallrec-{{ call.id }}" class="hidden mt-3 pt-3 border-t border-slate-50">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-headphones text-orange-400 text-sm flex-shrink-0"></i>
+                                    <audio controls class="w-full" style="height:36px;border-radius:8px;">
+                                        <source src="{{ call.recording_url }}" type="audio/mpeg">
+                                        <source src="{{ call.recording_url }}" type="audio/wav">
+                                    </audio>
+                                    <a href="{{ call.recording_url }}" target="_blank"
+                                       style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0;border-radius:8px;color:#94a3b8;text-decoration:none;font-size:.8rem;">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div style="text-align:center;padding:48px 0;">
+                            <div style="width:56px;height:56px;background:#f1f5f9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                                <i class="fas fa-headphones" style="font-size:1.3rem;color:#cbd5e1;"></i>
+                            </div>
+                            <h4 style="font-size:.9rem;font-weight:700;color:#1e293b;margin-bottom:4px;">Çağrı kaydı bulunamadı</h4>
+                            <p style="font-size:.78rem;color:#94a3b8;">Bu portföye sunum yapılan müşterilere ait çağrı kaydı henüz yok.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div><!-- /prop-content-cagrilar -->
+
+            <!-- Tab İçerik: Son Aktiviteler -->
+            <div id="prop-content-aktiviteler" class="hidden">
+                <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">Son Aktiviteler</h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Bu portföyle ilgili tüm aktiviteler</p>
+                        </div>
+                        {% if activities %}
+                        <span style="font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:999px;background:#f1f5f9;color:#475569;">
+                            {{ activities|length }} kayıt
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    {% if activities %}
+                    <!-- Zaman çizelgesi -->
+                    <div class="relative">
+                        <!-- Dikey çizgi -->
+                        <div class="absolute left-5 top-0 bottom-0 w-px bg-slate-100"></div>
+
+                        <div class="space-y-4">
+                            {% for act in activities %}
+                            <div class="flex gap-4 relative">
+                                <!-- İkon -->
+                                <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center z-10"
+                                     style="background:{{ act.bg }};color:{{ act.color }};">
+                                    <i class="{{ act.icon }}" style="font-size:.8rem;"></i>
+                                </div>
+                                <!-- İçerik -->
+                                <div class="flex-1 bg-slate-50 rounded-xl px-4 py-3 min-w-0">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <div class="text-sm font-semibold text-slate-800">{{ act.title }}</div>
+                                            {% if act.description %}
+                                            <div class="text-xs text-slate-500 mt-0.5 leading-relaxed">{{ act.description }}</div>
+                                            {% endif %}
+                                            {% if act.user and act.user != '—' %}
+                                            <div class="text-[10px] text-slate-400 mt-1">
+                                                <i class="fas fa-user text-[8px] mr-1"></i>{{ act.user }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-shrink-0 text-right">
+                                            <div class="text-[10px] font-medium text-slate-500 whitespace-nowrap">{{ act.date|date:"d.m.Y" }}</div>
+                                            <div class="text-[10px] text-slate-400">{{ act.date|date:"H:i" }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
                     </div>
-                    {% endfor %}
+                    {% else %}
+                    <div style="text-align:center;padding:48px 0;">
+                        <div style="width:56px;height:56px;background:#f1f5f9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                            <i class="fas fa-history" style="font-size:1.3rem;color:#cbd5e1;"></i>
+                        </div>
+                        <h4 style="font-size:.9rem;font-weight:700;color:#1e293b;margin-bottom:4px;">Henüz aktivite yok</h4>
+                        <p style="font-size:.78rem;color:#94a3b8;">Bu portföyle ilgili aktiviteler burada görünecek.</p>
+                    </div>
+                    {% endif %}
                 </div>
-            </div>
-            {% endif %}
+            </div><!-- /prop-content-aktiviteler -->
+
         </div>
 
         <!-- SAĞ: Sahip + Danışman + İlan Numaraları -->
         <div class="col-span-4 space-y-6">
 
             <!-- Mal Sahibi -->
+            {% if is_own_property %}
             <div class="bg-white rounded-2xl custom-shadow border border-slate-100 p-6">
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Mal Sahibi</h3>
                 <div class="space-y-3">
@@ -207,7 +504,6 @@
                         </div>
                     </div>
                 </div>
-
                 {% if property.owner_phone %}
                 <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-100">
                     <a href="tel:{{ property.owner_phone }}" class="flex items-center justify-center space-x-1 px-3 py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-xs font-bold hover:bg-emerald-100">
@@ -219,6 +515,15 @@
                 </div>
                 {% endif %}
             </div>
+            {% else %}
+            <div class="bg-slate-50 rounded-2xl border border-slate-100 p-5">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Mal Sahibi</h3>
+                <div class="flex items-center gap-2 text-slate-400">
+                    <i class="fas fa-lock text-sm"></i>
+                    <span class="text-xs">Bu portföy ofis portföyüdür. Mülk sahibi bilgileri gizlenmiştir.</span>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Danışman -->
             {% if property.consultant %}
@@ -298,5 +603,28 @@
         navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
         autoplay: { delay: 5000, disableOnInteraction: false },
     });
+
+    const propTabs = ['detaylar', 'musteriler', 'cagrilar', 'aktiviteler'];
+
+    function switchPropTab(name) {
+        propTabs.forEach(t => {
+            const btn = document.getElementById('prop-tab-' + t);
+            const content = document.getElementById('prop-content-' + t);
+            if (t === name) {
+                btn.classList.remove('prop-tab-inactive');
+                btn.classList.add('prop-tab-active');
+                content.classList.remove('hidden');
+            } else {
+                btn.classList.remove('prop-tab-active');
+                btn.classList.add('prop-tab-inactive');
+                content.classList.add('hidden');
+            }
+        });
+    }
+
+    function togglePropCallAudio(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden');
+    }
 </script>
 {% endblock extra_js %}

@@ -74,61 +74,61 @@
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
-                <thead class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                <thead style="background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;">
                     <tr>
-                        <th class="px-5 py-3 text-left">Yön</th>
-                        <th class="px-5 py-3 text-left">Arayan</th>
-                        <th class="px-5 py-3 text-left">Aranan</th>
-                        <th class="px-5 py-3 text-left">Müşteri</th>
-                        <th class="px-5 py-3 text-left">Durum</th>
-                        <th class="px-5 py-3 text-center">Süre</th>
-                        <th class="px-5 py-3 text-left">Tarih</th>
-                        <th class="px-5 py-3 text-center">Kayıt</th>
-                        <th class="px-5 py-3 text-right">İşlem</th>
+                        <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Yön</th>
+                        <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Arayan</th>
+                        <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Müşteri</th>
+                        <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Durum</th>
+                        <th class="px-5 py-3.5 text-center text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Süre</th>
+                        <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Tarih</th>
+                        <th class="px-5 py-3.5 text-center text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Kayıt</th>
+                        <th class="px-5 py-3.5 text-right text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">İşlem</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody>
                     {% for call in calls %}
-                    <tr class="hover:bg-slate-50 transition">
+                    <tr style="border-bottom:1px solid #f1f5f9;transition:all .15s;" onmouseover="this.style.background='#f8faff';this.style.boxShadow='inset 3px 0 0 #a5b4fc'" onmouseout="this.style.background='';this.style.boxShadow=''">
                         <td class="px-5 py-3">
-                            {% if call.direction == 'inbound' %}<span class="inline-flex items-center space-x-1 px-2 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded"><i class="fas fa-arrow-down"></i><span>Gelen</span></span>
-                            {% elif call.direction == 'outbound' %}<span class="inline-flex items-center space-x-1 px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded"><i class="fas fa-arrow-up"></i><span>Giden</span></span>
-                            {% else %}<span class="inline-flex items-center space-x-1 px-2 py-1 bg-purple-50 text-purple-600 text-[10px] font-bold rounded"><i class="fas fa-exchange-alt"></i><span>İç</span></span>{% endif %}
+                            {% if call.direction == 'inbound' %}<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:#ecfdf5;border-radius:8px;font-size:.78rem;font-weight:700;color:#1e293b;"><i class="fas fa-arrow-down" style="color:#10b981;font-size:.7rem;"></i>Gelen</span>
+                            {% elif call.direction == 'outbound' %}<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:#eff6ff;border-radius:8px;font-size:.78rem;font-weight:700;color:#1e293b;"><i class="fas fa-arrow-up" style="color:#3b82f6;font-size:.7rem;"></i>Giden</span>
+                            {% else %}<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:#f5f3ff;border-radius:8px;font-size:.78rem;font-weight:700;color:#1e293b;"><i class="fas fa-exchange-alt" style="color:#8b5cf6;font-size:.7rem;"></i>İç</span>{% endif %}
                         </td>
-                        <td class="px-5 py-3 font-mono text-xs text-slate-700">{{ call.caller|default:"—" }}</td>
-                        <td class="px-5 py-3 font-mono text-xs text-slate-700">{{ call.called|default:"—" }}</td>
+                        <td class="px-5 py-3" style="font-family:monospace;font-size:.9rem;font-weight:400;color:#475569;">{{ call.caller|default:"—" }}</td>
                         <td class="px-5 py-3">
-                            {% if call.customer %}<a href="{% url 'customer_detail' call.customer.pk %}" class="text-sm font-medium text-blue-600 hover:underline">{{ call.customer.full_name|default:call.customer.display_name }}</a>
-                            {% else %}<span class="text-xs text-amber-600"><i class="fas fa-user-slash mr-1"></i>Eşleşmemiş</span>{% endif %}
+                            {% if call.customer %}<a href="{% url 'customer_detail' call.customer.pk %}" style="font-size:.88rem;font-weight:700;color:#1e293b;text-decoration:none;" onmouseover="this.style.color='#6366f1'" onmouseout="this.style.color='#1e293b'">{{ call.customer.full_name|default:call.customer.display_name }}</a>
+                            {% else %}<span style="font-size:.82rem;color:#94a3b8;font-style:italic;"><i class="fas fa-user-slash mr-1"></i>Eşleşmemiş</span>{% endif %}
                         </td>
                         <td class="px-5 py-3">
-                            {% if call.status == 'completed' or call.status == 'answered' %}<span class="inline-block px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded uppercase">{{ call.get_status_display }}</span>
-                            {% elif call.status == 'missed' %}<span class="inline-block px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold rounded uppercase">Cevapsız</span>
-                            {% else %}<span class="inline-block px-2 py-0.5 bg-slate-50 text-slate-500 text-[10px] font-bold rounded uppercase">{{ call.get_status_display }}</span>{% endif %}
+                            {% if call.status == 'completed' or call.status == 'answered' %}<span style="display:inline-block;padding:4px 12px;background:#d1fae5;border-radius:8px;font-size:.78rem;font-weight:700;color:#1e293b;">Tamamlandı</span>
+                            {% elif call.status == 'missed' %}<span style="display:inline-block;padding:4px 12px;background:#fca5a5;border-radius:8px;font-size:.78rem;font-weight:700;color:#1e293b;">Cevapsız</span>
+                            {% else %}<span style="display:inline-block;padding:4px 12px;background:#f1f5f9;border-radius:8px;font-size:.78rem;font-weight:700;color:#1e293b;">{{ call.get_status_display }}</span>{% endif %}
                         </td>
-                        <td class="px-5 py-3 text-center text-xs font-mono text-slate-600">{{ call.duration_formatted }}</td>
-                        <td class="px-5 py-3 text-xs text-slate-500">{{ call.start_time|date:"d.m.Y H:i:s" }}</td>
+                        <td class="px-5 py-3 text-center" style="font-family:monospace;font-size:.9rem;font-weight:600;color:#475569;">{{ call.duration_formatted }}</td>
+                        <td class="px-5 py-3" style="font-size:.85rem;font-weight:500;color:#64748b;">{{ call.start_time|date:"d.m.Y H:i:s" }}</td>
                         <td class="px-5 py-3 text-center">
                             {% if call.recording_url %}
                             <button onclick="openRecordingModal('{{ call.recording_url|escapejs }}', '{{ call.caller|default:""|escapejs }}', '{{ call.start_time|date:"d.m.Y H:i" }}', '{{ call.duration_formatted|default:""|escapejs }}')"
-                                class="inline-flex items-center justify-center w-8 h-8 bg-purple-50 text-purple-600 rounded-full hover:bg-purple-100 transition" title="Kaydı Dinle">
-                                <i class="fas fa-play text-xs"></i>
+                                style="width:34px;height:34px;border-radius:10px;border:none;background:#dcfce7;color:#16a34a;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;transition:all .2s;"
+                                onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Kaydı Dinle">
+                                <i class="fas fa-play" style="margin-left:2px;"></i>
                             </button>
-                            {% else %}<span class="text-slate-300 text-[10px]">—</span>{% endif %}
+                            {% else %}<span style="color:#e2e8f0;">—</span>{% endif %}
                         </td>
                         <td class="px-5 py-3 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 {% if call.recording_url and call.customer %}
                                 <button onclick="runAiSummary({{ call.id }}, this)"
                                         title="AI ile özet çıkar"
-                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-violet-50 text-violet-600 border border-violet-200 text-xs font-bold rounded-lg hover:bg-violet-100 transition">
-                                    <i class="fas fa-magic text-[10px]"></i> AI Özet
+                                        style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;font-size:.75rem;font-weight:700;border-radius:8px;cursor:pointer;transition:all .2s;"
+                                        onmouseover="this.style.background='#ede9fe'" onmouseout="this.style.background='#f5f3ff'">
+                                    <i class="fas fa-magic" style="font-size:.68rem;"></i> AI Özet
                                 </button>
                                 {% endif %}
                                 {% if call.customer %}
-                                <a href="{% url 'customer_detail' call.customer.pk %}" class="inline-flex items-center px-3 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-lg">Müşteri <i class="fas fa-arrow-right ml-1 text-[10px]"></i></a>
+                                <a href="{% url 'customer_detail' call.customer.pk %}" style="display:inline-flex;align-items:center;gap:5px;padding:5px 13px;background:#1e293b;color:white;font-size:.75rem;font-weight:600;border-radius:8px;text-decoration:none;transition:all .2s;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">Müşteri <i class="fas fa-arrow-right" style="font-size:.6rem;"></i></a>
                                 {% else %}
-                                <button type="button" onclick="openConvertModal({{ call.id }}, '{{ call.caller|escapejs }}', '{{ call.start_time|date:"d.m.Y H:i" }}')" class="inline-flex items-center px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700"><i class="fas fa-user-plus mr-1"></i>Müşteriye Dönüştür</button>
+                                <button type="button" onclick="openConvertModal({{ call.id }}, '{{ call.caller|escapejs }}', '{{ call.start_time|date:"d.m.Y H:i" }}')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 13px;background:#059669;color:white;font-size:.75rem;font-weight:700;border-radius:8px;border:none;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'"><i class="fas fa-user-plus"></i>Müşteriye Dönüştür</button>
                                 {% endif %}
                             </div>
                         </td>

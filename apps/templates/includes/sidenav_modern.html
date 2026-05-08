@@ -47,12 +47,6 @@
                 {% endif %}
                 <li><a href="{% url 'customer_list' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'musteri' in request.path and 'hatirlatma' not in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
                     <i class="fas fa-smile w-4 text-cyan-500"></i><span>Müşteriler</span></a></li>
-                <li><a href="{% url 'sales_process:dashboard' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'dashboard' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
-                    <i class="fas fa-tv w-4 text-blue-500"></i><span>Dashboard</span></a></li>
-                <li><a href="{% url 'sales_process:staff_kanban' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'personel-kanban' in request.path or 'staff_kanban' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
-                    <i class="fas fa-columns w-4 text-indigo-500"></i><span>Personel Kanban</span></a></li>
-                <li><a href="{% url 'sales_process:manager_kanban' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'mudur-kanban' in request.path or 'manager_kanban' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
-                    <i class="fas fa-briefcase w-4 text-amber-500"></i><span>Müdür Kanban</span></a></li>
             </ul>
         </details>
 
@@ -68,9 +62,7 @@
             <ul class="mt-1 ml-4 space-y-1 border-l border-slate-100 pl-3">
                 <li><a href="{% url 'property_list' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'gayrimenkul' in request.path and 'sahibinden' not in request.path and 'emlakjet' not in request.path and 'hepsiemlak' not in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
                     <i class="fas fa-building w-4 text-orange-500"></i><span>Gayrimenkuller</span></a></li>
-                <li><a href="{% url 'presentation_list' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'presentation' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
-                    <i class="fas fa-book-open w-4 text-cyan-500"></i><span>Daire Sunumu</span></a></li>
-                <li><a href="{% url 'fsbo_list' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'fsbo' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
+<li><a href="{% url 'fsbo_list' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'fsbo' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
                     <i class="fas fa-mobile-alt w-4 text-red-500"></i><span>FSBO Aramaları</span></a></li>
                 <li><a href="{% url 'saha_harita' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'saha' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
                     <i class="fas fa-map-marked-alt w-4 text-emerald-500"></i><span>Saha Haritası</span></a></li>

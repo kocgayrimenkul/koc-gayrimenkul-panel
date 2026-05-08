@@ -14,7 +14,7 @@ from .models import (
     Customer,
     Neighborhood, CustomerNote, CustomerTask, CustomerWorkflow,
     CustomerOffer, CustomerDemand, CustomerSmsLog, CustomerWhatsappLog,
-    CustomerActivity, CustomerReminder,
+    CustomerActivity, CustomerReminder, CustomerPresentation,
 )
 from apps.portfolio.models import Property
 
@@ -42,9 +42,10 @@ def customer_detail(request, pk):
     workflow_stats = {
         'total': workflows_qs.count(),
         'active': workflows_qs.filter(status='aktif').count(),
-        'completed': workflows_qs.filter(status='tamamlandi').count(),
-        'overdue': workflows_qs.filter(status='gecikmis').count(),
-        'archived': workflows_qs.filter(status='arsivlendi').count(),
+        'geri_donus': workflows_qs.filter(status='geri_donus').count(),
+        'daire_sunumu': workflows_qs.filter(status='daire_sunumu').count(),
+        'satis': workflows_qs.filter(status='satis').count(),
+        'iptal_olacak': workflows_qs.filter(status='iptal_olacak').count(),
     }
     workflows = list(workflows_qs[:50])
 
@@ -99,6 +100,71 @@ def customer_detail(request, pk):
     activities = list(customer.activities.select_related('user').all()[:50])
     available_properties = Property.objects.filter(is_active=True).order_by('-created_at')[:100]
 
+    # Tüm aktiviteleri birleştir (zaman sırasına göre)
+    from django.utils import timezone as tz2
+    combined_activities = []
+
+    for note in notes_qs:
+        combined_activities.append({
+            'type': 'note', 'icon': 'fa-sticky-note', 'color': '#6366f1', 'bg': '#ede9fe',
+            'title': 'Not eklendi',
+            'description': note.content[:120],
+            'user': note.user.get_full_name() if note.user else 'Sistem',
+            'date': note.created_at,
+        })
+
+    for task in tasks_qs:
+        combined_activities.append({
+            'type': 'task', 'icon': 'fa-check-square', 'color': '#0284c7', 'bg': '#e0f2fe',
+            'title': f'Görev: {task.title}',
+            'description': f'Durum: {task.get_status_display()}',
+            'user': task.assigned_to.get_full_name() if task.assigned_to else 'Atanmamış',
+            'date': task.created_at,
+        })
+
+    for wf in workflows_qs:
+        combined_activities.append({
+            'type': 'workflow', 'icon': 'fa-filter', 'color': '#7c3aed', 'bg': '#f5f3ff',
+            'title': f'İş Akışı: {wf.title}',
+            'description': f'{wf.get_workflow_type_display()} · {wf.get_status_display()}',
+            'user': wf.created_by.get_full_name() if wf.created_by else 'Sistem',
+            'date': wf.created_at,
+        })
+
+    for call in call_logs_qs:
+        combined_activities.append({
+            'type': 'call', 'icon': 'fa-phone-alt', 'color': '#059669', 'bg': '#dcfce7',
+            'title': f'Çağrı ({call.get_direction_display()})',
+            'description': f'{call.get_status_display()} · Süre: {call.duration_formatted}',
+            'user': call.caller or '—',
+            'date': call.start_time,
+        })
+
+    for act in activities:
+        combined_activities.append({
+            'type': 'activity', 'icon': 'fa-bolt', 'color': '#d97706', 'bg': '#fef9c3',
+            'title': act.get_activity_type_display(),
+            'description': act.description,
+            'user': act.user.get_full_name() if act.user else act.source_label or 'Sistem',
+            'date': act.created_at,
+        })
+
+    combined_activities.sort(key=lambda x: x['date'], reverse=True)
+
+    # Kanban verisi
+    WORKFLOW_TYPES = CustomerWorkflow.WORKFLOW_TYPE_CHOICES
+    STATUS_CHOICES = CustomerWorkflow.STATUS_CHOICES
+    kanban_active_type = request.GET.get('kanban_type', 'satis')
+    kanban_by_status = {}
+    for status_key, status_label in STATUS_CHOICES:
+        qs = CustomerWorkflow.objects.filter(workflow_type=kanban_active_type, status=status_key).select_related('customer', 'related_property')
+        kanban_by_status[status_key] = {'label': status_label, 'cards': list(qs), 'count': qs.count()}
+    type_counts = {wt_key: CustomerWorkflow.objects.filter(workflow_type=wt_key).count() for wt_key, _ in WORKFLOW_TYPES}
+    kanban_type_tabs = [(wt_key, wt_label, type_counts.get(wt_key, 0)) for wt_key, wt_label in WORKFLOW_TYPES]
+    active_type_label = dict(WORKFLOW_TYPES).get(kanban_active_type, kanban_active_type)
+
+    presentations = list(customer.presentations.select_related('property', 'created_by').all()[:50])
+
     context = {
         'customer': customer,
         'notes': notes, 'tasks': tasks, 'notes_stats': notes_stats,
@@ -108,10 +174,16 @@ def customer_detail(request, pk):
         'call_logs': call_logs, 'sms_logs': sms_logs, 'whatsapp_logs': whatsapp_logs,
         'call_stats': call_stats, 'sms_stats': sms_stats, 'wa_stats': wa_stats, 'action_stats': action_stats,
         'activities': activities,
+        'combined_activities': combined_activities,
         'available_properties': available_properties,
         'workflow_type_choices': CustomerWorkflow.WORKFLOW_TYPE_CHOICES,
         'priority_choices': CustomerWorkflow.PRIORITY_CHOICES,
         'currency_choices': CustomerOffer.CURRENCY_CHOICES,
+        'kanban_by_status': kanban_by_status,
+        'kanban_type_tabs': kanban_type_tabs,
+        'kanban_active_type': kanban_active_type,
+        'active_type_label': active_type_label,
+        'presentations': presentations,
     }
     return render(request, 'customers/customer_detail.html', context)
 
@@ -177,6 +249,54 @@ def customer_note_create(request, pk):
     )
     CustomerActivity.objects.create(customer=customer, user=request.user, activity_type='not_eklendi', source_label='Manuel', description=f"Not eklendi: {content[:60]}")
     return JsonResponse({'success': True, 'note': {'id': note.id, 'content': note.content, 'created_at': note.created_at.strftime('%d.%m.%Y %H:%M')}})
+
+
+@login_required
+@require_POST
+def customer_presentation_create(request, pk):
+    """Müşteriye daire sunumu ekle"""
+    customer = get_object_or_404(Customer, pk=pk)
+    property_id = request.POST.get('property_id', '').strip()
+    meeting_notes = request.POST.get('meeting_notes', '').strip()
+    if not property_id:
+        return JsonResponse({'success': False, 'error': 'Daire seçimi zorunludur.'}, status=400)
+    try:
+        prop = Property.objects.get(pk=property_id)
+    except Property.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Daire bulunamadı.'}, status=404)
+    presentation = CustomerPresentation.objects.create(
+        customer=customer,
+        property=prop,
+        created_by=request.user,
+        meeting_notes=meeting_notes,
+    )
+    CustomerActivity.objects.create(
+        customer=customer, user=request.user,
+        activity_type='diger', source_label='Manuel',
+        description=f"Daire sunumu: {prop.apartment_name}",
+    )
+    return JsonResponse({
+        'success': True,
+        'presentation': {
+            'id': presentation.id,
+            'property_name': prop.apartment_name or str(prop),
+            'meeting_notes': presentation.meeting_notes,
+            'created_at': presentation.created_at.strftime('%d.%m.%Y %H:%M'),
+            'consultant': request.user.get_full_name() or request.user.username,
+        }
+    })
+
+
+@login_required
+def property_search_json(request):
+    """Daire arama için JSON autocomplete endpoint"""
+    q = request.GET.get('q', '').strip()
+    props = Property.objects.filter(is_active=True)
+    if q:
+        props = props.filter(apartment_name__icontains=q)
+    props = props.order_by('apartment_name')[:20]
+    data = [{'id': p.pk, 'name': p.apartment_name or str(p)} for p in props]
+    return JsonResponse({'results': data})
 
 
 def customer_reminders_processor(request):
@@ -368,6 +488,23 @@ def customer_quick_create(request):
             customer.real_estate_id = int(real_estate_id)
 
         customer.save()
+
+        # Otomatik satış süreci workflow oluştur (3 günlük takip)
+        try:
+            import datetime
+            from django.utils import timezone
+            CustomerWorkflow.objects.create(
+                customer=customer,
+                title='Satış Takibi',
+                workflow_type='satis',
+                status='aktif',
+                priority='normal',
+                due_date=(timezone.now() + datetime.timedelta(days=3)).date(),
+                description='Yeni müşteri otomatik oluşturuldu. 3 gün içinde en az 3 işlem yapılması gerekiyor.',
+                created_by=request.user,
+            )
+        except Exception:
+            pass
 
         return JsonResponse({
             'success': True,

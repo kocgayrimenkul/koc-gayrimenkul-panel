@@ -521,6 +521,24 @@ def convert_call_to_customer(request, call_id):
     call.customer = customer
     call.save(update_fields=['customer'])
 
+    # Otomatik satış süreci workflow oluştur (3 günlük takip)
+    try:
+        from apps.customers.models import CustomerWorkflow
+        from django.utils import timezone
+        import datetime
+        CustomerWorkflow.objects.create(
+            customer=customer,
+            title='Satış Takibi',
+            workflow_type='satis',
+            status='aktif',
+            priority='normal',
+            due_date=(timezone.now() + datetime.timedelta(days=3)).date(),
+            description='Çağrıdan otomatik oluşturuldu. 3 gün içinde en az 3 işlem yapılması gerekiyor.',
+            created_by=request.user,
+        )
+    except Exception:
+        pass
+
     # Seçilen daire varsa CustomerDemand oluştur
     prop = None
     if property_id:

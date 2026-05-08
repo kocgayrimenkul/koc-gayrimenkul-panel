@@ -22,6 +22,8 @@ urlpatterns = [
     path('<int:pk>/workflow/create/', views.customer_workflow_create, name='workflow_create'),
     path('<int:pk>/offer/create/', views.customer_offer_create, name='offer_create'),
     path('<int:pk>/note/create/', views.customer_note_create, name='note_create'),
+    path('<int:pk>/presentation/create/', views.customer_presentation_create, name='presentation_create'),
+    path('musteri/gayrimenkul-ara/', views.property_search_json, name='property_search_json'),
 
     # call_list URL'i apps/calls/urls.py'den geliyor (cagrilar/ -> calls.views.call_list)
     # Eski sidebar placeholder'lar (admin'e yonlendiren)

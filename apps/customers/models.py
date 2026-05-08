@@ -446,10 +446,10 @@ class CustomerWorkflow(models.Model):
 
     STATUS_CHOICES = [
         ('aktif', 'Aktif'),
-        ('tamamlandi', 'Tamamlandı'),
-        ('gecikmis', 'Gecikmiş'),
-        ('arsivlendi', 'Arşivlendi'),
-        ('iptal', 'İptal'),
+        ('geri_donus', 'Geri Dönüş'),
+        ('daire_sunumu', 'Daire Sunumu'),
+        ('satis', 'Satış'),
+        ('iptal_olacak', 'İptal Olacak'),
     ]
 
     WORKFLOW_TYPE_CHOICES = [
@@ -778,4 +778,38 @@ class CustomerActivity(models.Model):
     class Meta:
         verbose_name = "Müşteri Aktivitesi"
         verbose_name_plural = "Müşteri Aktiviteleri"
+        ordering = ['-created_at']
+
+
+class CustomerPresentation(models.Model):
+    """Müşteriye yapılan daire sunumları"""
+
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name="presentations",
+        verbose_name="Müşteri",
+    )
+    property = models.ForeignKey(
+        'portfolio.Property',
+        on_delete=models.CASCADE,
+        related_name="customer_presentations",
+        verbose_name="Sunulan Daire",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_presentations",
+        verbose_name="Danışman",
+    )
+    meeting_notes = models.TextField(blank=True, verbose_name="Görüşme Sonucu")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.customer.display_name} - {self.property.apartment_name}"
+
+    class Meta:
+        verbose_name = "Daire Sunumu"
+        verbose_name_plural = "Daire Sunumları"
         ordering = ['-created_at']
