@@ -172,30 +172,4 @@
         {% if presentations.has_other_pages %}
         <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
             <div class="text-xs text-slate-500">
-                Toplam <span class="font-semibold text-slate-700">{{ presentations.paginator.count }}</span> sunumdan
-                <span class="font-semibold text-slate-700">{{ presentations.start_index }}-{{ presentations.end_index }}</span> arası
-            </div>
-            <div class="flex space-x-1">
-                {% if presentations.has_previous %}
-                <a href="?page={{ presentations.previous_page_number }}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_date %}&date={{ filter_date }}{% endif %}" class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs hover:bg-slate-50">
-                    <i class="fas fa-chevron-left text-[10px]"></i>
-                </a>
-                {% endif %}
-                {% for n in presentations.paginator.page_range %}
-                    {% if n == presentations.number %}
-                    <span class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold">{{ n }}</span>
-                    {% elif n|add:"-2" <= presentations.number and n|add:"2" >= presentations.number %}
-                    <a href="?page={{ n }}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_date %}&date={{ filter_date }}{% endif %}" class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs hover:bg-slate-50">{{ n }}</a>
-                    {% endif %}
-                {% endfor %}
-                {% if presentations.has_next %}
-                <a href="?page={{ presentations.next_page_number }}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_date %}&date={{ filter_date }}{% endif %}" class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs hover:bg-slate-50">
-                    <i class="fas fa-chevron-right text-[10px]"></i>
-                </a>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-    </div>
-</div>
-{% endblock %}
+                Toplam <span class="font-semibold text-slate-700">{{ presentations.paginator.count 
