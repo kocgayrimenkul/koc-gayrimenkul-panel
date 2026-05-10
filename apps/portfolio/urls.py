@@ -66,6 +66,15 @@ urlpatterns = [
     # Fiyat geçmişi
     path('api/gayrimenkul/<int:property_id>/fiyat-gecmisi/', views.price_history_api, name='price_history_api'),
 
+    # Sunum yapılan müşteriler
+    path('api/gayrimenkul/<int:property_id>/sunum-musteriler/', views.property_sunum_musteriler_api, name='property_sunum_musteriler_api'),
+
+    # Sosyal medya şablonları
+    path('gayrimenkul/<int:property_id>/sosyal-medya/', views.social_media_page, name='social_media_page'),
+
+    # Arşivden geri al
+    path('gayrimenkul/<int:property_id>/geri-al/', views.property_restore, name='property_restore'),
+
     # Sahibinden entegrasyonu
     path('sahibinden/', views.sahibinden_export, name='sahibinden_export'),
     path('sahibinden/xml/', views.sahibinden_xml_feed, name='sahibinden_xml_feed'),

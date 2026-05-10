@@ -55,10 +55,14 @@ def presentation_list(request):
         ).distinct()
     
     # Filtreleme işlemleri
+    filter_property = request.GET.get('property', '')
+    if filter_property:
+        presentations = presentations.filter(property_id=filter_property)
+
     filter_status = request.GET.get('status', '')
     if filter_status:
         presentations = presentations.filter(status=filter_status)
-    
+
     filter_date = request.GET.get('date', '')
     if filter_date == 'today':
         today = timezone.now().date()
@@ -99,11 +103,22 @@ def presentation_list(request):
     tamamlanan_sunum_sayisi = all_presentations.filter(status='tamamlandi').count()
     iptal_sunum_sayisi = all_presentations.filter(status='iptal').count()
     
+    # Filtrelenen gayrimenkul bilgisi
+    filtered_property = None
+    if filter_property:
+        from apps.portfolio.models import Property
+        try:
+            filtered_property = Property.objects.get(pk=filter_property)
+        except Property.DoesNotExist:
+            pass
+
     context = {
         'segment': 'daire_sunumu',
         'presentations': presentations_page,
         'filter_status': filter_status,
         'filter_date': filter_date,
+        'filter_property': filter_property,
+        'filtered_property': filtered_property,
         'bekleyen_sunum_sayisi': bekleyen_sunum_sayisi,
         'tamamlanan_sunum_sayisi': tamamlanan_sunum_sayisi,
         'iptal_sunum_sayisi': iptal_sunum_sayisi,

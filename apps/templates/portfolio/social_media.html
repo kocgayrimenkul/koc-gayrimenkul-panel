@@ -1,0 +1,621 @@
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+
+{% block title %}Sosyal Medya Şablonları - {{ property.apartment_name|default:"Gayrimenkul" }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .template-thumb { cursor:pointer; border:3px solid transparent; border-radius:12px; overflow:hidden; transition:all .2s; }
+  .template-thumb:hover { border-color:#6366f1; transform:translateY(-2px); }
+  .template-thumb.active { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.2); }
+  .photo-thumb { cursor:pointer; border:3px solid transparent; border-radius:8px; overflow:hidden; transition:all .2s; }
+  .photo-thumb:hover { border-color:#3b82f6; }
+  .photo-thumb.active { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.2); }
+  .format-btn { padding:8px 18px; border-radius:8px; font-size:.8rem; font-weight:700; cursor:pointer; border:2px solid #e2e8f0; background:#fff; color:#64748b; transition:all .2s; }
+  .format-btn.active { border-color:#6366f1; background:#eef2ff; color:#4f46e5; }
+  canvas { max-width:100%; height:auto; display:block; }
+  #canvas-wrap { display:flex; align-items:center; justify-content:center; background:#1e293b; border-radius:16px; padding:20px; min-height:400px; }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="p-4 max-w-7xl mx-auto">
+
+  <!-- Başlık -->
+  <div class="flex items-center gap-3 mb-4">
+    <a href="{% url 'property_detail' property.id %}" class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-300 transition no-underline">
+      <i class="fas fa-arrow-left text-sm"></i>
+    </a>
+    <div>
+      <h1 class="text-lg font-bold text-slate-800">Sosyal Medya Şablonları</h1>
+      <p class="text-xs text-slate-500">{{ property.apartment_name|default:property.web_title|default:"Gayrimenkul"|upper }} · #{{ property.id }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+
+    <!-- SOL: Ayarlar Paneli -->
+    <div class="xl:col-span-1 space-y-4">
+
+      <!-- Format Seçimi -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-700 mb-3"><i class="fas fa-mobile-alt text-indigo-500 mr-2"></i>Format</h3>
+        <div class="flex gap-2">
+          <button class="format-btn active" id="fmt-story" onclick="setFormat('story')">
+            <i class="fas fa-mobile-alt mr-1"></i> Story / Reels<br><span style="font-size:.68rem;opacity:.7;">9:16 · 1080×1920</span>
+          </button>
+          <button class="format-btn" id="fmt-square" onclick="setFormat('square')">
+            <i class="fas fa-square mr-1"></i> Kare Post<br><span style="font-size:.68rem;opacity:.7;">1:1 · 1080×1080</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Şablon Seçimi -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-700 mb-3"><i class="fas fa-palette text-pink-500 mr-2"></i>Şablon Stili</h3>
+        <div class="grid grid-cols-3 gap-2" id="template-thumbs">
+          <div class="template-thumb active" data-tpl="modern" onclick="setTemplate('modern')">
+            <div style="background:linear-gradient(160deg,#1e293b,#334155);padding:8px;aspect-ratio:9/16;display:flex;flex-direction:column;justify-content:flex-end;">
+              <div style="background:rgba(99,102,241,.9);height:4px;border-radius:2px;margin-bottom:4px;"></div>
+              <div style="background:#fff;height:6px;border-radius:2px;width:70%;margin-bottom:2px;"></div>
+              <div style="background:rgba(255,255,255,.5);height:3px;border-radius:2px;width:50%;"></div>
+            </div>
+            <p class="text-center text-[10px] font-semibold text-slate-600 py-1">Modern</p>
+          </div>
+          <div class="template-thumb" data-tpl="luxury" onclick="setTemplate('luxury')">
+            <div style="background:linear-gradient(160deg,#7c2d12,#b91c1c);padding:8px;aspect-ratio:9/16;display:flex;flex-direction:column;justify-content:flex-end;">
+              <div style="background:rgba(251,191,36,.9);height:4px;border-radius:2px;margin-bottom:4px;"></div>
+              <div style="background:#fff;height:6px;border-radius:2px;width:70%;margin-bottom:2px;"></div>
+              <div style="background:rgba(255,255,255,.5);height:3px;border-radius:2px;width:50%;"></div>
+            </div>
+            <p class="text-center text-[10px] font-semibold text-slate-600 py-1">Lüks</p>
+          </div>
+          <div class="template-thumb" data-tpl="minimal" onclick="setTemplate('minimal')">
+            <div style="background:#f8fafc;padding:8px;aspect-ratio:9/16;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:flex-end;">
+              <div style="background:#3b82f6;height:4px;border-radius:2px;margin-bottom:4px;"></div>
+              <div style="background:#1e293b;height:6px;border-radius:2px;width:70%;margin-bottom:2px;"></div>
+              <div style="background:rgba(30,41,59,.4);height:3px;border-radius:2px;width:50%;"></div>
+            </div>
+            <p class="text-center text-[10px] font-semibold text-slate-600 py-1">Minimal</p>
+          </div>
+          <div class="template-thumb" data-tpl="dark" onclick="setTemplate('dark')">
+            <div style="background:#0f172a;padding:8px;aspect-ratio:9/16;display:flex;flex-direction:column;justify-content:flex-end;">
+              <div style="background:#10b981;height:4px;border-radius:2px;margin-bottom:4px;"></div>
+              <div style="background:#fff;height:6px;border-radius:2px;width:70%;margin-bottom:2px;"></div>
+              <div style="background:rgba(255,255,255,.4);height:3px;border-radius:2px;width:50%;"></div>
+            </div>
+            <p class="text-center text-[10px] font-semibold text-slate-600 py-1">Koyu</p>
+          </div>
+          <div class="template-thumb" data-tpl="gradient" onclick="setTemplate('gradient')">
+            <div style="background:linear-gradient(160deg,#1d4ed8,#7c3aed);padding:8px;aspect-ratio:9/16;display:flex;flex-direction:column;justify-content:flex-end;">
+              <div style="background:#fbbf24;height:4px;border-radius:2px;margin-bottom:4px;"></div>
+              <div style="background:#fff;height:6px;border-radius:2px;width:70%;margin-bottom:2px;"></div>
+              <div style="background:rgba(255,255,255,.5);height:3px;border-radius:2px;width:50%;"></div>
+            </div>
+            <p class="text-center text-[10px] font-semibold text-slate-600 py-1">Gradient</p>
+          </div>
+          <div class="template-thumb" data-tpl="nature" onclick="setTemplate('nature')">
+            <div style="background:linear-gradient(160deg,#064e3b,#065f46);padding:8px;aspect-ratio:9/16;display:flex;flex-direction:column;justify-content:flex-end;">
+              <div style="background:#34d399;height:4px;border-radius:2px;margin-bottom:4px;"></div>
+              <div style="background:#fff;height:6px;border-radius:2px;width:70%;margin-bottom:2px;"></div>
+              <div style="background:rgba(255,255,255,.5);height:3px;border-radius:2px;width:50%;"></div>
+            </div>
+            <p class="text-center text-[10px] font-semibold text-slate-600 py-1">Doğa</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fotoğraf Seçimi -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-700 mb-3"><i class="fas fa-image text-emerald-500 mr-2"></i>Arka Plan Fotoğrafı</h3>
+        {% if images %}
+        <div class="grid grid-cols-3 gap-2" id="photo-grid">
+          {% for img in images %}
+          <div class="photo-thumb {% if forloop.first %}active{% endif %}" onclick="selectPhoto('{{ img.image.url }}', this)">
+            <img src="{{ img.image.url }}" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;">
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-6 text-slate-400 text-xs">
+          <i class="far fa-image text-3xl mb-2 block"></i>
+          Fotoğraf bulunamadı
+        </div>
+        {% endif %}
+        <div class="mt-3">
+          <label class="text-xs text-slate-500 font-medium mb-1 block">Fotoğraf opaklığı</label>
+          <input type="range" id="photo-opacity" min="20" max="100" value="65" class="w-full" oninput="renderCanvas()">
+        </div>
+      </div>
+
+      <!-- İçerik Özelleştirme -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-700 mb-3"><i class="fas fa-edit text-blue-500 mr-2"></i>İçerik</h3>
+        <div class="space-y-2">
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Başlık</label>
+            <input type="text" id="txt-title" value="{{ property.web_title|default:property.apartment_name|default:""|upper }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-300" oninput="renderCanvas()">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Fiyat</label>
+            <input type="text" id="txt-price" value="₺{{ property.price|floatformat:0|intcomma }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-300" oninput="renderCanvas()">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Konum</label>
+            <input type="text" id="txt-location" value="{{ property.neighborhood.name|default:"" }}{% if property.neighborhood.district %} / {{ property.neighborhood.district }}{% endif %}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-300" oninput="renderCanvas()">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Marka / İletişim</label>
+            <input type="text" id="txt-brand" value="Koç Gayrimenkul" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-300" oninput="renderCanvas()">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 font-medium">Hashtag Satırı</label>
+            <input type="text" id="txt-hashtag" value="#emlak #koçgayrimenkul #satılık {% if property.neighborhood %}#{{ property.neighborhood.name|lower|cut:" " }}{% endif %}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-300" oninput="renderCanvas()">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SAĞ: Önizleme + İndirme -->
+    <div class="xl:col-span-2 space-y-4">
+
+      <!-- Canvas Önizleme -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-slate-700"><i class="fas fa-eye text-slate-400 mr-2"></i>Önizleme</h3>
+          <div class="flex gap-2">
+            <button onclick="downloadCanvas()" class="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition flex items-center gap-2">
+              <i class="fas fa-download"></i> İndir (PNG)
+            </button>
+            <button onclick="copyCanvasToClipboard()" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-200 transition flex items-center gap-2">
+              <i class="fas fa-copy"></i> Kopyala
+            </button>
+          </div>
+        </div>
+        <div id="canvas-wrap">
+          <canvas id="sm-canvas"></canvas>
+        </div>
+        <p class="text-center text-xs text-slate-400 mt-2" id="canvas-size-label">1080 × 1920 px</p>
+      </div>
+
+      <!-- Hızlı İlan Bilgileri -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-700 mb-3"><i class="fas fa-info-circle text-slate-400 mr-2"></i>İlan Bilgileri</h3>
+        <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+          {% if property.room_count %}
+          <div class="bg-slate-50 rounded-xl p-3 text-center">
+            <div class="text-xs text-slate-400">Oda</div>
+            <div class="font-bold text-slate-800">{{ property.room_count }}</div>
+          </div>
+          {% endif %}
+          {% if property.net_area %}
+          <div class="bg-slate-50 rounded-xl p-3 text-center">
+            <div class="text-xs text-slate-400">Net m²</div>
+            <div class="font-bold text-slate-800">{{ property.net_area|floatformat:0 }}</div>
+          </div>
+          {% endif %}
+          {% if property.gross_area %}
+          <div class="bg-slate-50 rounded-xl p-3 text-center">
+            <div class="text-xs text-slate-400">Brüt m²</div>
+            <div class="font-bold text-slate-800">{{ property.gross_area|floatformat:0 }}</div>
+          </div>
+          {% endif %}
+          {% if property.floor %}
+          <div class="bg-slate-50 rounded-xl p-3 text-center">
+            <div class="text-xs text-slate-400">Kat</div>
+            <div class="font-bold text-slate-800">{{ property.floor }}</div>
+          </div>
+          {% endif %}
+          {% if property.floor_count %}
+          <div class="bg-slate-50 rounded-xl p-3 text-center">
+            <div class="text-xs text-slate-400">Kat Sayısı</div>
+            <div class="font-bold text-slate-800">{{ property.floor_count }}</div>
+          </div>
+          {% endif %}
+          {% if property.bathroom_count %}
+          <div class="bg-slate-50 rounded-xl p-3 text-center">
+            <div class="text-xs text-slate-400">Banyo</div>
+            <div class="font-bold text-slate-800">{{ property.bathroom_count }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Sosyal Medya Metni -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-slate-700"><i class="fab fa-instagram text-pink-500 mr-2"></i>Hazır Paylaşım Metni</h3>
+          <button onclick="copyCaption()" class="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-200 transition">
+            <i class="fas fa-copy mr-1"></i> Kopyala
+          </button>
+        </div>
+        <textarea id="caption-text" rows="8" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none">{% autoescape off %}{{ property.get_status_display|upper }} | {{ property.get_property_type_display|upper }}
+
+🏠 {{ property.web_title|default:property.apartment_name|default:"Gayrimenkul" }}
+📍 {{ property.neighborhood.name|default:"" }}{% if property.neighborhood.district %} / {{ property.neighborhood.district }}{% endif %}
+💰 ₺{{ property.price|floatformat:0|intcomma }}
+
+{% if property.room_count %}🛏 {{ property.room_count }} Oda  {% endif %}{% if property.net_area %}📐 {{ property.net_area|floatformat:0 }} m² Net  {% endif %}{% if property.floor %}🏢 {{ property.floor }}. Kat{% endif %}
+
+✅ Detaylı bilgi ve görüntüleme için DM'den ulaşabilirsiniz.
+
+📞 Koç Gayrimenkul
+
+#emlak #gayrimenkul #koçgayrimenkul #satılık {% if property.get_status_display == 'Kiralık' %}#kiralık{% else %}#satılık{% endif %} #ev {% if property.neighborhood %}#{{ property.neighborhood.name|lower|cut:" " }}{% endif %} #daire{% endautoescape %}</textarea>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+// ─── VERİ ───────────────────────────────────────────────
+const PROPERTY = {
+  title:    document.getElementById('txt-title').value,
+  price:    document.getElementById('txt-price').value,
+  location: document.getElementById('txt-location').value,
+  brand:    document.getElementById('txt-brand').value,
+  hashtag:  document.getElementById('txt-hashtag').value,
+  rooms:    '{{ property.room_count|default:"" }}',
+  net:      '{{ property.net_area|floatformat:0|default:"" }}',
+  gross:    '{{ property.gross_area|floatformat:0|default:"" }}',
+  floor:    '{{ property.floor|default:"" }}',
+  type:     '{{ property.get_property_type_display|default:"" }}',
+  status:   '{{ property.get_status_display|default:"" }}',
+};
+
+// ─── DURUM ──────────────────────────────────────────────
+let currentFormat   = 'story';
+let currentTemplate = 'modern';
+let currentBgImage  = null;
+
+// ─── CANVAS ─────────────────────────────────────────────
+const canvas = document.getElementById('sm-canvas');
+const ctx = canvas.getContext('2d');
+
+const FORMATS = {
+  story:  { w:1080, h:1920 },
+  square: { w:1080, h:1080 },
+};
+
+const TEMPLATES = {
+  modern: {
+    bg:       '#1e293b',
+    accent:   '#6366f1',
+    accent2:  '#818cf8',
+    textMain: '#ffffff',
+    textSub:  '#cbd5e1',
+    barColor: '#6366f1',
+  },
+  luxury: {
+    bg:       '#7c1d1d',
+    accent:   '#fbbf24',
+    accent2:  '#fde68a',
+    textMain: '#ffffff',
+    textSub:  '#fde68a',
+    barColor: '#fbbf24',
+  },
+  minimal: {
+    bg:       '#f8fafc',
+    accent:   '#3b82f6',
+    accent2:  '#1d4ed8',
+    textMain: '#0f172a',
+    textSub:  '#475569',
+    barColor: '#3b82f6',
+  },
+  dark: {
+    bg:       '#0f172a',
+    accent:   '#10b981',
+    accent2:  '#34d399',
+    textMain: '#ffffff',
+    textSub:  '#94a3b8',
+    barColor: '#10b981',
+  },
+  gradient: {
+    bg:       '#1d4ed8',
+    accent:   '#fbbf24',
+    accent2:  '#fde68a',
+    textMain: '#ffffff',
+    textSub:  '#bfdbfe',
+    barColor: '#fbbf24',
+    grad:     ['#1d4ed8','#7c3aed'],
+  },
+  nature: {
+    bg:       '#064e3b',
+    accent:   '#34d399',
+    accent2:  '#6ee7b7',
+    textMain: '#ffffff',
+    textSub:  '#a7f3d0',
+    barColor: '#34d399',
+  },
+};
+
+function setFormat(fmt) {
+  currentFormat = fmt;
+  ['story','square'].forEach(f => {
+    const b = document.getElementById('fmt-' + f);
+    b.classList.toggle('active', f === fmt);
+  });
+  document.getElementById('canvas-size-label').textContent =
+    fmt === 'story' ? '1080 × 1920 px' : '1080 × 1080 px';
+  renderCanvas();
+}
+
+function setTemplate(tpl) {
+  currentTemplate = tpl;
+  document.querySelectorAll('.template-thumb').forEach(el => {
+    el.classList.toggle('active', el.dataset.tpl === tpl);
+  });
+  renderCanvas();
+}
+
+function selectPhoto(url, el) {
+  document.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => { currentBgImage = img; renderCanvas(); };
+  img.onerror = () => { currentBgImage = null; renderCanvas(); };
+  img.src = url;
+}
+
+// İlk fotoğrafı yükle
+(function() {
+  const first = document.querySelector('.photo-thumb');
+  if (first) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { currentBgImage = img; renderCanvas(); };
+    img.onerror = () => renderCanvas();
+    img.src = first.querySelector('img')?.src || '';
+  } else {
+    renderCanvas();
+  }
+})();
+
+// ─── RENDER ─────────────────────────────────────────────
+function renderCanvas() {
+  const fmt = FORMATS[currentFormat];
+  const tpl = TEMPLATES[currentTemplate];
+  canvas.width  = fmt.w;
+  canvas.height = fmt.h;
+  const W = fmt.w, H = fmt.h;
+
+  // --- Arka Plan ---
+  if (tpl.grad) {
+    const grd = ctx.createLinearGradient(0, 0, W * 0.6, H);
+    grd.addColorStop(0, tpl.grad[0]);
+    grd.addColorStop(1, tpl.grad[1]);
+    ctx.fillStyle = grd;
+  } else {
+    ctx.fillStyle = tpl.bg;
+  }
+  ctx.fillRect(0, 0, W, H);
+
+  // --- Fotoğraf Overlay ---
+  if (currentBgImage) {
+    const opacity = parseInt(document.getElementById('photo-opacity').value) / 100;
+    ctx.globalAlpha = opacity;
+    // Cover fit
+    const iRatio = currentBgImage.width / currentBgImage.height;
+    const cRatio = W / H;
+    let sw, sh, sx, sy;
+    if (iRatio > cRatio) {
+      sh = currentBgImage.height;
+      sw = sh * cRatio;
+      sy = 0;
+      sx = (currentBgImage.width - sw) / 2;
+    } else {
+      sw = currentBgImage.width;
+      sh = sw / cRatio;
+      sx = 0;
+      sy = (currentBgImage.height - sh) / 2;
+    }
+    ctx.drawImage(currentBgImage, sx, sy, sw, sh, 0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  // --- Gradient overlay (okunabilirlik) ---
+  const overlayGrad = ctx.createLinearGradient(0, 0, 0, H);
+  overlayGrad.addColorStop(0,    'rgba(0,0,0,0.55)');
+  overlayGrad.addColorStop(0.35, 'rgba(0,0,0,0.1)');
+  overlayGrad.addColorStop(0.6,  'rgba(0,0,0,0.2)');
+  overlayGrad.addColorStop(1,    'rgba(0,0,0,0.85)');
+  ctx.fillStyle = overlayGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── ALT BÖLGE ──────────────────────────────────────
+  const pad = 70;
+  let y = H - pad;
+
+  // Hashtag
+  const hashtagVal = document.getElementById('txt-hashtag').value;
+  if (hashtagVal) {
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = `${W * 0.028}px Arial`;
+    ctx.textAlign = 'left';
+    y -= W * 0.035;
+    ctx.fillText(truncate(hashtagVal, 55), pad, y);
+    y -= W * 0.015;
+  }
+
+  // Marka
+  const brandVal = document.getElementById('txt-brand').value;
+  ctx.fillStyle = tpl.accent2;
+  ctx.font = `bold ${W * 0.035}px Arial`;
+  y -= W * 0.055;
+  ctx.fillText(brandVal, pad, y);
+  y -= W * 0.025;
+
+  // Accent çizgi
+  ctx.fillStyle = tpl.barColor;
+  ctx.fillRect(pad, y, W * 0.08, W * 0.008);
+  y -= W * 0.055;
+
+  // Konum
+  const locVal = document.getElementById('txt-location').value;
+  if (locVal) {
+    ctx.fillStyle = tpl.textSub;
+    ctx.font = `${W * 0.038}px Arial`;
+    ctx.fillText('📍 ' + locVal, pad, y);
+    y -= W * 0.065;
+  }
+
+  // Detay etiketleri (oda, m², kat)
+  const tags = [];
+  if (PROPERTY.rooms)   tags.push('🛏 ' + PROPERTY.rooms);
+  if (PROPERTY.net)     tags.push('📐 ' + PROPERTY.net + ' m²');
+  if (PROPERTY.floor)   tags.push('🏢 ' + PROPERTY.floor + '. Kat');
+  if (tags.length) {
+    const tagFontSize = W * 0.036;
+    ctx.font = `${tagFontSize}px Arial`;
+    let tx = pad;
+    const tagH = tagFontSize * 1.8;
+    y -= tagH + W * 0.02;
+    tags.forEach(tag => {
+      const tw = ctx.measureText(tag).width + 36;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      roundRect(ctx, tx, y - tagFontSize * 1.1, tw, tagH, 12);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(tag, tx + 18, y);
+      tx += tw + 12;
+    });
+    y -= W * 0.02;
+  }
+
+  // Fiyat
+  const priceVal = document.getElementById('txt-price').value;
+  y -= W * 0.01;
+  ctx.fillStyle = tpl.accent;
+  ctx.font = `900 ${W * 0.085}px Arial`;
+  ctx.fillText(priceVal, pad, y);
+  y -= W * 0.025;
+
+  // Tip/durum badge
+  const badgeText = (PROPERTY.status + ' · ' + PROPERTY.type).toUpperCase();
+  ctx.font = `bold ${W * 0.032}px Arial`;
+  const bw = ctx.measureText(badgeText).width + 40;
+  ctx.fillStyle = tpl.barColor;
+  roundRect(ctx, pad, y - W * 0.042, bw, W * 0.056, 10);
+  ctx.fill();
+  ctx.fillStyle = currentTemplate === 'minimal' ? '#0f172a' : '#ffffff';
+  ctx.fillText(badgeText, pad + 20, y);
+  y -= W * 0.07;
+
+  // Başlık
+  const titleVal = document.getElementById('txt-title').value;
+  ctx.fillStyle = tpl.textMain;
+  ctx.font = `bold ${W * 0.05}px Arial`;
+  const titleLines = wrapText(ctx, titleVal, W - pad * 2);
+  titleLines.slice(0,3).reverse().forEach(line => {
+    ctx.fillText(line, pad, y);
+    y -= W * 0.065;
+  });
+
+  // ── ÜST BÖLGE ──────────────────────────────────────
+  // Logo alanı (üst sol)
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  roundRect(ctx, pad, 60, 320, 80, 16);
+  ctx.fill();
+  ctx.fillStyle = tpl.accent;
+  ctx.font = `900 ${W * 0.04}px Arial`;
+  ctx.textAlign = 'left';
+  ctx.fillText('KOÇ', pad + 20, 60 + 54);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${W * 0.04}px Arial`;
+  ctx.fillText(' GAYRİMENKUL', pad + 20 + ctx.measureText('KOÇ').width + 8, 60 + 54);
+
+  // Portföy no (üst sağ)
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  roundRect(ctx, W - pad - 200, 60, 200, 80, 16);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = `${W * 0.028}px Arial`;
+  ctx.fillText('#{{ property.id }}', W - pad - 20, 60 + 32);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${W * 0.038}px Arial`;
+  ctx.fillText('PORTFÖY', W - pad - 20, 60 + 64);
+
+  ctx.textAlign = 'left';
+}
+
+// ─── YARDIMCI FONKSİYONLAR ───────────────────────────────
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function wrapText(ctx, text, maxWidth) {
+  if (!text) return [];
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  words.forEach(word => {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
+function truncate(str, max) {
+  return str.length > max ? str.slice(0, max) + '…' : str;
+}
+
+// ─── İNDİR ───────────────────────────────────────────────
+function downloadCanvas() {
+  renderCanvas();
+  const link = document.createElement('a');
+  const fmt = currentFormat === 'story' ? 'story' : 'post';
+  link.download = `koc-gayrimenkul-${fmt}-${currentTemplate}-{{ property.id }}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+async function copyCanvasToClipboard() {
+  renderCanvas();
+  try {
+    canvas.toBlob(async blob => {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      const btn = event.target.closest('button');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-check"></i> Kopyalandı!';
+      btn.classList.add('bg-green-100','text-green-700');
+      setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('bg-green-100','text-green-700'); }, 2000);
+    });
+  } catch(e) {
+    alert('Kopyalama desteklenmiyor, indirme kullanın.');
+  }
+}
+
+function copyCaption() {
+  const txt = document.getElementById('caption-text').value;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = event.target.closest('button');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check mr-1"></i> Kopyalandı!';
+    btn.classList.add('bg-green-100','text-green-700');
+    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('bg-green-100','text-green-700'); }, 2000);
+  });
+}
+</script>
+{% endblock extra_js %}

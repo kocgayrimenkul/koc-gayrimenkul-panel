@@ -152,6 +152,15 @@ class Property(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True, verbose_name="Aktif")
     is_featured = models.BooleanField(default=False, verbose_name="Öne Çıkan")
+    is_archived = models.BooleanField(default=False, verbose_name="Arşivlendi")
+    archived_at = models.DateTimeField(null=True, blank=True, verbose_name="Arşiv Tarihi")
+    archived_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='archived_properties',
+        verbose_name="Arşivleyen",
+    )
     
     def __str__(self):
         return self.apartment_name if self.apartment_name else "İsimsiz Gayrimenkul"

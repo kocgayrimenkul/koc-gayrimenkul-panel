@@ -71,35 +71,43 @@ def property_list(request):
     consultant_neighborhood_ids = []
     own_ids = []
 
+    requested_tab = request.GET.get('tab', 'own')
+    is_admin_or_manager = request.user.is_superuser or role in ['admin', 'manager']
+
+    # Arşiv sekmesi: sadece admin/manager
+    if requested_tab == 'archive' and is_admin_or_manager:
+        properties_list = Property.objects.filter(is_archived=True)\
+            .select_related('neighborhood', 'consultant', 'archived_by')\
+            .prefetch_related('images')\
+            .order_by('-archived_at')
     # Başlangıç sorgusu - yetki kontrolü ile
-    if request.user.is_superuser or role in ['admin', 'manager']:
-        properties_list = Property.objects.filter(is_active=True)\
+    elif is_admin_or_manager:
+        properties_list = Property.objects.filter(is_active=True, is_archived=False)\
             .select_related('neighborhood', 'consultant')\
             .prefetch_related('images')
     elif role == 'secretary':
-        properties_list = Property.objects.filter(is_active=True)\
+        properties_list = Property.objects.filter(is_active=True, is_archived=False)\
             .select_related('neighborhood', 'consultant')\
             .prefetch_related('images')
     elif role == 'consultant':
         consultant_neighborhood_ids = list(
             Neighborhood.objects.filter(consultant=request.user).values_list('id', flat=True)
         )
-        requested_tab = request.GET.get('tab', 'own')
         # "Kendi" portföy ID'leri: atanmış mahalledekiler VEYA danışman olarak atanmış portföyler
         own_ids = list(
-            Property.objects.filter(is_active=True).filter(
+            Property.objects.filter(is_active=True, is_archived=False).filter(
                 Q(neighborhood_id__in=consultant_neighborhood_ids) | Q(consultant=request.user)
             ).values_list('id', flat=True)
         )
         if requested_tab == 'office':
             # Ofis portföyleri: kendi portföy ID'leri dışındaki TÜM aktif portföyler
-            properties_list = Property.objects.filter(is_active=True).exclude(
+            properties_list = Property.objects.filter(is_active=True, is_archived=False).exclude(
                 id__in=own_ids
             ).select_related('neighborhood', 'consultant').prefetch_related('images')
         else:
             # Kendi portföyleri: atanmış mahallelerdekiler + consultant olarak atanmışlar
             properties_list = Property.objects.filter(
-                is_active=True, id__in=own_ids
+                is_active=True, is_archived=False, id__in=own_ids
             ).select_related('neighborhood', 'consultant').prefetch_related('images')
     else:
         properties_list = Property.objects.none()
@@ -213,19 +221,22 @@ def property_list(request):
     context = {
         'segment': 'gayrimenkul',
         'properties': properties,
-        'total_properties': Property.objects.count(),
-        'active_properties': Property.objects.filter(is_active=True).count(),
-        'satilik_count': Property.objects.filter(status='satilik', is_active=True).count(),
-        'kiralik_count': Property.objects.filter(status='kiralik', is_active=True).count(),
+        'total_properties': Property.objects.filter(is_archived=False).count(),
+        'active_properties': Property.objects.filter(is_active=True, is_archived=False).count(),
+        'satilik_count': Property.objects.filter(status='satilik', is_active=True, is_archived=False).count(),
+        'kiralik_count': Property.objects.filter(status='kiralik', is_active=True, is_archived=False).count(),
         # Dan\u0131\u015fman i\u00e7in Kendi/Ofis portf\u00f6y sekmesi say\u0131lar\u0131
         'own_count': (len(own_ids) if role == 'consultant' else 0),
         'office_count': (
-            Property.objects.filter(is_active=True).exclude(id__in=own_ids).count()
+            Property.objects.filter(is_active=True, is_archived=False).exclude(id__in=own_ids).count()
             if role == 'consultant' else 0
         ),
-        'active_tab': request.GET.get('tab', 'own'),
-        'is_office_view': (role == 'consultant' and request.GET.get('tab', 'own') == 'office'),
+        'archive_count': Property.objects.filter(is_archived=True).count() if is_admin_or_manager else 0,
+        'active_tab': requested_tab,
+        'is_office_view': (role == 'consultant' and requested_tab == 'office'),
+        'is_archive_view': (requested_tab == 'archive' and is_admin_or_manager),
         'is_consultant': (role == 'consultant'),
+        'is_admin_or_manager': is_admin_or_manager,
 
         'neighborhoods': neighborhoods,
         'consultants': consultants,
@@ -1190,31 +1201,27 @@ def property_update_field(request):
 @can_delete_portfolio
 @csrf_exempt
 def property_delete(request, property_id):
-    """Gayrimenkul silme"""
+    """Gayrimenkul arşivleme (soft delete)"""
     if request.method == 'POST':
         try:
             try:
                 property_obj = Property.objects.get(id=property_id)
             except Property.DoesNotExist:
                 return JsonResponse({'success': False, 'error': 'Gayrimenkul bulunamadı'})
-            
-            # Yetki kontrolü - Sadece Yönetici ve Müdür silebilir
-            role = get_user_role(request.user)
-            if not request.user.is_superuser and role not in ['admin', 'manager']:
-                return JsonResponse({
-                    'success': False, 
-                    'error': f'Gayrimenkul silme yetkiniz bulunmamaktadır. Mevcut rolünüz: {role or "Tanımsız"}. Sadece Yönetici ve Müdür gayrimenkul silebilir.'
-                })
-            
-            # Gayrimenkulün başlığını sakla
-            property_title = property_obj.apartment_name
-            
-            # Gayrimenkulle ilişkili çevre bilgilerini ve görselleri de sil
-            property_obj.delete()
-            
+
+            from django.utils import timezone
+            property_title = property_obj.apartment_name or 'İsimsiz Gayrimenkul'
+
+            # Arşive taşı
+            property_obj.is_archived = True
+            property_obj.is_active = False
+            property_obj.archived_at = timezone.now()
+            property_obj.archived_by = request.user
+            property_obj.save(update_fields=['is_archived', 'is_active', 'archived_at', 'archived_by'])
+
             return JsonResponse({
-                'success': True, 
-                'message': f'"{property_title}" gayrimenkulü başarıyla silindi'
+                'success': True,
+                'message': f'"{property_title}" arşive taşındı'
             })
             
         except Exception as e:
@@ -2039,6 +2046,72 @@ def price_history_api(request, property_id):
         'current_price': float(prop.price),
         'total_change': total_change,
         'history': rows,
+    })
+
+
+@login_required
+def property_restore(request, property_id):
+    """Arşivden geri al"""
+    from django.http import JsonResponse
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Geçersiz istek'})
+    role = get_user_role(request.user)
+    if not request.user.is_superuser and role not in ['admin', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Yetkiniz yok'})
+    try:
+        prop = Property.objects.get(pk=property_id)
+    except Property.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Bulunamadı'})
+    prop.is_archived = False
+    prop.is_active = True
+    prop.archived_at = None
+    prop.archived_by = None
+    prop.save(update_fields=['is_archived', 'is_active', 'archived_at', 'archived_by'])
+    return JsonResponse({'success': True, 'message': f'"{prop.apartment_name or "Portföy"}" geri alındı'})
+
+
+@login_required
+def social_media_page(request, property_id):
+    """Gayrimenkul sosyal medya şablonları sayfası"""
+    property_obj = get_object_or_404(Property, id=property_id)
+    images = property_obj.images.all().order_by('order')
+    context = {
+        'property': property_obj,
+        'images': images,
+        'segment': 'gayrimenkuller',
+    }
+    return render(request, 'portfolio/social_media.html', context)
+
+
+@login_required
+def property_sunum_musteriler_api(request, property_id):
+    """Gayrimenkule sunum yapılan müşteriler API"""
+    from apps.customers.models import CustomerPresentation
+    from django.http import JsonResponse
+    try:
+        prop = Property.objects.get(pk=property_id)
+    except Property.DoesNotExist:
+        return JsonResponse({'error': 'Bulunamadı'}, status=404)
+
+    qs = CustomerPresentation.objects.filter(property=prop).select_related(
+        'customer', 'created_by'
+    ).order_by('-created_at')
+
+    rows = []
+    for cp in qs:
+        rows.append({
+            'id': cp.id,
+            'customer_name': cp.customer.display_name,
+            'customer_phone': cp.customer.phone or '',
+            'consultant': cp.created_by.get_full_name() if cp.created_by else (cp.created_by.username if cp.created_by else ''),
+            'meeting_notes': cp.meeting_notes or '',
+            'created_at': cp.created_at.strftime('%d.%m.%Y'),
+            'customer_url': f'/musteriler/{cp.customer.id}/',
+        })
+
+    return JsonResponse({
+        'total': len(rows),
+        'rows': rows,
     })
 
 

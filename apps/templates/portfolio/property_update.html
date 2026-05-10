@@ -1,9 +1,8 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/modern_base.html" %}
 
-{% block title %} Gayrimenkul Düzenle {% endblock %}
+{% block title %}Gayrimenkul Düzenle{% endblock %}
 
-<!-- Specific CSS goes HERE -->
-{% block stylesheets %}
+{% block extra_css %}
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.min.css">
 <style>
   /* Koç Gayrimenkul kurumsal renkleri */
@@ -501,7 +500,7 @@
     margin-bottom: 20px;
   }
 </style>
-{% endblock stylesheets %}
+{% endblock extra_css %}
 
 {% block content %}
 
@@ -1187,8 +1186,7 @@
 
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
-{% block javascripts %}
+{% block extra_js %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js" integrity="sha512-efAcjYoYT0sXxQRtxGY37CKYmqsFVOIwMApaEbrxJr4RwqVVGw8o+Lfh/+59TU07+suZn1BWq4fDl5fdgyCNkw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js" integrity="sha256-lSjKY0/srUM9BE3dPm+c4fBo1dky2v27Gdjm2uoZaL0=" crossorigin="anonymous"></script>
 <!-- Google Maps API -->
@@ -1784,4 +1782,4 @@
     });
   });
 </script>
-{% endblock javascripts %}
+{% endblock extra_js %}
