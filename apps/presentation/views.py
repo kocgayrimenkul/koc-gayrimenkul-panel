@@ -538,4 +538,21 @@ def property_presentations_api(request, property_id):
             'status_color': COLOR_MAP.get(p.status, '#64748b'),
             'date': p.presentation_date.strftime('%d.%m.%Y') if p.presentation_date else '',
             'notes': p.notes or '',
-            'is_completed': p.is_complet
+            'is_completed': p.is_completed,
+            'detail_url': f'/daire-sunumu/{p.id}/',
+        })
+
+    stats = {
+        'total':     qs.count(),
+        'planned':   qs.filter(status='bekliyor').count(),
+        'shown':     qs.filter(status='tamamlandi').count(),
+        'sale':      qs.filter(status='satis').count(),
+        'cancelled': qs.filter(status='iptal').count(),
+    }
+
+    return _JR2({
+        'property_name': prop.apartment_name or str(prop),
+        'property_id': prop.id,
+        'stats': stats,
+        'presentations': rows,
+    })
