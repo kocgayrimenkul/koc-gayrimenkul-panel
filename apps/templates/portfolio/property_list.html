@@ -35,8 +35,8 @@
                     <input type="text" name="q" value="{{ request.GET.q }}{{ request.GET.search }}" placeholder="Portföy ara... (başlık, konum, danışman)" class="w-full border border-slate-200 rounded-xl py-2 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                 </div>
                 <span class="text-sm text-slate-400 px-2 whitespace-nowrap">
-                    {% if page_obj %}
-                        {{ page_obj.start_index }}-{{ page_obj.end_index }} / {{ page_obj.paginator.count }} portföy
+                    {% if properties %}
+                        {{ properties.start_index }}-{{ properties.end_index }} / {{ properties.paginator.count }} portföy
                     {% else %}
                         {{ properties|length }} portföy
                     {% endif %}
@@ -374,24 +374,24 @@
         </div>
 
         {# ============ SAYFALAMA ============ #}
-        {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        {% if properties and properties.paginator.num_pages > 1 %}
         <div class="p-4 border-t border-slate-100 flex justify-between items-center bg-white text-sm text-slate-500">
             <div>
-                {{ page_obj.paginator.count }} kayıttan {{ page_obj.start_index }}-{{ page_obj.end_index }} arası gösteriliyor
+                {{ properties.paginator.count }} kayıttan {{ properties.start_index }}-{{ properties.end_index }} arası gösteriliyor
             </div>
             <div class="flex items-center gap-2">
-                {% if page_obj.has_previous %}
-                    <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="text-slate-400 px-2 hover:text-slate-600 no-underline"><i class="fas fa-chevron-left text-[10px]"></i></a>
+                {% if properties.has_previous %}
+                    <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ properties.previous_page_number }}" class="text-slate-400 px-2 hover:text-slate-600 no-underline"><i class="fas fa-chevron-left text-[10px]"></i></a>
                 {% endif %}
-                {% for num in page_obj.paginator.page_range %}
-                    {% if num == page_obj.number %}
+                {% for num in properties.paginator.page_range %}
+                    {% if num == properties.number %}
                         <span class="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium">{{ num }}</span>
-                    {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                    {% elif num > properties.number|add:"-3" and num < properties.number|add:"3" %}
                         <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}" class="text-slate-500 px-3 py-1.5 hover:bg-slate-50 rounded-lg no-underline">{{ num }}</a>
                     {% endif %}
                 {% endfor %}
-                {% if page_obj.has_next %}
-                    <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="text-slate-400 px-2 hover:text-slate-600 no-underline"><i class="fas fa-chevron-right text-[10px]"></i></a>
+                {% if properties.has_next %}
+                    <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ properties.next_page_number }}" class="text-slate-400 px-2 hover:text-slate-600 no-underline"><i class="fas fa-chevron-right text-[10px]"></i></a>
                 {% endif %}
             </div>
         </div>
