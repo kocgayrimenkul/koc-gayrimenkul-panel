@@ -6,23 +6,6 @@
 {% block content %}
 <div class="p-4">
 
-    {# ===== SEKME BARI (sadece Arşiv) ===== #}
-    {% if is_admin_or_manager %}
-    <div class="flex flex-wrap gap-2 mb-3">
-        <a href="?tab=archive" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition
-            {% if active_tab == 'archive' %}bg-white custom-shadow border-2 border-rose-500 text-rose-600{% else %}bg-white custom-shadow border border-slate-100 text-slate-500 hover:text-rose-600{% endif %}">
-            <i class="fas fa-archive text-xs"></i>
-            Arşiv
-            <span class="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold {% if active_tab == 'archive' %}bg-rose-100 text-rose-600{% else %}bg-slate-100 text-slate-400{% endif %}">{{ archive_count }}</span>
-        </a>
-        {% if active_tab == 'archive' %}
-        <div class="flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium">
-            <i class="fas fa-archive"></i>
-            Arşivlenen portföyler — sadece yöneticiler görebilir.
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
 
     {# ============ ÜST KART: Başlık + Butonlar + Filtreler ============ #}
     <div class="bg-white rounded-2xl p-4 custom-shadow mb-3">
@@ -122,9 +105,10 @@
         </form>
     </div>
 
-    {# ============ KENDİ/OFİS SEKMELERİ ============ #}
-    {% if is_consultant %}
+    {# ============ KENDİ/OFİS/ARŞİV SEKMELERİ ============ #}
+    {% if is_consultant or is_admin_or_manager %}
     <div class="flex flex-wrap gap-2 mb-3">
+        {% if is_consultant %}
         <a href="?tab=own" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition
             {% if active_tab == 'own' %}bg-white custom-shadow border-2 border-blue-500 text-blue-600{% else %}bg-white custom-shadow border border-slate-100 text-slate-500 hover:text-blue-600{% endif %} no-underline">
             <i class="fas fa-home text-xs"></i>
@@ -137,6 +121,15 @@
             Ofis Portföyleri
             <span class="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold {% if active_tab == 'office' %}bg-amber-100 text-amber-600{% else %}bg-slate-100 text-slate-400{% endif %}">{{ office_count }}</span>
         </a>
+        {% endif %}
+        {% if is_admin_or_manager %}
+        <a href="?tab=archive" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition
+            {% if active_tab == 'archive' %}bg-white custom-shadow border-2 border-rose-500 text-rose-600{% else %}bg-white custom-shadow border border-slate-100 text-slate-500 hover:text-rose-600{% endif %} no-underline">
+            <i class="fas fa-archive text-xs"></i>
+            Arşiv
+            <span class="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold {% if active_tab == 'archive' %}bg-rose-100 text-rose-600{% else %}bg-slate-100 text-slate-400{% endif %}">{{ archive_count }}</span>
+        </a>
+        {% endif %}
     </div>
     {% endif %}
 
