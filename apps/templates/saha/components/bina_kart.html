@@ -1,0 +1,25 @@
+{% comment %}
+  Parametreler:
+    item        — parsel bilgisi dict'i
+    devir       — True ise devreden kart, False ise bugünkü kart
+{% endcomment %}
+
+{% if devir %}
+  {% if item.ziyaret_edildi %}
+    {% with kart_extra="tamamlandi-bugun" %}
+    {% include "saha/components/_bina_kart_inner.html" %}
+    {% endwith %}
+  {% elif item.geciken_gun >= 3 %}
+    {% with kart_extra="acil-kart" %}
+    {% include "saha/components/_bina_kart_inner.html" %}
+    {% endwith %}
+  {% else %}
+    {% with kart_extra="" %}
+    {% include "saha/components/_bina_kart_inner.html" %}
+    {% endwith %}
+  {% endif %}
+{% else %}
+  {% with kart_extra="" %}
+  {% include "saha/components/_bina_kart_inner.html" %}
+  {% endwith %}
+{% endif %}

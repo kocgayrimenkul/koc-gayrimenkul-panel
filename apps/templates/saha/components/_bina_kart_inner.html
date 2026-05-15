@@ -1,0 +1,148 @@
+<div class="bina-kart bg-white rounded-2xl custom-shadow overflow-hidden {% if devir %}devir-kart {{ kart_extra }}{% endif %}"
+     id="bina-{{ item.parsel.id }}">
+
+    <!-- KART BAŞLIK -->
+    <div class="px-4 py-3 border-b border-slate-100 flex items-start justify-between gap-2">
+        <div class="flex-1 min-w-0">
+            <!-- Devir badge -->
+            {% if devir %}
+            <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                {% if item.ziyaret_edildi %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">
+                    <i class="fas fa-check-circle"></i> Bugün Tamamlandı
+                </span>
+                {% elif item.geciken_gun >= 3 %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold animate-pulse">
+                    <i class="fas fa-exclamation-triangle"></i> {{ item.geciken_gun }} gün gecikme
+                </span>
+                {% else %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">
+                    <i class="fas fa-history"></i> {{ item.geciken_gun }} gün devir
+                </span>
+                {% endif %}
+                <span class="text-[10px] text-slate-400">
+                    {{ item.orijinal_tarih|date:"d.m.Y" }}
+                </span>
+            </div>
+            {% endif %}
+
+            <h3 class="font-bold text-slate-800 text-sm leading-snug" title="{{ item.parsel.adres }}">
+                {{ item.parsel.adres|default:"Adres yok" }}
+            </h3>
+            {% if item.parsel.ada_no or item.parsel.parsel_no %}
+            <p class="text-[10px] text-slate-400 mt-0.5">
+                Ada: {{ item.parsel.ada_no|default:"-" }} / Parsel: {{ item.parsel.parsel_no|default:"-" }}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Durum ikonu -->
+        {% if item.ziyaret_edildi %}
+        <span class="flex-shrink-0 w-7 h-7 bg-emerald-100 rounded-xl flex items-center justify-center">
+            <i class="fas fa-check text-emerald-600 text-xs"></i>
+        </span>
+        {% elif devir and item.geciken_gun >= 3 %}
+        <span class="flex-shrink-0 w-7 h-7 bg-red-100 rounded-xl flex items-center justify-center">
+            <i class="fas fa-exclamation text-red-500 text-xs"></i>
+        </span>
+        {% else %}
+        <span class="flex-shrink-0 w-7 h-7 bg-slate-100 rounded-xl flex items-center justify-center">
+            <i class="fas fa-clock text-slate-400 text-xs"></i>
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- İLETİŞİM BİLGİLERİ -->
+    <div class="px-4 py-3 space-y-1.5">
+        {% if item.parsel.durum %}
+        <div class="flex items-center gap-2 text-xs">
+            <i class="fas fa-building w-4 text-slate-400 flex-shrink-0"></i>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold
+                {% if item.parsel.durum == 'yapim_asamasinda' %}bg-orange-100 text-orange-700
+                {% elif item.parsel.durum == 'oturuma_hazir' %}bg-blue-100 text-blue-700
+                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                {{ item.parsel.get_durum_display|default:item.parsel.durum }}
+            </span>
+        </div>
+        {% endif %}
+
+        {% if item.parsel.yonetici_ad %}
+        <div class="flex items-center gap-2 text-xs">
+            <i class="fas fa-user-tie w-4 text-blue-500 flex-shrink-0"></i>
+            <span class="text-slate-600 flex-1">{{ item.parsel.yonetici_ad }}</span>
+            {% if item.parsel.yonetici_tel %}
+            <a href="tel:{{ item.parsel.yonetici_tel }}"
+               class="text-blue-600 hover:text-blue-700 font-semibold">
+                <i class="fas fa-phone text-[10px] mr-0.5"></i>{{ item.parsel.yonetici_tel }}
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if item.parsel.kapici_ad %}
+        <div class="flex items-center gap-2 text-xs">
+            <i class="fas fa-key w-4 text-amber-500 flex-shrink-0"></i>
+            <span class="text-slate-600 flex-1">{{ item.parsel.kapici_ad }}</span>
+            {% if item.parsel.kapici_tel %}
+            <a href="tel:{{ item.parsel.kapici_tel }}"
+               class="text-blue-600 hover:text-blue-700 font-semibold">
+                <i class="fas fa-phone text-[10px] mr-0.5"></i>{{ item.parsel.kapici_tel }}
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if item.parsel.muteahit_ad %}
+        <div class="flex items-center gap-2 text-xs">
+            <i class="fas fa-hard-hat w-4 text-orange-400 flex-shrink-0"></i>
+            <span class="text-slate-600 flex-1">{{ item.parsel.muteahit_ad }}</span>
+            {% if item.parsel.muteahit_tel %}
+            <a href="tel:{{ item.parsel.muteahit_tel }}"
+               class="text-blue-600 hover:text-blue-700 font-semibold">
+                <i class="fas fa-phone text-[10px] mr-0.5"></i>{{ item.parsel.muteahit_tel }}
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if item.parsel.mahalle %}
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <i class="fas fa-map-pin w-4 text-slate-300 flex-shrink-0"></i>
+            <span>{{ item.parsel.mahalle }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ÖNCEKI GÖRÜŞMELER -->
+    {% if item.bugun_gorusmeler %}
+    <div class="px-4 py-3 bg-emerald-50 border-t border-emerald-100">
+        <div class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-2">
+            {% if devir %}Bugünkü Görüşmeler{% else %}Bugünkü Görüşmeler{% endif %}
+        </div>
+        {% for gorusme in item.bugun_gorusmeler %}
+        <div class="mb-2 last:mb-0">
+            <div class="flex items-center gap-1 text-[10px] text-emerald-600 mb-0.5">
+                <i class="fas fa-clock"></i> {{ gorusme.tarih|date:"H:i" }}
+            </div>
+            <p class="text-xs text-slate-700">{{ gorusme.not_metni }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- GÖRÜŞME NOTU EKLE -->
+    <div class="px-4 pb-4 pt-3 border-t border-slate-100">
+        <textarea id="not-text-{{ item.parsel.id }}"
+                  class="not-textarea w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2
+                         {% if devir and item.geciken_gun >= 3 %}focus:ring-red-400{% elif devir %}focus:ring-amber-400{% else %}focus:ring-blue-500{% endif %}"
+                  placeholder="Görüşme notu yazın..."></textarea>
+        <button onclick="gorusmeEkle({{ item.parsel.id }})"
+                data-parsel-btn="{{ item.parsel.id }}"
+                class="mt-2 w-full py-2 text-white text-xs font-semibold rounded-xl transition
+                       {% if devir and not item.ziyaret_edildi and item.geciken_gun >= 3 %}bg-red-500 hover:bg-red-600
+                       {% elif devir and not item.ziyaret_edildi %}bg-amber-500 hover:bg-amber-600
+                       {% else %}bg-blue-600 hover:bg-blue-700{% endif %}">
+            <i class="fas fa-plus mr-1"></i> Görüşme Notu Kaydet
+        </button>
+    </div>
+</div>

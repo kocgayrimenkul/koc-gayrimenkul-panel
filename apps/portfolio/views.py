@@ -537,7 +537,13 @@ def property_create(request):
             property_obj.hepsiemlak_listing_number = request.POST.get('hepsiemlak_listing_number', '')
             property_obj.website_listing_number = request.POST.get('website_listing_number', '')
             property_obj.branda_number = request.POST.get('branda_number', '')
-            
+            property_obj.yetki_numarasi = request.POST.get('yetki_numarasi', '')
+            yetki_suresi = request.POST.get('yetki_suresi', '')
+            if yetki_suresi:
+                property_obj.yetki_suresi = yetki_suresi
+            else:
+                property_obj.yetki_suresi = None
+
             # Operasyonel bilgiler
             property_obj.key_holder = request.POST.get('key_holder', '')
             listing_date = request.POST.get('listing_date', '')

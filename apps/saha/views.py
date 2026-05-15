@@ -333,6 +333,8 @@ def gorev_plani_detay(request, plan_id):
 def gunluk_gorevim(request):
     user = request.user
     bugun = date_cls.today()
+
+    # Bugünkü görev
     gorev = GunlukGorev.objects.filter(
         plan__bolge_uzmani=user, plan__aktif=True, tarih=bugun,
     ).select_related('plan__bolge_uzmani', 'plan__atayan_broker').first()
@@ -350,13 +352,58 @@ def gunluk_gorevim(request):
             })
         gorev.kontrol_et_ve_tamamla()
 
+    # ── Geçmiş günlerden devredilen (notu yazılmamış) parseller ──────────────
+    # Önceki günlere ait aktif görevleri al, en yeni tarihten eskiye doğru
+    gecmis_gorevler = GunlukGorev.objects.filter(
+        plan__bolge_uzmani=user,
+        plan__aktif=True,
+        tarih__lt=bugun,
+    ).prefetch_related('atanan_parseller').order_by('-tarih')
+
+    # Bugünkü görevdeki parsel ID'leri → devre dışı bırakmak için
+    bugun_parsel_ids = {item['parsel'].id for item in parseller_bilgi}
+    gorulmus_ids = set(bugun_parsel_ids)  # tekrar eklemeyi önle
+
+    devreden_parseller = []
+    for gecmis_gorev in gecmis_gorevler:
+        for p in gecmis_gorev.atanan_parseller.all():
+            # O günün notu yazılmışsa atla
+            if gecmis_gorev.ziyaret_edildi_mi(p):
+                continue
+            # Aynı parsel birden fazla geçmiş günde varsa sadece bir kez ekle
+            if p.id in gorulmus_ids:
+                continue
+            gorulmus_ids.add(p.id)
+
+            # Bugün bu parsele not yazıldı mı?
+            bugun_gorusmeler = SahaGorusme.objects.filter(
+                parsel=p, tarih__date=bugun).order_by('-tarih')
+            geciken_gun = (bugun - gecmis_gorev.tarih).days
+
+            devreden_parseller.append({
+                'parsel': p,
+                'orijinal_tarih': gecmis_gorev.tarih,
+                'geciken_gun': geciken_gun,
+                'ziyaret_edildi': bugun_gorusmeler.exists(),
+                'bugun_gorusmeler': list(bugun_gorusmeler),
+            })
+
+    # Bugün tamamlananlar öne, gecikmeli olanlar arkaya
+    devreden_parseller.sort(key=lambda x: (x['ziyaret_edildi'], -x['geciken_gun']))
+
+    tamamlanan_sayi = sum(1 for p in parseller_bilgi if p['ziyaret_edildi'])
+    devreden_tamamlanan = sum(1 for p in devreden_parseller if p['ziyaret_edildi'])
+
     return render(request, 'saha/gunluk_gorev.html', {
         'segment': 'saha',
         'gorev': gorev,
         'parseller_bilgi': parseller_bilgi,
+        'devreden_parseller': devreden_parseller,
         'bugun': bugun,
-        'tamamlanan_sayi': sum(1 for p in parseller_bilgi if p['ziyaret_edildi']),
+        'tamamlanan_sayi': tamamlanan_sayi,
         'toplam_sayi': len(parseller_bilgi),
+        'devreden_tamamlanan': devreden_tamamlanan,
+        'devreden_toplam': len(devreden_parseller),
     })
 
 
@@ -389,16 +436,34 @@ def api_gunluk_gorev_parselleri(request):
 
     if not gorev:
         return JsonResponse({'gorev_id': None, 'parsel_ids': [],
-                             'tamamlandi': False, 'tamamlanan': 0, 'toplam': 0})
+                             'tamamlandi': False, 'tamamlanan': 0, 'toplam': 0,
+                             'devreden_parsel_ids': []})
 
     parsel_ids = list(gorev.atanan_parseller.values_list('id', flat=True))
     tamamlanan, toplam = gorev.tamamlanma_orani()
+
+    # Devredilen (geçmiş günlerden notu yazılmamış) parselleri de haritaya gönder
+    gecmis_gorevler = GunlukGorev.objects.filter(
+        plan__bolge_uzmani=request.user,
+        plan__aktif=True,
+        tarih__lt=bugun,
+    ).prefetch_related('atanan_parseller')
+
+    gorulmus = set(parsel_ids)
+    devreden_ids = []
+    for gg in gecmis_gorevler:
+        for p in gg.atanan_parseller.all():
+            if not gg.ziyaret_edildi_mi(p) and p.id not in gorulmus:
+                gorulmus.add(p.id)
+                devreden_ids.append(p.id)
+
     return JsonResponse({
         'gorev_id': gorev.id,
         'parsel_ids': parsel_ids,
         'tamamlandi': gorev.tamamlandi,
         'tamamlanan': tamamlanan,
         'toplam': toplam,
+        'devreden_parsel_ids': devreden_ids,
     })
 
 

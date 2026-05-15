@@ -138,7 +138,9 @@ class Property(models.Model):
     hepsiemlak_url = models.URLField(max_length=500, verbose_name="Hepsiemlak İlan Linki", blank=True)
     hepsiemlak_active = models.BooleanField(default=False, verbose_name="Hepsiemlak'ta Yayında")
     branda_number = models.CharField(max_length=50, verbose_name="Branda No", blank=True)
-    
+    yetki_numarasi = models.CharField(max_length=100, verbose_name="Yetki Numarası", blank=True)
+    yetki_suresi = models.DateField(null=True, blank=True, verbose_name="Yetki Süresi")
+
     # Operasyonel Bilgiler
     key_holder = models.CharField(max_length=20, choices=KEY_HOLDER_CHOICES, verbose_name="Anahtar Kimde", blank=True)
     photo_status = models.CharField(max_length=20, choices=PHOTO_STATUS_CHOICES, verbose_name="Fotoğraf Durumu", blank=True, default='cekilmedi')
@@ -164,7 +166,12 @@ class Property(models.Model):
     
     def __str__(self):
         return self.apartment_name if self.apartment_name else "İsimsiz Gayrimenkul"
-    
+
+    @property
+    def gun_sayisi(self):
+        from django.utils import timezone
+        return (timezone.now().date() - self.created_at.date()).days
+
     class Meta:
         verbose_name = "Portföy"
         verbose_name_plural = "Portföyler"

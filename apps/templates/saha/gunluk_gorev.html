@@ -6,6 +6,11 @@
 .bina-kart { transition: box-shadow 0.2s, transform 0.2s; }
 .bina-kart:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.10); transform: translateY(-2px); }
 .not-textarea { resize: vertical; min-height: 72px; }
+
+/* Devir kartı özel soluk çerçeve */
+.bina-kart.devir-kart { border-left: 4px solid #f59e0b; }
+.bina-kart.devir-kart.acil-kart { border-left: 4px solid #ef4444; }
+.bina-kart.devir-kart.tamamlandi-bugun { border-left: 4px solid #10b981; }
 </style>
 {% endblock extra_css %}
 
@@ -24,36 +29,61 @@
     </div>
     {% endif %}
 
-    <!-- Başlık + Tarih -->
+    <!-- ══ BAŞLIK KARTI ══════════════════════════════════════════════ -->
     <div class="bg-white rounded-2xl p-4 custom-shadow mb-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="text-lg font-bold text-slate-800">Günlük Görevim</h1>
                 <p class="text-xs text-slate-500 mt-0.5">{{ bugun|date:"d F Y, l" }}</p>
             </div>
-            {% if gorev %}
-            <div class="flex items-center gap-3">
-                <!-- İlerleme Çemberi -->
+
+            {% if gorev or devreden_toplam %}
+            <div class="flex items-center gap-3 flex-wrap">
+
+                <!-- Bugün İlerleme -->
+                {% if gorev %}
                 <div class="flex items-center gap-2">
-                    <div class="relative w-12 h-12">
-                        <svg class="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
+                    <div class="relative w-11 h-11">
+                        <svg class="w-11 h-11 -rotate-90" viewBox="0 0 36 36">
                             <circle cx="18" cy="18" r="14" fill="none" stroke="#e2e8f0" stroke-width="3"/>
-                            <circle cx="18" cy="18" r="14" fill="none" stroke="#10b981" stroke-width="3"
-                                    stroke-dasharray="{% if toplam_sayi %}{% widthratio tamamlanan_sayi toplam_sayi 88 %}{% else %}0{% endif %} 88"
-                                    stroke-linecap="round"/>
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="#3b82f6" stroke-width="3"
+                                stroke-dasharray="{% if toplam_sayi %}{% widthratio tamamlanan_sayi toplam_sayi 88 %}{% else %}0{% endif %} 88"
+                                stroke-linecap="round"/>
                         </svg>
-                        <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-700">
+                        <div class="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-slate-700">
                             {{ tamamlanan_sayi }}/{{ toplam_sayi }}
                         </div>
                     </div>
                     <div>
-                        <div class="text-xs font-semibold text-slate-700">{{ tamamlanan_sayi }} tamamlandı</div>
-                        <div class="text-[10px] text-slate-400">{{ toplam_sayi }} binadan</div>
+                        <div class="text-xs font-semibold text-blue-700">Bugün</div>
+                        <div class="text-[10px] text-slate-400">{{ tamamlanan_sayi }}/{{ toplam_sayi }} bina</div>
                     </div>
                 </div>
+                {% endif %}
 
-                <!-- Broker Bildir -->
-                {% if not gorev.tamamlandi and not gorev.broker_bildirildi %}
+                <!-- Devir İlerleme -->
+                {% if devreden_toplam %}
+                <div class="flex items-center gap-2">
+                    <div class="relative w-11 h-11">
+                        <svg class="w-11 h-11 -rotate-90" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="#fef3c7" stroke-width="3"/>
+                            <circle cx="18" cy="18" r="14" fill="none" stroke="#f59e0b" stroke-width="3"
+                                stroke-dasharray="{% if devreden_toplam %}{% widthratio devreden_tamamlanan devreden_toplam 88 %}{% else %}0{% endif %} 88"
+                                stroke-linecap="round"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-slate-700">
+                            {{ devreden_tamamlanan }}/{{ devreden_toplam }}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-amber-600">Devir</div>
+                        <div class="text-[10px] text-slate-400">{{ devreden_tamamlanan }}/{{ devreden_toplam }} bina</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Güne Son Ver -->
+                {% if gorev and not gorev.tamamlandi and not gorev.broker_bildirildi %}
                 <button onclick="gunuBitir()"
                         class="px-3 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-semibold rounded-xl transition">
                     <i class="fas fa-flag-checkered mr-1"></i> Güne Son Ver
@@ -77,115 +107,68 @@
         </div>
     </div>
 
+    <!-- ══ DEVREDİLEN UYARI BANNER ══════════════════════════════════════ -->
+    {% if devreden_toplam %}
+    <div class="mb-4 rounded-2xl border-2 {% if devreden_tamamlanan == devreden_toplam %}border-emerald-200 bg-emerald-50{% else %}border-amber-200 bg-amber-50{% endif %} px-5 py-3 flex items-start gap-3">
+        <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5
+            {% if devreden_tamamlanan == devreden_toplam %}bg-emerald-100 text-emerald-600{% else %}bg-amber-100 text-amber-600{% endif %}">
+            <i class="fas {% if devreden_tamamlanan == devreden_toplam %}fa-check-circle{% else %}fa-history{% endif %} text-sm"></i>
+        </div>
+        <div class="flex-1">
+            <p class="text-sm font-bold {% if devreden_tamamlanan == devreden_toplam %}text-emerald-700{% else %}text-amber-700{% endif %}">
+                {% if devreden_tamamlanan == devreden_toplam %}
+                    Tüm devredilen görevler bugün tamamlandı 🎉
+                {% else %}
+                    {{ devreden_toplam|add:"-"|add:devreden_tamamlanan|stringformat:"s" }}
+                    {{ devreden_toplam }} devredilen görev — {{ devreden_toplam|add:"0"|add:devreden_tamamlanan }} bekliyor
+                {% endif %}
+            </p>
+            <p class="text-xs {% if devreden_tamamlanan == devreden_toplam %}text-emerald-600{% else %}text-amber-600{% endif %} mt-0.5">
+                {% if devreden_tamamlanan == devreden_toplam %}
+                    Geçmiş günlerden kalan tüm parseller bugün ziyaret edildi.
+                {% else %}
+                    Önceki günlerde görüşme notu yazılmayan
+                    <strong>{{ devreden_toplam }}</strong> bina bugünün görev listesine eklendi.
+                    Tamamlanan: <strong>{{ devreden_tamamlanan }}</strong> / Bekleyen: <strong>{{ devreden_toplam|add:"0" }}</strong>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ══ BUGÜNKÜ GÖREV ══════════════════════════════════════════════ -->
     {% if gorev %}
-    <!-- Plan Bilgisi -->
-    <div class="bg-blue-50 border border-blue-100 rounded-2xl px-5 py-3 mb-4 flex items-center gap-3">
-        <i class="fas fa-info-circle text-blue-500"></i>
+    <div class="bg-blue-50 border border-blue-100 rounded-2xl px-5 py-3 mb-3 flex items-center gap-3">
+        <i class="fas fa-calendar-day text-blue-500 flex-shrink-0"></i>
         <div class="text-xs text-blue-700">
             <span class="font-semibold">{{ gorev.plan.mahalle_adi }}</span> mahallesinde bugün
             <span class="font-semibold">{{ toplam_sayi }} bina</span> ziyaret etmeniz gerekiyor.
             {% if gorev.plan.atayan_broker %}
-            Plan atayan: <span class="font-semibold">{{ gorev.plan.atayan_broker.get_full_name }}</span>
+            · Plan atayan: <span class="font-semibold">{{ gorev.plan.atayan_broker.get_full_name }}</span>
             {% endif %}
         </div>
     </div>
 
-    <!-- Bina Kartları -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {% for item in parseller_bilgi %}
-        <div class="bina-kart bg-white rounded-2xl custom-shadow overflow-hidden" id="bina-{{ item.parsel.id }}">
-            <!-- Kart Başlık -->
-            <div class="px-5 py-4 border-b border-slate-100 flex items-start justify-between">
-                <div class="flex-1 min-w-0">
-                    <h3 class="font-bold text-slate-800 text-sm truncate" title="{{ item.parsel.adres }}">
-                        {{ item.parsel.adres|default:"Adres yok" }}
-                    </h3>
-                    {% if item.parsel.ada_no or item.parsel.parsel_no %}
-                    <p class="text-[10px] text-slate-400 mt-0.5">
-                        Ada: {{ item.parsel.ada_no|default:"-" }} / Parsel: {{ item.parsel.parsel_no|default:"-" }}
-                    </p>
-                    {% endif %}
-                </div>
-                {% if item.ziyaret_edildi %}
-                <span class="flex-shrink-0 ml-2 w-7 h-7 bg-emerald-100 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-check text-emerald-600 text-xs"></i>
-                </span>
-                {% else %}
-                <span class="flex-shrink-0 ml-2 w-7 h-7 bg-slate-100 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-clock text-slate-400 text-xs"></i>
-                </span>
-                {% endif %}
-            </div>
-
-            <!-- İletişim Bilgileri -->
-            <div class="px-5 py-3 space-y-1.5">
-                {% if item.parsel.yonetici_ad %}
-                <div class="flex items-center gap-2 text-xs">
-                    <i class="fas fa-user-tie w-4 text-blue-500 flex-shrink-0"></i>
-                    <span class="text-slate-600">{{ item.parsel.yonetici_ad }}</span>
-                    {% if item.parsel.yonetici_tel %}
-                    <a href="tel:{{ item.parsel.yonetici_tel }}"
-                       class="ml-auto text-blue-600 hover:text-blue-700 font-semibold">
-                        {{ item.parsel.yonetici_tel }}
-                    </a>
-                    {% endif %}
-                </div>
-                {% endif %}
-                {% if item.parsel.kapici_ad %}
-                <div class="flex items-center gap-2 text-xs">
-                    <i class="fas fa-key w-4 text-amber-500 flex-shrink-0"></i>
-                    <span class="text-slate-600">{{ item.parsel.kapici_ad }}</span>
-                    {% if item.parsel.kapici_tel %}
-                    <a href="tel:{{ item.parsel.kapici_tel }}"
-                       class="ml-auto text-blue-600 hover:text-blue-700 font-semibold">
-                        {{ item.parsel.kapici_tel }}
-                    </a>
-                    {% endif %}
-                </div>
-                {% endif %}
-                {% if item.parsel.mahalle %}
-                <div class="flex items-center gap-2 text-xs text-slate-400">
-                    <i class="fas fa-map-pin w-4 text-slate-300 flex-shrink-0"></i>
-                    <span>{{ item.parsel.mahalle }}</span>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Bugünkü Görüşmeler -->
-            {% if item.bugun_gorusmeler %}
-            <div class="px-5 py-3 bg-emerald-50 border-t border-emerald-100">
-                <div class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-2">
-                    Bugünkü Görüşmeler
-                </div>
-                {% for gorusme in item.bugun_gorusmeler %}
-                <div class="mb-2 last:mb-0">
-                    <div class="flex items-center gap-1 text-[10px] text-emerald-600 mb-0.5">
-                        <i class="fas fa-clock"></i> {{ gorusme.tarih|date:"H:i" }}
-                    </div>
-                    <p class="text-xs text-slate-700">{{ gorusme.not_metni }}</p>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Görüşme Notu Ekle -->
-            <div class="px-5 pb-4 pt-3 border-t border-slate-100">
-                <div id="not-form-{{ item.parsel.id }}">
-                    <textarea id="not-text-{{ item.parsel.id }}"
-                              class="not-textarea w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Görüşme notu yazın..."></textarea>
-                    <button onclick="gorusmeEkle({{ item.parsel.id }})"
-                            class="mt-2 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition">
-                        <i class="fas fa-plus mr-1"></i> Görüşme Notu Kaydet
-                    </button>
-                </div>
-            </div>
+    {% if parseller_bilgi %}
+    <!-- Bugün başlığı -->
+    <div class="flex items-center gap-2 mb-3">
+        <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+            <i class="fas fa-calendar-day text-blue-600 text-xs"></i>
         </div>
+        <h2 class="text-sm font-bold text-slate-700">Bugünün Görevleri</h2>
+        <span class="ml-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">{{ toplam_sayi }}</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+        {% for item in parseller_bilgi %}
+        {% include "saha/components/bina_kart.html" with item=item devir=False %}
         {% endfor %}
     </div>
+    {% endif %}
 
     {% else %}
-    <!-- Görev Yok -->
+    <!-- Bugün için görev yok ama devredenler olabilir -->
+    {% if not devreden_toplam %}
     <div class="bg-white rounded-2xl custom-shadow p-12 text-center">
         <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <i class="fas fa-calendar-times text-2xl text-slate-400"></i>
@@ -198,6 +181,25 @@
            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition">
             <i class="fas fa-list"></i> Tüm Planları Gör
         </a>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- ══ DEVREDİLEN GÖREVLER ═══════════════════════════════════════ -->
+    {% if devreden_parseller %}
+    <div class="flex items-center gap-2 mb-3">
+        <div class="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
+            <i class="fas fa-history text-amber-600 text-xs"></i>
+        </div>
+        <h2 class="text-sm font-bold text-slate-700">Devredilen Görevler</h2>
+        <span class="ml-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">{{ devreden_toplam }}</span>
+        <span class="text-xs text-slate-400 ml-1">— önceki günlerden not yazılmamış binalar</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {% for item in devreden_parseller %}
+        {% include "saha/components/bina_kart.html" with item=item devir=True %}
+        {% endfor %}
     </div>
     {% endif %}
 
@@ -219,6 +221,9 @@ function gorusmeEkle(parselId) {
     const not = document.getElementById(`not-text-${parselId}`).value.trim();
     if (!not) { alert('Lütfen bir görüşme notu girin.'); return; }
 
+    const btn = document.querySelector(`[data-parsel-btn="${parselId}"]`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Kaydediliyor...'; }
+
     fetch(`/api/saha/parsel/${parselId}/gorusme/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
@@ -227,11 +232,15 @@ function gorusmeEkle(parselId) {
     .then(r => r.json())
     .then(d => {
         if (d.success) {
-            // Sayfayı yenile - tamamlanma kontrolü için
             location.reload();
         } else {
             alert('Hata: ' + (d.error || 'Kaydedilemedi'));
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus mr-1"></i> Görüşme Notu Kaydet'; }
         }
+    })
+    .catch(() => {
+        alert('Bağlantı hatası.');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus mr-1"></i> Görüşme Notu Kaydet'; }
     });
 }
 
@@ -245,7 +254,7 @@ function gunuBitir() {
         return;
     }
 
-    if (!confirm(`Bugün ${kalan} bina ziyaret edilmedi. Broker\'a bildirim gönderilsin mi?`)) return;
+    if (!confirm(`Bugün ${kalan} bina ziyaret edilmedi. Broker'a bildirim gönderilsin mi?`)) return;
 
     fetch(`/api/saha/gorev/${gorevId}/bildir/`, {
         method: 'POST',

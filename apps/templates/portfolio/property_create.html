@@ -1,1529 +1,1024 @@
-{% extends "layouts/base.html" %}
-{% block title %} Yeni Gayrimenkul Ekle {% endblock %}
-<!-- Specific CSS goes HERE -->
-{% block stylesheets %}
+{% extends "layouts/modern_base.html" %}
+{% block title %}Yeni Gayrimenkul Ekle{% endblock %}
+
+{% block extra_css %}
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.min.css">
 <style>
-  /* Koç Gayrimenkul kurumsal renkleri */
   :root {
     --koc-red: #9d2235;
     --koc-red-light: #b82e42;
     --koc-red-dark: #7a1a29;
-    --koc-black: #212529;
-  }
-  
-  .bg-gradient-koc-red {
-    background: linear-gradient(87deg, var(--koc-red-dark) 0, var(--koc-red) 100%) !important;
-  }
-  
-  .text-koc-red {
-    color: var(--koc-red) !important;
-  }
-  
-  .btn-koc-red {
-    color: #fff;
-    background-color: var(--koc-red);
-    border-color: var(--koc-red);
-  }
-  
-  .btn-koc-red:hover {
-    color: #fff;
-    background-color: var(--koc-red-light);
-    border-color: var(--koc-red-light);
   }
 
-  .section-header {
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-left: 4px solid var(--koc-red);
-    margin-bottom: 20px;
-    border-radius: 0 4px 4px 0;
-  }
-  
-  .section-title {
-    color: var(--koc-red);
-    margin-bottom: 0;
-    font-weight: 600;
-  }
-  
-  .form-card {
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-    padding: 30px;
-    margin-bottom: 20px;
-  }
-
-  .form-section-title {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  
-  .form-section-title i {
-    color: var(--koc-red);
-    margin-right: 10px;
-    font-size: 18px;
-  }
-  
-  /* Zorunlu alanlar */
-  .required-label::after {
-    content: " *";
-    color: var(--koc-red);
-  }
-  
-  /* SWOT analiz kutusu */
-  .swot-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-gap: 15px;
-  }
-  
-  .swot-box {
-    border: 1px solid #eee;
-    border-radius: 5px;
-    padding: 15px;
-    margin-bottom: 15px;
-  }
-  
-  .swot-box h6 {
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-  
-  .swot-box.strengths {
-    border-left: 3px solid #28a745;
-  }
-  
-  .swot-box.weaknesses {
-    border-left: 3px solid #dc3545;
-  }
-  
-  .swot-box.opportunities {
-    border-left: 3px solid #17a2b8;
-  }
-  
-  .swot-box.threats {
-    border-left: 3px solid #ffc107;
-  }
-  
-  /* Fotoğraf yükleme - önizleme alanı */
-  .photo-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-top: 15px;
-  }
-  
-  .photo-preview {
-    width: 200px;
-    height: 200px;
-    overflow: hidden;
-    position: relative;
-    border-radius: 8px;
-    border: 2px solid #ddd;
-    margin: 10px;
-    background: white;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    cursor: grab;
-  }
-  
-  .photo-preview:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-  }
-  
-  .photo-preview.dragging {
-    opacity: 0.6;
-    cursor: grabbing;
-  }
-  
-  .photo-preview.main-photo {
-    border-color: var(--koc-red);
-    border-width: 3px;
-  }
-  
-  .photo-preview img {
+  /* Form field modern stillleri */
+  .field-input {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    padding: 0.625rem 0.875rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #1e293b;
+    background: #fff;
+    transition: all 0.2s;
+    outline: none;
   }
-  
-  .photo-controls {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
-    padding: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+  .field-input:focus {
+    border-color: #9d2235;
+    box-shadow: 0 0 0 3px rgba(157,34,53,0.08);
   }
-  
-  .photo-controls .delete-btn {
-    background: rgba(220, 53, 69, 0.9);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
-  }
-  
-  .photo-controls .delete-btn:hover {
-    background: rgba(220, 53, 69, 1);
-    transform: scale(1.1);
-  }
-  
-  .photo-controls .order-badge {
-    background: rgba(0,0,0,0.7);
-    color: white;
-    border-radius: 12px;
-    padding: 4px 8px;
-    font-size: 12px;
-    font-weight: bold;
-  }
-  
-  .photo-actions {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-    padding: 10px 8px 8px;
-    display: flex;
-    justify-content: center;
-  }
-  
-  .main-photo-btn {
-    background: var(--koc-red);
-    color: white;
-    border: none;
-    border-radius: 15px;
-    padding: 4px 12px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .main-photo-btn:hover {
-    background: var(--koc-red-dark);
-    transform: scale(1.05);
-  }
-  
-  .main-photo-btn.active {
-    background: #28a745;
-  }
-  
-  .main-photo-btn.active:hover {
-    background: #218838;
-  }
-  
-  .main-photo-indicator {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: #28a745;
-    color: white;
-    border-radius: 50%;
-    width: 25px;
-    height: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
-    z-index: 10;
-  }
-  
-  /* Drag drop için özel stiller */
-  .photo-preview .drag-handle {
-    position: absolute;
-    top: 40px;
-    right: 8px;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: grab;
-    z-index: 10;
-  }
-  
-  .photo-preview .drag-handle:hover {
-    background: rgba(0,0,0,0.7);
-  }
-  
-  .photo-preview.dragging {
-    opacity: 0.6;
-    cursor: grabbing;
-  }
-  
-  .photo-preview-placeholder {
-    border: 2px dashed var(--koc-red-light);
-    background-color: rgba(157, 34, 53, 0.1);
-    border-radius: 8px;
-    box-shadow: none;
-  }
+  .field-input::placeholder { color: #94a3b8; }
+  .field-input.is-invalid { border-color: #ef4444; }
 
-  .ui-sortable-helper {
-    cursor: grabbing;
-  }
-  
-  /* Drag & Drop feedback */
-  .photo-container.drag-over {
-    background-color: rgba(157, 34, 53, 0.1);
-    border: 2px dashed var(--koc-red);
-    border-radius: 8px;
-    padding: 10px;
-  }
-  
-  /* Tip boxes */
-  .tip-box {
-    background-color: #f8f9fa;
-    border-left: 3px solid var(--koc-red);
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 0 5px 5px 0;
-    font-size: 0.9rem;
-  }
+  select.field-input { appearance: auto; }
 
-  /* Category options */
-  .category-option {
-    border: 2px solid #e9ecef;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-  }
-  
-  .category-option:hover {
-    border-color: #ced4da;
-    background-color: #f8f9fa;
-  }
-  
-  .category-option.active {
-    border-color: var(--koc-red);
-    background-color: rgba(157, 34, 53, 0.05);
-    color: var(--koc-red);
-    font-weight: 600;
-    box-shadow: 0 3px 10px rgba(157, 34, 53, 0.1);
-  }
-  
-  .category-option input[type="radio"] {
-    margin-right: 10px;
-  }
-
-  .field-help {
-    color: #6c757d;
-    font-size: 12px;
-    margin-top: 5px;
-  }
-  
-  /* Yeni fotoğraf yükleme stili */
-  .upload-box {
-    border: 2px dashed #5e72e4;
-    border-radius: 5px;
-    background-color: #f8f9fa;
-    padding: 20px;
-    text-align: center;
-    margin-bottom: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative; /* Pozisyon ekleme - input için */
-  }
-  
-  .upload-box:hover {
-    background-color: #edf2ff;
-    border-color: #324cdd;
-  }
-  
-  .upload-box i {
-    font-size: 48px;
-    color: #5e72e4;
-    margin-bottom: 15px;
+  .field-label {
     display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.35rem;
   }
-  
-  .upload-box h4 {
-    color: #5e72e4;
-    margin-bottom: 10px;
+  .field-label.required::after {
+    content: " *";
+    color: #9d2235;
   }
-  
-  .upload-box p {
-    color: #8898aa;
+  .field-hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.25rem;
   }
 
-  /* Göz gizli dosya yukleme butonu */
-  .upload-box input[type="file"] {
-    position: absolute;
-    left: 0;
-    top: 0;
-    opacity: 0;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
+  /* Section kartları — diğer modern sayfalarla uyumlu */
+  .section-card {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+    overflow: hidden;
+    margin-bottom: 1rem;
   }
-  
-  #photo-preview-container {
+  .section-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1.125rem 1.5rem;
+    border-bottom: 1.5px solid #f1f5f9;
+  }
+  .section-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .section-card-body { padding: 1.5rem; }
+
+  /* Kategori seçim butonları */
+  .cat-option {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.625rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+    background: #f8fafc;
+    margin-bottom: 0.5rem;
+    user-select: none;
+  }
+  .cat-option:hover { border-color: #9d2235; background: #fdf2f4; color: #9d2235; }
+  .cat-option input[type="radio"] { accent-color: #9d2235; width: 16px; height: 16px; }
+  .cat-option.selected {
+    border-color: #9d2235;
+    background: linear-gradient(135deg, #fdf2f4 0%, #fff5f6 100%);
+    color: #9d2235;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(157,34,53,0.12);
+  }
+
+  /* İpucu kutusu */
+  .tip-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 0.625rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.8125rem;
+    color: #1d4ed8;
+  }
+
+  /* Fotoğraf yükleme */
+  .upload-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 0.875rem;
+    background: #f8fafc;
+    padding: 2.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover {
+    border-color: #9d2235;
+    background: #fdf2f4;
+  }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+
+  /* Fotoğraf önizleme */
+  .photo-grid {
     display: flex;
     flex-wrap: wrap;
-    margin-top: 20px;
+    gap: 0.75rem;
+    margin-top: 1rem;
   }
-  
-  .upload-progress {
-    height: 5px;
-    margin-top: 10px;
-    display: none;
+  .photo-item {
+    width: 160px;
+    height: 160px;
+    position: relative;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    cursor: grab;
+    transition: all 0.2s;
+  }
+  .photo-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+  .photo-item.main-photo { border-color: #9d2235; border-width: 3px; }
+  .photo-item img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-overlay {
+    position: absolute; top: 0; left: 0; right: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
+    padding: 6px 8px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .photo-badge {
+    background: rgba(255,255,255,0.9);
+    color: #334155;
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .photo-delete {
+    width: 26px; height: 26px;
+    background: rgba(239,68,68,0.9);
+    border: none; border-radius: 50%;
+    color: white; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    transition: all 0.15s;
+  }
+  .photo-delete:hover { background: #ef4444; transform: scale(1.1); }
+  .photo-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.75), transparent);
+    padding: 8px;
+    display: flex; justify-content: center;
+  }
+  .main-btn {
+    background: #9d2235;
+    color: white; border: none; border-radius: 20px;
+    padding: 3px 12px; font-size: 10px; font-weight: 700;
+    cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
+    transition: all 0.15s;
+  }
+  .main-btn:hover { background: #7a1a29; }
+  .main-btn.active { background: #059669; }
+  .main-star {
+    position: absolute; top: 30px; right: 6px;
+    background: #059669; color: white;
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: bold; z-index: 10;
+  }
+  .drag-handle {
+    position: absolute; top: 34px; right: 6px;
+    background: rgba(0,0,0,0.45);
+    color: white; width: 26px; height: 26px;
+    border-radius: 50%; display: flex;
+    align-items: center; justify-content: center;
+    cursor: grab; font-size: 10px;
+  }
+  .photo-item.dragging { opacity: 0.5; cursor: grabbing; }
+  .photo-placeholder {
+    border: 2px dashed #fca5a5;
+    background: rgba(157,34,53,0.05);
+    border-radius: 0.75rem;
+  }
+  .ui-sortable-helper { cursor: grabbing; }
+
+  /* Checkbox özel stil */
+  .check-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f8fafc;
+  }
+  .check-card:hover { border-color: #9d2235; background: #fdf2f4; }
+  .check-card input[type="checkbox"] {
+    accent-color: #9d2235;
+    width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0;
   }
 
-  /* Google Harita stili */
+  /* Harita */
   #map-container {
-    height: 400px;
-    width: 100%;
-    border-radius: 5px;
-    z-index: 1;
+    height: 380px; width: 100%;
+    border-radius: 0.75rem;
+    border: 1.5px solid #e2e8f0;
+    overflow: hidden;
   }
+
+  /* Input group */
+  .input-group { display: flex; align-items: stretch; }
+  .input-group .field-input { border-radius: 0.5rem 0 0 0.5rem; flex: 1; }
+  .input-group-suffix {
+    background: #f1f5f9;
+    border: 1.5px solid #e2e8f0;
+    border-left: none;
+    padding: 0 0.875rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+    display: flex; align-items: center;
+    font-size: 0.875rem; font-weight: 600;
+    color: #64748b;
+  }
+  .input-group-prefix {
+    background: #f1f5f9;
+    border: 1.5px solid #e2e8f0;
+    border-right: none;
+    padding: 0 0.875rem;
+    border-radius: 0.5rem 0 0 0.5rem;
+    display: flex; align-items: center;
+    font-size: 0.875rem; color: #64748b;
+  }
+  .input-group-prefix + .field-input { border-radius: 0 0.5rem 0.5rem 0; }
+
+  .invalid-feedback { color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; }
 </style>
-{% endblock stylesheets %}
+{% endblock extra_css %}
+
 {% block content %}
-<div class="header bg-gradient-koc-red pb-6">
-  <div class="container-fluid">
-    <div class="header-body">
-      <div class="row align-items-center py-4">
-        <div class="col-lg-6 col-7">
-          <h6 class="h2 text-white d-inline-block mb-0">Yeni Gayrimenkul Ekle</h6>
-          <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-            <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-              <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i></a></li>
-              <li class="breadcrumb-item"><a href="{% url 'property_list' %}">Gayrimenkuller</a></li>
-              <li class="breadcrumb-item active" aria-current="page">Yeni Gayrimenkul Ekle</li>
-            </ol>
-          </nav>
+<div class="p-4">
+
+  <!-- Sayfa Başlığı -->
+  <div class="bg-white rounded-2xl custom-shadow mb-4 px-5 py-4 flex items-center justify-between">
+    <div>
+      <div class="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+        <a href="/" class="hover:text-slate-600 transition"><i class="fas fa-home"></i></a>
+        <span>/</span>
+        <a href="{% url 'property_list' %}" class="hover:text-slate-600 transition">Gayrimenkuller</a>
+        <span>/</span>
+        <span class="text-slate-600 font-medium">Yeni Ekle</span>
+      </div>
+      <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+        <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm" style="background:linear-gradient(135deg,#9d2235,#b82e42);">
+          <i class="fas fa-plus"></i>
+        </span>
+        Yeni Gayrimenkul Ekle
+      </h1>
+    </div>
+    <button id="fill-random-data" type="button"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition hover:opacity-90"
+      style="background:linear-gradient(135deg,#7a1a29,#9d2235);">
+      <i class="fas fa-magic"></i> Rastgele Doldur
+    </button>
+  </div>
+
+  <!-- Form Alanı -->
+  <div>
+  <form method="post" enctype="multipart/form-data" id="property-form">
+    {% csrf_token %}
+
+    <!-- ══════════════════════════════════════════
+         BÖLÜM 1: KATEGORİ SEÇİMİ
+    ══════════════════════════════════════════ -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-icon text-white" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+          <i class="fas fa-tag"></i>
         </div>
-        <div class="col-lg-6 col-5 text-right">
-          <button id="fill-random-data" class="btn btn-sm btn-koc-red">
-            <i class="fas fa-magic mr-1"></i> Rastgele Doldur
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Kategori Seçimi</h3>
+          <p class="text-xs text-slate-400 mt-0.5">İlan türünü ve gayrimenkul tipini belirleyin</p>
+        </div>
+        <span class="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-50 text-violet-600">Adım 1</span>
+      </div>
+      <div class="section-card-body">
+        <div class="tip-box">
+          <i class="fas fa-lightbulb mt-0.5 flex-shrink-0"></i>
+          <span>Gayrimenkulün tipini ve ilan türünü seçin. Bu seçim, formda gösterilecek alanları belirler.</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <p class="field-label mb-3" style="color:#9d2235; font-size:0.8125rem;">
+              <i class="fas fa-exchange-alt mr-1"></i> Satılık / Kiralık
+            </p>
+            {% for status_tuple in status_choices %}
+            <label class="cat-option status-option">
+              <input type="radio" name="status" value="{{ status_tuple.0 }}">
+              <span>{{ status_tuple.1 }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <div>
+            <p class="field-label mb-3" style="color:#9d2235; font-size:0.8125rem;">
+              <i class="fas fa-building mr-1"></i> Gayrimenkul Tipi
+            </p>
+            {% for type_tuple in property_types %}
+            <label class="cat-option type-option">
+              <input type="radio" name="property_type" value="{{ type_tuple.0 }}">
+              <span>{{ type_tuple.1 }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         BÖLÜM 2: TEMEL BİLGİLER
+    ══════════════════════════════════════════ -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-icon text-white" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">
+          <i class="fas fa-file-alt"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Temel Bilgiler</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Gayrimenkulün ana özelliklerini girin</p>
+        </div>
+        <span class="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-50 text-sky-600">Adım 2</span>
+      </div>
+      <div class="section-card-body">
+        <div class="tip-box" style="background:#f0fdf4; border-color:#bbf7d0; color:#166534;">
+          <i class="fas fa-info-circle mt-0.5 flex-shrink-0"></i>
+          <span>Temel bilgileri eksiksiz doldurmak, gayrimenkulün daha hızlı bulunmasını sağlar.</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="field-label required" for="apartment_name">Daire Adı</label>
+            <input type="text" id="apartment_name" name="apartment_name" class="field-input"
+              placeholder="Örn: Bahçelievler 2+1 Daire" required>
+            <p class="field-hint">Gayrimenkulü en iyi tanımlayan bir isim yazın</p>
+          </div>
+          <div>
+            <label class="field-label" for="web_title">Web Sitesi İlan Başlığı</label>
+            <input type="text" id="web_title" name="web_title" class="field-input"
+              placeholder="Örn: Gaziantep Merkez'de Satılık 3+1 Lüks Daire">
+            <p class="field-hint">Boş bırakılırsa daire adı kullanılır</p>
+          </div>
+          <div>
+            <label class="field-label required" for="price">Fiyat</label>
+            <div class="input-group">
+              <input type="number" id="price" name="price" class="field-input"
+                placeholder="TL cinsinden" required>
+              <div class="input-group-suffix">₺</div>
+            </div>
+          </div>
+          <div>
+            <label class="field-label required" for="floor">Bulunduğu Kat</label>
+            <select id="floor" name="floor" class="field-input" required>
+              <option value="">Seçiniz</option>
+              <option value="Zemin">Zemin</option>
+              <option value="Bodrum">Bodrum</option>
+              <option value="Yarı Bodrum">Yarı Bodrum</option>
+              <option value="Giriş">Giriş</option>
+              <option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option>
+              <option value="7">7</option><option value="8">8</option>
+              <option value="9">9</option><option value="10+">10+</option>
+              <option value="En Üst Kat">En Üst Kat</option>
+              <option value="Çatı Katı">Çatı Katı</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label required" for="neighborhood">Mahalle</label>
+            <select id="neighborhood" name="neighborhood" class="field-input" required>
+              <option value="">Seçiniz</option>
+              {% for neighborhood in neighborhoods %}
+              <option value="{{ neighborhood.id }}">{{ neighborhood.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="field-label required" for="room_count">Oda Sayısı</label>
+            <select id="room_count" name="room_count" class="field-input" required>
+              <option value="">Seçiniz</option>
+              <option value="1+0">1+0</option><option value="1+1">1+1</option>
+              <option value="1.5+1">1.5+1</option><option value="2+1">2+1</option>
+              <option value="2.5+1">2.5+1</option><option value="3+1">3+1</option>
+              <option value="3.5+1">3.5+1</option><option value="4+1">4+1</option>
+              <option value="4.5+1">4.5+1</option><option value="4+2">4+2</option>
+              <option value="4.5+2">4.5+2</option><option value="5+1">5+1</option>
+              <option value="5.5+1">5.5+1</option><option value="5+2">5+2</option>
+              <option value="5.5+2">5.5+2</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label required" for="usage_status">Kullanım Durumu</label>
+            <select id="usage_status" name="usage_status" class="field-input" required>
+              <option value="">Seçiniz</option>
+              <option value="bos">Boş</option>
+              <option value="kiracili">Kiracılı</option>
+              <option value="mulk_sahibi">Mülk Sahibi</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label required" for="floor_count">Kat Sayısı</label>
+            <select id="floor_count" name="floor_count" class="field-input" required>
+              <option value="">Seçiniz</option>
+              <option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option>
+              <option value="7">7</option><option value="8">8</option>
+              <option value="9">9</option><option value="10+">10+</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="field-label" for="address">Adres</label>
+            <textarea id="address" name="address" class="field-input" rows="3"
+              placeholder="Adres detayları"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         BÖLÜM 3: PORTFÖY SAHİBİ BİLGİLERİ
+    ══════════════════════════════════════════ -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-icon text-white" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+          <i class="fas fa-user-tie"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Portföy Sahibi Bilgileri</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Mal sahibi iletişim ve yetki bilgileri</p>
+        </div>
+        <span class="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Adım 3</span>
+      </div>
+      <div class="section-card-body">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="field-label" for="owner_name">Mal Sahibi</label>
+            <input type="text" id="owner_name" name="owner_name" class="field-input"
+              placeholder="Mal sahibinin adı soyadı">
+          </div>
+          <div>
+            <label class="field-label" for="owner_phone">Mal Sahibi Telefon</label>
+            <input type="text" id="owner_phone" name="owner_phone" class="field-input"
+              placeholder="(___) ___-____">
+          </div>
+
+          <!-- Yetki Numarası -->
+          <div>
+            <label class="field-label" for="yetki_numarasi">
+              <i class="fas fa-id-badge mr-1 text-amber-500"></i>Yetki Numarası
+            </label>
+            <div class="input-group">
+              <div class="input-group-prefix"><i class="fas fa-hashtag text-xs"></i></div>
+              <input type="text" id="yetki_numarasi" name="yetki_numarasi" class="field-input"
+                placeholder="Yetki belgesi numarası">
+            </div>
+            <p class="field-hint">Mal sahibinden alınan yetki belgesi numarası</p>
+          </div>
+
+          <!-- Yetki Süresi -->
+          <div>
+            <label class="field-label" for="yetki_suresi">
+              <i class="fas fa-calendar-check mr-1 text-amber-500"></i>Yetki Süresi
+            </label>
+            <div class="input-group">
+              <div class="input-group-prefix"><i class="fas fa-calendar text-xs"></i></div>
+              <input type="date" id="yetki_suresi" name="yetki_suresi" class="field-input">
+            </div>
+            <p class="field-hint">Yetki belgesinin geçerlilik bitiş tarihi</p>
+          </div>
+
+          <div>
+            <label class="field-label" for="branda_number">Branda No</label>
+            <input type="text" id="branda_number" name="branda_number" class="field-input"
+              placeholder="Branda numarası">
+          </div>
+          <div>
+            <label class="field-label" for="key_holder">Anahtar Kimde</label>
+            <select id="key_holder" name="key_holder" class="field-input">
+              <option value="">Seçiniz</option>
+              {% for key_id, key_name in key_holder_choices %}
+              <option value="{{ key_id }}">{{ key_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         BÖLÜM 4: DAİRE DETAYLARI
+    ══════════════════════════════════════════ -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-icon text-white" style="background:linear-gradient(135deg,#10b981,#059669);">
+          <i class="fas fa-home"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Daire Detayları</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Alan, ısıtma, tapu ve diğer teknik bilgiler</p>
+        </div>
+        <span class="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Adım 4</span>
+      </div>
+      <div class="section-card-body" id="daire-details">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="field-label required" for="gross_area">Brüt m²</label>
+            <div class="input-group">
+              <input type="number" step="0.01" id="gross_area" name="gross_area"
+                class="field-input" placeholder="Brüt alan" required>
+              <div class="input-group-suffix">m²</div>
+            </div>
+          </div>
+          <div>
+            <label class="field-label required" for="net_area">Net m²</label>
+            <div class="input-group">
+              <input type="number" step="0.01" id="net_area" name="net_area"
+                class="field-input" placeholder="Net alan" required>
+              <div class="input-group-suffix">m²</div>
+            </div>
+          </div>
+          <div>
+            <label class="field-label required" for="heating">Isıtma</label>
+            <select id="heating" name="heating" class="field-input" required>
+              <option value="">Seçiniz</option>
+              {% for heating_tuple in heating_choices %}
+              <option value="{{ heating_tuple.0 }}">{{ heating_tuple.1 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="field-label required" for="dues">Aidat</label>
+            <div class="input-group">
+              <input type="number" step="0.01" id="dues" name="dues"
+                class="field-input" placeholder="Aidat tutarı" required>
+              <div class="input-group-suffix">₺</div>
+            </div>
+          </div>
+          <div>
+            <label class="field-label required" for="balcony">Balkon</label>
+            <select id="balcony" name="balcony" class="field-input" required>
+              <option value="">Seçiniz</option>
+              <option value="var">Var</option>
+              <option value="yok">Yok</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label required" for="deed_status">Tapu Durumu</label>
+            <select id="deed_status" name="deed_status" class="field-input" required>
+              <option value="">Seçiniz</option>
+              {% for deed_tuple in deed_status_choices %}
+              <option value="{{ deed_tuple.0 }}">{{ deed_tuple.1 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         BÖLÜM 5: LOKASYON & HARİTA
+    ══════════════════════════════════════════ -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-icon text-white" style="background:linear-gradient(135deg,#ef4444,#dc2626);">
+          <i class="fas fa-map-marker-alt"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Lokasyon ve Harita</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Gayrimenkulün konumunu haritada işaretleyin</p>
+        </div>
+        <span class="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-500">Adım 5</span>
+      </div>
+      <div class="section-card-body">
+        <div class="mb-4">
+          <label class="field-label" for="map_coordinates">Harita Koordinatları</label>
+          <input type="text" id="map_coordinates" name="map_coordinates" class="field-input"
+            placeholder="Enlem, Boylam (örn: 37.066667, 37.383333)">
+          <p class="field-hint">Haritada tıkladığınız konum otomatik doldurulur</p>
+        </div>
+        <div class="flex flex-col md:flex-row gap-3 mb-4">
+          <div class="flex-1">
+            <div class="input-group">
+              <div class="input-group-prefix"><i class="fas fa-search text-xs"></i></div>
+              <input type="text" id="location-search" class="field-input"
+                placeholder="Adres veya konum arayın...">
+              <button class="px-4 py-2 text-sm font-medium text-white rounded-r-lg transition"
+                style="background:#0ea5e9; border:1.5px solid #0ea5e9;"
+                type="button" id="search-location-btn">
+                <i class="fas fa-search mr-1"></i> Ara
+              </button>
+            </div>
+          </div>
+          <button class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border-2 border-slate-200 text-slate-600 hover:border-red-400 hover:text-red-500 transition"
+            type="button" id="get-current-location">
+            <i class="fas fa-crosshairs"></i> Konumumu Kullan
+          </button>
+        </div>
+        <div id="map-container"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         BÖLÜM 6: EK ÖZELLİKLER
+    ══════════════════════════════════════════ -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-icon text-white" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">
+          <i class="fas fa-sliders-h"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Ek Özellikler</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Görünürlük ve öne çıkarma ayarları</p>
+        </div>
+        <span class="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-50 text-violet-600">Adım 6</span>
+      </div>
+      <div class="section-card-body">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label class="check-card">
+            <input type="checkbox" name="is_featured" id="is_featured">
+            <div>
+              <p class="text-sm font-semibold text-slate-700">
+                <i class="fas fa-star text-amber-400 mr-1"></i> Öne Çıkan Gayrimenkul
+              </p>
+              <p class="text-xs text-slate-400 mt-0.5">Ana sayfada ve öne çıkan listelerinde görüntülenir</p>
+            </div>
+          </label>
+          <label class="check-card">
+            <input type="checkbox" name="is_active" id="is_active" checked>
+            <div>
+              <p class="text-sm font-semibold text-slate-700">
+                <i class="fas fa-check-circle text-emerald-500 mr-1"></i> Aktif Gayrimenkul
+              </p>
+              <p class="text-xs text-slate-400 mt-0.5">Web sitesinde görünür şekilde yayınlanır</p>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         BÖLÜM 7: FOTOĞRAFLAR
+    ══════════════════════════════════════════ -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-icon text-white" style="background:linear-gradient(135deg,#ec4899,#db2777);">
+          <i class="fas fa-camera"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Fotoğraflar</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Gayrimenkul görselleri yükleyin ve sıralayın</p>
+        </div>
+        <span class="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-pink-50 text-pink-600">Adım 7</span>
+      </div>
+      <div class="section-card-body">
+        <div class="upload-zone" id="upload-box">
+          <i class="fas fa-cloud-upload-alt text-4xl mb-3 block" style="color:#9d2235;"></i>
+          <p class="font-semibold text-slate-700 text-base mb-1">Fotoğrafları sürükleyin veya seçin</p>
+          <p class="text-sm text-slate-400">Maks. 5MB · JPG ve PNG formatları kabul edilir</p>
+          <input type="file" id="photo-upload" name="photos[]" multiple accept="image/jpeg,image/png,image/jpg">
+        </div>
+
+        <div id="photo-preview-container" class="photo-grid"></div>
+
+        <div id="sorting-info" class="hidden mt-4">
+          <div class="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <i class="fas fa-info-circle text-blue-500 mt-0.5 flex-shrink-0"></i>
+            <ul class="text-xs text-blue-700 space-y-1">
+              <li>Fotoğrafları sürükleyerek istediğiniz sıraya koyabilirsiniz</li>
+              <li>"Ana Yap" butonuna basarak kapak fotoğrafını seçebilirsiniz</li>
+              <li>Silmek için fotoğrafın üzerindeki <strong>✕</strong> butonuna tıklayın</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mt-5">
+          <button type="button" id="take-photo-btn"
+            class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border-2 border-slate-200 text-slate-600 hover:border-pink-400 hover:text-pink-500 transition">
+            <i class="fas fa-camera"></i> Kamera ile Çek
+          </button>
+          <input type="file" id="camera-input" accept="image/*" capture="camera" style="display:none;">
+
+          <button type="submit" id="save-btn"
+            class="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white rounded-xl shadow-lg transition hover:opacity-90 active:scale-95"
+            style="background:linear-gradient(135deg,#7a1a29,#9d2235);">
+            <i class="fas fa-save"></i> Gayrimenkulü Kaydet
           </button>
         </div>
       </div>
     </div>
+
+  </form>
+  </div><!-- /form alanı -->
+
+  <!-- Footer -->
+  <div class="mt-6 py-4 border-t border-slate-200 flex items-center justify-between text-xs text-slate-400">
+    <span class="font-semibold">Koç Gayrimenkul Panel</span>
+    <span>&copy; 2025 Koç Gayrimenkul. Tüm hakları saklıdır.</span>
   </div>
-</div>
-<!-- Page content -->
-<div class="container-fluid mt--6">
-  <div class="row">
-    <div class="col-xl-12">
-      <div class="card">
-        <div class="card-header">
-          <div class="row align-items-center">
-            <div class="col-8">
-              <h3 class="mb-0">Gayrimenkul Ekleme</h3>
-              <p class="text-sm text-muted">Portföy bilgilerini doldurun</p>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <form method="post" enctype="multipart/form-data" id="property-form">
-            {% csrf_token %}
-            
-            <!-- BÖLÜM 1: KATEGORİ SEÇİMİ -->
-            <div class="section-header">
-              <h4 class="section-title">
-                <i class="ni ni-tag mr-2"></i>Kategori Seçimi
-              </h4>
-            </div>
 
-            <div class="tip-box mb-4">
-              <i class="ni ni-bulb-61 mr-2"></i> 
-              <strong>İpucu:</strong> Gayrimenkulün tipini ve ilan türünü belirleyin. Bu, hangi alanların görüneceğini belirler.
-            </div>
-            
-            <div class="form-card">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                      <h5 class="mb-4 text-koc-red">Satılık / Kiralık</h5>
-                      <div class="d-flex flex-column">
-                        {% for status_tuple in status_choices %}
-                        <label class="category-option status-option">
-                          <input type="radio" name="status" value="{{ status_tuple.0 }}"> 
-                          <span>{{ status_tuple.1 }}</span>
-                        </label>
-                        {% endfor %}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="card shadow-sm">
-                    <div class="card-body">
-                      <h5 class="mb-4 text-koc-red">Gayrimenkul Tipi</h5>
-                      <div class="d-flex flex-column">
-                        {% for type_tuple in property_types %}
-                        <label class="category-option type-option">
-                          <input type="radio" name="property_type" value="{{ type_tuple.0 }}">
-                          <span>{{ type_tuple.1 }}</span>
-                        </label>
-                        {% endfor %}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- BÖLÜM 2: TEMEL BİLGİLER -->
-            <div class="section-header">
-              <h4 class="section-title">
-                <i class="ni ni-single-copy-04 mr-2"></i>Temel Bilgiler
-              </h4>
-            </div>
-
-            <div class="tip-box mb-4">
-              <i class="ni ni-bulb-61 mr-2"></i> 
-              <strong>İpucu:</strong> Temel bilgileri eksiksiz girmeniz, gayrimenkulün daha hızlı bulunmasını sağlar.
-            </div>
-            
-            <div class="form-card">
-              <div class="pl-lg-4">
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label required-label" for="apartment_name">Daire Adı</label>
-                      <input type="text" id="apartment_name" name="apartment_name" class="form-control" placeholder="Örn: Bahçelievler 2+1 Daire, Vadi Rezidans 3+1" required>
-                      <div class="field-help">Gayrimenkulü en iyi şekilde tanımlayan bir isim yazın</div>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="web_title">Web Sitesi İlan Başlığı</label>
-                      <input type="text" id="web_title" name="web_title" class="form-control" placeholder="Örn: Gaziantep Merkez'de Satılık 3+1 Lüks Daire">
-                      <div class="field-help">Web sitesinde görünecek ilan başlığı (boş bırakılırsa daire adı kullanılır)</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label required-label" for="price">Fiyat</label>
-                      <div class="input-group">
-                        <input type="number" id="price" name="price" class="form-control" placeholder="TL cinsinden" required>
-                        <div class="input-group-append">
-                          <span class="input-group-text">₺</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label required-label" for="floor">Bulunduğu Kat</label>
-                      <select id="floor" name="floor" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        <option value="Zemin">Zemin</option>
-                        <option value="Bodrum">Bodrum</option>
-                        <option value="Yarı Bodrum">Yarı Bodrum</option>
-                        <option value="Giriş">Giriş</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10+">10+</option>
-                        <option value="En Üst Kat">En Üst Kat</option>
-                        <option value="Çatı Katı">Çatı Katı</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label required-label" for="neighborhood">Mahalle</label>
-                      <select id="neighborhood" name="neighborhood" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        {% for neighborhood in neighborhoods %}
-                          <option value="{{ neighborhood.id }}">{{ neighborhood.name }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label required-label" for="room_count">Oda Sayısı</label>
-                      <select id="room_count" name="room_count" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        <option value="1+0">1+0</option>
-                        <option value="1+1">1+1</option>
-                        <option value="1.5+1">1.5+1</option>
-                        <option value="2+1">2+1</option>
-                        <option value="2.5+1">2.5+1</option>
-                        <option value="3+1">3+1</option>
-                        <option value="3.5+1">3.5+1</option>
-                        <option value="4+1">4+1</option>
-                        <option value="4.5+1">4.5+1</option>
-                        <option value="4+2">4+2</option>
-                        <option value="4.5+2">4.5+2</option>
-                        <option value="5+1">5+1</option>
-                        <option value="5.5+1">5.5+1</option>
-                        <option value="5+2">5+2</option>
-                        <option value="5.5+2">5.5+2</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label required-label" for="usage_status">Kullanım Durumu</label>
-                      <select id="usage_status" name="usage_status" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        <option value="bos">Boş</option>
-                        <option value="kiracili">Kiracılı</option>
-                        <option value="mulk_sahibi">Mülk Sahibi</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label required-label" for="floor_count">Kat Sayısı</label>
-                      <select id="floor_count" name="floor_count" class="form-control" required>
-                        <option value="">Seçiniz</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10+">10+</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="address">Adres</label>
-                      <textarea id="address" name="address" class="form-control" placeholder="Adres detayları" rows="3"></textarea>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- BÖLÜM 3: PORTFÖY SAHİBİ BİLGİLERİ -->
-            <div class="section-header">
-              <h4 class="section-title">
-                <i class="ni ni-single-02 mr-2"></i>Portföy Sahibi Bilgileri
-              </h4>
-            </div>
-
-            <div class="form-card">
-              <div class="pl-lg-4">
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="owner_name">Mal Sahibi</label>
-                      <input type="text" id="owner_name" name="owner_name" class="form-control" placeholder="Mal sahibinin adı soyadı">
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="owner_phone">Mal Sahibi Telefon</label>
-                      <input type="text" id="owner_phone" name="owner_phone" class="form-control" placeholder="(___) ___-____">
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="owner_listing_number">Sahibinden İlan No</label>
-                      <div class="input-group">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
-                        </div>
-                        <input type="text" id="owner_listing_number" name="owner_listing_number" class="form-control" placeholder="Sahibinden.com ilan numarası">
-                      </div>
-                      <div class="field-help">Sahibinden.com platformdaki ilan numarası</div>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="emlakjet_listing_number">Emlakjet İlan No</label>
-                      <div class="input-group">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
-                        </div>
-                        <input type="text" id="emlakjet_listing_number" name="emlakjet_listing_number" class="form-control" placeholder="Emlakjet.com ilan numarası">
-                      </div>
-                      <div class="field-help">Emlakjet.com platformdaki ilan numarası</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="hepsiemlak_listing_number">Hepsiemlak İlan No</label>
-                      <div class="input-group">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
-                        </div>
-                        <input type="text" id="hepsiemlak_listing_number" name="hepsiemlak_listing_number" class="form-control" placeholder="Hepsiemlak.com ilan numarası">
-                      </div>
-                      <div class="field-help">Hepsiemlak.com platformdaki ilan numarası</div>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="branda_number">Branda No</label>
-                      <input type="text" id="branda_number" name="branda_number" class="form-control" placeholder="Branda numarası">
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="form-group">
-                      <label class="form-control-label" for="key_holder">Anahtar Kimde</label>
-                      <select id="key_holder" name="key_holder" class="form-control">
-                        <option value="">Seçiniz</option>
-                        {% for key_id, key_name in key_holder_choices %}
-                          <option value="{{ key_id }}">{{ key_name }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- BÖLÜM 4: DAİRE DETAYLARI -->
-            <div class="section-header">
-              <h4 class="section-title">
-                <i class="ni ni-building mr-2"></i>Daire Detayları
-              </h4>
-            </div>
-
-            <div class="tip-box mb-4">
-              <i class="ni ni-bulb-61 mr-2"></i> 
-              <strong>İpucu:</strong> Daire detaylarını eksiksiz girmeniz, gayrimenkulün daha doğru değerlendirilmesini sağlar.
-            </div>
-            
-            <div class="form-card">
-              <div id="daire-details">
-                <div class="pl-lg-4">
-                  <div class="row">
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label required-label" for="gross_area">Brüt m²</label>
-                        <input type="number" step="0.01" id="gross_area" name="gross_area" class="form-control" placeholder="Brüt alan" required>
-                      </div>
-                    </div>
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label required-label" for="net_area">Net m²</label>
-                        <input type="number" step="0.01" id="net_area" name="net_area" class="form-control" placeholder="Net alan" required>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label required-label" for="heating">Isıtma</label>
-                        <select id="heating" name="heating" class="form-control" required>
-                          <option value="">Seçiniz</option>
-                          {% for heating_tuple in heating_choices %}
-                            <option value="{{ heating_tuple.0 }}">{{ heating_tuple.1 }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
-                    </div>
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label required-label" for="dues">Aidat (TL)</label>
-                        <div class="input-group">
-                          <input type="number" step="0.01" id="dues" name="dues" class="form-control" placeholder="Aidat tutarı" required>
-                          <div class="input-group-append">
-                            <span class="input-group-text">₺</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label required-label" for="balcony">Balkon</label>
-                        <select id="balcony" name="balcony" class="form-control" required>
-                          <option value="">Seçiniz</option>
-                          <option value="var">Var</option>
-                          <option value="yok">Yok</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="col-lg-6">
-                      <div class="form-group">
-                        <label class="form-control-label required-label" for="deed_status">Tapu Durumu</label>
-                        <select id="deed_status" name="deed_status" class="form-control" required>
-                          <option value="">Seçiniz</option>
-                          {% for deed_tuple in deed_status_choices %}
-                            <option value="{{ deed_tuple.0 }}">{{ deed_tuple.1 }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- BÖLÜM 4: LOKASYON ve HARİTA BİLGİLERİ -->
-            <div class="section-header">
-              <h4 class="section-title">
-                <i class="ni ni-pin-3 mr-2"></i>Lokasyon ve Harita Bilgileri
-              </h4>
-            </div>
-
-            <div class="form-card">
-              <!-- Harita Konumu -->
-              <div class="form-section-title">
-                <i class="ni ni-world"></i>
-                <h4>Harita Konumu</h4>
-              </div>
-              
-              <div class="pl-lg-4">
-                <div class="row">
-                  <div class="col-lg-12">
-                    <div class="form-group">
-                      <label class="form-control-label" for="map_coordinates">Harita Koordinatları</label>
-                      <input type="text" id="map_coordinates" name="map_coordinates" class="form-control" placeholder="Enlem, Boylam (örn: 37.066667, 37.383333)">
-                      <div class="field-help">Haritada seçtiğiniz konum otomatik olarak doldurulacaktır veya kendiniz yazabilirsiniz</div>
-                    </div>
-                    
-                    <!-- Konum arama ve butonlar -->
-                    <div class="row mb-3">
-                      <div class="col-md-6">
-                        <div class="input-group">
-                          <input type="text" id="location-search" class="form-control" placeholder="Adres veya konum arayın...">
-                          <div class="input-group-append">
-                            <button class="btn btn-outline-primary" type="button" id="search-location-btn">
-                              <i class="fa fa-search"></i> Ara
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-6 text-right">
-                        <button class="btn btn-outline-info" type="button" id="get-current-location">
-                          <i class="fa fa-map-marker-alt"></i> Konumumu Kullan
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div id="map-container"></div>
-                    <div class="field-help mt-2">Gayrimenkulün konumunu haritada işaretlemek için tıklayın</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- BÖLÜM 5: EK ÖZELLİKLER -->
-            <div class="section-header">
-              <h4 class="section-title">
-                <i class="ni ni-settings-gear-65 mr-2"></i>Ek Özellikler
-              </h4>
-            </div>
-
-            <div class="form-card">
-              <div class="pl-lg-4">
-                <div class="row">
-                  <div class="col-lg-6">
-                    <div class="custom-control custom-checkbox">
-                      <input type="checkbox" class="custom-control-input" id="is_featured" name="is_featured">
-                      <label class="custom-control-label" for="is_featured">
-                        <i class="fas fa-star text-warning mr-2"></i>
-                        Öne Çıkan Gayrimenkul
-                      </label>
-                      <div class="field-help">Bu gayrimenkul ana sayfada ve öne çıkan listelerinde görüntülenecektir.</div>
-                    </div>
-                  </div>
-                  <div class="col-lg-6">
-                    <div class="custom-control custom-checkbox">
-                      <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" checked>
-                      <label class="custom-control-label" for="is_active">
-                        <i class="fas fa-check-circle text-success mr-2"></i>
-                        Aktif Gayrimenkul
-                      </label>
-                      <div class="field-help">Bu gayrimenkul sitede görüntülenecektir.</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- BÖLÜM 6: FOTOĞRAF YÜKLEME -->
-            <div class="section-header">
-              <h4 class="section-title">
-                <i class="ni ni-image mr-2"></i>Fotoğraflar
-              </h4>
-            </div>
-
-            <div class="form-card">                
-              <!-- Fotoğraf Yükleme -->
-              <div class="form-section-title">
-                <i class="ni ni-camera-compact"></i>
-                <h4>Gayrimenkul Fotoğrafları</h4>
-              </div>
-
-              <div class="pl-lg-4">
-                <div class="row">
-                  <div class="col-12">
-                    <div class="upload-box" id="upload-box">
-                      <i class="ni ni-cloud-upload-96"></i>
-                      <h4>Fotoğrafları seçin</h4>
-                      <p>Maksimum dosya boyutu: 5MB | Kabul edilen formatlar: JPG, PNG</p>
-                      <input type="file" id="photo-upload" name="photos[]" multiple accept="image/jpeg,image/png,image/jpg">
-                    </div>
-                    
-                    <!-- Fotoğraf önizleme ve yönetim alanı -->
-                    <div id="photo-preview-container" class="photo-container">
-                      <!-- Yüklenen fotoğraflar burada gösterilecek -->
-                    </div>
-                    
-                    <!-- Sıralama Bilgisi -->
-                    <div class="mt-3" id="sorting-info" style="display: none;">
-                      <div class="alert alert-info">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        <strong>Fotoğraf Yönetimi:</strong>
-                        <ul class="mb-0 mt-2">
-                          <li>Fotoğrafları sürükleyerek istediğiniz sıraya koyabilirsiniz</li>
-                          <li>"Ana Fotoğraf" butonuna basarak ana fotoğrafı seçebilirsiniz</li>
-                          <li>Ana fotoğraf ilan kapağında görünecektir</li>
-                          <li>Fotoğrafları silmek için çarpı butonuna tıklayın</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Kamera ile fotoğraf çekme butonu -->
-                <div class="row mt-3">
-                  <div class="col-12">
-                    <button type="button" class="btn btn-outline-primary" id="take-photo-btn">
-                      <i class="ni ni-camera-compact mr-2"></i> Kamera ile Fotoğraf Çek
-                    </button>
-                    <input type="file" id="camera-input" accept="image/*" capture="camera" style="display: none;">
-                  </div>
-                </div>
-
-                <!-- Kaydet Butonu -->
-                <div class="row mt-4">
-                  <div class="col-12 text-right">
-                    <button type="submit" class="btn btn-success btn-lg" id="save-btn">
-                      <i class="fas fa-save mr-1"></i> Gayrimenkulü Kaydet
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  {% include "includes/footer.html" %}
-  
-</div>
+</div><!-- /p-4 -->
 {% endblock content %}
-<!-- Specific JS goes HERE --> 
-{% block javascripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js" integrity="sha512-efAcjYoYT0sXxQRtxGY37CKYmqsFVOIwMApaEbrxJr4RwqVVGw8o+Lfh/+59TU07+suZn1BWq4fDl5fdgyCNkw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js" integrity="sha256-lSjKY0/srUM9BE3dPm+c4fBo1dky2v27Gdjm2uoZaL0=" crossorigin="anonymous"></script>
-<!-- Google Maps API -->
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script>
   var map, marker, geocoder, autocomplete;
   var isMapLoaded = false;
   var formSubmitting = false;
-  
-  // Haritayı başlatma fonksiyonu
+
   function propertyInitMap() {
-    // Google Maps API'nin yüklenip yüklenmediğini kontrol et
     if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
-      console.log('Google Maps API henüz yüklenmedi');
-      setTimeout(propertyInitMap, 1000); // 1 saniye sonra tekrar dene
+      setTimeout(propertyInitMap, 1000);
       return;
     }
-    
-    // Eğer harita container'ı yoksa, işlemi durdur
     var mapContainer = document.getElementById('map-container');
-    if (!mapContainer) {
-      console.log('Harita container bulunamadı');
-      return;
-    }
-    
+    if (!mapContainer) return;
+
     try {
-      // Gaziantep'in koordinatları (varsayılan)
       var defaultLocation = { lat: 37.066667, lng: 37.383333 };
-      
-      // Eğer form doldurulurken koordinat girilmişse, onu kullan
       var coordinates = $('#map_coordinates').val();
       if (coordinates && coordinates.includes(',')) {
         var coords = coordinates.split(',');
         var lat = parseFloat(coords[0].trim());
         var lng = parseFloat(coords[1].trim());
-        if (!isNaN(lat) && !isNaN(lng)) {
-          defaultLocation = { lat: lat, lng: lng };
-        }
+        if (!isNaN(lat) && !isNaN(lng)) defaultLocation = { lat: lat, lng: lng };
       }
-      
-      // Haritayı başlat
+
       map = new google.maps.Map(mapContainer, {
         center: defaultLocation,
         zoom: 12,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         streetViewControl: false,
         mapTypeControl: true,
-        fullscreenControl: false, // Fullscreen kontrolü devre dışı bırak
-        gestureHandling: 'cooperative' // Touch eventlerini iyileştir
+        fullscreenControl: false,
+        gestureHandling: 'cooperative'
       });
-      
-      // Geocoder servisi
+
       geocoder = new google.maps.Geocoder();
-      
-      // Marker ekle
       marker = new google.maps.Marker({
-        position: defaultLocation,
-        map: map,
-        draggable: true,
-        title: 'Gayrimenkul Konumu'
+        position: defaultLocation, map: map, draggable: true, title: 'Gayrimenkul Konumu'
       });
-      
-      // Marker sürüklendiğinde koordinatları güncelle
+
       marker.addListener('dragend', function() {
         if (!formSubmitting) {
-          var position = marker.getPosition();
-          updateCoordinates(position.lat(), position.lng());
+          var p = marker.getPosition();
+          updateCoordinates(p.lat(), p.lng());
         }
       });
-      
-      // Haritaya tıklandığında marker'ı güncelle
       map.addListener('click', function(event) {
         if (!formSubmitting) {
           marker.setPosition(event.latLng);
           updateCoordinates(event.latLng.lat(), event.latLng.lng());
         }
       });
-      
-      // AutoComplete için konum arama
+
       var searchInput = document.getElementById('location-search');
       if (searchInput) {
         autocomplete = new google.maps.places.Autocomplete(searchInput, {
-          componentRestrictions: { country: 'tr' }, // Sadece Türkiye
+          componentRestrictions: { country: 'tr' },
           fields: ['place_id', 'geometry', 'name']
         });
-        
         autocomplete.addListener('place_changed', function() {
           if (!formSubmitting) {
             var place = autocomplete.getPlace();
             if (place.geometry) {
-              var location = place.geometry.location;
-              map.setCenter(location);
-              map.setZoom(15);
-              marker.setPosition(location);
-              updateCoordinates(location.lat(), location.lng());
+              var loc = place.geometry.location;
+              map.setCenter(loc); map.setZoom(15);
+              marker.setPosition(loc);
+              updateCoordinates(loc.lat(), loc.lng());
             }
           }
         });
       }
-      
       isMapLoaded = true;
-      console.log('Google Maps başarıyla yüklendi');
-      
-    } catch (error) {
-      console.error('Google Maps başlatılırken hata:', error);
-    }
-  }
-  
-  // Google Maps API yükleme fonksiyonu
-  function loadGoogleMaps() {
-    // API key kontrolü
-    var apiKey = "{{ settings.GOOGLE_MAPS_API_KEY }}";
-    if (!apiKey || apiKey === "None" || apiKey === "") {
-      console.warn('Google Maps API key tanımlanmamış');
-      return;
-    }
-    
-    // Script zaten yüklüyse tekrar yükleme
-    if (window.googleMapsLoaded) {
-      propertyInitMap();
-      return;
-    }
-    
-    var script = document.createElement('script');
-    script.src = "https://maps.googleapis.com/maps/api/js?key=" + apiKey + "&libraries=places&loading=async&callback=propertyMapLoaded";
-    script.async = true;
-    script.defer = true;
-    script.onerror = function() {
-      console.error('Google Maps API yüklenemedi');
-    };
-    document.head.appendChild(script);
-  }
-  
-  // Google Maps yüklendikten sonra çağrılan fonksiyon
-  function propertyMapLoaded() {
-    window.googleMapsLoaded = true;
-    $(document).ready(function() {
-      setTimeout(propertyInitMap, 500);
-    });
+    } catch (error) { console.error('Google Maps hatası:', error); }
   }
 
-  // Koordinat alanını güncelle
-  function updateCoordinates(lat, lng) {
-    if (!formSubmitting) {
-      $('#map_coordinates').val(lat.toFixed(6) + ', ' + lng.toFixed(6));
-    }
+  function loadGoogleMaps() {
+    var apiKey = "{{ settings.GOOGLE_MAPS_API_KEY }}";
+    if (!apiKey || apiKey === "None" || apiKey === "") return;
+    if (window.googleMapsLoaded) { propertyInitMap(); return; }
+    var script = document.createElement('script');
+    script.src = "https://maps.googleapis.com/maps/api/js?key=" + apiKey + "&libraries=places&loading=async&callback=propertyMapLoaded";
+    script.async = true; script.defer = true;
+    document.head.appendChild(script);
   }
-  
-  // Manuel konum arama
+
+  function propertyMapLoaded() {
+    window.googleMapsLoaded = true;
+    $(document).ready(function() { setTimeout(propertyInitMap, 500); });
+  }
+
+  function updateCoordinates(lat, lng) {
+    if (!formSubmitting) $('#map_coordinates').val(lat.toFixed(6) + ', ' + lng.toFixed(6));
+  }
+
   function searchLocation() {
     if (formSubmitting) return;
-    
-    var searchQuery = $('#location-search').val().trim();
-    if (!searchQuery) return;
-    
-    $('#search-location-btn').html('<i class="fa fa-spinner fa-spin"></i>');
-    
+    var q = $('#location-search').val().trim();
+    if (!q) return;
+    $('#search-location-btn').html('<i class="fas fa-spinner fa-spin"></i>');
     if (geocoder) {
-      geocoder.geocode({ 
-        address: searchQuery,
-        componentRestrictions: { country: 'TR' }
-      }, function(results, status) {
+      geocoder.geocode({ address: q, componentRestrictions: { country: 'TR' } }, function(results, status) {
         if (status === 'OK' && results[0] && !formSubmitting) {
-          var location = results[0].geometry.location;
-          map.setCenter(location);
-          map.setZoom(15);
-          marker.setPosition(location);
-          updateCoordinates(location.lat(), location.lng());
-        } else if (status !== 'OK') {
-          alert('Aradığınız konum bulunamadı: ' + status);
-        }
-        $('#search-location-btn').html('<i class="fa fa-search"></i> Ara');
+          var loc = results[0].geometry.location;
+          map.setCenter(loc); map.setZoom(15);
+          marker.setPosition(loc);
+          updateCoordinates(loc.lat(), loc.lng());
+        } else if (status !== 'OK') alert('Konum bulunamadı: ' + status);
+        $('#search-location-btn').html('<i class="fas fa-search mr-1"></i> Ara');
       });
     } else {
-      $('#search-location-btn').html('<i class="fa fa-search"></i> Ara');
-      alert('Harita servisi henüz hazır değil. Lütfen biraz bekleyin.');
+      $('#search-location-btn').html('<i class="fas fa-search mr-1"></i> Ara');
     }
   }
-  
-  // Mevcut konumu al
+
   function getCurrentLocation() {
     if (formSubmitting) return;
-    
     if ("geolocation" in navigator) {
-      $('#get-current-location').html('<i class="fa fa-spinner fa-spin"></i> Konum Alınıyor...');
-      
-      navigator.geolocation.getCurrentPosition(function(position) {
+      $('#get-current-location').html('<i class="fas fa-spinner fa-spin"></i> Alınıyor...');
+      navigator.geolocation.getCurrentPosition(function(pos) {
         if (!formSubmitting) {
-          var userLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          
+          var ul = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           if (map && marker) {
-            map.setCenter(userLocation);
-            map.setZoom(15);
-            marker.setPosition(userLocation);
-            updateCoordinates(userLocation.lat, userLocation.lng);
+            map.setCenter(ul); map.setZoom(15);
+            marker.setPosition(ul);
+            updateCoordinates(ul.lat, ul.lng);
           }
         }
-        $('#get-current-location').html('<i class="fa fa-map-marker-alt"></i> Konumumu Kullan');
-      }, function(error) {
-        var errorMessage = "";
-        switch(error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Konum izni reddedildi.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Konum bilgisi alınamadı.";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Konum talebi zaman aşımına uğradı.";
-            break;
-          default:
-            errorMessage = "Bilinmeyen bir hata oluştu.";
-            break;
-        }
-        alert("Konum alınamadı: " + errorMessage);
-        $('#get-current-location').html('<i class="fa fa-map-marker-alt"></i> Konumumu Kullan');
-      }, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      });
-    } else {
-      alert("Tarayıcınız konum servislerini desteklemiyor.");
-    }
+        $('#get-current-location').html('<i class="fas fa-crosshairs"></i> Konumumu Kullan');
+      }, function(err) {
+        var msg = ["", "Konum izni reddedildi.", "Konum alınamadı.", "Zaman aşımı."][err.code] || "Hata.";
+        alert(msg);
+        $('#get-current-location').html('<i class="fas fa-crosshairs"></i> Konumumu Kullan');
+      }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    } else alert("Tarayıcınız konum servisini desteklemiyor.");
   }
 
   $(document).ready(function() {
-    // Google Maps API'sini yükle
     loadGoogleMaps();
-    
-    // Koordinat giriş değişikliğini izle (sadece form submit değilse)
+
+    // Kategori seçim görsel güncelleme
+    $(document).on('change', '.cat-option input[type="radio"]', function() {
+      $(this).closest('.cat-option').siblings().removeClass('selected');
+      $(this).closest('.cat-option').addClass('selected');
+    });
+
+    // Mevcut seçiliyse işaretle
+    $('.cat-option input[type="radio"]:checked').each(function() {
+      $(this).closest('.cat-option').addClass('selected');
+    });
+
     $('#map_coordinates').on('change', function() {
       if (formSubmitting) return;
-      
       var coords = $(this).val().split(',');
       if (coords.length === 2) {
-        var lat = parseFloat(coords[0].trim());
-        var lng = parseFloat(coords[1].trim());
-        if (!isNaN(lat) && !isNaN(lng)) {
-          var newLocation = { lat: lat, lng: lng };
-          if (map && marker) {
-            map.setCenter(newLocation);
-            map.setZoom(12);
-            marker.setPosition(newLocation);
-          }
+        var lat = parseFloat(coords[0].trim()), lng = parseFloat(coords[1].trim());
+        if (!isNaN(lat) && !isNaN(lng) && map && marker) {
+          var nl = { lat: lat, lng: lng };
+          map.setCenter(nl); map.setZoom(12); marker.setPosition(nl);
         }
       }
     });
-    
-    // Konum arama butonları
-    $('#search-location-btn').on('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      searchLocation();
-    });
-    
-    $('#location-search').on('keypress', function(e) {
-      if (e.which === 13) {
-        e.preventDefault();
-        e.stopPropagation();
-        searchLocation();
-      }
-    });
-    
-    $('#get-current-location').on('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      getCurrentLocation();
-    });
-    
-    // Rastgele Doldur Butonu
+
+    $('#search-location-btn').on('click', function(e) { e.preventDefault(); searchLocation(); });
+    $('#location-search').on('keypress', function(e) { if (e.which === 13) { e.preventDefault(); searchLocation(); } });
+    $('#get-current-location').on('click', function(e) { e.preventDefault(); getCurrentLocation(); });
+
+    // Rastgele doldur
     $('#fill-random-data').click(function(e) {
       e.preventDefault();
-      
-      // Rastgele isimler
-      const isimler = ["Ahmet", "Mehmet", "Ayşe", "Fatma", "Ali", "Veli", "Zeynep", "Gül", "Mustafa", "Kemal", "Murat", "Sevim"];
-      const soyisimler = ["Yılmaz", "Koç", "Demir", "Çelik", "Kaya", "Yıldız", "Aydın", "Özdemir", "Arslan", "Doğan", "Şahin", "Çetin"];
-      
-      // Rastgele mahalleler (örnek olarak)
-      const mahalleler = $('select#neighborhood option').map(function() {
-        return $(this).val();
-      }).get().filter(val => val !== "");
-      
-      // Temel bilgiler
-      $('#apartment_name').val("Satılık " + ["Lüks", "Ferah", "Modern", "Merkezi", "Yeni", "Geniş"][Math.floor(Math.random() * 6)] + " Daire");
-      $('#web_title').val("Gaziantep " + ["Merkez", "Şahinbey", "Şehitkamil"][Math.floor(Math.random() * 3)] + "'de " + 
-                          ["Satılık", "Kiralık"][Math.floor(Math.random() * 2)] + " " + 
-                          ["2+1", "3+1", "4+1"][Math.floor(Math.random() * 3)] + " " +
-                          ["Lüks", "Modern", "Ferah", "Merkezi"][Math.floor(Math.random() * 4)] + " Daire");
-      $('#property_type').val("daire").trigger('change');
-      $('#status').val("satilik").trigger('change');
-      $('#price').val(Math.floor(Math.random() * 5000000) + 500000);
-      
-      if (mahalleler.length > 0) {
-        $('#neighborhood').val(mahalleler[Math.floor(Math.random() * mahalleler.length)]);
-      }
-      
-      $('#room_count').val(["1+0", "1+1", "1.5+1", "2+1", "2.5+1", "3+1", "3.5+1", "4+1", "4.5+1", "4+2", "4.5+2", "5+1", "5.5+1", "5+2", "5.5+2"][Math.floor(Math.random() * 15)]);
-      $('#usage_status').val(["bos", "kiracili", "mulk_sahibi"][Math.floor(Math.random() * 3)]);
-      $('#floor_count').val(Math.floor(Math.random() * 9) + 1);
-      $('#floor').val(["Zemin", "1", "2", "3", "4", "5"][Math.floor(Math.random() * 6)]);
-      $('#address').val("Örnek Caddesi, No:" + Math.floor(Math.random() * 100) + ", " + ["Gaziantep", "Şahinbey", "Şehitkamil"][Math.floor(Math.random() * 3)]);
-      
-      // Mal Sahibi bilgileri
-      const ownerName = isimler[Math.floor(Math.random() * isimler.length)];
-      const ownerSurname = soyisimler[Math.floor(Math.random() * soyisimler.length)];
-      $('#owner_name').val(ownerName + " " + ownerSurname);
-      
-      const ownerPhone = "05" + Math.floor(Math.random() * 10) + Math.floor(Math.random() * 10) + 
-                          Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
-      $('#owner_phone').val(ownerPhone);
-      
-      $('#hepsiemlak_listing_number').val(Math.floor(Math.random() * 1000000) + 100000);
-      $('#branda_number').val(Math.floor(Math.random() * 1000) + 100);
-      $('#key_holder').val(["sahibi", "danisman", "kiracı", "diger"][Math.floor(Math.random() * 4)]);
-      
-      // Daire detayları
-      $('#gross_area').val(Math.floor(Math.random() * 100) + 100);
-      $('#net_area').val(Math.floor(Math.random() * 50) + 80);
-      $('#heating').val(["dogalgaz", "merkezi", "soba", "klima", "yok"][Math.floor(Math.random() * 5)]);
-      $('#dues').val(Math.floor(Math.random() * 1000) + 100);
-      $('#balcony').val(["var", "yok"][Math.floor(Math.random() * 2)]);
-      $('#deed_status').val(["kat_mulkiyetli", "kat_irtifakli", "arsa", "diger"][Math.floor(Math.random() * 4)]);
-      $('#has_photos').val(["var", "yok"][Math.floor(Math.random() * 2)]);
-      $('#has_banner').val(["var", "yok"][Math.floor(Math.random() * 2)]);
-      
-      // Harita koordinatlarını güncelle (Gaziantep)
+      const isimler = ["Ahmet","Mehmet","Ayşe","Fatma","Ali","Mustafa","Murat","Sevim"];
+      const soyisimler = ["Yılmaz","Koç","Demir","Çelik","Kaya","Yıldız","Aydın","Arslan"];
+      const mahalleler = $('select#neighborhood option').map(function() { return $(this).val(); }).get().filter(v => v !== "");
+
+      $('input[name="status"]').eq(Math.floor(Math.random()*2)).prop('checked',true).trigger('change');
+      $('input[name="property_type"]').eq(Math.floor(Math.random()*3)).prop('checked',true).trigger('change');
+      $('#apartment_name').val("Satılık "+["Lüks","Ferah","Modern","Geniş"][Math.floor(Math.random()*4)]+" Daire");
+      $('#web_title').val("Gaziantep'te Satılık "+["2+1","3+1","4+1"][Math.floor(Math.random()*3)]+" Daire");
+      $('#price').val(Math.floor(Math.random()*5000000)+500000);
+      if (mahalleler.length > 0) $('#neighborhood').val(mahalleler[Math.floor(Math.random()*mahalleler.length)]);
+      $('#room_count').val(["2+1","3+1","4+1"][Math.floor(Math.random()*3)]);
+      $('#usage_status').val(["bos","kiracili","mulk_sahibi"][Math.floor(Math.random()*3)]);
+      $('#floor_count').val(Math.floor(Math.random()*9)+1);
+      $('#floor').val(["Zemin","1","2","3","4","5"][Math.floor(Math.random()*6)]);
+      $('#address').val("Örnek Caddesi No:"+Math.floor(Math.random()*100)+", Gaziantep");
+      $('#owner_name').val(isimler[Math.floor(Math.random()*isimler.length)]+" "+soyisimler[Math.floor(Math.random()*soyisimler.length)]);
+      $('#owner_phone').val("05"+Math.floor(Math.random()*10)+Math.floor(Math.random()*10)+Math.floor(Math.random()*10000000).toString().padStart(7,'0'));
+      $('#yetki_numarasi').val("YTK-"+Math.floor(Math.random()*90000+10000));
+      const d = new Date(); d.setMonth(d.getMonth()+Math.floor(Math.random()*12+3));
+      $('#yetki_suresi').val(d.toISOString().split('T')[0]);
+      $('#branda_number').val(Math.floor(Math.random()*1000)+100);
+      $('#gross_area').val(Math.floor(Math.random()*100)+100);
+      $('#net_area').val(Math.floor(Math.random()*50)+80);
+      $('#dues').val(Math.floor(Math.random()*1000)+100);
+      $('#balcony').val(["var","yok"][Math.floor(Math.random()*2)]);
       $('#map_coordinates').val("37.066667, 37.383333");
       if (map && marker) {
-        var newLocation = { lat: 37.066667, lng: 37.383333 };
-        map.setCenter(newLocation);
-        map.setZoom(12);
-        marker.setPosition(newLocation);
+        var nl = { lat: 37.066667, lng: 37.383333 };
+        map.setCenter(nl); map.setZoom(12); marker.setPosition(nl);
       }
-      
-      // Uyarı mesajı
-      alert("Form rastgele verilerle dolduruldu! Fotoğraf yüklemesi hariç tüm alanlar dolduruldu.");
+      alert("Form rastgele verilerle dolduruldu!");
     });
-    
-    // Telefon numarası maskesi
-    $("#owner_phone").inputmask({
-      mask: "(999) 999-9999",
-      placeholder: "(___) ___-____",
-      showMaskOnHover: true,
-      showMaskOnFocus: true
-    });
-    
-    // Form alanlarında değişiklik olduğunda hata mesajlarını temizle
+
+    // Telefon maskesi
+    $("#owner_phone").inputmask({ mask: "(999) 999-9999", placeholder: "(___) ___-____" });
+
+    // Alan validasyonu
     $('input, select, textarea').on('change keyup', function() {
       if ($(this).hasClass('is-invalid')) {
         $(this).removeClass('is-invalid');
         $(this).next('.invalid-feedback').remove();
       }
     });
-    
-    // Fiyat alanına sayısal format
-    $('#price, #dues').on('input', function() {
-      // Sadece sayı ve virgül kabul et
-      var value = $(this).val().replace(/[^0-9,.]/g, '');
-      $(this).val(value);
-    });
-    
-    // Form submit önleme ve kontrol
-    $('#property-form').on('submit', function(e) {
-      formSubmitting = true;
-      
-      // Google Maps eventlerini durdur
-      if (map) {
-        google.maps.event.clearListeners(map, 'click');
-      }
-      if (marker) {
-        google.maps.event.clearListeners(marker, 'dragend');
-      }
-      
-      console.log('Form submit edildi, fotoğraflar ekleniyor...');
-      
-      // Form doğrulama
-      let isValid = true;
-      const form = $(this);
-      
-      // Zorunlu alanları kontrol et
-      form.find('input[required], select[required], textarea[required]').each(function() {
-        if (!$(this).val()) {
-          $(this).addClass('is-invalid');
-          isValid = false;
-          
-          // Hata mesajı ekle
-          if (!$(this).next('.invalid-feedback').length) {
-            $(this).after('<div class="invalid-feedback">Bu alan zorunludur</div>');
-          }
-        } else {
-          $(this).removeClass('is-invalid');
-          $(this).next('.invalid-feedback').remove();
-        }
-      });
-      
-      // Geçersiz alanları göster
-      if (!isValid) {
-        e.preventDefault();
-        formSubmitting = false;
-        const firstInvalid = form.find('.is-invalid').first();
-        if (firstInvalid.length) {
-          $('html, body').animate({
-            scrollTop: firstInvalid.offset().top - 150
-          }, 300);
-        }
-        return false;
-      }
-      
-      // Eğer photoFiles array'inde fotoğraf varsa, bunları form'a ekle
-      if (photoFiles.length > 0) {
-        console.log('Toplamda ' + photoFiles.length + ' fotoğraf form\'a ekleniyor');
-        
-        // Her fotoğraf için hidden input oluştur
-        photoOrder.forEach(function(fileIndex, order) {
-          const file = photoFiles[fileIndex];
-          if (file) {
-            // File input oluştur ve form'a ekle
-            const fileInput = $('<input type="file" name="photos[]" style="display:none;">');
-            
-            // File input'a dosyayı ekle (bu biraz tricky, FileList oluşturmamız gerekiyor)
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            fileInput[0].files = dt.files;
-            
-            $('#property-form').append(fileInput);
-            
-            console.log('Fotoğraf eklendi:', file.name, 'Sıra:', order + 1);
-          }
-        });
-        
-        // Ana fotoğraf bilgisini ekle
-        if (mainPhotoIndex !== -1) {
-          const mainPhotoOrder = photoOrder.indexOf(mainPhotoIndex) + 1;
-          $('#property-form').append('<input type="hidden" name="main_photo_order" value="' + mainPhotoOrder + '">');
-          console.log('Ana fotoğraf sırası:', mainPhotoOrder);
-        }
-      } else {
-        console.log('Hiç fotoğraf seçilmemiş');
-      }
-      
-      // Form normal şekilde submit olsun
-      return true;
-    });
-    
-    // Fotoğraf önizleme ve yönetim
+
+    // Fotoğraf yönetimi
     let photoFiles = [];
     let photoOrder = [];
     let mainPhotoIndex = -1;
-    
+
     $('#photo-upload, #camera-input').on('change', function() {
       const files = this.files;
       if (!files || files.length === 0) return;
-      
-      console.log('Fotoğraf seçildi, dosya sayısı:', files.length);
-      
-      // Her dosya için önizleme oluştur
-      Array.from(files).forEach(function(file, index) {
-        // Dosya boyutu kontrolü
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Dosya boyutu 5MB\'dan büyük olamaz: ' + file.name);
-          return;
-        }
-        
-        // Dosya tipi kontrolü
-        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-          alert('Sadece JPG ve PNG formatları kabul edilmektedir: ' + file.name);
-          return;
-        }
-        
-        console.log('Dosya ekleniyor:', file.name);
-        
-        // Dosyayı array'e ekle
+      Array.from(files).forEach(function(file) {
+        if (file.size > 5 * 1024 * 1024) { alert('5MB sınırı aşıldı: ' + file.name); return; }
+        if (!['image/jpeg','image/png','image/jpg'].includes(file.type)) { alert('Sadece JPG/PNG: ' + file.name); return; }
         const fileIndex = photoFiles.length;
         photoFiles.push(file);
         photoOrder.push(fileIndex);
-        
-        // İlk fotoğrafı ana fotoğraf yap
-        if (mainPhotoIndex === -1) {
-          mainPhotoIndex = fileIndex;
-          console.log('İlk fotoğraf ana fotoğraf olarak ayarlandı:', file.name);
-        }
-        
-        // Dosyayı önizleme için göster
+        if (mainPhotoIndex === -1) mainPhotoIndex = fileIndex;
         const reader = new FileReader();
-        reader.onload = function(e) {
-          createPhotoPreview(e.target.result, fileIndex, file.name);
-          updatePhotoContainer();
-        };
-        
+        reader.onload = function(e) { createPhotoPreview(e.target.result, fileIndex); updatePhotoOrder(); };
         reader.readAsDataURL(file);
       });
-      
-      // File input'u temizle
       $(this).val('');
     });
-    
-    function createPhotoPreview(src, fileIndex, fileName) {
-      const isMainPhoto = fileIndex === mainPhotoIndex;
-      const orderIndex = photoOrder.indexOf(fileIndex) + 1;
-      
-      const previewElement = $(`
-        <div class="photo-preview ${isMainPhoto ? 'main-photo' : ''}" data-file-index="${fileIndex}">
-          ${isMainPhoto ? '<div class="main-photo-indicator"><i class="fas fa-star"></i></div>' : ''}
-          <img src="${src}" alt="Property Image">
-          <div class="photo-controls">
-            <span class="order-badge">${orderIndex}</span>
-            <button type="button" class="delete-btn" data-file-index="${fileIndex}">
-              <i class="fas fa-times"></i>
+
+    function createPhotoPreview(src, fileIndex) {
+      const isMain = fileIndex === mainPhotoIndex;
+      const order = photoOrder.indexOf(fileIndex) + 1;
+      const el = $(`
+        <div class="photo-item ${isMain ? 'main-photo' : ''}" data-file-index="${fileIndex}">
+          ${isMain ? '<div class="main-star"><i class="fas fa-star" style="font-size:9px;"></i></div>' : ''}
+          <img src="${src}" alt="">
+          <div class="photo-overlay">
+            <span class="photo-badge">${order}</span>
+            <button type="button" class="photo-delete" data-file-index="${fileIndex}">
+              <i class="fas fa-times" style="font-size:10px;"></i>
             </button>
           </div>
-          <div class="drag-handle" title="Sürükleyerek sıralayın">
-            <i class="fas fa-grip-lines"></i>
-          </div>
-          <div class="photo-actions">
-            <button type="button" class="main-photo-btn ${isMainPhoto ? 'active' : ''}" data-file-index="${fileIndex}">
-              ${isMainPhoto ? 'Ana Fotoğraf' : 'Ana Yap'}
+          <div class="drag-handle" title="Sürükle"><i class="fas fa-grip-lines" style="font-size:9px;"></i></div>
+          <div class="photo-bottom">
+            <button type="button" class="main-btn ${isMain ? 'active' : ''}" data-file-index="${fileIndex}">
+              ${isMain ? 'Ana Fotoğraf' : 'Ana Yap'}
             </button>
           </div>
         </div>
       `);
-      
-      $('#photo-preview-container').append(previewElement);
-      $('#sorting-info').show();
+      $('#photo-preview-container').append(el);
+      $('#sorting-info').removeClass('hidden');
       initSortable();
     }
-    
-    function updatePhotoContainer() {
-      // Fotoğrafları sıraya göre yeniden düzenle
-      const container = $('#photo-preview-container');
-      const photos = container.find('.photo-preview').get();
-      
-      photos.sort(function(a, b) {
-        const aIndex = photoOrder.indexOf(parseInt($(a).data('file-index')));
-        const bIndex = photoOrder.indexOf(parseInt($(b).data('file-index')));
-        return aIndex - bIndex;
+
+    function updatePhotoOrder() {
+      $('#photo-preview-container .photo-item').each(function(i) {
+        $(this).find('.photo-badge').text(i + 1);
       });
-      
-      container.empty().append(photos);
-      
-      // Sıra numaralarını güncelle
-      photos.forEach(function(photo, index) {
-        $(photo).find('.order-badge').text(index + 1);
-      });
-      
-      // Sortable'ı yeniden başlat
-      initSortable();
     }
-    
-    // Sortable fonksiyonunu başlatma
+
     function initSortable() {
-      // Önce mevcut sortable'ı destroy et
-      if ($('#photo-preview-container').hasClass('ui-sortable')) {
+      if ($('#photo-preview-container').hasClass('ui-sortable'))
         $('#photo-preview-container').sortable('destroy');
-      }
-      
-      // Yeni sortable'ı başlat
       $("#photo-preview-container").sortable({
-        placeholder: "photo-preview photo-preview-placeholder",
-        cursor: "move",
-        opacity: 0.7,
-        tolerance: "pointer",
+        placeholder: "photo-item photo-placeholder",
+        cursor: "move", opacity: 0.7, tolerance: "pointer",
         handle: ".drag-handle",
         start: function(e, ui) {
           ui.placeholder.height(ui.item.height());
@@ -1532,138 +1027,88 @@
         },
         stop: function(e, ui) {
           ui.item.removeClass("dragging");
-          
-          // Yeni sıralamayı photoOrder array'ine yansıt
           const newOrder = [];
-          $('#photo-preview-container .photo-preview').each(function() {
-      const fileIndex = parseInt($(this).data('file-index'));
-            newOrder.push(fileIndex);
+          $('#photo-preview-container .photo-item').each(function() {
+            newOrder.push(parseInt($(this).data('file-index')));
           });
           photoOrder = newOrder;
-        
-          // Sıra numaralarını güncelle
-          $('#photo-preview-container .photo-preview').each(function(index) {
-            $(this).find('.order-badge').text(index + 1);
-          });
-          
-          console.log('Fotoğraf sıralaması güncellendi:', photoOrder);
-      }
-    });
+          updatePhotoOrder();
+        }
+      });
     }
-    
-    // Ana fotoğraf seçimi
-    $(document).on('click', '.main-photo-btn', function() {
+
+    $(document).on('click', '.main-btn', function() {
       const fileIndex = parseInt($(this).data('file-index'));
-      
-      // Eski ana fotoğrafı temizle
-      $('.photo-preview').removeClass('main-photo');
-      $('.main-photo-indicator').remove();
-      $('.main-photo-btn').removeClass('active').text('Ana Yap');
-      
-      // Yeni ana fotoğrafı ayarla
+      $('.photo-item').removeClass('main-photo');
+      $('.main-star').remove();
+      $('.main-btn').removeClass('active').text('Ana Yap');
       mainPhotoIndex = fileIndex;
-      const photoElement = $(`.photo-preview[data-file-index="${fileIndex}"]`);
-      photoElement.addClass('main-photo');
-      photoElement.prepend('<div class="main-photo-indicator"><i class="fas fa-star"></i></div>');
+      const el = $(`.photo-item[data-file-index="${fileIndex}"]`);
+      el.addClass('main-photo');
+      el.prepend('<div class="main-star"><i class="fas fa-star" style="font-size:9px;"></i></div>');
       $(this).addClass('active').text('Ana Fotoğraf');
     });
-    
-    // Fotoğraf silme
-    $(document).on('click', '.delete-btn', function() {
+
+    $(document).on('click', '.photo-delete', function() {
       const fileIndex = parseInt($(this).data('file-index'));
-      
-      // Array'den kaldır
-      const orderIndex = photoOrder.indexOf(fileIndex);
-      if (orderIndex > -1) {
-        photoOrder.splice(orderIndex, 1);
-      }
-      
-      // Ana fotoğraf ise başka bir fotoğrafı ana yap
-      if (fileIndex === mainPhotoIndex) {
-        mainPhotoIndex = photoOrder.length > 0 ? photoOrder[0] : -1;
-      }
-      
-      // DOM'dan kaldır
-      $(`.photo-preview[data-file-index="${fileIndex}"]`).remove();
-      
-      // Container'ı güncelle
-      updatePhotoContainer();
-      
-      // Ana fotoğrafı yeniden ayarla
-      if (mainPhotoIndex !== -1) {
-        $(`.main-photo-btn[data-file-index="${mainPhotoIndex}"]`).click();
-      }
-      
-      // Eğer hiç fotoğraf kalmadıysa bilgi kutusunu gizle
-      if (photoOrder.length === 0) {
-        $('#sorting-info').hide();
-      }
+      const oi = photoOrder.indexOf(fileIndex);
+      if (oi > -1) photoOrder.splice(oi, 1);
+      if (fileIndex === mainPhotoIndex) mainPhotoIndex = photoOrder.length > 0 ? photoOrder[0] : -1;
+      $(`.photo-item[data-file-index="${fileIndex}"]`).remove();
+      updatePhotoOrder();
+      if (mainPhotoIndex !== -1) $(`.main-btn[data-file-index="${mainPhotoIndex}"]`).click();
+      if (photoOrder.length === 0) $('#sorting-info').addClass('hidden');
     });
-    
-    // Kamera ile fotoğraf çekme
-    $('#take-photo-btn').on('click', function() {
-      $('#camera-input').click();
-    });
-    
-    $('#camera-input').on('change', function(e) {
-      if (this.files && this.files.length > 0) {
-        const file = this.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = function(event) {
-          // Dosyayı array'e ekle
-          const fileIndex = photoFiles.length;
-          photoFiles.push(file);
-          photoOrder.push(fileIndex);
-          
-          // İlk fotoğrafı ana fotoğraf yap
-          if (mainPhotoIndex === -1) {
-            mainPhotoIndex = fileIndex;
+
+    $('#take-photo-btn').on('click', function() { $('#camera-input').click(); });
+
+    // Form submit
+    $('#property-form').on('submit', function(e) {
+      formSubmitting = true;
+      if (map) google.maps.event.clearListeners(map, 'click');
+      if (marker) google.maps.event.clearListeners(marker, 'dragend');
+
+      let isValid = true;
+      $(this).find('input[required], select[required], textarea[required]').each(function() {
+        if (!$(this).val()) {
+          $(this).addClass('is-invalid');
+          isValid = false;
+          if (!$(this).next('.invalid-feedback').length)
+            $(this).after('<div class="invalid-feedback">Bu alan zorunludur</div>');
+        } else {
+          $(this).removeClass('is-invalid');
+          $(this).next('.invalid-feedback').remove();
+        }
+      });
+
+      if (!isValid) {
+        e.preventDefault();
+        formSubmitting = false;
+        const first = $(this).find('.is-invalid').first();
+        if (first.length) $('html,body').animate({ scrollTop: first.offset().top - 120 }, 300);
+        return false;
+      }
+
+      if (photoFiles.length > 0) {
+        photoOrder.forEach(function(fileIndex, order) {
+          const file = photoFiles[fileIndex];
+          if (file) {
+            const fi = $('<input type="file" name="photos[]" style="display:none;">');
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fi[0].files = dt.files;
+            $('#property-form').append(fi);
           }
-          
-          const imagePreviewIndex = photoOrder.indexOf(fileIndex) + 1;
-          const isMainPhoto = fileIndex === mainPhotoIndex;
-          
-          // Önizleme HTML'ini oluştur
-          const photoPreview = `
-            <div class="photo-preview ${isMainPhoto ? 'main-photo' : ''}" data-file-index="${fileIndex}">
-              ${isMainPhoto ? '<div class="main-photo-indicator"><i class="fas fa-star"></i></div>' : ''}
-              <img src="${event.target.result}" alt="">
-              <div class="photo-controls">
-                <span class="order-badge">${imagePreviewIndex}</span>
-                <button type="button" class="delete-btn" data-file-index="${fileIndex}" title="Kaldır">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-              <div class="drag-handle" title="Sürükleyerek sıralayın">
-                <i class="fas fa-grip-lines"></i>
-              </div>
-              <div class="photo-actions">
-                <button type="button" class="main-photo-btn ${isMainPhoto ? 'active' : ''}" data-file-index="${fileIndex}">
-                  ${isMainPhoto ? 'Ana Fotoğraf' : 'Ana Yap'}
-                </button>
-              </div>
-            </div>
-          `;
-          
-          $('#photo-preview-container').append(photoPreview);
-          $('#sorting-info').show();
-          
-          // Sortable'ı güncelle
-          initSortable();
-        };
-        
-        reader.readAsDataURL(file);
-        
-        // File input'u temizle
-        $(this).val('');
+        });
+        if (mainPhotoIndex !== -1) {
+          const mo = photoOrder.indexOf(mainPhotoIndex) + 1;
+          $('#property-form').append('<input type="hidden" name="main_photo_order" value="' + mo + '">');
+        }
       }
+      return true;
     });
-    
-    // Sayfa yüklendiğinde sortable'ı başlat
+
     initSortable();
-    
-    // Fotoğraf önizleme ve yönetim
   });
 </script>
-{% endblock javascripts %}
+{% endblock extra_js %}

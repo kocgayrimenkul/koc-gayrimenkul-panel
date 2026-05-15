@@ -146,6 +146,22 @@
             {% for property in properties %}
             <div class="flex flex-col md:flex-row border border-slate-100 rounded-2xl p-4 gap-6 bg-white hover:border-blue-100 transition relative">
 
+                {# Sağ Üst: Yetki Badge + Gün Kutusu #}
+                <div class="absolute top-3 right-3 flex flex-col items-end gap-1.5 z-10">
+                    {% if property.yetki_numarasi %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                        <i class="fas fa-shield-alt text-[9px]"></i> Yetkili
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-600 border border-red-200">
+                        <i class="fas fa-ban text-[9px]"></i> Yetkili Değil
+                    </span>
+                    {% endif %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200">
+                        <i class="fas fa-clock text-[10px]"></i> {{ property.gun_sayisi }} Gün
+                    </span>
+                </div>
+
                 {# Sol: Resim #}
                 <div class="w-full md:w-56 h-48 bg-slate-100 rounded-xl flex items-center justify-center relative flex-shrink-0 overflow-hidden">
                     {% with main_img=property.images.all|first %}
@@ -165,87 +181,146 @@
                 {# Sağ: İçerik #}
                 <div class="flex-1 flex flex-col gap-1.5 min-w-0">
 
-                    {# Üst: Başlık + Fiyat #}
-                    <div class="flex flex-wrap items-start justify-between gap-2">
-                        <div class="space-y-0.5 min-w-0">
-                            <div class="flex items-center space-x-2 flex-wrap mb-1">
-                                <span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded">Portföy #{{ property.id }}</span>
-                                <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">
-                                    {{ property.get_status_display }}
-                                    {% if property.category %}/ {{ property.get_category_display }}{% endif %}
-                                    / {{ property.get_property_type_display }}
-                                </span>
-                                {% if property.listing_type %}
-                                    <span class="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded">{{ property.get_listing_type_display|upper }}</span>
-                                {% endif %}
-                            </div>
-                            <h2 class="text-lg font-bold text-slate-800 leading-tight">
-                                <a href="{% url 'property_detail' property.id %}" class="hover:text-blue-600 no-underline">
-                                    {{ property.web_title|default:property.apartment_name|default:"İsimsiz Gayrimenkul"|upper }}
-                                </a>
-                            </h2>
-                            <div class="flex items-center text-slate-400 text-xs">
-                                <i class="fas fa-map-marker-alt mr-1"></i>
-                                {% if property.neighborhood %}
-                                    {{ property.neighborhood.name }}{% if property.neighborhood.district %} / {{ property.neighborhood.district }}{% endif %}
-                                {% else %}
-                                    Konum belirtilmemiş
-                                {% endif %}
-                            </div>
+                    {# Üst: Başlık #}
+                    <div class="space-y-0.5 min-w-0 pr-24">
+                        <div class="flex items-center space-x-2 flex-wrap mb-1">
+                            <span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded">Portföy #{{ property.id }}</span>
+                            <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">
+                                {{ property.get_status_display }}
+                                {% if property.category %}/ {{ property.get_category_display }}{% endif %}
+                                / {{ property.get_property_type_display }}
+                            </span>
+                            {% if property.listing_type %}
+                                <span class="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded">{{ property.get_listing_type_display|upper }}</span>
+                            {% endif %}
                         </div>
-
-                        <div class="text-right bg-slate-50 py-2 px-4 rounded-xl min-w-[150px] border border-slate-100">
-                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">LİSTE FİYATI</div>
-                            <div class="text-xl font-black text-emerald-600 flex items-center justify-end">
-                                ₺{{ property.price|floatformat:0|intcomma }}
-                                <i class="fas fa-edit text-[9px] ml-1.5 text-slate-300 cursor-pointer hover:text-blue-500"></i>
-                            </div>
+                        <h2 class="text-lg font-bold text-slate-800 leading-tight">
+                            <a href="{% url 'property_detail' property.id %}" class="hover:text-blue-600 no-underline">
+                                {{ property.web_title|default:property.apartment_name|default:"İsimsiz Gayrimenkul"|upper }}
+                            </a>
+                        </h2>
+                        <div class="flex items-center text-slate-400 text-xs">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            {% if property.neighborhood %}
+                                {{ property.neighborhood.name }}{% if property.neighborhood.district %} / {{ property.neighborhood.district }}{% endif %}
+                            {% else %}
+                                Konum belirtilmemiş
+                            {% endif %}
                         </div>
                     </div>
 
-                    {# Orta: Detaylar #}
-                    <div class="flex flex-wrap items-center justify-between gap-2 mt-0">
-                        <div class="flex gap-2 flex-wrap">
-                            {% if property.net_area %}
-                            <div class="bg-slate-50 border border-slate-100 px-3 py-2 rounded-md text-sm font-semibold text-slate-600 flex items-center gap-1.5">
-                                <span class="text-slate-400">NET</span> {{ property.net_area|floatformat:0 }} m²
-                            </div>
-                            {% endif %}
-                            {% if property.gross_area %}
-                            <div class="bg-slate-50 border border-slate-100 px-3 py-2 rounded-md text-sm font-semibold text-slate-600 flex items-center gap-1.5">
-                                <span class="text-slate-400">BRÜT</span> {{ property.gross_area|floatformat:0 }} m²
-                            </div>
-                            {% endif %}
-                            {% if property.room_count %}
-                            <div class="bg-slate-50 border border-slate-100 px-3 py-2 rounded-md text-sm font-semibold text-slate-600 flex items-center gap-1.5">
-                                <span class="text-slate-400">ODA</span> {{ property.room_count }}
-                            </div>
-                            {% endif %}
-                            {% if property.floor %}
-                            <div class="bg-slate-50 border border-slate-100 px-3 py-2 rounded-md text-sm font-semibold text-slate-600 flex items-center gap-1.5">
-                                <span class="text-slate-400">KAT</span> {{ property.floor }}
-                            </div>
-                            {% endif %}
-                            {% if active_tab != 'office' %}
-                            <div class="bg-slate-50 border border-slate-100 py-2 px-3 rounded-lg min-w-[130px]">
-                                <div class="text-[10px] text-slate-400 uppercase font-bold leading-none mb-0.5">MÜLK SAHİBİ</div>
-                                <div class="text-[13px] font-bold">{{ property.owner_name|default:"Atanmamış" }}</div>
-                            </div>
-                            {% endif %}
-                            <div class="bg-slate-50 border border-slate-100 py-2 px-3 rounded-lg min-w-[130px]">
-                                <div class="text-[10px] text-slate-400 uppercase font-bold leading-none mb-0.5">DANIŞMAN</div>
-                                <div class="text-[13px] font-bold">
-                                    {% if property.consultant %}
-                                        {{ property.consultant.get_full_name|default:property.consultant.username }}
-                                    {% else %}
-                                        Atanmamış
-                                    {% endif %}
-                                </div>
+                    {# Orta: Detaylar + Fiyat sağda #}
+                    <div class="flex items-center gap-2 flex-wrap">
+                        {% if property.net_area %}
+                        <div class="bg-slate-50 border border-slate-100 px-3 py-2 rounded-md text-sm font-semibold text-slate-600 flex items-center gap-1.5">
+                            <span class="text-slate-400">NET</span> {{ property.net_area|floatformat:0 }} m²
+                        </div>
+                        {% endif %}
+                        {% if property.gross_area %}
+                        <div class="bg-slate-50 border border-slate-100 px-3 py-2 rounded-md text-sm font-semibold text-slate-600 flex items-center gap-1.5">
+                            <span class="text-slate-400">BRÜT</span> {{ property.gross_area|floatformat:0 }} m²
+                        </div>
+                        {% endif %}
+                        {% if property.room_count %}
+                        <div class="bg-slate-50 border border-slate-100 px-3 py-2 rounded-md text-sm font-semibold text-slate-600 flex items-center gap-1.5">
+                            <span class="text-slate-400">ODA</span> {{ property.room_count }}
+                        </div>
+                        {% endif %}
+                        {% if property.floor %}
+                        <div class="bg-slate-50 border border-slate-100 px-3 py-2 rounded-md text-sm font-semibold text-slate-600 flex items-center gap-1.5">
+                            <span class="text-slate-400">KAT</span> {{ property.floor }}
+                        </div>
+                        {% endif %}
+                        {% if active_tab != 'office' %}
+                        <div class="bg-slate-50 border border-slate-100 py-2 px-3 rounded-lg min-w-[130px]">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold leading-none mb-0.5">MÜLK SAHİBİ</div>
+                            <div class="text-[13px] font-bold">{{ property.owner_name|default:"Atanmamış" }}</div>
+                        </div>
+                        {% endif %}
+                        <div class="bg-slate-50 border border-slate-100 py-2 px-3 rounded-lg min-w-[130px]">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold leading-none mb-0.5">DANIŞMAN</div>
+                            <div class="text-[13px] font-bold">
+                                {% if property.consultant %}
+                                    {{ property.consultant.get_full_name|default:property.consultant.username }}
+                                {% else %}
+                                    Atanmamış
+                                {% endif %}
                             </div>
                         </div>
 
-                        {# İşlem butonları #}
-                        <div class="flex items-center space-x-1.5">
+                        {# Fiyat kutusu — sağa yasla #}
+                        <div class="ml-auto bg-slate-50 border border-slate-100 py-2 px-3 rounded-lg">
+                            <div class="text-base font-bold text-emerald-600 whitespace-nowrap">{{ property.price|floatformat:0|intcomma }} TL</div>
+                        </div>
+                    </div>
+
+                    {# Arşiv bilgisi #}
+                    {% if is_archive_view %}
+                    <div class="flex items-center gap-3 mt-1 pt-1.5 border-t border-rose-50 text-xs text-rose-500">
+                        <i class="fas fa-archive"></i>
+                        <span>Arşivleyen: <strong>{{ property.archived_by.get_full_name|default:property.archived_by.username|default:"—" }}</strong></span>
+                        <span>·</span>
+                        <span>{{ property.archived_at|date:"d.m.Y H:i"|default:"—" }}</span>
+                        <button onclick="restoreProperty({{ property.id }}, '{{ property.apartment_name|default:"Bu portföy"|escapejs }}')"
+                                class="ml-auto px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition">
+                            <i class="fas fa-undo mr-1"></i> Geri Al
+                        </button>
+                    </div>
+                    {% else %}
+                    {# Alt satır: Sol butonlar | Sahibinden/Emlakjet/Hepsiemlak | Sağda işlem butonları #}
+                    <div class="flex flex-wrap gap-1.5 mt-1 pt-1.5 border-t border-slate-50 items-center">
+
+                        {# Sol: Notlar, Yer Gösterme, Fiyat #}
+                        <button type="button" onclick="openNotesPanel({{ property.id }}, '{{ property.apartment_name|default:property.web_title|default:"Isimsiz"|escapejs }}')" class="px-3 py-1.5 border border-blue-200 text-blue-600 rounded-md text-xs font-bold flex items-center hover:bg-blue-50">
+                            <i class="fas fa-sticky-note mr-1.5"></i> Notlar
+                        </button>
+                        <button onclick="openYerPanel({{ property.id }}, '{{ property.apartment_name|escapejs }}')" class="px-3 py-1.5 border border-teal-200 text-teal-600 rounded-md text-xs font-bold flex items-center hover:bg-teal-50 transition">
+                            <i class="fas fa-map-marker-alt mr-1.5"></i> Yer Gösterme
+                        </button>
+                        <button onclick="openPricePanel({{ property.id }}, '{{ property.apartment_name|escapejs }}')" class="px-2.5 py-1.5 border border-blue-200 text-blue-600 rounded-md text-xs font-bold flex items-center hover:bg-blue-50 transition">
+                            <i class="fas fa-chart-line mr-1.5"></i> Fiyat
+                        </button>
+
+                        {# Sahibinden #}
+                        {% if property.sahibinden_active and property.sahibinden_url %}
+                        <a href="{{ property.sahibinden_url }}" target="_blank" onclick="event.stopPropagation()" title="Sahibinden'de Yayında" class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition" style="border-color:#ff6000;color:#ff6000;background:#fff8f5;">
+                            <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#ff6000;color:#fff;font-size:8px;font-weight:900;flex-shrink:0;">S</span> Yayında
+                        </a>
+                        {% else %}
+                        <a href="{% url 'sahibinden_export' %}" title="Sahibinden'de Yayında Değil" class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition" style="border-color:#e2e8f0;color:#94a3b8;background:#f8fafc;">
+                            <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#e2e8f0;color:#94a3b8;font-size:8px;font-weight:900;flex-shrink:0;">S</span> Sahibinden
+                        </a>
+                        {% endif %}
+
+                        {# Emlakjet #}
+                        {% if property.emlakjet_active and property.emlakjet_url %}
+                        <a href="{{ property.emlakjet_url }}" target="_blank" onclick="event.stopPropagation()" title="Emlakjet'te Yayında" class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition" style="border-color:#00a651;color:#00a651;background:#f0fdf4;">
+                            <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#00a651;color:#fff;font-size:7px;font-weight:900;flex-shrink:0;">EJ</span> Yayında
+                        </a>
+                        {% else %}
+                        <a href="{% url 'emlakjet_export' %}" title="Emlakjet'te Yayında Değil" class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition" style="border-color:#e2e8f0;color:#94a3b8;background:#f8fafc;">
+                            <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#e2e8f0;color:#94a3b8;font-size:7px;font-weight:900;flex-shrink:0;">EJ</span> Emlakjet
+                        </a>
+                        {% endif %}
+                        {% if property.hepsiemlak_active and property.hepsiemlak_url %}
+                        <a href="{{ property.hepsiemlak_url }}" target="_blank" onclick="event.stopPropagation()"
+                           title="Hepsiemlak'ta Yayında"
+                           class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition"
+                           style="border-color:#e4002b;color:#e4002b;background:#fff5f5;">
+                          <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#e4002b;color:#fff;font-size:7px;font-weight:900;flex-shrink:0;">HE</span>
+                          Yayında
+                        </a>
+                        {% else %}
+                        <a href="{% url 'hepsiemlak_export' %}" title="Hepsiemlak'ta Yayında Değil"
+                           class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition"
+                           style="border-color:#e2e8f0;color:#94a3b8;background:#f8fafc;">
+                          <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#e2e8f0;color:#94a3b8;font-size:7px;font-weight:900;flex-shrink:0;">HE</span>
+                          Hepsiemlak
+                        </a>
+                        {% endif %}
+
+                        {# İşlem butonları — en sağa yasla #}
+                        <div class="ml-auto flex items-center gap-1.5">
                             <a href="{% url 'property_update' property.id %}" class="w-9 h-9 rounded-md border border-slate-200 text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition flex items-center justify-center no-underline" title="Düzenle">
                                 <i class="fas fa-edit text-xs"></i>
                             </a>
@@ -255,8 +330,6 @@
                             <a href="{% url 'property_detail' property.id %}" class="w-9 h-9 rounded-md border border-slate-200 text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition flex items-center justify-center no-underline" title="Görüntüle">
                                 <i class="fas fa-eye text-xs"></i>
                             </a>
-
-                            {# Dropdown menü #}
                             <div class="relative inline-block">
                                 <button onclick="togglePortfolioDropdown(this)" class="bg-slate-900 text-white px-4 py-2 rounded-md text-xs font-bold flex items-center hover:bg-slate-800 shadow-sm">
                                     <i class="fas fa-ellipsis-v mr-1.5"></i> İşlemler
@@ -278,85 +351,11 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {# Arşiv bilgisi #}
-                    {% if is_archive_view %}
-                    <div class="flex items-center gap-3 mt-1 pt-1.5 border-t border-rose-50 text-xs text-rose-500">
-                        <i class="fas fa-archive"></i>
-                        <span>Arşivleyen: <strong>{{ property.archived_by.get_full_name|default:property.archived_by.username|default:"—" }}</strong></span>
-                        <span>·</span>
-                        <span>{{ property.archived_at|date:"d.m.Y H:i"|default:"—" }}</span>
-                        <button onclick="restoreProperty({{ property.id }}, '{{ property.apartment_name|default:"Bu portföy"|escapejs }}')"
-                                class="ml-auto px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition">
-                            <i class="fas fa-undo mr-1"></i> Geri Al
-                        </button>
-                    </div>
-                    {% else %}
-                    {# Alt: Hızlı butonlar #}
-                    <div class="flex flex-wrap gap-1.5 mt-1 pt-1.5 border-t border-slate-50 items-center">
-                        <button type="button" onclick="openNotesPanel({{ property.id }}, '{{ property.apartment_name|default:property.web_title|default:"Isimsiz"|escapejs }}')" class="px-3 py-1.5 border border-blue-200 text-blue-600 rounded-md text-xs font-bold flex items-center hover:bg-blue-50">
-                            <i class="fas fa-sticky-note mr-1.5"></i> Notlar
-                        </button>
-                        <button onclick="openYerPanel({{ property.id }}, '{{ property.apartment_name|escapejs }}')"
-                                class="px-3 py-1.5 border border-teal-200 text-teal-600 rounded-md text-xs font-bold flex items-center hover:bg-teal-50 transition">
-                            <i class="fas fa-map-marker-alt mr-1.5"></i> Yer Gösterme
-                        </button>
-                        <button onclick="openPricePanel({{ property.id }}, '{{ property.apartment_name|escapejs }}')"
-                                class="px-2.5 py-1.5 border border-blue-200 text-blue-600 rounded-md text-xs font-bold flex items-center hover:bg-blue-50 transition">
-                            <i class="fas fa-chart-line mr-1.5"></i> Fiyat
-                        </button>
-                        {% if property.sahibinden_active and property.sahibinden_url %}
-                        <a href="{{ property.sahibinden_url }}" target="_blank" onclick="event.stopPropagation()"
-                           title="Sahibinden'de Yayında"
-                           class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition"
-                           style="border-color:#ff6000;color:#ff6000;background:#fff8f5;">
-                          <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#ff6000;color:#fff;font-size:8px;font-weight:900;flex-shrink:0;">S</span>
-                          Yayında
-                        </a>
-                        {% else %}
-                        <a href="{% url 'sahibinden_export' %}" title="Sahibinden'de Yayında Değil"
-                           class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition"
-                           style="border-color:#e2e8f0;color:#94a3b8;background:#f8fafc;">
-                          <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#e2e8f0;color:#94a3b8;font-size:8px;font-weight:900;flex-shrink:0;">S</span>
-                          Sahibinden
-                        </a>
-                        {% endif %}
-                        {% if property.emlakjet_active and property.emlakjet_url %}
-                        <a href="{{ property.emlakjet_url }}" target="_blank" onclick="event.stopPropagation()"
-                           title="Emlakjet'te Yayında"
-                           class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition"
-                           style="border-color:#00a651;color:#00a651;background:#f0fdf4;">
-                          <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#00a651;color:#fff;font-size:7px;font-weight:900;flex-shrink:0;">EJ</span>
-                          Yayında
-                        </a>
-                        {% else %}
-                        <a href="{% url 'emlakjet_export' %}" title="Emlakjet'te Yayında Değil"
-                           class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition"
-                           style="border-color:#e2e8f0;color:#94a3b8;background:#f8fafc;">
-                          <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#e2e8f0;color:#94a3b8;font-size:7px;font-weight:900;flex-shrink:0;">EJ</span>
-                          Emlakjet
-                        </a>
-                        {% endif %}
-                        {% if property.hepsiemlak_active and property.hepsiemlak_url %}
-                        <a href="{{ property.hepsiemlak_url }}" target="_blank" onclick="event.stopPropagation()"
-                           title="Hepsiemlak'ta Yayında"
-                           class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition"
-                           style="border-color:#e4002b;color:#e4002b;background:#fff5f5;">
-                          <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#e4002b;color:#fff;font-size:7px;font-weight:900;flex-shrink:0;">HE</span>
-                          Yayında
-                        </a>
-                        {% else %}
-                        <a href="{% url 'hepsiemlak_export' %}" title="Hepsiemlak'ta Yayında Değil"
-                           class="px-2.5 py-1.5 border rounded-md text-xs font-bold flex items-center gap-1.5 transition"
-                           style="border-color:#e2e8f0;color:#94a3b8;background:#f8fafc;">
-                          <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:#e2e8f0;color:#94a3b8;font-size:7px;font-weight:900;flex-shrink:0;">HE</span>
-                          Hepsiemlak
-                        </a>
-                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
+
             </div>
             {% empty %}
             <div class="py-16 flex flex-col items-center text-center opacity-50">
