@@ -52,9 +52,14 @@ def _parsel_to_dict(k):
         'yonetici_ad': k.yonetici_ad, 'yonetici_tel': k.yonetici_tel,
         'kapici_ad': k.kapici_ad, 'kapici_tel': k.kapici_tel,
         'diger_not': k.diger_not,
+        'portfoy_sayisi': k.portfoy_sayisi,
         'gorusme_sayisi': k.gorusmeler.count(),
         'son_gorusme': (
             k.gorusmeler.first().tarih.strftime('%d.%m.%Y %H:%M')
+            if k.gorusmeler.exists() else None
+        ),
+        'son_gorusme_gun': (
+            (timezone.now() - k.gorusmeler.first().tarih).days
             if k.gorusmeler.exists() else None
         ),
     }
@@ -66,8 +71,8 @@ def saha_harita(request):
     user = request.user
     is_broker = user.is_superuser or user.has_role('Mudur') or user.has_role('Yonetici')
 
-    baslangic_lat = 39.92
-    baslangic_lng = 32.85
+    baslangic_lat = 37.0662
+    baslangic_lng = 37.3833
     baslangic_zoom = 12
     mahalle_adi = ''
 
@@ -91,6 +96,31 @@ def saha_harita(request):
         'baslangic_lng': baslangic_lng,
         'baslangic_zoom': baslangic_zoom,
         'mahalle_adi': mahalle_adi,
+    })
+
+
+@login_required(login_url='/login/')
+def parsel_detay(request, parsel_id):
+    parsel = get_object_or_404(ParselKayit, pk=parsel_id)
+    gorusmeler = parsel.gorusmeler.select_related('personel').order_by('-tarih')
+
+    # Aktivite listesi oluştur
+    aktiviteler = []
+    for g in gorusmeler:
+        aktiviteler.append({
+            'tur': 'gorusme',
+            'tarih': g.tarih,
+            'metin': g.not_metni,
+            'personel': g.personel.get_full_name() if g.personel else '—',
+            'gorusulen_kisi': g.gorusulen_kisi,
+        })
+
+    return render(request, 'saha/parsel_detay.html', {
+        'segment': 'saha',
+        'parsel': parsel,
+        'aktiviteler': aktiviteler,
+        'gorusme_sayisi': gorusmeler.count(),
+        'portfoy_sayisi': parsel.portfoy_sayisi,
     })
 
 
@@ -191,22 +221,48 @@ def api_gorusme_ekle(request, parsel_id):
         kayit = ParselKayit.objects.get(pk=parsel_id)
         body = json.loads(request.body)
         not_metni = body.get('not_metni', '').strip()
+        gorusulen_kisi = body.get('gorusulen_kisi', '').strip()
         if not not_metni:
             return JsonResponse({'error': 'Not bos olamaz'}, status=400)
         gorusme = SahaGorusme.objects.create(
             parsel=kayit, personel=request.user, not_metni=not_metni,
+            gorusulen_kisi=gorusulen_kisi,
         )
         return JsonResponse({
             'success': True,
             'gorusme': {
                 'id': gorusme.id,
                 'personel': request.user.get_full_name(),
+                'gorusulen_kisi': gorusme.gorusulen_kisi,
                 'tarih': gorusme.tarih.strftime('%d.%m.%Y %H:%M'),
                 'not_metni': gorusme.not_metni,
             }
         })
     except ParselKayit.DoesNotExist:
         return JsonResponse({'error': 'Parsel bulunamadi'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required(login_url='/login/')
+@require_POST
+def api_portfoy_guncelle(request, parsel_id):
+    """Portföy alındı/alınmadı güncelle"""
+    try:
+        kayit = ParselKayit.objects.get(pk=parsel_id)
+        body = json.loads(request.body)
+        eylem = body.get('eylem')  # 'alindi' veya 'alinmadi'
+        if eylem == 'alindi':
+            kayit.portfoy_sayisi = kayit.portfoy_sayisi + 1
+            kayit.save(update_fields=['portfoy_sayisi'])
+            return JsonResponse({'success': True, 'portfoy_sayisi': kayit.portfoy_sayisi})
+        elif eylem == 'alinmadi':
+            # Bilgi kaydı - sayıyı değiştirme
+            return JsonResponse({'success': True, 'portfoy_sayisi': kayit.portfoy_sayisi})
+        else:
+            return JsonResponse({'error': 'Geçersiz eylem'}, status=400)
+    except ParselKayit.DoesNotExist:
+        return JsonResponse({'error': 'Parsel bulunamadı'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 

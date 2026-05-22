@@ -617,14 +617,30 @@ function initMap() {
 function haritayiSifirla() { map.setView([MAP_LAT, MAP_LNG], MAP_ZOOM); }
 
 // ── Markers ───────────────────────────────────────────────────────────────────
-function markerIkonu(durum) {
-  const c = DURUM_COLORS[durum] || '#9d2235';
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32">
-    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="${c}"/>
-    <circle cx="12" cy="12" r="5" fill="white"/>
-  </svg>`;
+function gorusmeRengi(gun) {
+  if (gun === null || gun === undefined) return '#ef4444';
+  if (gun <= 15) return '#22c55e';
+  if (gun <= 30) return '#f97316';
+  return '#ef4444';
+}
+
+function markerIkonu(p) {
+  // Dış renk: son görüşme süresi
+  const cDis = gorusmeRengi(p.son_gorusme_gun);
+  // İç daire: portföy durumu
+  const portfoy = p.portfoy_sayisi || 0;
+  const cIc = portfoy > 0 ? '#22c55e' : '#ef4444';
+  const icerik = portfoy > 0 ? String(portfoy) : '';
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="38" height="50" viewBox="0 0 38 50">'
+    + '<filter id="sh" x="-30%" y="-30%" width="160%" height="160%">'
+    + '<feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#00000055"/>'
+    + '</filter>'
+    + '<path d="M19 1C9.06 1 1 9.06 1 19c0 14 18 29 18 29s18-15 18-29C37 9.06 28.94 1 19 1z" fill="' + cDis + '" stroke="#1a1a1a" stroke-width="2.5" filter="url(#sh)"/>'
+    + '<circle cx="19" cy="19" r="8.5" fill="' + cIc + '" stroke="#1a1a1a" stroke-width="1.5"/>'
+    + '<text x="19" y="23" text-anchor="middle" font-size="7" font-weight="bold" fill="white" font-family="Arial,sans-serif">' + icerik + '</text>'
+    + '</svg>';
   return L.divIcon({
-    html: svg, className: '', iconSize: [24,32], iconAnchor: [12,32], popupAnchor: [0,-32]
+    html: svg, className: '', iconSize: [38,50], iconAnchor: [19,50], popupAnchor: [0,-50]
   });
 }
 
@@ -634,10 +650,20 @@ function parselleriYukle() {
     .then(data => {
       markerLayer.clearLayers();
       (data.parseller || []).forEach(p => {
-        const m = L.marker([p.lat, p.lng], {icon: markerIkonu(p.durum)});
+        const m = L.marker([p.lat, p.lng], {icon: markerIkonu(p)});
         m._parsel_id = p.id;
-        m.on('click', () => parselAc(p.id));
-        m.bindTooltip(p.adres || ('%.5f, %.5f'.replace('%.5f', p.lat.toFixed(5)).replace('%.5f', p.lng.toFixed(5))), {direction:'top', offset:[0,-28]});
+        m.on('click', () => window.location.href = '/saha/parsel/' + p.id + '/');
+        const gun = p.son_gorusme_gun;
+        const gunLabel = (gun === null || gun === undefined) ? 'Hiç görüşme yok' : (gun === 0 ? 'Bugün görüşüldü' : gun + ' gün önce görüşüldü');
+        const gunColor = (gun===null||gun===undefined) ? '#ef4444' : gun<=15 ? '#16a34a' : gun<=30 ? '#ea580c' : '#ef4444';
+        const portfoy = p.portfoy_sayisi || 0;
+        const portfoyHtml = portfoy > 0
+          ? '<br><span style="font-size:11px;color:#16a34a"><b>✓ ' + portfoy + ' portföy alındı</b></span>'
+          : '<br><span style="font-size:11px;color:#94a3b8">Portföy alınmadı</span>';
+        const tooltipHtml = '<b>' + (p.adres || p.mahalle || 'Parsel') + '</b>'
+          + '<br><span style="font-size:11px;color:' + gunColor + '">' + gunLabel + '</span>'
+          + portfoyHtml;
+        m.bindTooltip(tooltipHtml, {direction:'top', offset:[0,-34], className:'leaflet-tooltip-parsel'});
         markerLayer.addLayer(m);
       });
       if (gorevParselleri.length) parselleriVurgula(gorevParselleri);

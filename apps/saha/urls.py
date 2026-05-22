@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     # Harita
     path('saha/',                                    views.saha_harita,                      name='saha_harita'),
+    path('saha/parsel/<int:parsel_id>/',             views.parsel_detay,                     name='parsel_detay'),
 
     # Gorev Sistemi
     path('saha/gorevler/',                           views.gorev_plani_listesi,              name='gorev_plani_listesi'),
@@ -30,4 +31,5 @@ urlpatterns = [
     path('api/saha/gorev-planlari/',                 views.api_gorev_planlari_json,          name='api_gorev_planlari_json'),
     path('api/saha/bildirimler/',                    views.api_bildirimleri_json,            name='api_bildirimleri_json'),
     path('api/saha/plan/otomatik-olustur/',          views.api_planlari_otomatik_olustur,    name='api_planlari_otomatik_olustur'),
+    path('api/saha/parsel/<int:parsel_id>/portfoy/', views.api_portfoy_guncelle,              name='api_portfoy_guncelle'),
 ]

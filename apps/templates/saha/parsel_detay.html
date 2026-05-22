@@ -1,0 +1,511 @@
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+
+{% block title %}Parsel Detay - {{ parsel }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-5">
+
+  <!-- BREADCRUMB -->
+  <div class="flex items-center gap-2 text-xs text-slate-400 mb-4">
+    <a href="{% url 'saha_harita' %}" class="hover:text-red-700 transition flex items-center gap-1">
+      <i class="fas fa-map-marked-alt text-[10px]"></i> Saha Haritası
+    </a>
+    <i class="fas fa-chevron-right text-[9px]"></i>
+    <span class="text-slate-600 font-semibold">{{ parsel.adres|default:"Parsel Detay" }}</span>
+  </div>
+
+  <!-- HERO BAŞLIK -->
+  <div class="bg-gradient-to-r from-red-900 via-red-800 to-red-700 rounded-2xl p-5 mb-5 shadow-lg relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10" style="background:radial-gradient(circle at 80% 50%, white 0%, transparent 60%)"></div>
+    <div class="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <p class="text-[10px] text-red-200 font-bold uppercase tracking-widest mb-1.5">Parsel Detayı</p>
+        <h1 class="text-white font-bold text-xl leading-tight">{{ parsel.adres|default:"Adres Girilmemiş" }}</h1>
+        <div class="flex flex-wrap items-center gap-3 mt-2">
+          {% if parsel.mahalle %}<span class="text-red-200 text-xs flex items-center gap-1"><i class="fas fa-map-marker-alt text-[10px]"></i> {{ parsel.mahalle }}</span>{% endif %}
+          {% if parsel.ada_no or parsel.parsel_no %}<span class="text-red-200 text-xs flex items-center gap-1"><i class="fas fa-th text-[10px]"></i> Ada: {{ parsel.ada_no|default:"—" }} / Parsel: {{ parsel.parsel_no|default:"—" }}</span>{% endif %}
+          <span class="text-red-200 text-xs flex items-center gap-1"><i class="fas fa-clock text-[10px]"></i> {{ parsel.olusturma_tarihi|date:"d.m.Y" }}</span>
+        </div>
+      </div>
+      <div class="flex flex-col items-end gap-2">
+        {% if parsel.durum == 'yapim_asamasinda' %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-400/20 text-amber-200 border border-amber-400/30"><span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Yapım Aşamasında</span>
+        {% elif parsel.durum == 'oturuma_hazir' %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-400/20 text-blue-200 border border-blue-400/30"><span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span> Oturuma Hazır</span>
+        {% elif parsel.durum == 'dolu_bina' %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-400/20 text-emerald-200 border border-emerald-400/30"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Dolu Bina</span>
+        {% else %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 text-white/70 border border-white/20"><span class="w-2 h-2 rounded-full bg-white/50"></span> Durum Belirtilmemiş</span>
+        {% endif %}
+        <div class="flex gap-2">
+          <a href="{% url 'saha_harita' %}" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-lg transition border border-white/20"><i class="fas fa-arrow-left text-[10px]"></i> Haritaya Dön</a>
+          <a href="{% url 'saha_harita' %}?parsel={{ parsel.id }}" class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-red-800 text-xs font-bold rounded-lg hover:bg-red-50 transition shadow"><i class="fas fa-edit text-[10px]"></i> Düzenle</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- İSTATİSTİK SATIRI -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+    <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-comments text-blue-600 text-sm"></i></div>
+      <div><p class="text-xl font-bold text-slate-800">{{ gorusme_sayisi }}</p><p class="text-[10px] text-slate-400 font-semibold">Görüşme</p></div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl {% if parsel.durum == 'yapim_asamasinda' %}bg-amber-50{% elif parsel.durum == 'oturuma_hazir' %}bg-blue-50{% elif parsel.durum == 'dolu_bina' %}bg-emerald-50{% else %}bg-slate-50{% endif %} flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-building {% if parsel.durum == 'yapim_asamasinda' %}text-amber-600{% elif parsel.durum == 'oturuma_hazir' %}text-blue-600{% elif parsel.durum == 'dolu_bina' %}text-emerald-600{% else %}text-slate-400{% endif %} text-sm"></i>
+      </div>
+      <div><p class="text-sm font-bold text-slate-800 leading-tight">{% if parsel.durum == 'yapim_asamasinda' %}Yapım{% elif parsel.durum == 'oturuma_hazir' %}Oturuma Hazır{% elif parsel.durum == 'dolu_bina' %}Dolu Bina{% else %}—{% endif %}</p><p class="text-[10px] text-slate-400 font-semibold">Durum</p></div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-map-pin text-slate-500 text-sm"></i></div>
+      <div><p class="text-sm font-bold text-slate-800 leading-tight truncate">{{ parsel.mahalle|default:"—" }}</p><p class="text-[10px] text-slate-400 font-semibold">Mahalle</p></div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center flex-shrink-0"><i class="fas fa-th-large text-slate-500 text-sm"></i></div>
+      <div><p class="text-sm font-bold text-slate-800 leading-tight">{{ parsel.ada_no|default:"—" }} / {{ parsel.parsel_no|default:"—" }}</p><p class="text-[10px] text-slate-400 font-semibold">Ada / Parsel</p></div>
+    </div>
+  </div>
+
+  <!-- ANA İÇERİK -->
+  <div class="flex flex-col lg:flex-row gap-5">
+
+    <!-- SOL PANEL -->
+    <div class="w-full lg:w-80 flex-shrink-0 flex flex-col gap-4">
+
+      <!-- MİNİ HARİTA -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div id="mini-map" style="height:180px;"></div>
+        <div class="px-4 py-3 flex items-center justify-between border-t border-slate-50">
+          <span class="text-xs text-slate-500 flex items-center gap-1"><i class="fas fa-location-arrow text-red-700 text-[10px]"></i> {{ parsel.lat|floatformat:4 }}, {{ parsel.lng|floatformat:4 }}</span>
+          <a href="https://www.google.com/maps?q={{ parsel.lat }},{{ parsel.lng }}" target="_blank" class="text-xs text-blue-600 hover:underline font-semibold">Maps <i class="fas fa-external-link-alt text-[9px]"></i></a>
+        </div>
+      </div>
+
+      <!-- KONUM BİLGİSİ -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-50 flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center"><i class="fas fa-map-marker-alt text-red-700 text-xs"></i></div>
+          <p class="text-xs font-bold text-slate-600 uppercase tracking-wider">Konum Bilgisi</p>
+        </div>
+        <div class="p-4 space-y-3">
+          <div><p class="text-[10px] text-slate-400 font-semibold mb-0.5">Adres</p><p class="text-sm text-slate-800 font-medium">{{ parsel.adres|default:"Girilmemiş" }}</p></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><p class="text-[10px] text-slate-400 font-semibold mb-0.5">Ada No</p><p class="text-sm text-slate-800 font-bold">{{ parsel.ada_no|default:"—" }}</p></div>
+            <div><p class="text-[10px] text-slate-400 font-semibold mb-0.5">Parsel No</p><p class="text-sm text-slate-800 font-bold">{{ parsel.parsel_no|default:"—" }}</p></div>
+          </div>
+          <div><p class="text-[10px] text-slate-400 font-semibold mb-0.5">Mahalle</p><p class="text-sm text-slate-800 font-medium">{{ parsel.mahalle|default:"Girilmemiş" }}</p></div>
+        </div>
+      </div>
+
+      <!-- KİŞİ BİLGİLERİ -->
+      {% if parsel.durum == 'yapim_asamasinda' %}
+        {% if parsel.muteahit_ad or parsel.bekci_ad or parsel.cavus_ad %}
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div class="px-4 py-3 border-b border-amber-50 flex items-center gap-2 bg-amber-50/50">
+            <div class="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center"><i class="fas fa-hard-hat text-amber-600 text-xs"></i></div>
+            <p class="text-xs font-bold text-amber-700 uppercase tracking-wider">Yapım Bilgileri</p>
+          </div>
+          <div class="p-4 space-y-3">
+            {% if parsel.muteahit_ad %}
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-amber-50/50 border border-amber-100/50">
+              <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0"><i class="fas fa-hard-hat text-amber-600 text-xs"></i></div>
+              <div class="flex-1 min-w-0"><p class="text-[10px] text-slate-400 font-semibold">Müteahhit</p><p class="text-sm font-bold text-slate-800 truncate">{{ parsel.muteahit_ad }}</p>{% if parsel.muteahit_tel %}<a href="tel:{{ parsel.muteahit_tel }}" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"><i class="fas fa-phone text-[9px]"></i> {{ parsel.muteahit_tel }}</a>{% endif %}</div>
+            </div>
+            {% endif %}
+            {% if parsel.bekci_ad %}
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><i class="fas fa-user-shield text-slate-600 text-xs"></i></div>
+              <div class="flex-1 min-w-0"><p class="text-[10px] text-slate-400 font-semibold">Bekçi</p><p class="text-sm font-bold text-slate-800 truncate">{{ parsel.bekci_ad }}</p>{% if parsel.bekci_tel %}<a href="tel:{{ parsel.bekci_tel }}" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"><i class="fas fa-phone text-[9px]"></i> {{ parsel.bekci_tel }}</a>{% endif %}</div>
+            </div>
+            {% endif %}
+            {% if parsel.cavus_ad %}
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><i class="fas fa-user-tie text-slate-600 text-xs"></i></div>
+              <div class="flex-1 min-w-0"><p class="text-[10px] text-slate-400 font-semibold">Çavuş</p><p class="text-sm font-bold text-slate-800 truncate">{{ parsel.cavus_ad }}</p>{% if parsel.cavus_tel %}<a href="tel:{{ parsel.cavus_tel }}" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"><i class="fas fa-phone text-[9px]"></i> {{ parsel.cavus_tel }}</a>{% endif %}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% if parsel.taseronlar %}
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-50 flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center"><i class="fas fa-tools text-orange-600 text-xs"></i></div>
+            <p class="text-xs font-bold text-slate-600 uppercase tracking-wider">Taşeronlar</p>
+            <span class="ml-auto bg-orange-100 text-orange-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ parsel.taseronlar|length }}</span>
+          </div>
+          <div class="p-4 space-y-2">
+            {% for t in parsel.taseronlar %}
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span class="text-sm font-semibold text-slate-700">{{ t.ad|default:"—" }}</span>
+              {% if t.tel %}<a href="tel:{{ t.tel }}" class="text-xs text-blue-600 hover:underline">{{ t.tel }}</a>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+      {% elif parsel.durum == 'oturuma_hazir' %}
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div class="px-4 py-3 border-b border-blue-50 flex items-center gap-2 bg-blue-50/50">
+            <div class="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center"><i class="fas fa-users text-blue-600 text-xs"></i></div>
+            <p class="text-xs font-bold text-blue-700 uppercase tracking-wider">Oturuma Hazır Kişiler</p>
+          </div>
+          <div class="p-4 space-y-3">
+            {% if parsel.arsa_sahibi_ad %}
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-blue-50/50 border border-blue-100/50">
+              <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"><i class="fas fa-user text-blue-600 text-xs"></i></div>
+              <div class="flex-1 min-w-0"><p class="text-[10px] text-slate-400 font-semibold">Arsa Sahibi</p><p class="text-sm font-bold text-slate-800 truncate">{{ parsel.arsa_sahibi_ad }}</p>{% if parsel.arsa_sahibi_tel %}<a href="tel:{{ parsel.arsa_sahibi_tel }}" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"><i class="fas fa-phone text-[9px]"></i> {{ parsel.arsa_sahibi_tel }}</a>{% endif %}</div>
+            </div>
+            {% endif %}
+            {% if parsel.oturuma_yonetici_ad %}
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><i class="fas fa-user-tie text-slate-600 text-xs"></i></div>
+              <div class="flex-1 min-w-0"><p class="text-[10px] text-slate-400 font-semibold">Yönetici</p><p class="text-sm font-bold text-slate-800 truncate">{{ parsel.oturuma_yonetici_ad }}</p>{% if parsel.oturuma_yonetici_tel %}<a href="tel:{{ parsel.oturuma_yonetici_tel }}" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"><i class="fas fa-phone text-[9px]"></i> {{ parsel.oturuma_yonetici_tel }}</a>{% endif %}</div>
+            </div>
+            {% endif %}
+            {% if parsel.oturuma_bekci_ad %}
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><i class="fas fa-shield-alt text-slate-600 text-xs"></i></div>
+              <div class="flex-1 min-w-0"><p class="text-[10px] text-slate-400 font-semibold">Bekçi</p><p class="text-sm font-bold text-slate-800 truncate">{{ parsel.oturuma_bekci_ad }}</p>{% if parsel.oturuma_bekci_tel %}<a href="tel:{{ parsel.oturuma_bekci_tel }}" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"><i class="fas fa-phone text-[9px]"></i> {{ parsel.oturuma_bekci_tel }}</a>{% endif %}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+      {% elif parsel.durum == 'dolu_bina' %}
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div class="px-4 py-3 border-b border-emerald-50 flex items-center gap-2 bg-emerald-50/50">
+            <div class="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center"><i class="fas fa-building text-emerald-600 text-xs"></i></div>
+            <p class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Bina Görevlileri</p>
+          </div>
+          <div class="p-4 space-y-3">
+            {% if parsel.yonetici_ad %}
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/50 border border-emerald-100/50">
+              <div class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0"><i class="fas fa-user-tie text-emerald-600 text-xs"></i></div>
+              <div class="flex-1 min-w-0"><p class="text-[10px] text-slate-400 font-semibold">Yönetici</p><p class="text-sm font-bold text-slate-800 truncate">{{ parsel.yonetici_ad }}</p>{% if parsel.yonetici_tel %}<a href="tel:{{ parsel.yonetici_tel }}" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"><i class="fas fa-phone text-[9px]"></i> {{ parsel.yonetici_tel }}</a>{% endif %}</div>
+            </div>
+            {% endif %}
+            {% if parsel.kapici_ad %}
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><i class="fas fa-key text-slate-600 text-xs"></i></div>
+              <div class="flex-1 min-w-0"><p class="text-[10px] text-slate-400 font-semibold">Kapıcı</p><p class="text-sm font-bold text-slate-800 truncate">{{ parsel.kapici_ad }}</p>{% if parsel.kapici_tel %}<a href="tel:{{ parsel.kapici_tel }}" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"><i class="fas fa-phone text-[9px]"></i> {{ parsel.kapici_tel }}</a>{% endif %}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- NOTLAR -->
+      {% if parsel.diger_not %}
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-50 flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-yellow-50 flex items-center justify-center"><i class="fas fa-sticky-note text-yellow-500 text-xs"></i></div>
+          <p class="text-xs font-bold text-slate-600 uppercase tracking-wider">Notlar</p>
+        </div>
+        <div class="p-4"><p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{{ parsel.diger_not }}</p></div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- SAĞ PANEL -->
+    <div class="flex-1 min-w-0 flex flex-col gap-4">
+
+      <!-- Sekme Bar -->
+      <div class="flex gap-1 bg-white rounded-2xl border border-slate-100 shadow-sm p-1.5">
+        <button onclick="sekmeAc('aktiviteler')" id="tab-aktiviteler"
+          class="tab-btn flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition active">
+          <i class="fas fa-history text-xs"></i> Son Aktiviteler
+          {% if gorusme_sayisi %}<span class="tab-badge text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ gorusme_sayisi }}</span>{% endif %}
+        </button>
+      </div>
+
+      <!-- AKTİVİTELER PANELİ -->
+      <div id="panel-aktiviteler" class="sekme-panel flex-1">
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+
+          <!-- Başlık + Buton -->
+          <div class="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Tüm Aktiviteler</h2>
+              <p class="text-xs text-slate-400 mt-0.5">{{ gorusme_sayisi }} görüşme kaydı</p>
+            </div>
+            <div class="flex items-center gap-2">
+              {% if portfoy_sayisi > 0 %}
+              <span id="portfoyBadge" class="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-xl">
+                <i class="fas fa-folder-open text-[10px]"></i> <span id="portfoyBadgeSayi">{{ portfoy_sayisi }}</span> Portföy Alındı
+              </span>
+              {% else %}
+              <span id="portfoyBadge" class="hidden flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-xl">
+                <i class="fas fa-folder-open text-[10px]"></i> <span id="portfoyBadgeSayi">0</span> Portföy Alındı
+              </span>
+              {% endif %}
+              <button onclick="document.getElementById('gorusmeForm').classList.toggle('hidden')"
+                class="flex items-center gap-1.5 px-3 py-2 bg-red-800 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition shadow-sm">
+                <i class="fas fa-plus text-[10px]"></i> Görüşme Ekle
+              </button>
+            </div>
+          </div>
+
+          <!-- Görüşme Ekleme Formu -->
+          <div id="gorusmeForm" class="hidden border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+
+            <!-- Kişi Seçimi -->
+            <label class="block text-xs font-bold text-slate-600 mb-2">Kiminle Görüşüldü?</label>
+            <div class="flex flex-wrap gap-2 mb-3">
+              {% if parsel.durum == 'yapim_asamasinda' %}
+                {% if parsel.muteahit_ad %}<button type="button" onclick="kisiSec(this,'{{ parsel.muteahit_ad }}')" class="kisi-chip px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-red-700 hover:text-red-800 transition"><i class="fas fa-hard-hat mr-1 text-amber-500"></i>{{ parsel.muteahit_ad }}</button>{% endif %}
+                {% if parsel.bekci_ad %}<button type="button" onclick="kisiSec(this,'{{ parsel.bekci_ad }}')" class="kisi-chip px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-red-700 hover:text-red-800 transition"><i class="fas fa-user-shield mr-1 text-slate-400"></i>{{ parsel.bekci_ad }}</button>{% endif %}
+                {% if parsel.cavus_ad %}<button type="button" onclick="kisiSec(this,'{{ parsel.cavus_ad }}')" class="kisi-chip px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-red-700 hover:text-red-800 transition"><i class="fas fa-user-tie mr-1 text-slate-400"></i>{{ parsel.cavus_ad }}</button>{% endif %}
+              {% elif parsel.durum == 'oturuma_hazir' %}
+                {% if parsel.arsa_sahibi_ad %}<button type="button" onclick="kisiSec(this,'{{ parsel.arsa_sahibi_ad }}')" class="kisi-chip px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-red-700 hover:text-red-800 transition"><i class="fas fa-user mr-1 text-blue-500"></i>{{ parsel.arsa_sahibi_ad }}</button>{% endif %}
+                {% if parsel.oturuma_yonetici_ad %}<button type="button" onclick="kisiSec(this,'{{ parsel.oturuma_yonetici_ad }}')" class="kisi-chip px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-red-700 hover:text-red-800 transition"><i class="fas fa-user-tie mr-1 text-slate-400"></i>{{ parsel.oturuma_yonetici_ad }}</button>{% endif %}
+                {% if parsel.oturuma_bekci_ad %}<button type="button" onclick="kisiSec(this,'{{ parsel.oturuma_bekci_ad }}')" class="kisi-chip px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-red-700 hover:text-red-800 transition"><i class="fas fa-shield-alt mr-1 text-slate-400"></i>{{ parsel.oturuma_bekci_ad }}</button>{% endif %}
+              {% elif parsel.durum == 'dolu_bina' %}
+                {% if parsel.yonetici_ad %}<button type="button" onclick="kisiSec(this,'{{ parsel.yonetici_ad }}')" class="kisi-chip px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-red-700 hover:text-red-800 transition"><i class="fas fa-user-tie mr-1 text-emerald-500"></i>{{ parsel.yonetici_ad }}</button>{% endif %}
+                {% if parsel.kapici_ad %}<button type="button" onclick="kisiSec(this,'{{ parsel.kapici_ad }}')" class="kisi-chip px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-red-700 hover:text-red-800 transition"><i class="fas fa-key mr-1 text-slate-400"></i>{{ parsel.kapici_ad }}</button>{% endif %}
+              {% endif %}
+              <button type="button" onclick="kisiSec(this,'__diger__')" class="kisi-chip px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-red-700 hover:text-red-800 transition"><i class="fas fa-pen mr-1"></i>Diğer</button>
+            </div>
+            <div id="digerKisiWrap" class="hidden mb-3">
+              <input id="gorusulenKisi" type="text" placeholder="Kişi adını yazın..."
+                class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700 bg-white">
+            </div>
+
+            <!-- Portföy Sonucu -->
+            <label class="block text-xs font-bold text-slate-600 mb-2 mt-1">Portföy Sonucu</label>
+            <div class="flex gap-2 mb-3">
+              <button type="button" id="btnPortfoyAlindi" onclick="portfoySecClik('alindi')"
+                class="portfoy-sec flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-slate-200 bg-white text-slate-500 hover:border-emerald-500 hover:text-emerald-700 transition">
+                <i class="fas fa-check-circle"></i> Portföy Alındı
+              </button>
+              <button type="button" id="btnPortfoyAlinmadi" onclick="portfoySecClik('alinmadi')"
+                class="portfoy-sec flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-slate-200 bg-white text-slate-500 hover:border-red-500 hover:text-red-700 transition">
+                <i class="fas fa-times-circle"></i> Portföy Alınmadı
+              </button>
+            </div>
+
+            <!-- Not -->
+            <label class="block text-xs font-bold text-slate-600 mb-1.5">Görüşme Notu</label>
+            <textarea id="gorusmeNot" rows="3" placeholder="Görüşme detaylarını yazın..."
+              class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-700 resize-none bg-white"></textarea>
+            <div class="flex gap-2 mt-3">
+              <button type="button" onclick="gorusmeKaydet(this)" class="px-4 py-2 bg-red-800 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition">
+                <i class="fas fa-save mr-1"></i> Kaydet
+              </button>
+              <button type="button" onclick="gorusmeFormSifirla(); document.getElementById('gorusmeForm').classList.add('hidden')"
+                class="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50 transition">İptal</button>
+            </div>
+          </div>
+
+          <!-- Aktivite Listesi -->
+          <div class="p-5">
+            {% if aktiviteler %}
+            <div class="space-y-3">
+              {% for a in aktiviteler %}
+              <div class="flex gap-4 p-4 rounded-2xl border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all bg-white">
+                <div class="flex-shrink-0">
+                  <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shadow-sm">
+                    <i class="fas fa-comments text-blue-600 text-sm"></i>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-start justify-between gap-2 mb-2">
+                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                      <i class="fas fa-map-marker-alt text-[8px]"></i> Saha Görüşmesi
+                    </span>
+                    <span class="text-[10px] text-slate-400 whitespace-nowrap flex items-center gap-1">
+                      <i class="fas fa-clock text-[9px]"></i> {{ a.tarih|date:"d.m.Y H:i" }}
+                    </span>
+                  </div>
+                  <p class="text-sm text-slate-700 leading-relaxed">{{ a.metin }}</p>
+                  <div class="flex items-center gap-2 mt-2 flex-wrap">
+                    <span class="text-xs text-slate-400 flex items-center gap-1">
+                      <i class="fas fa-user text-[10px]"></i> {{ a.personel }}
+                    </span>
+                    {% if a.gorusulen_kisi %}
+                    <span class="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 flex items-center gap-1">
+                      <i class="fas fa-handshake text-[9px]"></i> {{ a.gorusulen_kisi }}
+                    </span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-16">
+              <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-comments text-slate-300 text-2xl"></i>
+              </div>
+              <p class="text-sm font-bold text-slate-500">Henüz aktivite yok</p>
+              <p class="text-xs text-slate-400 mt-1 mb-4">Bu parselde görüşme yapıldığında burada görünecek</p>
+              <button onclick="document.getElementById('gorusmeForm').classList.remove('hidden')"
+                class="px-4 py-2 bg-red-800 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition">
+                <i class="fas fa-plus mr-1"></i> İlk Görüşmeyi Ekle
+              </button>
+            </div>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+.tab-btn { color: #64748b; }
+.tab-btn.active { background: #7f1d1d; color: white; }
+.tab-btn.active .tab-badge { background: rgba(255,255,255,0.25); color: white; }
+.tab-badge { background: #e2e8f0; color: #475569; }
+.tab-btn:not(.active):hover { background: #f1f5f9; }
+.kisi-chip.selected { border-color: #991b1b; background: #fef2f2; color: #991b1b; font-weight: 700; }
+</style>
+
+<script>
+var _secilenKisi = '';
+var _secilenPortfoy = null; // 'alindi' | 'alinmadi' | null
+
+function kisiSec(btn, ad) {
+  document.querySelectorAll('.kisi-chip').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  if (ad === '__diger__') {
+    _secilenKisi = '';
+    document.getElementById('digerKisiWrap').classList.remove('hidden');
+    document.getElementById('gorusulenKisi').focus();
+  } else {
+    _secilenKisi = ad;
+    document.getElementById('digerKisiWrap').classList.add('hidden');
+  }
+}
+
+function portfoySecClik(eylem) {
+  _secilenPortfoy = (_secilenPortfoy === eylem) ? null : eylem;
+  var btnAlindi   = document.getElementById('btnPortfoyAlindi');
+  var btnAlinmadi = document.getElementById('btnPortfoyAlinmadi');
+  // Sıfırla
+  btnAlindi.className   = 'portfoy-sec flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-slate-200 bg-white text-slate-500 hover:border-emerald-500 hover:text-emerald-700 transition';
+  btnAlinmadi.className = 'portfoy-sec flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-slate-200 bg-white text-slate-500 hover:border-red-500 hover:text-red-700 transition';
+  if (_secilenPortfoy === 'alindi') {
+    btnAlindi.className = 'portfoy-sec flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-emerald-500 bg-emerald-50 text-emerald-700 transition';
+  } else if (_secilenPortfoy === 'alinmadi') {
+    btnAlinmadi.className = 'portfoy-sec flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-red-500 bg-red-50 text-red-700 transition';
+  }
+}
+
+function gorusmeFormSifirla() {
+  _secilenKisi = '';
+  _secilenPortfoy = null;
+  document.querySelectorAll('.kisi-chip').forEach(b => b.classList.remove('selected'));
+  document.getElementById('gorusmeNot').value = '';
+  document.getElementById('digerKisiWrap').classList.add('hidden');
+  var btnAlindi   = document.getElementById('btnPortfoyAlindi');
+  var btnAlinmadi = document.getElementById('btnPortfoyAlinmadi');
+  if (btnAlindi)   btnAlindi.className   = 'portfoy-sec flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-slate-200 bg-white text-slate-500 hover:border-emerald-500 hover:text-emerald-700 transition';
+  if (btnAlinmadi) btnAlinmadi.className = 'portfoy-sec flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-slate-200 bg-white text-slate-500 hover:border-red-500 hover:text-red-700 transition';
+}
+
+function gorusmeKaydet(btn) {
+  var not = document.getElementById('gorusmeNot').value.trim();
+  if (!not) { alert('Lütfen görüşme notu girin.'); return; }
+
+  var kisi = _secilenKisi;
+  var digerInput = document.getElementById('gorusulenKisi');
+  if (digerInput && !document.getElementById('digerKisiWrap').classList.contains('hidden')) {
+    kisi = digerInput.value.trim();
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Kaydediliyor...';
+
+  var portfoyEylem = _secilenPortfoy;
+
+  fetch('{% url "api_gorusme_ekle" parsel.id %}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify({ not_metni: not, gorusulen_kisi: kisi })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      // Portföy seçildiyse ayrıca kaydet, sonra reload
+      if (portfoyEylem) {
+        return fetch('{% url "api_portfoy_guncelle" parsel.id %}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ eylem: portfoyEylem })
+        })
+        .then(r => r.json())
+        .then(pd => {
+          if (pd.success && portfoyEylem === 'alindi') {
+            // Badge güncelle anlık
+            var badge = document.getElementById('portfoyBadge');
+            var sayi  = document.getElementById('portfoyBadgeSayi');
+            if (badge && sayi) { sayi.textContent = pd.portfoy_sayisi; badge.classList.remove('hidden'); }
+          }
+          location.reload();
+        });
+      } else {
+        location.reload();
+      }
+    } else {
+      alert(data.error || 'Hata oluştu');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save mr-1"></i> Kaydet';
+    }
+  })
+  .catch(() => {
+    alert('Bağlantı hatası');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save mr-1"></i> Kaydet';
+  });
+}
+
+
+function showToast(msg, type) {
+  var el = document.createElement('div');
+  var bg = type === 'success' ? '#10b981' : type === 'info' ? '#3b82f6' : '#ef4444';
+  el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;padding:12px 18px;border-radius:12px;font-size:.85rem;font-weight:600;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);background:' + bg + ';transition:opacity .4s;';
+  el.innerHTML = '<i class="fas fa-check-circle mr-2"></i>' + msg;
+  document.body.appendChild(el);
+  setTimeout(function(){ el.style.opacity='0'; setTimeout(function(){ el.remove(); }, 400); }, 2800);
+}
+
+function getCookie(name) {
+  var v = null;
+  if (document.cookie) document.cookie.split(';').forEach(function(c) {
+    var t = c.trim().split('=');
+    if (t[0] === name) v = decodeURIComponent(t[1]);
+  });
+  return v;
+}
+
+function sekmeAc(id) {
+  document.querySelectorAll('.sekme-panel').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.remove('hidden');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var lat = {{ parsel.lat }};
+  var lng = {{ parsel.lng }};
+  var map = L.map('mini-map', { zoomControl: false, scrollWheelZoom: false, dragging: false }).setView([lat, lng], 16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map);
+  var icon = L.divIcon({
+    className: '',
+    html: '<div style="width:14px;height:14px;border-radius:50%;background:#991b1b;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>',
+    iconSize: [14, 14], iconAnchor: [7, 7]
+  });
+  L.marker([lat, lng], { icon: icon }).addTo(map);
+});
+</script>
+{% endblock %}

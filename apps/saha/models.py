@@ -50,6 +50,7 @@ class ParselKayit(models.Model):
     kapici_tel = models.CharField(max_length=30, blank=True, verbose_name='Kapici Telefonu')
     dolu_ek_kisiler = models.JSONField(default=list, blank=True, verbose_name='Dolu Bina Ek Kisiler')
 
+    portfoy_sayisi = models.PositiveIntegerField(default=0, verbose_name='Alinan Portfoy Sayisi')
     diger_not = models.TextField(blank=True, verbose_name='Bina Hakkinda Notlar')
     olusturan = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -82,6 +83,7 @@ class SahaGorusme(models.Model):
     )
     tarih = models.DateTimeField(auto_now_add=True, verbose_name='Gorusme Tarihi')
     not_metni = models.TextField(verbose_name='Gorusme Notu')
+    gorusulen_kisi = models.CharField(max_length=150, blank=True, verbose_name='Gorusulen Kisi')
 
     class Meta:
         verbose_name = 'Saha Gorusmesi'
