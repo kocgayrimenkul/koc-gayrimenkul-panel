@@ -51,7 +51,7 @@ class CallLog(models.Model):
     end_time = models.DateTimeField('Bitiş', null=True, blank=True)
     duration = models.IntegerField('Süre (saniye)', default=0)
     status = models.CharField('Durum', max_length=20, choices=STATUS_CHOICES)
-    recording_url = models.URLField('Kayıt', blank=True, null=True)
+    recording_url = models.TextField('Kayıt', blank=True, null=True, default='')
     notes = models.TextField('Notlar', blank=True, null=True)
     created_at = models.DateTimeField('Oluşturma', auto_now_add=True)
     
