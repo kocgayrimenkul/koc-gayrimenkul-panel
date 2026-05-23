@@ -252,9 +252,9 @@ def netgsm_webhook(request):
         data = json.loads(raw_body)
         scenario = data.get('scenario', '')
 
-        # CDR - ses kaydı URL'si
-        if scenario == 'cdr':
-            asterisk_id = data.get('asteriskId', '')
+        # CDR - ses kaydı URL'si (NetGSM CDR'de 'scenario' yok, 'bas' ve 'seskaydi' var)
+        if scenario == 'cdr' or ('bas' in data and 'seskaydi' in data):
+            asterisk_id = data.get('asteriskId', '') or str(data.get('kimlik', '')) or str(data.get('ortakkimlik', ''))
             ses_kaydi = data.get('seskaydi', '')
             arayan = data.get('arayan', '')
             aranan = data.get('aranan', '')
