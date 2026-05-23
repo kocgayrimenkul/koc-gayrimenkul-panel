@@ -108,7 +108,7 @@
                         <td class="px-5 py-3" style="font-size:.85rem;font-weight:500;color:#64748b;">{{ call.start_time|date:"d.m.Y H:i:s" }}</td>
                         <td class="px-5 py-3 text-center">
                             {% if call.recording_url %}
-                            <button onclick="openRecordingModal('{{ call.recording_url|escapejs }}', '{{ call.caller|default:""|escapejs }}', '{{ call.start_time|date:"d.m.Y H:i" }}', '{{ call.duration_formatted|default:""|escapejs }}')"
+                            <button onclick="openRecordingModal('/cagrilar/{{ call.id }}/ses-kaydi/', '{{ call.caller|default:""|escapejs }}', '{{ call.start_time|date:"d.m.Y H:i" }}', '{{ call.duration_formatted|default:""|escapejs }}')"
                                 style="width:34px;height:34px;border-radius:10px;border:none;background:#dcfce7;color:#16a34a;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;transition:all .2s;"
                                 onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Kaydı Dinle">
                                 <i class="fas fa-play" style="margin-left:2px;"></i>

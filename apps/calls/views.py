@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
@@ -683,3 +683,28 @@ def unmatched_calls_api(request):
             'convert_url': f"/cagrilar/{c.id}/musteriye-donustur/",
         })
     return JsonResponse({'calls': calls})
+
+
+@login_required
+def proxy_recording(request, call_id):
+    """NetGSM ses kaydını CORS sorununu aşmak için proxy üzerinden oynat"""
+    from .models import CallLog
+    call = get_object_or_404(CallLog, pk=call_id)
+    if not call.recording_url:
+        from django.http import Http404
+        raise Http404
+
+    try:
+        resp = http_requests.get(call.recording_url, stream=True, timeout=30)
+        content_type = resp.headers.get('Content-Type', 'audio/mpeg')
+
+        def stream():
+            for chunk in resp.iter_content(chunk_size=8192):
+                yield chunk
+
+        response = StreamingHttpResponse(stream(), content_type=content_type)
+        response['Content-Disposition'] = f'inline; filename="kayit_{call_id}.mp3"'
+        response['Accept-Ranges'] = 'bytes'
+        return response
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

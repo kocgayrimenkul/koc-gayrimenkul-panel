@@ -14,6 +14,9 @@ urlpatterns = [
     # AI çağrı özeti
     path('cagrilar/<int:call_id>/ai-ozet/', views.ai_summarize_call, name='ai_summarize_call'),
 
+    # Ses kaydı proxy
+    path('cagrilar/<int:call_id>/ses-kaydi/', views.proxy_recording, name='proxy_recording'),
+
     # API endpoints
     path('api/recent-calls/', views.recent_calls_api, name='recent_calls_api'),
     path('api/unmatched-calls/', views.unmatched_calls_api, name='unmatched_calls_api'),
