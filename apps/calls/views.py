@@ -288,7 +288,7 @@ def netgsm_webhook(request):
                         'called': aranan or '',
                         'status': 'completed' if sure > 0 else 'missed',
                         'duration': sure,
-                        'recording_url': ses_kaydi if ses_kaydi else None,
+                        'recording_url': ses_kaydi if ses_kaydi else '',
                         'customer': customer,
                         'start_time': start_time,
                     }
