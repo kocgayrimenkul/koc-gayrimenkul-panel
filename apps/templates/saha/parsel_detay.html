@@ -40,7 +40,8 @@
         {% endif %}
         <div class="flex gap-2">
           <a href="{% url 'saha_harita' %}" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-lg transition border border-white/20"><i class="fas fa-arrow-left text-[10px]"></i> Haritaya Dön</a>
-          <a href="{% url 'saha_harita' %}?parsel={{ parsel.id }}" class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-red-800 text-xs font-bold rounded-lg hover:bg-red-50 transition shadow"><i class="fas fa-edit text-[10px]"></i> Düzenle</a>
+          <button onclick="duzenleModalAc()" class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-red-800 text-xs font-bold rounded-lg hover:bg-red-50 transition shadow"><i class="fas fa-edit text-[10px]"></i> Düzenle</button>
+          <button onclick="silModalAc()" class="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/60 hover:bg-red-950/80 text-white text-xs font-bold rounded-lg transition border border-red-300/20"><i class="fas fa-trash text-[10px]"></i> Sil</button>
         </div>
       </div>
     </div>
@@ -358,6 +359,148 @@
   </div>
 </div>
 
+<!-- ===== DÜZENLE MODAL ===== -->
+<div id="duzenleModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="duzenleModalKapat()"></div>
+  <div class="absolute inset-y-0 right-0 w-full max-w-lg bg-white shadow-2xl flex flex-col overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-red-900 to-red-700">
+      <div>
+        <h2 class="text-white font-bold text-sm">Parsel Düzenle</h2>
+        <p class="text-red-200 text-xs mt-0.5">{{ parsel.adres|default:"Adres Girilmemiş" }}</p>
+      </div>
+      <button onclick="duzenleModalKapat()" class="text-white/70 hover:text-white transition"><i class="fas fa-times text-lg"></i></button>
+    </div>
+
+    <!-- Form body -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+
+      <!-- Temel Bilgiler -->
+      <div>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Temel Bilgiler</p>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Adres</label>
+            <input id="e_adres" type="text" value="{{ parsel.adres|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Ada No</label>
+              <input id="e_ada_no" type="text" value="{{ parsel.ada_no|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Parsel No</label>
+              <input id="e_parsel_no" type="text" value="{{ parsel.parsel_no|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Mahalle</label>
+            <input id="e_mahalle" type="text" value="{{ parsel.mahalle|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Durum</label>
+            <select id="e_durum" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700">
+              <option value="" {% if not parsel.durum %}selected{% endif %}>Belirtilmemiş</option>
+              <option value="yapim_asamasinda" {% if parsel.durum == 'yapim_asamasinda' %}selected{% endif %}>Yapım Aşamasında</option>
+              <option value="oturuma_hazir" {% if parsel.durum == 'oturuma_hazir' %}selected{% endif %}>Oturuma Hazır</option>
+              <option value="dolu_bina" {% if parsel.durum == 'dolu_bina' %}selected{% endif %}>Dolu Bina</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Yapım Aşamasında Kişiler -->
+      <div id="e_section_yapim">
+        <p class="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-3">Yapım Kişileri</p>
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Müteahhit Adı</label><input id="e_muteahit_ad" type="text" value="{{ parsel.muteahit_ad|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Müteahhit Tel</label><input id="e_muteahit_tel" type="text" value="{{ parsel.muteahit_tel|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Bekçi Adı</label><input id="e_bekci_ad" type="text" value="{{ parsel.bekci_ad|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Bekçi Tel</label><input id="e_bekci_tel" type="text" value="{{ parsel.bekci_tel|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Çavuş Adı</label><input id="e_cavus_ad" type="text" value="{{ parsel.cavus_ad|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Çavuş Tel</label><input id="e_cavus_tel" type="text" value="{{ parsel.cavus_tel|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Oturuma Hazır Kişiler -->
+      <div id="e_section_oturuma">
+        <p class="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-3">Oturuma Hazır Kişiler</p>
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Arsa Sahibi Adı</label><input id="e_arsa_sahibi_ad" type="text" value="{{ parsel.arsa_sahibi_ad|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Arsa Sahibi Tel</label><input id="e_arsa_sahibi_tel" type="text" value="{{ parsel.arsa_sahibi_tel|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Yönetici Adı</label><input id="e_oturuma_yonetici_ad" type="text" value="{{ parsel.oturuma_yonetici_ad|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Yönetici Tel</label><input id="e_oturuma_yonetici_tel" type="text" value="{{ parsel.oturuma_yonetici_tel|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Bekçi Adı</label><input id="e_oturuma_bekci_ad" type="text" value="{{ parsel.oturuma_bekci_ad|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Bekçi Tel</label><input id="e_oturuma_bekci_tel" type="text" value="{{ parsel.oturuma_bekci_tel|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dolu Bina Kişiler -->
+      <div id="e_section_dolu">
+        <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-3">Bina Görevlileri</p>
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Yönetici Adı</label><input id="e_yonetici_ad" type="text" value="{{ parsel.yonetici_ad|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Yönetici Tel</label><input id="e_yonetici_tel" type="text" value="{{ parsel.yonetici_tel|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Kapıcı Adı</label><input id="e_kapici_ad" type="text" value="{{ parsel.kapici_ad|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+            <div><label class="block text-xs font-semibold text-slate-600 mb-1">Kapıcı Tel</label><input id="e_kapici_tel" type="text" value="{{ parsel.kapici_tel|default:'' }}" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notlar -->
+      <div>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Notlar</p>
+        <textarea id="e_diger_not" rows="4" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700 resize-none" placeholder="Parsel hakkında notlar...">{{ parsel.diger_not|default:'' }}</textarea>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-5 py-4 border-t border-slate-100 flex gap-3">
+      <button onclick="duzenleKaydet(this)" class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-800 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition">
+        <i class="fas fa-save"></i> Kaydet
+      </button>
+      <button onclick="duzenleModalKapat()" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-50 transition">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SİL ONAY MODAL ===== -->
+<div id="silModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="silModalKapat()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+    <div class="p-6 text-center">
+      <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-trash-alt text-red-600 text-2xl"></i>
+      </div>
+      <h3 class="text-lg font-bold text-slate-800 mb-2">Parseli Sil</h3>
+      <p class="text-sm text-slate-500 mb-1">Bu parseli silmek istediğinize emin misiniz?</p>
+      <p class="text-xs font-bold text-slate-700 bg-slate-100 rounded-lg px-3 py-2 mt-3">{{ parsel.adres|default:"Adres Girilmemiş" }}</p>
+      <p class="text-xs text-red-500 mt-3">Bu işlem geri alınamaz. Tüm görüşme kayıtları da silinecektir.</p>
+    </div>
+    <div class="px-6 pb-6 flex gap-3">
+      <button onclick="silModalKapat()" class="flex-1 py-2.5 bg-white border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-50 transition">İptal</button>
+      <button onclick="parselSil(this)" class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition flex items-center justify-center gap-2">
+        <i class="fas fa-trash-alt"></i> Evet, Sil
+      </button>
+    </div>
+  </div>
+</div>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -493,6 +636,117 @@ function sekmeAc(id) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + id).classList.remove('hidden');
   document.getElementById('tab-' + id).classList.add('active');
+}
+
+// ===== DÜZENLE MODAL =====
+function duzenleModalAc() {
+  document.getElementById('duzenleModal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  durumSectionGoster(document.getElementById('e_durum').value);
+}
+function duzenleModalKapat() {
+  document.getElementById('duzenleModal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function durumSectionGoster(durum) {
+  document.getElementById('e_section_yapim').style.display   = (durum === 'yapim_asamasinda') ? '' : 'none';
+  document.getElementById('e_section_oturuma').style.display = (durum === 'oturuma_hazir')     ? '' : 'none';
+  document.getElementById('e_section_dolu').style.display    = (durum === 'dolu_bina')          ? '' : 'none';
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var durumSel = document.getElementById('e_durum');
+  if (durumSel) {
+    durumSectionGoster(durumSel.value);
+    durumSel.addEventListener('change', function() { durumSectionGoster(this.value); });
+  }
+});
+
+function duzenleKaydet(btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+
+  var payload = {
+    adres:                  document.getElementById('e_adres').value,
+    ada_no:                 document.getElementById('e_ada_no').value,
+    parsel_no:              document.getElementById('e_parsel_no').value,
+    mahalle:                document.getElementById('e_mahalle').value,
+    durum:                  document.getElementById('e_durum').value,
+    muteahit_ad:            document.getElementById('e_muteahit_ad').value,
+    muteahit_tel:           document.getElementById('e_muteahit_tel').value,
+    bekci_ad:               document.getElementById('e_bekci_ad').value,
+    bekci_tel:              document.getElementById('e_bekci_tel').value,
+    cavus_ad:               document.getElementById('e_cavus_ad').value,
+    cavus_tel:              document.getElementById('e_cavus_tel').value,
+    arsa_sahibi_ad:         document.getElementById('e_arsa_sahibi_ad').value,
+    arsa_sahibi_tel:        document.getElementById('e_arsa_sahibi_tel').value,
+    oturuma_yonetici_ad:    document.getElementById('e_oturuma_yonetici_ad').value,
+    oturuma_yonetici_tel:   document.getElementById('e_oturuma_yonetici_tel').value,
+    oturuma_bekci_ad:       document.getElementById('e_oturuma_bekci_ad').value,
+    oturuma_bekci_tel:      document.getElementById('e_oturuma_bekci_tel').value,
+    yonetici_ad:            document.getElementById('e_yonetici_ad').value,
+    yonetici_tel:           document.getElementById('e_yonetici_tel').value,
+    kapici_ad:              document.getElementById('e_kapici_ad').value,
+    kapici_tel:             document.getElementById('e_kapici_tel').value,
+    diger_not:              document.getElementById('e_diger_not').value,
+  };
+
+  fetch('{% url "api_parsel_detay" parsel.id %}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showToast('Parsel başarıyla güncellendi', 'success');
+      duzenleModalKapat();
+      setTimeout(() => location.reload(), 800);
+    } else {
+      showToast(data.error || 'Hata oluştu', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
+    }
+  })
+  .catch(() => {
+    showToast('Bağlantı hatası', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
+  });
+}
+
+// ===== SİL MODAL =====
+function silModalAc() {
+  document.getElementById('silModal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function silModalKapat() {
+  document.getElementById('silModal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function parselSil(btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Siliniyor...';
+
+  fetch('{% url "api_parsel_sil" parsel.id %}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showToast('Parsel silindi, yönlendiriliyorsunuz...', 'success');
+      setTimeout(() => { window.location.href = '{% url "saha_harita" %}'; }, 1000);
+    } else {
+      showToast(data.error || 'Silme başarısız', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-trash-alt"></i> Evet, Sil';
+    }
+  })
+  .catch(() => {
+    showToast('Bağlantı hatası', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-trash-alt"></i> Evet, Sil';
+  });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
