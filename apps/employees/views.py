@@ -516,12 +516,16 @@ def activity_log(request):
 @user_passes_test(is_admin_or_manager, login_url='/')
 def employee_delete(request, employee_id):
     """Çalışan silme (Sadece süper admin)"""
-    
+
     if not request.user.is_superuser:
         messages.error(request, "Bu işlem için yetkiniz bulunmuyor.")
         return redirect('employee_list')
-    
-    employee = get_object_or_404(EmployeeProfile, id=employee_id)
+
+    try:
+        employee = EmployeeProfile.objects.get(id=employee_id)
+    except EmployeeProfile.DoesNotExist:
+        messages.error(request, "Çalışan bulunamadı veya zaten silinmiş.")
+        return redirect('employee_list')
     
     if request.method == 'POST':
         user_name = employee.user.get_full_name()
