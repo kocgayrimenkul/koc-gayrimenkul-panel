@@ -121,7 +121,8 @@ def netgsm_webhook(request):
     
     try:
         # Import'ları fonksiyon içinde yap
-        from apps.customers.models import Customer, CallLog
+        from apps.calls.models import CallLog
+        from apps.customers.models import Customer
         from django.utils import timezone as tz
         
         # JSON parse
@@ -243,6 +244,7 @@ urlpatterns = [
     path("careers/", include(('apps.careers.urls', 'careers'), namespace='careers-views')),
     path("team/", include(('apps.team.urls', 'team'), namespace='team')),
     path("satis-surec/", include(('apps.sales_process.urls', 'sales_process'), namespace='sales_process')),
+    path("", include("apps.calls.urls")),
 ]
 
 # Media dosyalarını development'ta servis et
