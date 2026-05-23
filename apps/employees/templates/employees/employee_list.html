@@ -359,6 +359,27 @@ function toggleEmpDropdown(btn) {
   const dd = btn.nextElementSibling;
   document.querySelectorAll('.emp-dropdown').forEach(d => { if (d !== dd) d.classList.add('hidden'); });
   dd.classList.toggle('hidden');
+
+  if (!dd.classList.contains('hidden')) {
+    // Ekranın altına taşıyor mu kontrol et
+    const btnRect = btn.getBoundingClientRect();
+    const ddHeight = dd.offsetHeight || 220; // dropdown tahmini yükseklik
+    const spaceBelow = window.innerHeight - btnRect.bottom;
+
+    if (spaceBelow < ddHeight) {
+      // Yukarı aç
+      dd.style.top = 'auto';
+      dd.style.bottom = '100%';
+      dd.style.marginTop = '0';
+      dd.style.marginBottom = '4px';
+    } else {
+      // Aşağı aç
+      dd.style.top = '';
+      dd.style.bottom = '';
+      dd.style.marginTop = '';
+      dd.style.marginBottom = '';
+    }
+  }
 }
 document.addEventListener('click', e => {
   if (!e.target.closest('.relative')) document.querySelectorAll('.emp-dropdown, #role-dd').forEach(d => d.classList.add('hidden'));
