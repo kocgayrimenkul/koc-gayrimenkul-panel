@@ -5,6 +5,7 @@ from datetime import date as date_cls
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST, require_http_methods
@@ -126,7 +127,33 @@ def parsel_detay(request, parsel_id):
 
 @login_required(login_url='/login/')
 def api_parseller(request):
-    kayitlar = ParselKayit.objects.prefetch_related('gorusmeler__personel').all()
+    user = request.user
+    # Admin / müdür / superuser → tümünü gör
+    try:
+        ep = user.employee_profile.first()
+        is_admin = user.is_superuser or (ep and ep.role in ('admin', 'manager'))
+    except Exception:
+        is_admin = user.is_superuser
+
+    if is_admin:
+        kayitlar = ParselKayit.objects.prefetch_related('gorusmeler__personel').all()
+    else:
+        # Danışmanın yetkili olduğu mahalleleri bul (consultant veya consultant2)
+        from apps.customers.models import Neighborhood
+        yetkili_mahalleler = list(
+            Neighborhood.objects.filter(
+                Q(consultant=user) | Q(consultant2=user)
+            ).values_list('name', flat=True)
+        )
+        if yetkili_mahalleler:
+            # Mahalle adına göre büyük/küçük harf duyarsız filtrele
+            q = Q()
+            for m in yetkili_mahalleler:
+                q |= Q(mahalle__iexact=m)
+            kayitlar = ParselKayit.objects.prefetch_related('gorusmeler__personel').filter(q)
+        else:
+            kayitlar = ParselKayit.objects.none()
+
     return JsonResponse({'parseller': [_parsel_to_dict(k) for k in kayitlar]})
 
 
