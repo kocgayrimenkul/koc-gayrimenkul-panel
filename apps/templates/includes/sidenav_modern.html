@@ -45,6 +45,9 @@
                 <li><a href="{% url 'call_list' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'cagrilar' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
                     <i class="fas fa-phone w-4 text-emerald-500"></i><span>Çağrılar</span></a></li>
                 {% endif %}
+                <li><a href="{% url 'message_list' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'mesajlar' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
+                    <i class="fas fa-comment-dots w-4 text-pink-500"></i><span>Gelen Mesajlar</span>
+                </a></li>
                 <li><a href="{% url 'customer_list' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'musteri' in request.path and 'hatirlatma' not in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
                     <i class="fas fa-smile w-4 text-cyan-500"></i><span>Müşteriler</span></a></li>
             </ul>

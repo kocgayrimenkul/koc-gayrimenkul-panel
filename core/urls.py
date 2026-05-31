@@ -225,6 +225,7 @@ urlpatterns = [
     path('satis-surec/', include(('apps.sales_process.urls', 'sales_process'), namespace='sales_process')),
     path('', include('apps.saha.urls')),
     path('', include('apps.sahibinden.urls')),
+    path('', include('apps.messaging.urls')),
 ]
 
 # Media dosyaları (sadece development)

@@ -1,0 +1,254 @@
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+
+{% block title %}Gelen Mesajlar{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-[1600px] mx-auto">
+
+  <!-- Başlık -->
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Gelen Mesajlar</h1>
+      <p class="text-sm text-slate-400 mt-1">WhatsApp, Instagram, Facebook ve web sitesinden gelen müşteri mesajları</p>
+    </div>
+  </div>
+
+  <!-- İstatistikler -->
+  <div class="grid grid-cols-2 sm:grid-cols-6 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100">
+      <div class="text-[10px] font-bold text-slate-500 uppercase mb-1">Toplam</div>
+      <div class="text-2xl font-bold text-slate-800">{{ stats.total|intcomma }}</div>
+    </div>
+    <div class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100">
+      <div class="text-[10px] font-bold text-red-500 uppercase mb-1">Yeni</div>
+      <div class="text-2xl font-bold text-slate-800">{{ stats.new|intcomma }}</div>
+    </div>
+    <div class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100">
+      <div class="flex items-center gap-1 text-[10px] font-bold mb-1" style="color:#25D366"><i class="fab fa-whatsapp"></i> WhatsApp</div>
+      <div class="text-2xl font-bold text-slate-800">{{ stats.whatsapp|intcomma }}</div>
+    </div>
+    <div class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100">
+      <div class="flex items-center gap-1 text-[10px] font-bold mb-1" style="color:#E1306C"><i class="fab fa-instagram"></i> Instagram</div>
+      <div class="text-2xl font-bold text-slate-800">{{ stats.instagram|intcomma }}</div>
+    </div>
+    <div class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100">
+      <div class="flex items-center gap-1 text-[10px] font-bold mb-1" style="color:#0084FF"><i class="fab fa-facebook-messenger"></i> Facebook</div>
+      <div class="text-2xl font-bold text-slate-800">{{ stats.facebook|intcomma }}</div>
+    </div>
+    <div class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100">
+      <div class="flex items-center gap-1 text-[10px] font-bold text-indigo-500 mb-1"><i class="fas fa-globe"></i> Web</div>
+      <div class="text-2xl font-bold text-slate-800">{{ stats.website|intcomma }}</div>
+    </div>
+  </div>
+
+  <!-- Filtreler -->
+  <form method="GET" class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100 mb-6">
+    <div class="flex flex-wrap gap-3 items-end">
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Platform</label>
+        <select name="platform" class="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+          <option value="">Tümü</option>
+          <option value="whatsapp"  {% if platform == 'whatsapp' %}selected{% endif %}>WhatsApp</option>
+          <option value="instagram" {% if platform == 'instagram' %}selected{% endif %}>Instagram</option>
+          <option value="facebook"  {% if platform == 'facebook' %}selected{% endif %}>Facebook</option>
+          <option value="website"   {% if platform == 'website' %}selected{% endif %}>Web Sitesi</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Durum</label>
+        <select name="status" class="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+          <option value="">Tümü</option>
+          <option value="new"       {% if status == 'new' %}selected{% endif %}>Yeni</option>
+          <option value="replied"   {% if status == 'replied' %}selected{% endif %}>Yanıtlandı</option>
+          <option value="converted" {% if status == 'converted' %}selected{% endif %}>Dönüştürüldü</option>
+        </select>
+      </div>
+      <div class="flex-1 min-w-[200px]">
+        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ara</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Mesaj veya gönderen..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm">
+      </div>
+      <button type="submit" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium"><i class="fas fa-filter mr-1"></i> Filtrele</button>
+      <a href="{% url 'message_list' %}" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600"><i class="fas fa-times"></i></a>
+    </div>
+  </form>
+
+  <!-- Mesaj Listesi -->
+  <div class="bg-white rounded-2xl custom-shadow border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead style="background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;">
+          <tr>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Platform</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Gönderen</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Mesaj</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">AI Yanıtı</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Müşteri</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Durum</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Tarih</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">İşlem</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          {% for msg in messages_list %}
+          <tr class="hover:bg-slate-50/50 transition-colors {% if msg.status == 'new' %}bg-amber-50/30{% endif %}">
+            <!-- Platform -->
+            <td class="px-5 py-4">
+              {% if msg.platform == 'whatsapp' %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold" style="background:#dcfce7;color:#15803d">
+                  <i class="fab fa-whatsapp"></i> WhatsApp
+                </span>
+              {% elif msg.platform == 'instagram' %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold" style="background:#fce7f3;color:#9d174d">
+                  <i class="fab fa-instagram"></i> Instagram
+                </span>
+              {% elif msg.platform == 'facebook' %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold" style="background:#dbeafe;color:#1d4ed8">
+                  <i class="fab fa-facebook-messenger"></i> Facebook
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700">
+                  <i class="fas fa-globe"></i> Web
+                </span>
+              {% endif %}
+            </td>
+            <!-- Gönderen -->
+            <td class="px-5 py-4">
+              <div class="font-semibold text-slate-800 text-sm">{{ msg.sender_name|default:"Bilinmiyor" }}</div>
+              {% if msg.sender_phone %}<div class="text-xs text-slate-400 mt-0.5">{{ msg.sender_phone }}</div>{% endif %}
+            </td>
+            <!-- Mesaj -->
+            <td class="px-5 py-4 max-w-xs">
+              <p class="text-slate-700 text-sm line-clamp-2 leading-snug">{{ msg.message_text }}</p>
+            </td>
+            <!-- AI Yanıtı -->
+            <td class="px-5 py-4 max-w-xs">
+              {% if msg.ai_response %}
+                <p class="text-slate-500 text-xs line-clamp-2 leading-snug">{{ msg.ai_response }}</p>
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 mt-1">
+                  <i class="fas fa-robot"></i> AI yanıtladı
+                </span>
+              {% else %}
+                <span class="text-xs text-slate-300">—</span>
+              {% endif %}
+            </td>
+            <!-- Müşteri -->
+            <td class="px-5 py-4">
+              {% if msg.customer %}
+                <a href="{% url 'customer_detail' msg.customer.pk %}" class="text-blue-600 hover:underline text-sm font-medium">
+                  {{ msg.customer.get_full_name }}
+                </a>
+              {% else %}
+                <span class="text-slate-300 text-xs">Eşleşmemiş</span>
+              {% endif %}
+            </td>
+            <!-- Durum -->
+            <td class="px-5 py-4">
+              {% if msg.status == 'new' %}
+                <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">Yeni</span>
+              {% elif msg.status == 'replied' %}
+                <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">Yanıtlandı</span>
+              {% elif msg.status == 'converted' %}
+                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Dönüştürüldü</span>
+              {% else %}
+                <span class="px-2 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-bold">{{ msg.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <!-- Tarih -->
+            <td class="px-5 py-4 text-xs text-slate-400 whitespace-nowrap">
+              {{ msg.created_at|date:"d.m.Y H:i" }}
+            </td>
+            <!-- İşlem -->
+            <td class="px-5 py-4">
+              {% if msg.status != 'converted' %}
+                <button onclick="musteriyeDonustur({{ msg.id }}, this)"
+                  class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition whitespace-nowrap">
+                  <i class="fas fa-user-plus mr-1"></i> Müşteriye Dönüştür
+                </button>
+              {% else %}
+                <span class="text-xs text-slate-300">✓ Dönüştürüldü</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="px-5 py-16 text-center">
+              <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-comment-slash text-slate-300 text-2xl"></i>
+              </div>
+              <p class="text-slate-500 font-semibold">Henüz mesaj yok</p>
+              <p class="text-slate-400 text-xs mt-1">Meta webhook bağlandığında mesajlar burada görünecek</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Web Sitesi Widget Kodu -->
+  <div class="mt-6 bg-slate-800 rounded-2xl p-5">
+    <div class="flex items-center gap-2 mb-3">
+      <i class="fas fa-code text-slate-400"></i>
+      <span class="text-white font-bold text-sm">Web Sitesi Chat Widget — Kodu web sitenize ekleyin</span>
+    </div>
+    <code class="text-emerald-400 text-xs font-mono break-all">
+      &lt;script src="https://panelkocgayrimenkul.com/chat-widget.js"&gt;&lt;/script&gt;
+    </code>
+    <p class="text-slate-400 text-xs mt-2">Bu kodu web sitenizin <code class="text-slate-300">&lt;/body&gt;</code> kapanış etiketinden önce yapıştırın.</p>
+  </div>
+
+</div>
+
+<script>
+function musteriyeDonustur(msgId, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> İşleniyor...';
+
+  fetch('/mesajlar/' + msgId + '/musteriye-donustur/', {
+    method: 'POST',
+    headers: {'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json'}
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      btn.closest('tr').querySelector('td:nth-child(6)').innerHTML =
+        '<span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Dönüştürüldü</span>';
+      btn.closest('td').innerHTML = '<span class="text-xs text-slate-300">✓ Dönüştürüldü</span>';
+      if (data.is_new) {
+        showToast('Yeni müşteri oluşturuldu: ' + data.customer_name, 'success');
+      } else {
+        showToast('Mevcut müşteriye bağlandı: ' + data.customer_name, 'success');
+      }
+    } else {
+      showToast(data.error || 'Hata oluştu', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-user-plus mr-1"></i> Müşteriye Dönüştür';
+    }
+  })
+  .catch(() => {
+    showToast('Bağlantı hatası', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-user-plus mr-1"></i> Müşteriye Dönüştür';
+  });
+}
+
+function showToast(msg, type) {
+  var el = document.createElement('div');
+  var bg = type === 'success' ? '#10b981' : '#ef4444';
+  el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;padding:12px 18px;border-radius:12px;font-size:.85rem;font-weight:600;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);background:' + bg;
+  el.innerHTML = '<i class="fas fa-check-circle mr-2"></i>' + msg;
+  document.body.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 3000);
+}
+
+function getCookie(name) {
+  var v = null;
+  if (document.cookie) document.cookie.split(';').forEach(function(c) {
+    var t = c.trim().split('=');
+    if (t[0] === name) v = decodeURIComponent(t[1]);
+  });
+  return v;
+}
+</script>
+{% endblock %}

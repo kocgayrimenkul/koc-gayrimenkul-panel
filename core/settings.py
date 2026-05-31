@@ -23,6 +23,10 @@ env = environ.Env(
     DB_PORT=(str, '3306'),
     GOOGLE_MAPS_API_KEY=(str, ''),
     OPENAI_API_KEY=(str, ''),
+    META_VERIFY_TOKEN=(str, 'koc_gayrimenkul_verify'),
+    META_ACCESS_TOKEN=(str, ''),
+    WHATSAPP_PHONE_NUMBER_ID=(str, ''),
+    PANEL_URL=(str, 'https://panelkocgayrimenkul.com'),
 )
 
 # .env dosyasını oku
@@ -33,7 +37,11 @@ environ.Env.read_env(env_file=env_file)
 # Güvenlik
 # ─────────────────────────────────────────────
 SECRET_KEY = env('SECRET_KEY')
-OPENAI_API_KEY = env('OPENAI_API_KEY')
+OPENAI_API_KEY          = env('OPENAI_API_KEY')
+META_VERIFY_TOKEN       = env('META_VERIFY_TOKEN')
+META_ACCESS_TOKEN       = env('META_ACCESS_TOKEN')
+WHATSAPP_PHONE_NUMBER_ID = env('WHATSAPP_PHONE_NUMBER_ID')
+PANEL_URL               = env('PANEL_URL')
 DEBUG = env('DEBUG')
 
 raw_allowed = env('ALLOWED_HOSTS', default='localhost,127.0.0.1')
@@ -86,6 +94,7 @@ INSTALLED_APPS = [
     'apps.team',
     'apps.sales_process',
     'apps.calls',
+    'apps.messaging',
     'apps.saha',
     'apps.sahibinden',
 ]
