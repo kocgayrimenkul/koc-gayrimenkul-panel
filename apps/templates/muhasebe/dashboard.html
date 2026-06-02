@@ -1,0 +1,263 @@
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+
+{% block title %}Muhasebe Özet - {{ ay_adi }} {{ yil }}{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="p-4 max-w-[1600px] mx-auto">
+
+  <!-- BAŞLIK -->
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Muhasebe Özet</h1>
+      <p class="text-xs text-slate-400 mt-0.5">{{ ay_adi }} {{ yil }} · Kâr-zarar & analiz</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'muhasebe_dashboard_export' %}?yil={{ yil }}"
+         class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition shadow-sm">
+        <i class="fas fa-file-excel"></i> Yıllık Özeti İndir
+      </a>
+      <a href="{% url 'gelir_list' %}?ay={{ ay }}&yil={{ yil }}"
+         class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-semibold rounded-xl transition">
+        <i class="fas fa-list"></i> Detay
+      </a>
+    </div>
+  </div>
+
+  <!-- AY / YIL SEÇİCİ -->
+  <div class="bg-white rounded-2xl p-3 custom-shadow border border-slate-100 mb-4">
+    <form method="get" class="flex items-center gap-2 flex-wrap">
+      <select name="yil" class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white font-semibold" onchange="this.form.submit()">
+        {% for y in yillar %}<option value="{{ y }}" {% if y == yil %}selected{% endif %}>{{ y }}</option>{% endfor %}
+      </select>
+      <div class="flex gap-1 flex-wrap">
+        {% for i in aylar %}
+        <a href="?ay={{ i }}&yil={{ yil }}"
+           class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if i == ay %}bg-emerald-700 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+          {% if i == 1 %}Oca{% elif i == 2 %}Şub{% elif i == 3 %}Mar{% elif i == 4 %}Nis{% elif i == 5 %}May{% elif i == 6 %}Haz{% elif i == 7 %}Tem{% elif i == 8 %}Ağu{% elif i == 9 %}Eyl{% elif i == 10 %}Eki{% elif i == 11 %}Kas{% else %}Ara{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </form>
+  </div>
+
+  <!-- KPI KARTLARI -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+    <!-- Gelir -->
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Gelir ({{ ay_adi }})</div>
+          <div class="text-2xl font-extrabold text-emerald-600 mt-1">{{ gelir_ay|floatformat:0|intcomma }} ₺</div>
+          <div class="text-[11px] text-slate-400 mt-1">Yıl: {{ gelir_yil|floatformat:0|intcomma }} ₺</div>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+          <i class="fas fa-arrow-trend-up text-emerald-600"></i>
+        </div>
+      </div>
+    </div>
+    <!-- Gider -->
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Gider ({{ ay_adi }})</div>
+          <div class="text-2xl font-extrabold text-red-600 mt-1">{{ gider_ay|floatformat:0|intcomma }} ₺</div>
+          <div class="text-[11px] text-slate-400 mt-1">Yıl: {{ gider_yil|floatformat:0|intcomma }} ₺</div>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <i class="fas fa-arrow-trend-down text-red-600"></i>
+        </div>
+      </div>
+    </div>
+    <!-- Net -->
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Net Kâr ({{ ay_adi }})</div>
+          <div class="text-2xl font-extrabold {% if net_ay >= 0 %}text-blue-600{% else %}text-orange-600{% endif %} mt-1">
+            {{ net_ay|floatformat:0|intcomma }} ₺
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1">Yıl: {{ net_yil|floatformat:0|intcomma }} ₺</div>
+        </div>
+        <div class="w-10 h-10 rounded-xl {% if net_ay >= 0 %}bg-blue-50{% else %}bg-orange-50{% endif %} flex items-center justify-center">
+          <i class="fas fa-coins {% if net_ay >= 0 %}text-blue-600{% else %}text-orange-600{% endif %}"></i>
+        </div>
+      </div>
+    </div>
+    <!-- Kapora -->
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bekleyen Kapora</div>
+          <div class="text-2xl font-extrabold text-amber-600 mt-1">{{ kapora_ay|floatformat:0|intcomma }} ₺</div>
+          <div class="text-[11px] text-slate-400 mt-1">{{ ay_adi }} {{ yil }}</div>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+          <i class="fas fa-hourglass-half text-amber-600"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRAFİKLER -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+    <!-- Aylık Gelir/Gider -->
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100 lg:col-span-2">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold text-slate-700">{{ yil }} Aylık Gelir / Gider</h2>
+        <span class="text-[11px] text-slate-400">TL</span>
+      </div>
+      <div style="position:relative; height:280px;">
+        <canvas id="chartAylik"></canvas>
+      </div>
+    </div>
+
+    <!-- Kategori bazlı gider -->
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+      <h2 class="text-sm font-bold text-slate-700 mb-3">Gider Kategorileri ({{ ay_adi }})</h2>
+      <div style="position:relative; height:260px;">
+        <canvas id="chartKategori"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALT BLOK: ofis dağılımı + son işlemler -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+      <h2 class="text-sm font-bold text-slate-700 mb-3">Ofis Bazlı Gelir ({{ ay_adi }})</h2>
+      <div style="position:relative; height:240px;">
+        <canvas id="chartOfis"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold text-slate-700">Son Gelirler</h2>
+        <a href="{% url 'gelir_list' %}" class="text-[11px] text-blue-600 hover:underline font-semibold">Tümü →</a>
+      </div>
+      <ul class="space-y-2">
+        {% for g in son_gelirler %}
+        <li class="flex items-center justify-between text-xs border-b border-slate-50 pb-2 last:border-0">
+          <div class="min-w-0 flex-1">
+            <div class="font-semibold text-slate-700 truncate">{{ g.yer }}</div>
+            <div class="text-slate-400 text-[10px]">{{ g.get_ofis_display }} · {{ g.created_at|date:"d.m.Y" }}</div>
+          </div>
+          <span class="text-emerald-600 font-bold whitespace-nowrap ml-2">{{ g.toplam|floatformat:0|intcomma }} ₺</span>
+        </li>
+        {% empty %}
+        <li class="text-xs text-slate-400 text-center py-4">Kayıt yok</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold text-slate-700">Son Giderler</h2>
+        <a href="{% url 'gider_list' %}" class="text-[11px] text-blue-600 hover:underline font-semibold">Tümü →</a>
+      </div>
+      <ul class="space-y-2">
+        {% for g in son_giderler %}
+        <li class="flex items-center justify-between text-xs border-b border-slate-50 pb-2 last:border-0">
+          <div class="min-w-0 flex-1">
+            <div class="font-semibold text-slate-700 truncate">{{ g.get_kategori_display }}</div>
+            <div class="text-slate-400 text-[10px]">{{ g.aciklama|truncatechars:30 }} · {{ g.tarih|date:"d.m.Y" }}</div>
+          </div>
+          <span class="text-red-600 font-bold whitespace-nowrap ml-2">{{ g.tutar|floatformat:0|intcomma }} ₺</span>
+        </li>
+        {% empty %}
+        <li class="text-xs text-slate-400 text-center py-4">Kayıt yok</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const tlFormat = (v) => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 }).format(v) + ' ₺';
+
+  // Aylık Gelir/Gider (bar + line)
+  new Chart(document.getElementById('chartAylik'), {
+    type: 'bar',
+    data: {
+      labels: {{ chart_labels|safe }},
+      datasets: [
+        { label: 'Gelir', data: {{ chart_gelir|safe }}, backgroundColor: 'rgba(16, 185, 129, 0.85)', borderRadius: 6 },
+        { label: 'Gider', data: {{ chart_gider|safe }}, backgroundColor: 'rgba(239, 68, 68, 0.85)', borderRadius: 6 },
+        { label: 'Kapora (Bekleyen)', data: {{ chart_kapora|safe }}, type: 'line', borderColor: 'rgba(245, 158, 11, 1)', backgroundColor: 'rgba(245, 158, 11, 0.1)', tension: 0.35, borderWidth: 2, pointRadius: 3 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11, weight: '600' } } },
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${tlFormat(c.parsed.y)}` } }
+      },
+      scales: {
+        y: { ticks: { callback: (v) => tlFormat(v), font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+        x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+      }
+    }
+  });
+
+  // Kategori (doughnut)
+  const katLabels = {{ kategori_labels|safe }};
+  const katData   = {{ kategori_data|safe }};
+  if (katLabels.length) {
+    new Chart(document.getElementById('chartKategori'), {
+      type: 'doughnut',
+      data: {
+        labels: katLabels,
+        datasets: [{
+          data: katData,
+          backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#64748b']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } },
+          tooltip: { callbacks: { label: (c) => `${c.label}: ${tlFormat(c.parsed)}` } }
+        }
+      }
+    });
+  } else {
+    document.getElementById('chartKategori').replaceWith(
+      Object.assign(document.createElement('div'),
+        { className: 'text-center text-xs text-slate-400 py-12', innerText: 'Bu ay gider kaydı yok' })
+    );
+  }
+
+  // Ofis (pie)
+  const ofisLabels = {{ ofis_labels|safe }};
+  const ofisData   = {{ ofis_data|safe }};
+  if (ofisLabels.length) {
+    new Chart(document.getElementById('chartOfis'), {
+      type: 'pie',
+      data: {
+        labels: ofisLabels,
+        datasets: [{ data: ofisData, backgroundColor: ['#dc2626', '#2563eb', '#7c3aed'] }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11, weight: '600' } } },
+          tooltip: { callbacks: { label: (c) => `${c.label}: ${tlFormat(c.parsed)}` } }
+        }
+      }
+    });
+  } else {
+    document.getElementById('chartOfis').replaceWith(
+      Object.assign(document.createElement('div'),
+        { className: 'text-center text-xs text-slate-400 py-12', innerText: 'Bu ay gelir kaydı yok' })
+    );
+  }
+</script>
+{% endblock %}

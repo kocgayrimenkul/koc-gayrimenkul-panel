@@ -1,0 +1,370 @@
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+
+{% block title %}Gelirler - {{ ay_adi }} {{ yil }}{% endblock %}
+
+{% block content %}
+<div class="p-4 max-w-[1700px] mx-auto">
+
+  <!-- BAŞLIK -->
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Gelirler</h1>
+      <p class="text-xs text-slate-400 mt-0.5">{{ ay_adi }} {{ yil }}</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'gelir_export' %}?ay={{ ay }}&yil={{ yil }}"
+         class="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl transition shadow-sm">
+        <i class="fas fa-file-excel text-emerald-600"></i> Excel İndir
+      </a>
+      <button onclick="modalAc('kaporaModal')" class="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition shadow-sm">
+        <i class="fas fa-plus"></i> Yeni Gelir Ekle
+      </button>
+    </div>
+  </div>
+
+  <!-- AY SEÇİCİ -->
+  <div class="bg-white rounded-2xl p-3 custom-shadow border border-slate-100 mb-4">
+    <div class="flex items-center gap-2 flex-wrap">
+      <select id="yilSec" class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white font-semibold" onchange="ayDegistir()">
+        {% for y in yillar %}<option value="{{ y }}" {% if y == yil %}selected{% endif %}>{{ y }}</option>{% endfor %}
+      </select>
+      <div class="flex gap-1 flex-wrap">
+        {% for i in aylar %}
+        <a href="?ay={{ i }}&yil={{ yil }}"
+           class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if i == ay %}bg-red-800 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+          {% if i == 1 %}Oca{% elif i == 2 %}Şub{% elif i == 3 %}Mar{% elif i == 4 %}Nis{% elif i == 5 %}May{% elif i == 6 %}Haz{% elif i == 7 %}Tem{% elif i == 8 %}Ağu{% elif i == 9 %}Eyl{% elif i == 10 %}Eki{% elif i == 11 %}Kas{% else %}Ara{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ANA TABLO -->
+  <div class="bg-white rounded-2xl custom-shadow border border-slate-100 overflow-hidden mb-4">
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs border-collapse">
+        <thead>
+          <tr>
+            <th rowspan="2" class="px-2 py-2 text-center text-[10px] font-extrabold text-slate-400 bg-slate-50 border-b-2 border-slate-200" style="border-right:2px solid #e2e8f0">Sn</th>
+            <th colspan="4" class="px-3 py-2.5 text-center font-extrabold text-red-700 border-b-2 border-red-200 bg-red-50" style="border-right:2px solid #e2e8f0">Beykent</th>
+            <th colspan="4" class="px-3 py-2.5 text-center font-extrabold text-blue-700 border-b-2 border-blue-200 bg-blue-50" style="border-right:2px solid #e2e8f0">Fıstıklık</th>
+            <th colspan="4" class="px-3 py-2.5 text-center font-extrabold text-amber-700 border-b-2 border-amber-200 bg-amber-50" style="border-right:2px solid #e2e8f0">Fıstıklık Kapora</th>
+            <th colspan="4" class="px-3 py-2.5 text-center font-extrabold text-purple-700 border-b-2 border-purple-200 bg-purple-50">Beykent Kapora</th>
+          </tr>
+          <tr class="bg-slate-50 border-b border-slate-200">
+            <th class="px-3 py-2 text-left text-[10px] font-extrabold text-slate-500 uppercase">Bulan</th>
+            <th class="px-3 py-2 text-left text-[10px] font-extrabold text-slate-500 uppercase">Satan</th>
+            <th class="px-3 py-2 text-left text-[10px] font-extrabold text-slate-500 uppercase">Yer</th>
+            <th class="px-3 py-2 text-right text-[10px] font-extrabold text-slate-500 uppercase" style="border-right:2px solid #e2e8f0">Gelir</th>
+
+            <th class="px-3 py-2 text-left text-[10px] font-extrabold text-slate-500 uppercase">Bulan</th>
+            <th class="px-3 py-2 text-left text-[10px] font-extrabold text-slate-500 uppercase">Satan</th>
+            <th class="px-3 py-2 text-left text-[10px] font-extrabold text-slate-500 uppercase">Yer</th>
+            <th class="px-3 py-2 text-right text-[10px] font-extrabold text-slate-500 uppercase" style="border-right:2px solid #e2e8f0">Gelir</th>
+
+            <th class="px-2 py-2 text-[10px] font-extrabold text-slate-500 uppercase"></th>
+            <th class="px-3 py-2 text-left text-[10px] font-extrabold text-slate-500 uppercase">Satan</th>
+            <th class="px-3 py-2 text-left text-[10px] font-extrabold text-slate-500 uppercase">Yer</th>
+            <th class="px-3 py-2 text-right text-[10px] font-extrabold text-slate-500 uppercase" style="border-right:2px solid #e2e8f0">Kapora</th>
+
+            <th class="px-2 py-2 text-[10px] font-extrabold text-slate-500 uppercase"></th>
+            <th class="px-3 py-2 text-left text-[10px] font-extrabold text-slate-500 uppercase">Satan</th>
+            <th class="px-3 py-2 text-left text-[10px] font-extrabold text-slate-500 uppercase">Yer</th>
+            <th class="px-3 py-2 text-right text-[10px] font-extrabold text-slate-500 uppercase">Kapora</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr class="border-b border-slate-50 hover:bg-slate-50/50">
+            <td class="px-2 py-2 text-center text-[10px] font-bold text-slate-400 bg-slate-50/50" style="border-right:2px solid #e2e8f0">{{ r.sira }}</td>
+
+            <!-- Beykent Gelir -->
+            {% if r.gb %}
+            <td class="px-3 py-2 text-slate-700">{{ r.gb.bulan.get_full_name|default:"—" }}</td>
+            <td class="px-3 py-2 text-slate-700">{{ r.gb.satan.get_full_name|default:"—" }}</td>
+            <td class="px-3 py-2 text-slate-600">{{ r.gb.yer }}</td>
+            <td class="px-3 py-2 text-right font-bold text-emerald-700 whitespace-nowrap" style="border-right:2px solid #e2e8f0">
+              ₺{{ r.gb.toplam|floatformat:0|intcomma }}
+              <button onclick="gelirSil({{ r.gb.id }}, 'gelir')" class="ml-1 text-red-300 hover:text-red-500 transition" title="Sil"><i class="fas fa-times text-[9px]"></i></button>
+            </td>
+            {% else %}
+            <td class="px-3 py-2"></td><td class="px-3 py-2"></td><td class="px-3 py-2"></td>
+            <td class="px-3 py-2" style="border-right:2px solid #e2e8f0"></td>
+            {% endif %}
+
+            <!-- Fıstıklık Gelir -->
+            {% if r.gf %}
+            <td class="px-3 py-2 text-slate-700">{{ r.gf.bulan.get_full_name|default:"—" }}</td>
+            <td class="px-3 py-2 text-slate-700">{{ r.gf.satan.get_full_name|default:"—" }}</td>
+            <td class="px-3 py-2 text-slate-600">{{ r.gf.yer }}</td>
+            <td class="px-3 py-2 text-right font-bold text-emerald-700 whitespace-nowrap" style="border-right:2px solid #e2e8f0">
+              ₺{{ r.gf.toplam|floatformat:0|intcomma }}
+              <button onclick="gelirSil({{ r.gf.id }}, 'gelir')" class="ml-1 text-red-300 hover:text-red-500 transition" title="Sil"><i class="fas fa-times text-[9px]"></i></button>
+            </td>
+            {% else %}
+            <td class="px-3 py-2"></td><td class="px-3 py-2"></td><td class="px-3 py-2"></td>
+            <td class="px-3 py-2" style="border-right:2px solid #e2e8f0"></td>
+            {% endif %}
+
+            <!-- Fıstıklık Kapora -->
+            {% if r.kf %}
+            <td class="px-2 py-2 text-center">
+              <button onclick="gerceklestirModalAc({{ r.kf.id }}, '{{ r.kf.satan.get_full_name|default_if_none:''|escapejs }}', {{ r.kf.satan.id|default:'null' }}, '{{ r.kf.yer|escapejs }}', {{ r.kf.kapora }})"
+                class="w-6 h-6 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold rounded-md transition shadow-sm" title="Gerçekleşti">
+                <i class="fas fa-check"></i>
+              </button>
+            </td>
+            <td class="px-3 py-2 text-slate-700">{{ r.kf.satan.get_full_name|default:"—" }}</td>
+            <td class="px-3 py-2 text-slate-600">{{ r.kf.yer }}</td>
+            <td class="px-3 py-2 text-right font-bold text-amber-700 whitespace-nowrap" style="border-right:2px solid #e2e8f0">
+              ₺{{ r.kf.kapora|floatformat:0|intcomma }}
+              <button onclick="gelirSil({{ r.kf.id }}, 'kapora')" class="ml-1 text-red-300 hover:text-red-500 transition" title="Sil"><i class="fas fa-times text-[9px]"></i></button>
+            </td>
+            {% else %}
+            <td class="px-2 py-2"></td><td class="px-3 py-2"></td><td class="px-3 py-2"></td>
+            <td class="px-3 py-2" style="border-right:2px solid #e2e8f0"></td>
+            {% endif %}
+
+            <!-- Beykent Kapora -->
+            {% if r.kb %}
+            <td class="px-2 py-2 text-center">
+              <button onclick="gerceklestirModalAc({{ r.kb.id }}, '{{ r.kb.satan.get_full_name|default_if_none:''|escapejs }}', {{ r.kb.satan.id|default:'null' }}, '{{ r.kb.yer|escapejs }}', {{ r.kb.kapora }})"
+                class="w-6 h-6 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold rounded-md transition shadow-sm" title="Gerçekleşti">
+                <i class="fas fa-check"></i>
+              </button>
+            </td>
+            <td class="px-3 py-2 text-slate-700">{{ r.kb.satan.get_full_name|default:"—" }}</td>
+            <td class="px-3 py-2 text-slate-600">{{ r.kb.yer }}</td>
+            <td class="px-3 py-2 text-right font-bold text-purple-700 whitespace-nowrap">
+              ₺{{ r.kb.kapora|floatformat:0|intcomma }}
+              <button onclick="gelirSil({{ r.kb.id }}, 'kapora')" class="ml-1 text-red-300 hover:text-red-500 transition" title="Sil"><i class="fas fa-times text-[9px]"></i></button>
+            </td>
+            {% else %}
+            <td class="px-2 py-2"></td><td class="px-3 py-2"></td><td class="px-3 py-2"></td>
+            <td class="px-3 py-2"></td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="border-t-2 border-slate-300">
+          <tr class="bg-slate-50 font-bold">
+            <td class="px-2 py-3 bg-slate-100" style="border-right:2px solid #e2e8f0"></td>
+            <td colspan="3" class="px-3 py-3 text-xs font-extrabold text-slate-600">Toplam Gelir</td>
+            <td class="px-3 py-3 text-right text-emerald-700 text-sm whitespace-nowrap" style="border-right:2px solid #e2e8f0">₺{{ toplam_beykent|floatformat:0|intcomma }}</td>
+            <td colspan="3" class="px-3 py-3 text-xs font-extrabold text-slate-600">Toplam Gelir</td>
+            <td class="px-3 py-3 text-right text-emerald-700 text-sm whitespace-nowrap" style="border-right:2px solid #e2e8f0">₺{{ toplam_fistiklik|floatformat:0|intcomma }}</td>
+            <td colspan="3" class="px-3 py-3 text-xs font-extrabold text-slate-600">Toplam Kapora</td>
+            <td class="px-3 py-3 text-right text-amber-700 text-sm whitespace-nowrap" style="border-right:2px solid #e2e8f0">₺{{ toplam_kap_fis|floatformat:0|intcomma }}</td>
+            <td colspan="3" class="px-3 py-3 text-xs font-extrabold text-slate-600">Toplam Kapora</td>
+            <td class="px-3 py-3 text-right text-purple-700 text-sm whitespace-nowrap">₺{{ toplam_kap_bey|floatformat:0|intcomma }}</td>
+          </tr>
+          <tr class="bg-gradient-to-r from-slate-100 to-slate-50">
+            <td colspan="9" class="px-3 py-3 text-sm font-extrabold text-slate-700">GENEL TOPLAM (Gelir)</td>
+            <td colspan="4" class="px-3 py-3 text-sm font-extrabold text-slate-700">Bekleyen Kapora</td>
+            <td colspan="4" class="px-3 py-3 text-right text-base font-extrabold text-amber-700">₺{{ toplam_kapora|floatformat:0|intcomma }}</td>
+          </tr>
+          <tr class="bg-emerald-50">
+            <td colspan="9" class="px-3 py-3 text-lg font-extrabold text-emerald-800">TOPLAM</td>
+            <td colspan="8" class="px-3 py-3 text-right text-lg font-extrabold text-emerald-700">₺{{ toplam_genel|floatformat:0|intcomma }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== KAPORA EKLE MODAL ===== -->
+<div id="kaporaModal" class="fixed inset-0 z-50 hidden items-center justify-center">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="modalKapat('kaporaModal')"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-red-900 to-red-700 flex items-center justify-between">
+      <h3 class="text-white font-bold text-sm"><i class="fas fa-plus-circle mr-1"></i> Yeni Kapora / Gelir Ekle</h3>
+      <button onclick="modalKapat('kaporaModal')" class="text-white/70 hover:text-white"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-5 space-y-4">
+      <!-- Ofis -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-2">Ofis *</label>
+        <div class="flex gap-3">
+          <label class="flex-1 flex items-center gap-2 p-3 border-2 border-slate-200 rounded-xl cursor-pointer hover:border-red-400 transition has-[:checked]:border-red-700 has-[:checked]:bg-red-50">
+            <input type="radio" name="k_ofis" value="beykent" class="accent-red-700"> <span class="text-sm font-semibold">Beykent</span>
+          </label>
+          <label class="flex-1 flex items-center gap-2 p-3 border-2 border-slate-200 rounded-xl cursor-pointer hover:border-blue-400 transition has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
+            <input type="radio" name="k_ofis" value="fistiklik" class="accent-blue-700"> <span class="text-sm font-semibold">Fıstıklık</span>
+          </label>
+        </div>
+      </div>
+      <!-- Satan -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5">Satan *</label>
+        <select id="k_satan" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-700 bg-white">
+          <option value="">Seçiniz</option>
+          {% for p in personeller %}<option value="{{ p.id }}">{{ p.get_full_name|default:p.username }}</option>{% endfor %}
+        </select>
+      </div>
+      <!-- Yer -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5">Yer *</label>
+        <input type="text" id="k_yer" placeholder="Konum / İlan adı" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-700">
+      </div>
+      <!-- Kapora -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5">Kapora (TL)</label>
+        <input type="number" id="k_kapora" placeholder="0" min="0" step="100" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-700">
+        <p class="text-[10px] text-slate-400 mt-1">Boş bırakırsanız 0 TL ile kapora kaydı oluşturulur.</p>
+      </div>
+    </div>
+    <div class="px-5 pb-5">
+      <button onclick="kaporaKaydet(this)" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition text-sm">
+        <i class="fas fa-save mr-2"></i>Kaydet
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GERÇEKLEŞTİ MODAL ===== -->
+<div id="gerceklestirModal" class="fixed inset-0 z-50 hidden items-center justify-center">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="modalKapat('gerceklestirModal')"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-emerald-700 to-emerald-600 flex items-center justify-between">
+      <h3 class="text-white font-bold text-sm"><i class="fas fa-check-circle mr-1"></i> Gerçekleşti — Gelir Ekle</h3>
+      <button onclick="modalKapat('gerceklestirModal')" class="text-white/70 hover:text-white"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="p-5 space-y-4">
+      <input type="hidden" id="g_kapora_id">
+      <div class="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 border border-slate-100">
+        <i class="fas fa-info-circle text-slate-400 mr-1"></i>
+        <span id="g_kapora_bilgi" class="font-semibold"></span>
+      </div>
+      <!-- Bulan (üstte) -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5">Bulan *</label>
+        <select id="g_bulan" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-white">
+          <option value="">Seçiniz</option>
+          {% for p in personeller %}<option value="{{ p.id }}">{{ p.get_full_name|default:p.username }}</option>{% endfor %}
+        </select>
+      </div>
+      <!-- Satan (altta) -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5">Satan</label>
+        <select id="g_satan" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-white">
+          <option value="">Seçiniz</option>
+          {% for p in personeller %}<option value="{{ p.id }}">{{ p.get_full_name|default:p.username }}</option>{% endfor %}
+        </select>
+      </div>
+      <!-- Gelir -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5">Gelir (TL) *</label>
+        <input type="number" id="g_gelir" placeholder="0" min="0" step="100" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+        <p class="text-[11px] text-slate-500 mt-1.5 bg-emerald-50 rounded-lg px-2.5 py-1.5 border border-emerald-100">
+          <i class="fas fa-calculator text-emerald-600 mr-1"></i>
+          Toplam = <b>Kapora + Gelir</b> olarak gelir listesine yazılacak ve kapora kaydı silinecek.
+        </p>
+      </div>
+    </div>
+    <div class="px-5 pb-5">
+      <button onclick="gerceklestirKaydet(this)" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition text-sm">
+        <i class="fas fa-check mr-2"></i>Geliri Kaydet
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+var _ay  = {{ ay }};
+var _yil = {{ yil }};
+
+function modalAc(id)   { var el = document.getElementById(id); el.classList.remove('hidden'); el.classList.add('flex'); document.body.style.overflow = 'hidden'; }
+function modalKapat(id){ var el = document.getElementById(id); el.classList.add('hidden'); el.classList.remove('flex'); document.body.style.overflow = ''; }
+
+function ayDegistir() {
+  var y = document.getElementById('yilSec').value;
+  window.location = '?ay=' + _ay + '&yil=' + y;
+}
+
+// Kapora kaydet
+function kaporaKaydet(btn) {
+  var ofis   = document.querySelector('input[name="k_ofis"]:checked');
+  ofis = ofis ? ofis.value : '';
+  var satan  = document.getElementById('k_satan').value;
+  var yer    = document.getElementById('k_yer').value.trim();
+  var kapora = document.getElementById('k_kapora').value;
+
+  if (!ofis) { alert('Ofis seçiniz'); return; }
+  if (!yer)  { alert('Yer giriniz'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Kaydediliyor...';
+
+  fetch('/muhasebe/kapora/ekle/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify({ ofis: ofis, satan_id: satan || null, yer: yer, kapora: kapora || 0, ay: _ay, yil: _yil })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.success) { location.reload(); }
+    else { alert(d.error || 'Hata'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-save mr-2"></i>Kaydet'; }
+  })
+  .catch(function(){ alert('Bağlantı hatası'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-save mr-2"></i>Kaydet'; });
+}
+
+// Gerçekleşti modal aç
+function gerceklestirModalAc(id, satanAdi, satanId, yer, kapora) {
+  document.getElementById('g_kapora_id').value = id;
+  document.getElementById('g_kapora_bilgi').textContent = yer + ' — Kapora: ₺' + Number(kapora).toLocaleString('tr-TR');
+  var sel = document.getElementById('g_satan');
+  sel.selectedIndex = 0;
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value == satanId) { sel.selectedIndex = i; break; }
+  }
+  document.getElementById('g_gelir').value = '';
+  document.getElementById('g_bulan').selectedIndex = 0;
+  modalAc('gerceklestirModal');
+}
+
+// Gerçekleşti kaydet
+function gerceklestirKaydet(btn) {
+  var id    = document.getElementById('g_kapora_id').value;
+  var bulan = document.getElementById('g_bulan').value;
+  var satan = document.getElementById('g_satan').value;
+  var gelir = document.getElementById('g_gelir').value;
+
+  if (!bulan) { alert('Bulan seçiniz'); return; }
+  if (!gelir || Number(gelir) <= 0) { alert('Gelir tutarı giriniz'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Kaydediliyor...';
+
+  fetch('/muhasebe/kapora/' + id + '/gerceklestir/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify({ bulan_id: bulan || null, satan_id: satan || null, gelir: gelir || 0 })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.success) { location.reload(); }
+    else { alert(d.error || 'Hata'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-check mr-2"></i>Geliri Kaydet'; }
+  })
+  .catch(function(){ alert('Bağlantı hatası'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-check mr-2"></i>Geliri Kaydet'; });
+}
+
+// Sil
+function gelirSil(id, tip) {
+  if (!confirm('Bu kaydı silmek istediğinize emin misiniz?')) return;
+  var url = tip === 'gelir' ? '/muhasebe/gelirler/' + id + '/sil/' : '/muhasebe/kapora/' + id + '/sil/';
+  fetch(url, { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') } })
+  .then(function(r){ return r.json(); })
+  .then(function(d){ if (d.success) location.reload(); });
+}
+
+function getCookie(name) {
+  var v = null;
+  if (document.cookie) document.cookie.split(';').forEach(function(c) {
+    var t = c.trim().split('='); if (t[0] === name) v = decodeURIComponent(t[1]);
+  });
+  return v;
+}
+</script>
+{% endblock %}

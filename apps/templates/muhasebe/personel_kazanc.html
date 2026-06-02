@@ -1,0 +1,128 @@
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+
+{% block title %}Kazancım - {{ ay_adi }} {{ yil }}{% endblock %}
+
+{% block content %}
+<div class="p-4 max-w-[1200px] mx-auto">
+
+  <!-- BAŞLIK -->
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">
+        {% if is_admin %}Personel Kazanç{% else %}Kazancım{% endif %}
+      </h1>
+      <p class="text-xs text-slate-400 mt-0.5">
+        <i class="fas fa-user mr-1 text-slate-300"></i>
+        <span class="font-semibold text-slate-600">{{ kullanici_ad }}</span> · {{ ay_adi }} {{ yil }}
+      </p>
+    </div>
+    <div class="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+      <i class="fas fa-info-circle mr-1 text-blue-500"></i>
+      Satan: <b>%{{ prim_satan_pct }}</b> &nbsp;·&nbsp; Bulan: <b>%{{ prim_bulan_pct }}</b>
+    </div>
+  </div>
+
+  <!-- FİLTRE: yıl + ay + (admin için) personel -->
+  <div class="bg-white rounded-2xl p-3 custom-shadow border border-slate-100 mb-4">
+    <form method="get" class="flex items-center gap-2 flex-wrap">
+      {% if is_admin %}
+      <div class="flex items-center gap-2 mr-2 pr-3 border-r border-slate-200">
+        <label class="text-[10px] font-bold text-slate-500 uppercase">Personel</label>
+        <select name="personel" class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white font-semibold min-w-[180px]" onchange="this.form.submit()">
+          {% for p in personeller %}
+          <option value="{{ p.id }}" {% if p.id == hedef_id %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <select name="yil" class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white font-semibold" onchange="this.form.submit()">
+        {% for y in yillar %}<option value="{{ y }}" {% if y == yil %}selected{% endif %}>{{ y }}</option>{% endfor %}
+      </select>
+      <input type="hidden" name="ay" value="{{ ay }}">
+      <div class="flex gap-1 flex-wrap">
+        {% for i in aylar %}
+        <a href="?ay={{ i }}&yil={{ yil }}{% if is_admin %}&personel={{ hedef_id }}{% endif %}"
+           class="px-3 py-1.5 rounded-lg text-xs font-bold transition {% if i == ay %}bg-emerald-700 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+          {% if i == 1 %}Oca{% elif i == 2 %}Şub{% elif i == 3 %}Mar{% elif i == 4 %}Nis{% elif i == 5 %}May{% elif i == 6 %}Haz{% elif i == 7 %}Tem{% elif i == 8 %}Ağu{% elif i == 9 %}Eyl{% elif i == 10 %}Eki{% elif i == 11 %}Kas{% else %}Ara{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </form>
+  </div>
+
+  <!-- ÖZET KART -->
+  <div class="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-6 shadow-lg mb-4 text-white">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <div class="text-xs font-bold uppercase tracking-wider opacity-80">Bu Ayki Toplam Kazancım</div>
+        <div class="text-4xl font-extrabold mt-1">{{ toplam_kazanc|floatformat:0|intcomma }} ₺</div>
+        <div class="text-xs mt-1 opacity-80">{{ kayitlar|length }} işlemden</div>
+      </div>
+      <div class="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center">
+        <i class="fas fa-wallet text-3xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- LİSTE -->
+  <div class="bg-white rounded-2xl custom-shadow border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200">
+            <th class="px-3 py-3 text-left text-[10px] font-extrabold text-slate-500 uppercase">#</th>
+            <th class="px-3 py-3 text-left text-[10px] font-extrabold text-slate-500 uppercase">Ofis</th>
+            <th class="px-3 py-3 text-left text-[10px] font-extrabold text-slate-500 uppercase">Yer / İşlem</th>
+            <th class="px-3 py-3 text-center text-[10px] font-extrabold text-slate-500 uppercase">Rolüm</th>
+            <th class="px-3 py-3 text-right text-[10px] font-extrabold text-slate-500 uppercase">Toplam Gelir</th>
+            <th class="px-3 py-3 text-center text-[10px] font-extrabold text-slate-500 uppercase">Oran</th>
+            <th class="px-3 py-3 text-right text-[10px] font-extrabold text-slate-500 uppercase">Kazancım</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for k in kayitlar %}
+          <tr class="border-b border-slate-50 hover:bg-emerald-50/30 transition">
+            <td class="px-3 py-3 text-slate-400 font-bold text-xs">{{ forloop.counter }}</td>
+            <td class="px-3 py-3">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold {% if k.ofis == 'Beykent' %}bg-red-50 text-red-700{% else %}bg-blue-50 text-blue-700{% endif %}">{{ k.ofis }}</span>
+            </td>
+            <td class="px-3 py-3 text-slate-700 font-semibold">{{ k.yer }}</td>
+            <td class="px-3 py-3 text-center">
+              <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold">
+                <i class="fas fa-user-tag text-[9px] text-slate-400"></i>{{ k.rol }}
+              </span>
+            </td>
+            <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">₺{{ k.toplam|floatformat:0|intcomma }}</td>
+            <td class="px-3 py-3 text-center">
+              <span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[11px] font-extrabold">%{{ k.oran_pct }}</span>
+            </td>
+            <td class="px-3 py-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">₺{{ k.kazanc|floatformat:0|intcomma }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="px-3 py-12 text-center text-slate-400">
+              <i class="fas fa-inbox text-3xl text-slate-200 mb-2 block"></i>
+              <div class="text-sm font-semibold">Bu ay için kayıt bulunmuyor</div>
+              <div class="text-xs text-slate-400 mt-1">Satışlar gerçekleştikçe burada listelenecek</div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        {% if kayitlar %}
+        <tfoot class="border-t-2 border-slate-300">
+          <tr class="bg-emerald-50">
+            <td colspan="6" class="px-3 py-4 text-sm font-extrabold text-emerald-800 text-right">TOPLAM KAZANÇ</td>
+            <td class="px-3 py-4 text-right text-lg font-extrabold text-emerald-700 whitespace-nowrap">₺{{ toplam_kazanc|floatformat:0|intcomma }}</td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+
+  <p class="text-[11px] text-slate-400 text-center mt-3">
+    <i class="fas fa-lock mr-1"></i>Bu sayfa yalnız okuma içindir. Düzenleme veya silme işlemleri yöneticiniz tarafından yapılır.
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "layouts/modern_base.html" %}
+{% load humanize %}
+
+{% block title %}Giderler{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-[1400px] mx-auto">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Giderler</h1>
+      <p class="text-sm text-slate-400 mt-1">Tüm gider kayıtları</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'gider_export' %}?{{ request.GET.urlencode }}"
+         class="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl transition shadow-sm no-underline">
+        <i class="fas fa-file-excel text-emerald-600"></i> Excel İndir
+      </a>
+      <a href="{% url 'gider_ekle' %}" class="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition shadow-sm no-underline">
+        <i class="fas fa-plus"></i> Gider Ekle
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-5 custom-shadow border border-slate-100 col-span-2">
+      <div class="text-[10px] font-bold text-red-600 uppercase mb-1">Toplam Gider (Filtre)</div>
+      <div class="text-3xl font-bold text-red-700">₺{{ toplam|floatformat:2|intcomma }}</div>
+    </div>
+    {% for a in aylik %}
+    <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+      <div class="text-[10px] text-slate-400 font-bold">
+        {% if a.ay == 1 %}Oca{% elif a.ay == 2 %}Şub{% elif a.ay == 3 %}Mar{% elif a.ay == 4 %}Nis{% elif a.ay == 5 %}May{% elif a.ay == 6 %}Haz{% elif a.ay == 7 %}Tem{% elif a.ay == 8 %}Ağu{% elif a.ay == 9 %}Eyl{% elif a.ay == 10 %}Eki{% elif a.ay == 11 %}Kas{% else %}Ara{% endif %}
+      </div>
+      <div class="text-sm font-bold text-slate-700">₺{{ a.toplam|floatformat:0|intcomma }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <form method="GET" class="bg-white rounded-2xl p-4 custom-shadow border border-slate-100 mb-6">
+    <div class="flex flex-wrap gap-3 items-end">
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Yıl</label>
+        <select name="yil" class="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+          {% for y in yillar %}<option value="{{ y }}" {% if yil == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ay</label>
+        <select name="ay" class="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+          <option value="">Tümü</option>
+          {% for i in "123456789" %}<option value="{{ i }}" {% if ay == i %}selected{% endif %}>{{ i }}. Ay</option>{% endfor %}
+          <option value="10" {% if ay == "10" %}selected{% endif %}>10. Ay</option>
+          <option value="11" {% if ay == "11" %}selected{% endif %}>11. Ay</option>
+          <option value="12" {% if ay == "12" %}selected{% endif %}>12. Ay</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kategori</label>
+        <select name="kategori" class="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+          <option value="">Tümü</option>
+          {% for k,v in kategoriler %}<option value="{{ k }}" {% if kategori == k %}selected{% endif %}>{{ v }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="flex-1 min-w-[160px]">
+        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Ara</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Açıklama..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm">
+      </div>
+      <button type="submit" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium"><i class="fas fa-filter mr-1"></i> Filtrele</button>
+      <a href="{% url 'gider_list' %}" class="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600"><i class="fas fa-times"></i></a>
+    </div>
+  </form>
+
+  <div class="bg-white rounded-2xl custom-shadow border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead style="background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;">
+          <tr>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase">Tarih</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase">Kategori</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase">Tutar</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase">Personel</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase">Ödeme</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase">Açıklama</th>
+            <th class="px-5 py-3.5 text-left text-[11px] font-extrabold text-slate-500 uppercase">İşlem</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          {% for g in giderler %}
+          <tr class="hover:bg-slate-50/50 transition-colors">
+            <td class="px-5 py-3.5 font-semibold text-slate-700 whitespace-nowrap">{{ g.tarih|date:"d.m.Y" }}</td>
+            <td class="px-5 py-3.5">
+              <span class="px-2.5 py-1 bg-red-50 text-red-700 rounded-full text-xs font-bold">{{ g.get_kategori_display }}</span>
+            </td>
+            <td class="px-5 py-3.5 font-bold text-red-700 whitespace-nowrap">₺{{ g.tutar|floatformat:2|intcomma }}</td>
+            <td class="px-5 py-3.5 text-slate-600">{{ g.personel.get_full_name|default:"—" }}</td>
+            <td class="px-5 py-3.5 text-slate-500 text-xs">{{ g.get_odeme_yontemi_display }}</td>
+            <td class="px-5 py-3.5 text-slate-500 max-w-xs truncate">{{ g.aciklama|default:"—" }}</td>
+            <td class="px-5 py-3.5">
+              <div class="flex gap-2">
+                <a href="{% url 'gider_duzenle' g.pk %}" class="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition no-underline"><i class="fas fa-edit"></i></a>
+                <button onclick="sil({{ g.pk }}, 'gider')" class="px-2.5 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-bold hover:bg-red-100 transition"><i class="fas fa-trash"></i></button>
+                {% if g.belge %}<a href="{{ g.belge.url }}" target="_blank" class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition no-underline"><i class="fas fa-paperclip"></i></a>{% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="px-5 py-16 text-center text-slate-400">
+            <i class="fas fa-receipt text-4xl mb-3 block opacity-20"></i>
+            Henüz gider kaydı yok
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="silModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+  <div class="absolute inset-0 bg-black/40" onclick="document.getElementById('silModal').classList.add('hidden')"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-80 p-6 text-center">
+    <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-trash text-red-600 text-xl"></i></div>
+    <h3 class="font-bold text-slate-800 mb-2">Kaydı Sil</h3>
+    <p class="text-sm text-slate-500 mb-5">Bu gider kaydını silmek istediğinize emin misiniz?</p>
+    <div class="flex gap-3">
+      <button onclick="document.getElementById('silModal').classList.add('hidden')" class="flex-1 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600">İptal</button>
+      <button id="silOnayla" class="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700">Sil</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var _silId = null, _silTip = null;
+function sil(id, tip) { _silId = id; _silTip = tip; document.getElementById('silModal').classList.remove('hidden'); }
+document.getElementById('silOnayla').addEventListener('click', function() {
+  fetch('/muhasebe/' + _silTip + 'ler/' + _silId + '/sil/', {
+    method: 'POST', headers: {'X-CSRFToken': getCookie('csrftoken')}
+  }).then(r => r.json()).then(d => { if (d.success) location.reload(); });
+});
+function getCookie(name) {
+  var v = null;
+  if (document.cookie) document.cookie.split(';').forEach(function(c) { var t = c.trim().split('='); if (t[0] === name) v = decodeURIComponent(t[1]); });
+  return v;
+}
+</script>
+{% endblock %}
