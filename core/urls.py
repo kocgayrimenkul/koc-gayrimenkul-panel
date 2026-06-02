@@ -226,6 +226,7 @@ urlpatterns = [
     path('', include('apps.saha.urls')),
     path('', include('apps.sahibinden.urls')),
     path('', include('apps.messaging.urls')),
+    path('', include('apps.muhasebe.urls')),
 ]
 
 # Media dosyaları (sadece development)
