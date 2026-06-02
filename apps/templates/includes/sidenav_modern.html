@@ -104,6 +104,36 @@
             </ul>
         </details>
 
+        <!-- MUHASEBE - admin/müdür için tam, diğerleri için sadece Kazancım -->
+        {% with ep2=request.user.employee_profile.first %}
+        {% if request.user.is_superuser or ep2.role == 'admin' or ep2.role == 'manager' %}
+        <details class="group" {% if 'muhasebe' in request.path %}open{% endif %}>
+            <summary class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer hover:bg-slate-50">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-calculator w-5 text-emerald-600"></i>
+                    <span class="font-semibold text-slate-700">Muhasebe</span>
+                </div>
+                <i class="fas fa-chevron-down text-[10px] text-slate-400 transition group-open:rotate-180"></i>
+            </summary>
+            <ul class="mt-1 ml-4 space-y-1 border-l border-slate-100 pl-3">
+                <li><a href="{% url 'muhasebe_dashboard' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if request.resolver_match.url_name == 'muhasebe_dashboard' %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
+                    <i class="fas fa-chart-pie w-4 text-blue-500"></i><span>Özet & Grafik</span></a></li>
+                <li><a href="{% url 'gelir_list' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'gelirler' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
+                    <i class="fas fa-arrow-trend-up w-4 text-emerald-500"></i><span>Gelirler</span></a></li>
+                <li><a href="{% url 'gider_list' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if 'giderler' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
+                    <i class="fas fa-arrow-trend-down w-4 text-red-500"></i><span>Giderler</span></a></li>
+                <li><a href="{% url 'personel_kazanc' %}" class="flex items-center space-x-2 px-2 py-1.5 rounded-md {% if request.resolver_match.url_name == 'personel_kazanc' %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600 hover:bg-blue-50 hover:text-blue-600{% endif %} transition">
+                    <i class="fas fa-wallet w-4 text-amber-500"></i><span>Kazancım</span></a></li>
+            </ul>
+        </details>
+        {% else %}
+        <a href="{% url 'personel_kazanc' %}" class="flex items-center space-x-3 px-3 py-2 rounded-lg {% if request.resolver_match.url_name == 'personel_kazanc' %}bg-emerald-50 text-emerald-700{% else %}hover:bg-slate-50 text-slate-700{% endif %} transition">
+            <i class="fas fa-wallet w-5 text-emerald-600"></i>
+            <span class="font-semibold">Muhasebe (Kazancım)</span>
+        </a>
+        {% endif %}
+        {% endwith %}
+
         <!-- SİSTEM YÖNETİMİ - sadece admin/müdür/superuser -->
         {% with ep=request.user.employee_profile.first %}
         {% if request.user.is_superuser or ep.role == 'admin' or ep.role == 'manager' %}
