@@ -1,4 +1,4 @@
-﻿# -*- encoding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 """Musteri Detay View"""
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
@@ -622,14 +622,16 @@ def neighborhood_create(request):
         name = request.POST.get('name', '').strip()
         district = request.POST.get('district', '').strip()
         consultant_id = request.POST.get('consultant_id') or None
+        consultant2_id = request.POST.get('consultant2_id') or None
         if name:
             obj, created = Neighborhood.objects.get_or_create(
                 name=name,
-                defaults={'district': district, 'consultant_id': consultant_id}
+                defaults={'district': district, 'consultant_id': consultant_id, 'consultant2_id': consultant2_id}
             )
             if not created:
                 obj.district = district
                 obj.consultant_id = consultant_id
+                obj.consultant2_id = consultant2_id
                 obj.save()
             messages.success(request, f"'{name}' mahallesi {'oluşturuldu' if created else 'güncellendi'}.")
         else:
@@ -657,6 +659,15 @@ def neighborhood_delete(request, pk):
     obj = get_object_or_404(Neighborhood, pk=pk)
     if request.method == 'POST':
         name = obj.name
+        # ManyToMany ilişkilerini önce temizle (foreign key constraint hatasını engeller)
+        try:
+            obj.consultants.clear()
+        except Exception:
+            pass
+        try:
+            obj.consultant2.clear()
+        except Exception:
+            pass
         obj.delete()
         messages.success(request, f"'{name}' silindi.")
     return redirect('neighborhood_list')
