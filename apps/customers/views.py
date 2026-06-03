@@ -656,18 +656,20 @@ def neighborhood_update(request, pk):
 @login_required
 def neighborhood_delete(request, pk):
     from .models import Neighborhood
+    from django.db import connection
     obj = get_object_or_404(Neighborhood, pk=pk)
     if request.method == 'POST':
         name = obj.name
-        # ManyToMany ilişkilerini önce temizle (foreign key constraint hatasını engeller)
-        try:
-            obj.consultants.clear()
-        except Exception:
-            pass
-        try:
-            obj.consultant2.clear()
-        except Exception:
-            pass
+        # Eski M2M ara tablolarını raw SQL ile temizle (orphan tablolar için)
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute("DELETE FROM customers_neighborhood_consultants WHERE neighborhood_id = %s", [obj.pk])
+            except Exception:
+                pass
+            try:
+                cursor.execute("DELETE FROM customers_neighborhood_consultant2 WHERE neighborhood_id = %s", [obj.pk])
+            except Exception:
+                pass
         obj.delete()
         messages.success(request, f"'{name}' silindi.")
     return redirect('neighborhood_list')
