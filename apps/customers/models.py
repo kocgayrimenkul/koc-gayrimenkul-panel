@@ -19,6 +19,13 @@ class Neighborhood(models.Model):
         related_name="neighborhoods",
         verbose_name="Bağlı Danışman",
     )
+    consultant2 = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="neighborhoods2",
+        verbose_name="2. Danışman",
+    )
     district = models.CharField(max_length=100, verbose_name="İlçe", blank=True)
 
     def __str__(self):

@@ -1,0 +1,312 @@
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+
+{% block title %}Video Oluşturucu — {{ property.apartment_name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-6 px-4">
+
+  <!-- Başlık -->
+  <div class="max-w-4xl mx-auto mb-6">
+    <div class="flex items-center gap-3">
+      <a href="{% url 'property_detail' property.id %}" class="text-slate-400 hover:text-slate-600 transition">
+        <i class="fas fa-arrow-left text-lg"></i>
+      </a>
+      <div>
+        <h1 class="text-xl font-bold text-slate-800">Gayrimenkul Tanıtım Videosu</h1>
+        <p class="text-sm text-slate-500">{{ property.apartment_name }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- ADIM 1: Fotoğraf Seçimi -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="step-photos">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">1</span>
+        <div>
+          <h2 class="font-semibold text-slate-800">Fotoğraf Seç</h2>
+          <p class="text-xs text-slate-500">Minimum 3, maksimum 8 fotoğraf seçin</p>
+        </div>
+        <span id="photo-count-badge" class="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">0 / 8 seçildi</span>
+      </div>
+
+      {% if photos %}
+      <div class="p-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="photo-grid">
+          {% for photo in photos %}
+          <div class="photo-card relative rounded-xl overflow-hidden cursor-pointer border-2 border-transparent transition-all hover:border-blue-300 select-none"
+               data-id="{{ photo.id }}"
+               onclick="togglePhoto(this)">
+            <img src="{{ photo.image.url }}" alt="{{ photo.title|default:'Fotoğraf' }}"
+                 class="w-full aspect-square object-cover">
+            <div class="photo-overlay absolute inset-0 bg-blue-600 bg-opacity-0 transition-all flex items-center justify-center">
+              <i class="fas fa-check-circle text-white text-2xl opacity-0 transition-all"></i>
+            </div>
+            <span class="order-badge absolute top-1 left-1 w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center hidden"></span>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="text-xs text-slate-400 mt-3 text-center">Seçili fotoğraflar video'da bu sırada görünecektir.</p>
+      </div>
+      {% else %}
+      <div class="p-10 text-center">
+        <i class="fas fa-images text-4xl text-slate-200 mb-3"></i>
+        <p class="text-slate-500 font-medium">Bu gayrimenkule ait fotoğraf bulunamadı.</p>
+        <a href="{% url 'property_detail' property.id %}" class="mt-3 inline-block text-sm text-blue-600 hover:underline">Fotoğraf ekle →</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ADIM 2: Ayarlar -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="step-settings">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">2</span>
+        <h2 class="font-semibold text-slate-800">Ayarlar</h2>
+      </div>
+      <div class="p-6 space-y-6">
+
+        <!-- Çözünürlük -->
+        <div>
+          <p class="text-sm font-semibold text-slate-700 mb-3">Çözünürlük</p>
+          <div class="grid grid-cols-3 gap-3" id="resolution-group">
+            {% for val, label, hint in resolution_choices %}
+            <label class="res-card flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer transition-all
+                          {% if val == '720p' %}border-blue-600 bg-blue-50{% else %}border-slate-200 hover:border-blue-300{% endif %}">
+              <input type="radio" name="resolution" value="{{ val }}" class="sr-only" {% if val == '720p' %}checked{% endif %}>
+              <span class="font-bold text-slate-800 text-sm">{{ label }}</span>
+              <span class="text-xs text-slate-400 text-center">{{ hint }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- En-Boy -->
+        <div>
+          <p class="text-sm font-semibold text-slate-700 mb-3">En-Boy Oranı</p>
+          <div class="grid grid-cols-2 gap-3" id="aspect-group">
+            {% for val, label, hint in aspect_choices %}
+            <label class="asp-card flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer transition-all
+                          {% if val == '9:16' %}border-blue-600 bg-blue-50{% else %}border-slate-200 hover:border-blue-300{% endif %}">
+              <input type="radio" name="aspect_ratio" value="{{ val }}" class="sr-only" {% if val == '9:16' %}checked{% endif %}>
+              <span class="font-bold text-slate-800 text-sm">{{ label }}</span>
+              <span class="text-xs text-slate-400 text-center">{{ hint }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADIM 3: Oluştur -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <span class="w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">3</span>
+        <h2 class="font-semibold text-slate-800">Videoyu Oluştur</h2>
+      </div>
+      <div class="p-6">
+        <div id="create-error" class="hidden mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"></div>
+        <button id="create-btn" onclick="createVideo()"
+                class="w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-base transition flex items-center justify-center gap-2">
+          <i class="fas fa-video"></i>
+          <span id="create-btn-text">Video Oluştur</span>
+        </button>
+        <p class="text-xs text-slate-400 mt-2 text-center">Video kuyruğa alınır; işlem birkaç dakika sürebilir.</p>
+      </div>
+    </div>
+
+    <!-- Geçmiş -->
+    {% if jobs %}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100">
+        <h2 class="font-semibold text-slate-800">Önceki Videolar</h2>
+      </div>
+      <div class="divide-y divide-slate-50" id="jobs-list">
+        {% for job in jobs %}
+        <div class="flex items-center gap-4 px-6 py-4" id="job-row-{{ job.id }}">
+          <!-- Durum -->
+          <span class="px-2.5 py-1 rounded-full text-xs font-semibold
+            {% if job.status == 'completed' %}bg-emerald-100 text-emerald-700
+            {% elif job.status == 'processing' %}bg-amber-100 text-amber-700
+            {% elif job.status == 'error' %}bg-red-100 text-red-700
+            {% else %}bg-blue-100 text-blue-700{% endif %}
+          ">{{ job.get_status_display }}</span>
+
+          <!-- Bilgi -->
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-slate-700">{{ job.resolution }} · {{ job.get_aspect_ratio_display }}</p>
+            <p class="text-xs text-slate-400">{{ job.created_at|date:"d.m.Y H:i" }} · {{ job.created_by.get_full_name|default:job.created_by.username }}</p>
+            {% if job.error_message %}
+            <p class="text-xs text-red-500 mt-0.5 truncate">{{ job.error_message }}</p>
+            {% endif %}
+          </div>
+
+          <!-- Aksiyon -->
+          {% if job.status == 'completed' and job.output_url %}
+          <a href="{{ job.output_url }}" target="_blank"
+             class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition flex items-center gap-1">
+            <i class="fas fa-download"></i> İndir
+          </a>
+          {% elif job.status == 'queued' or job.status == 'processing' %}
+          <button onclick="refreshJobStatus({{ job.id }})"
+                  class="shrink-0 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold transition flex items-center gap-1">
+            <i class="fas fa-sync-alt"></i> Yenile
+          </button>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- /max-w -->
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+  <div class="flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium" id="toast-inner">
+    <i id="toast-icon" class="fas fa-check-circle"></i>
+    <span id="toast-msg"></span>
+  </div>
+</div>
+
+<script>
+  const CSRF = '{{ csrf_token }}';
+  const CREATE_URL  = '{% url "video_create_job" property.id %}';
+  const STATUS_BASE = '/api/video/job/';
+
+  // Seçili fotoğraf ID'leri (sıralı)
+  let selectedIds = [];
+
+  function togglePhoto(card) {
+    const id = parseInt(card.dataset.id);
+    const idx = selectedIds.indexOf(id);
+    if (idx === -1) {
+      if (selectedIds.length >= 8) {
+        showToast('En fazla 8 fotoğraf seçebilirsiniz.', 'error'); return;
+      }
+      selectedIds.push(id);
+      card.classList.replace('border-transparent', 'border-blue-500');
+      card.querySelector('.photo-overlay').classList.add('bg-opacity-30');
+      card.querySelector('.fas').classList.replace('opacity-0', 'opacity-100');
+    } else {
+      selectedIds.splice(idx, 1);
+      card.classList.replace('border-blue-500', 'border-transparent');
+      card.querySelector('.photo-overlay').classList.remove('bg-opacity-30');
+      card.querySelector('.fas').classList.replace('opacity-100', 'opacity-0');
+    }
+    updateBadges();
+  }
+
+  function updateBadges() {
+    document.getElementById('photo-count-badge').textContent = `${selectedIds.length} / 8 seçildi`;
+    document.querySelectorAll('.order-badge').forEach(b => b.classList.add('hidden'));
+    selectedIds.forEach((id, i) => {
+      const card = document.querySelector(`.photo-card[data-id="${id}"]`);
+      if (card) {
+        const badge = card.querySelector('.order-badge');
+        badge.textContent = i + 1;
+        badge.classList.remove('hidden');
+      }
+    });
+  }
+
+  // Radyo kart stilleri
+  document.querySelectorAll('#resolution-group label').forEach(lbl => {
+    lbl.addEventListener('click', () => {
+      document.querySelectorAll('#resolution-group label').forEach(l =>
+        l.classList.remove('border-blue-600','bg-blue-50') || l.classList.add('border-slate-200'));
+      lbl.classList.add('border-blue-600','bg-blue-50');
+      lbl.classList.remove('border-slate-200');
+    });
+  });
+  document.querySelectorAll('#aspect-group label').forEach(lbl => {
+    lbl.addEventListener('click', () => {
+      document.querySelectorAll('#aspect-group label').forEach(l =>
+        l.classList.remove('border-blue-600','bg-blue-50') || l.classList.add('border-slate-200'));
+      lbl.classList.add('border-blue-600','bg-blue-50');
+      lbl.classList.remove('border-slate-200');
+    });
+  });
+
+  function createVideo() {
+    const errEl = document.getElementById('create-error');
+    errEl.classList.add('hidden');
+
+    if (selectedIds.length < 3) {
+      errEl.textContent = 'Lütfen en az 3 fotoğraf seçin.';
+      errEl.classList.remove('hidden'); return;
+    }
+
+    const resolution   = document.querySelector('input[name="resolution"]:checked')?.value  || '720p';
+    const aspect_ratio = document.querySelector('input[name="aspect_ratio"]:checked')?.value || '9:16';
+
+    const btn = document.getElementById('create-btn');
+    const btnText = document.getElementById('create-btn-text');
+    btn.disabled = true;
+    btnText.textContent = 'Oluşturuluyor…';
+
+    fetch(CREATE_URL, {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF, 'Content-Type': 'application/json'},
+      body: JSON.stringify({photo_ids: selectedIds, resolution, aspect_ratio})
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btnText.textContent = 'Video Oluştur';
+      if (data.success) {
+        showToast('Video kuyruğa alındı! İşlem tamamlanınca bildirim alacaksınız.', 'success');
+        setTimeout(() => location.reload(), 1800);
+      } else {
+        errEl.textContent = data.error || 'Bilinmeyen hata.';
+        errEl.classList.remove('hidden');
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btnText.textContent = 'Video Oluştur';
+      errEl.textContent = 'Sunucu hatası. Lütfen tekrar deneyin.';
+      errEl.classList.remove('hidden');
+    });
+  }
+
+  function refreshJobStatus(jobId) {
+    fetch(`${STATUS_BASE}${jobId}/durum/`)
+    .then(r => r.json())
+    .then(data => {
+      const row = document.getElementById(`job-row-${jobId}`);
+      if (!row) return;
+      const badge = row.querySelector('span.px-2\\.5');
+      if (badge) {
+        badge.textContent = data.status_display || data.status;
+      }
+      if (data.status === 'completed') {
+        showToast('Video hazır!', 'success');
+        setTimeout(() => location.reload(), 1000);
+      } else if (data.status === 'error') {
+        showToast('Video oluşturulurken hata oluştu.', 'error');
+      } else {
+        showToast(`Durum: ${data.status_display || data.status}`, 'info');
+      }
+    });
+  }
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    const inner = document.getElementById('toast-inner');
+    const icon  = document.getElementById('toast-icon');
+    document.getElementById('toast-msg').textContent = msg;
+
+    inner.className = 'flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium ';
+    if (type === 'success') { inner.classList.add('bg-emerald-600'); icon.className = 'fas fa-check-circle'; }
+    else if (type === 'error') { inner.classList.add('bg-red-600'); icon.className = 'fas fa-exclamation-circle'; }
+    else { inner.classList.add('bg-blue-600'); icon.className = 'fas fa-info-circle'; }
+
+    toast.classList.remove('hidden');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toast.classList.add('hidden'), 3500);
+  }
+</script>
+{% endblock %}

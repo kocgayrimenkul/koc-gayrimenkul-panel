@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+﻿# -*- encoding: utf-8 -*-
 """
 Koç Gayrimenkul Panel - Çalışan Yönetimi Modülleri
 """
@@ -182,3 +182,151 @@ class ActivityLog(models.Model):
         verbose_name = "Aktivite Kaydı"
         verbose_name_plural = "Aktivite Kayıtları"
         ordering = ['-timestamp']
+
+
+
+# ============================================================================
+# FAZ 1 - ANASAYFA YENILEME: NOTLAR ve GOREVLER
+# ============================================================================
+
+class UserNote(models.Model):
+    """Personel kisisel notlari - sadece kendisi gorur/duzenler"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='personal_notes',
+        verbose_name="Personel"
+    )
+    content = models.TextField(verbose_name="Not Icerigi")
+    is_completed = models.BooleanField(default=False, verbose_name="Tamamlandi")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Olusturma")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Guncelleme")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Tamamlanma")
+
+    class Meta:
+        verbose_name = "Kisisel Not"
+        verbose_name_plural = "Kisisel Notlar"
+        ordering = ['is_completed', '-created_at']
+
+    def __str__(self):
+        preview = self.content[:50] if self.content else ""
+        owner = self.user.get_full_name() or self.user.username
+        return f"{owner} - {preview}"
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+        if self.is_completed and not self.completed_at:
+            self.completed_at = timezone.now()
+        elif not self.is_completed:
+            self.completed_at = None
+        super().save(*args, **kwargs)
+
+
+class UserTask(models.Model):
+    """Personel gorevleri - hem otomatik (mahalle) hem manuel (santral atamasi)"""
+
+    TASK_TYPE_CHOICES = [
+        ('neighborhood_visit', 'Mahalle Ziyareti'),
+        ('photo_shoot', 'Fotograf Cekimi'),
+        ('hang_banner', 'Branda Asma'),
+        ('central_task', 'Santral Gorevi'),
+        ('manual', 'Kendi Ekledigi'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Bekliyor'),
+        ('in_progress', 'Devam Ediyor'),
+        ('completed', 'Tamamlandi'),
+        ('overdue', 'Gecikmis'),
+    ]
+
+    PRIORITY_CHOICES = [
+        ('low', 'Dusuk'),
+        ('normal', 'Normal'),
+        ('high', 'Yuksek'),
+        ('urgent', 'Acil'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='employee_tasks',
+        verbose_name="Atanan Personel"
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='created_employee_tasks',
+        verbose_name="Atayan"
+    )
+    title = models.CharField(max_length=200, verbose_name="Gorev Basligi")
+    description = models.TextField(blank=True, verbose_name="Aciklama")
+    task_type = models.CharField(
+        max_length=30,
+        choices=TASK_TYPE_CHOICES,
+        default='manual',
+        verbose_name="Gorev Tipi"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="Durum"
+    )
+    priority = models.CharField(
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        default='normal',
+        verbose_name="Oncelik"
+    )
+    neighborhood = models.ForeignKey(
+        'customers.Neighborhood',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='tasks',
+        verbose_name="Ilgili Mahalle"
+    )
+    property = models.ForeignKey(
+        'portfolio.Property',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='tasks',
+        verbose_name="Ilgili Portfoy"
+    )
+    parsel = models.ForeignKey(
+        'saha.ParselKayit',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='tasks',
+        verbose_name="Ilgili Parsel"
+    )
+    due_date = models.DateField(null=True, blank=True, verbose_name="Son Tarih")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Tamamlanma")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Olusturma")
+
+    class Meta:
+        verbose_name = "Personel Gorevi"
+        verbose_name_plural = "Personel Gorevleri"
+        ordering = ['status', '-priority', '-created_at']
+
+    def __str__(self):
+        owner = self.user.get_full_name() or self.user.username
+        return f"{owner} - {self.title}"
+
+    def check_and_update_overdue(self):
+        """Bitis tarihi gectiyse status'u 'overdue' yap"""
+        from django.utils import timezone
+        if self.status == 'pending' and self.due_date:
+            if self.due_date < timezone.now().date():
+                self.status = 'overdue'
+                self.save(update_fields=['status'])
+        return self.status
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+        if self.status == 'completed' and not self.completed_at:
+            self.completed_at = timezone.now()
+        elif self.status != 'completed':
+            self.completed_at = None
+        super().save(*args, **kwargs)

@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+﻿# -*- encoding: utf-8 -*-
 """
 Koç Gayrimenkul Panel - Ana URL Yapılandırması
 """
@@ -213,7 +213,7 @@ urlpatterns = [
     path('', include('apps.authentication.urls')),
     path('', include('apps.customers.urls')),
     path('', include('apps.portfolio.urls')),
-    path('', include('apps.employees.urls')),
+    path('personel/', include('apps.employees.urls')),
     path('', include('apps.presentation.urls')),
     path('', include('apps.calendar.urls')),
     path('', include('apps.calls.urls')),

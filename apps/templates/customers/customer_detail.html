@@ -1431,6 +1431,13 @@
                     btn.style.borderColor = '#bbf7d0';
                     btn.style.opacity = '1';
                     btn.style.cursor = 'default';
+                } else if (data.unavailable) {
+                    // Özellik geçici kapalı — temiz bilgi mesajı
+                    resultDiv.style.background = '#f8fafc';
+                    resultDiv.style.borderColor = '#e2e8f0';
+                    textDiv.style.color = '#64748b';
+                    textDiv.innerHTML = '<i class="fas fa-clock" style="color:#94a3b8;margin-right:5px;"></i>AI Çağrı Özeti şu an kullanılamıyor.';
+                    btn.style.display = 'none';
                 } else {
                     textDiv.textContent = '❌ Hata: ' + (data.error || 'Bilinmeyen hata');
                     btn.disabled = false;

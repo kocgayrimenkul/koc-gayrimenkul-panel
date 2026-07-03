@@ -24,6 +24,7 @@ from apps.portfolio.models import Property
 from apps.presentation.models import Presentation
 from apps.calendar.models import Event, TodoItem
 from apps.fsbo.models import FSBO
+from apps.home.dashboard_helpers import get_phase2_dashboard_context
 try:
     from apps.sales_process.models import Lead
     HAS_LEAD = True
@@ -304,6 +305,10 @@ def index(request):
             status='bekliyor',
             presentation_date__gte=date_from
         ).count()
+
+
+    # ====== FAZ 2: Cagri istatistikleri + performans grafigi ======
+    context.update(get_phase2_dashboard_context(user, today, date_from))
 
     return render(request, 'home/index.html', context)
 

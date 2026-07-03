@@ -53,6 +53,15 @@ class CallLog(models.Model):
     status = models.CharField('Durum', max_length=20, choices=STATUS_CHOICES)
     recording_url = models.TextField('Kayıt', blank=True, null=True, default='')
     notes = models.TextField('Notlar', blank=True, null=True)
+    is_returned = models.BooleanField('Geri Donus Yapildi', default=False)
+    returned_at = models.DateTimeField('Geri Donus Zamani', null=True, blank=True)
+    returned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='returned_calls',
+        verbose_name='Geri Donus Yapan'
+    )
     created_at = models.DateTimeField('Oluşturma', auto_now_add=True)
     
     class Meta:
@@ -72,34 +81,76 @@ class CallLog(models.Model):
             return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
         return "00:00:00"
     
+    @staticmethod
+    def normalize_phone(raw: str) -> str:
+        """Ham telefon numarasını 05xxxxxxxxx formatına çevir."""
+        clean = ''.join(filter(str.isdigit, raw or ''))
+        if clean.startswith('90') and len(clean) >= 11:
+            clean = '0' + clean[2:]
+        elif not clean.startswith('0') and clean:
+            clean = '0' + clean
+        return clean
+
     def save(self, *args, **kwargs):
-        """Kaydederken müşteriyi ve personeli otomatik eşleştir"""
-        
+        """Kaydederken müşteriyi, personeli eşleştir; geri dönüş mantığını çalıştır."""
+
         # Müşteriyi bul
         if not self.customer:
             from apps.customers.models import Customer
-            phone = self.caller if self.direction == 'inbound' else self.called
+            raw = self.caller if self.direction == 'inbound' else self.called
+            phone = self.normalize_phone(raw)
             if phone:
-                # Telefonu temizle
-                clean_phone = ''.join(filter(str.isdigit, phone))
-                if clean_phone.startswith('90'):
-                    clean_phone = '0' + clean_phone[2:]
-                elif not clean_phone.startswith('0'):
-                    clean_phone = '0' + clean_phone
-                
-                self.customer = Customer.objects.filter(phone=clean_phone).first()
-        
+                self.customer = Customer.objects.filter(phone=phone).first()
+
         # Personeli bul
         if not self.user:
             from apps.authentication.models import CustomUser
-            phone = self.caller if self.direction == 'outbound' else self.called
+            raw = self.caller if self.direction == 'outbound' else self.called
+            phone = self.normalize_phone(raw)
             if phone:
-                clean_phone = ''.join(filter(str.isdigit, phone))
-                if clean_phone.startswith('90'):
-                    clean_phone = '0' + clean_phone[2:]
-                elif not clean_phone.startswith('0'):
-                    clean_phone = '0' + clean_phone
-                
-                self.user = CustomUser.objects.filter(phone_number=clean_phone).first()
-        
+                self.user = CustomUser.objects.filter(phone_number=phone).first()
+
         super().save(*args, **kwargs)
+
+        # ── Geri dönüş otomasyonu ──────────────────────────────────────────
+        # update_fields ile çağrılmışsa bu blok atlanır (sonsuz döngü engeli)
+        if kwargs.get('update_fields'):
+            return
+
+        from django.utils import timezone as tz
+        cutoff = tz.now() - timezone.timedelta(days=7)
+        MISSED = ('missed', 'busy', 'failed')
+
+        if self.direction == 'outbound':
+            # Personel bir numara aradı → o numaradan gelen cevapsız çağrıları kapat
+            target = self.normalize_phone(self.called)
+            if target:
+                unresolved = CallLog.objects.filter(
+                    direction='inbound',
+                    status__in=MISSED,
+                    is_returned=False,
+                    start_time__gte=cutoff,
+                    caller__icontains=target[-9:],   # son 9 haneden eşle
+                )
+                unresolved.update(
+                    is_returned=True,
+                    returned_at=self.start_time,
+                    returned_by=self.user,
+                )
+
+        elif self.direction == 'inbound' and self.status == 'answered':
+            # Müşteri geri aradı ve cevaplandı → kendi numarasındaki cevapsızları kapat
+            target = self.normalize_phone(self.caller)
+            if target:
+                unresolved = CallLog.objects.filter(
+                    direction='inbound',
+                    status__in=MISSED,
+                    is_returned=False,
+                    start_time__gte=cutoff,
+                    caller__icontains=target[-9:],
+                ).exclude(pk=self.pk)
+                unresolved.update(
+                    is_returned=True,
+                    returned_at=self.start_time,
+                    returned_by=self.user,
+                )

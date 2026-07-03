@@ -1,4 +1,4 @@
-{% extends "layouts/modern_base.html" %}
+﻿{% extends "layouts/modern_base.html" %}
 {% load humanize %}
 {% load static %}
 
@@ -11,18 +11,78 @@
 .tab-btn.active { background:#f1f5f9; color:#1e293b; }
 .tab-pane { display:none; }
 .tab-pane.active { display:block; }
-.funnel-bar { height:8px; border-radius:4px; }
+/* Phase 2 v2 */
+.call-card-sm { position:relative; overflow:hidden; border-radius:16px; padding:18px 20px;
+                transition:transform .25s ease, box-shadow .25s ease; }
+.call-card-sm:hover { transform:translateY(-3px); }
+.call-card-sm .deco { position:absolute; top:-24px; right:-24px; width:80px; height:80px;
+                      border-radius:50%; background:rgba(255,255,255,.15); pointer-events:none; }
+.call-card-sm .icon-sm { width:36px; height:36px; border-radius:10px;
+                         background:rgba(255,255,255,.22); backdrop-filter:blur(6px);
+                         display:flex; align-items:center; justify-content:center; }
+
+
+.task-panel { background:#fff; border-radius:16px; border:1px solid #f1f5f9;
+              box-shadow:0 1px 4px rgba(0,0,0,.06); }
+
+@keyframes p2CountUp { from { opacity:0; transform:translateY(6px); }
+                       to   { opacity:1; transform:translateY(0); } }
+.p2-anim { animation: p2CountUp .5s ease-out both; }
+
+/* Phase 3 - Gorevler ve Notlar */
+.task-tab-btn { padding:5px 10px; border-radius:8px; font-size:.7rem; font-weight:600;
+                cursor:pointer; border:none; background:#f8fafc; color:#64748b;
+                transition:all .2s; display:flex; align-items:center; gap:4px; }
+.task-tab-btn:hover { background:#e2e8f0; color:#1e293b; }
+.task-tab-btn.active { background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:#fff; }
+.task-count { display:inline-flex; align-items:center; justify-content:center;
+              min-width:18px; height:16px; padding:0 5px; border-radius:8px;
+              background:rgba(255,255,255,.25); font-size:.62rem; font-weight:700; }
+.task-tab-btn:not(.active) .task-count { background:#e2e8f0; color:#1e293b; }
+.task-tab-btn .overdue-badge { background:#ef4444 !important; color:#fff !important; }
+
+.task-item { padding:10px 16px; border-bottom:1px solid #f8fafc;
+             display:flex; align-items:flex-start; gap:10px;
+             transition:background .15s; }
+.task-item:hover { background:#fafbfc; }
+.task-item.completed .task-title { text-decoration:line-through; opacity:.55; }
+.task-item.overdue { border-left:3px solid #ef4444; padding-left:13px; background:#fef2f2; }
+
+.task-type-icon { width:32px; height:32px; border-radius:10px;
+                  display:flex; align-items:center; justify-content:center;
+                  flex-shrink:0; font-size:.78rem; }
+.task-type-neighborhood_visit { background:#dbeafe; color:#2563eb; }
+.task-type-photo_shoot         { background:#f3e8ff; color:#9333ea; }
+.task-type-hang_banner         { background:#ffedd5; color:#ea580c; }
+.task-type-central_task        { background:#f1f5f9; color:#475569; }
+.task-type-manual              { background:#dcfce7; color:#16a34a; }
+
+.note-item { padding:10px 16px; border-bottom:1px solid #f8fafc;
+             display:flex; align-items:flex-start; gap:10px;
+             transition:background .15s; }
+.note-item:hover { background:#fafbfc; }
+.note-item.completed .note-text { text-decoration:line-through; opacity:.55; }
+
+.action-btn { width:24px; height:24px; border-radius:6px; border:none;
+              background:transparent; color:#94a3b8; cursor:pointer;
+              display:flex; align-items:center; justify-content:center;
+              transition:all .15s; font-size:.75rem; }
+.action-btn:hover { background:#f1f5f9; color:#1e293b; }
+.action-btn.delete:hover { background:#fef2f2; color:#dc2626; }
+.action-btn.complete:hover { background:#dcfce7; color:#16a34a; }
+.action-btn.completed { color:#16a34a; }
+
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="p-6" style="max-width:1600px;">
 
-  <!-- ===== KARŞILAMA ===== -->
-  <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+  <!-- ===== KARSILAMA ===== -->
+  <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800">Hoş geldin, {{ user.get_full_name|default:user.username }}!</h1>
-      <p class="text-sm text-slate-400 mt-1 flex items-center gap-2">
+      <h1 class="text-lg font-bold text-slate-800">Hos geldin, {{ user.get_full_name|default:user.username }}!</h1>
+      <p class="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
         <i class="fas fa-calendar-day text-slate-300"></i>
         {{ today|date:"j F Y, l" }}
       </p>
@@ -32,193 +92,81 @@
               class="text-sm border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-600 font-medium">
         <option value="week"    {% if date_filter == 'week' %}selected{% endif %}>Bu Hafta</option>
         <option value="month"   {% if date_filter == 'month' %}selected{% endif %}>Bu Ay</option>
-        <option value="quarter" {% if date_filter == 'quarter' %}selected{% endif %}>Bu Çeyrek</option>
-        <option value="year"    {% if date_filter == 'year' %}selected{% endif %}>Bu Yıl</option>
+        <option value="quarter" {% if date_filter == 'quarter' %}selected{% endif %}>Bu Ceyrek</option>
+        <option value="year"    {% if date_filter == 'year' %}selected{% endif %}>Bu Yil</option>
       </select>
     </form>
   </div>
 
-  <!-- ===== İSTATİSTİK KARTLARI ===== -->
-  <div class="grid gap-4 mb-6" style="grid-template-columns:repeat(6,1fr);">
-
-    <!-- Toplam Müşteri -->
-    <div class="stat-card">
-      <div class="flex items-center justify-between mb-3">
-        <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
-          <i class="fas fa-users text-blue-500 text-sm"></i>
-        </div>
-        <span class="text-xs font-bold" style="color:#3b82f6;">+%100</span>
-      </div>
-      <div class="text-2xl font-black text-slate-800">{{ total_customers|intcomma }}</div>
-      <div class="text-xs text-slate-400 mt-1 font-medium">Toplam Müşteri</div>
-    </div>
-
-    <!-- Aktif Lead -->
-    <div class="stat-card">
-      <div class="flex items-center justify-between mb-3">
-        <div class="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
-          <i class="fas fa-user-plus text-purple-500 text-sm"></i>
-        </div>
-        <span class="text-xs font-bold text-slate-400">Aktif</span>
-      </div>
-      <div class="text-2xl font-black text-slate-800">{{ active_leads|default:0 }}</div>
-      <div class="text-xs text-slate-400 mt-1 font-medium">Aktif Lead</div>
-    </div>
-
-    <!-- Aktif Portföy -->
-    <div class="stat-card">
-      <div class="flex items-center justify-between mb-3">
-        <div class="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
-          <i class="fas fa-building text-orange-500 text-sm"></i>
-        </div>
-        <span class="text-xs font-bold" style="color:#f97316;">+%100</span>
-      </div>
-      <div class="text-2xl font-black text-slate-800">{{ total_properties|intcomma }}</div>
-      <div class="text-xs text-slate-400 mt-1 font-medium">Aktif Portföy</div>
-    </div>
-
-    <!-- Bekleyen Teklif -->
-    <div class="stat-card">
-      <div class="flex items-center justify-between mb-3">
-        <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
-          <i class="fas fa-file-alt text-amber-500 text-sm"></i>
-        </div>
-        <span class="text-xs font-bold text-amber-500">{{ pending_offers }} bekle</span>
-      </div>
-      <div class="text-2xl font-black text-slate-800">{{ accepted_offers|default:0 }}</div>
-      <div class="text-xs text-slate-400 mt-1 font-medium">Kabul Edilen Teklif</div>
-    </div>
-
-    <!-- Açık Görev -->
-    <div class="stat-card">
-      <div class="flex items-center justify-between mb-3">
-        <div class="w-9 h-9 rounded-xl bg-cyan-50 flex items-center justify-center">
-          <i class="fas fa-tasks text-cyan-500 text-sm"></i>
-        </div>
-        <span class="text-xs font-bold text-slate-400">Bekliyor</span>
-      </div>
-      <div class="text-2xl font-black text-slate-800">{{ open_todos|default:0 }}</div>
-      <div class="text-xs text-slate-400 mt-1 font-medium">Açık Görev</div>
-    </div>
-
-    <!-- Bugün Sunum -->
-    <div class="stat-card" style="background:linear-gradient(135deg,#059669,#10b981);border:none;">
-      <div class="flex items-center justify-between mb-3">
-        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,.2);">
-          <i class="fas fa-home text-white text-sm"></i>
-        </div>
-        <span class="text-xs font-bold text-white opacity-80">Bugün</span>
-      </div>
-      <div class="text-2xl font-black text-white">{{ today_presentations|length }}</div>
-      <div class="text-xs text-white mt-1 font-medium opacity-80">Yer Gösterimi</div>
-    </div>
-
-  </div>
-
-  <!-- ===== ANA İÇERİK: 2 kolon ===== -->
+  <!-- ===== ANA ICERIK: 2 KOLON ===== -->
   <div class="grid grid-cols-12 gap-5">
 
-    <!-- SOL: Grafik + Günün Panosu -->
+    <!-- ========== SOL KOLON (8/12) ========== -->
     <div class="col-span-8 space-y-5">
 
-      <!-- Satış Hunisi -->
-      <div class="grid grid-cols-1 gap-5">
+      <!-- 3 Cagri Kutusu (kompakt) -->
+      <div class="grid grid-cols-3 gap-4 p2-anim">
 
-        <!-- Satış Hunisi -->
-        <div class="bg-white rounded-2xl p-5" style="border:1px solid #f1f5f9;box-shadow:0 1px 4px rgba(0,0,0,.06);">
-          <div class="mb-4">
-            <h3 class="text-sm font-bold text-slate-800">Satış Hunisi</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Lead → Teklif → Kabul</p>
+        <!-- Gelen Cagri -->
+        <div class="call-card-sm"
+             style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+                    box-shadow:0 8px 20px -4px rgba(59,130,246,.4);">
+          <div class="deco"></div>
+          <div style="position:relative;">
+            <div class="flex items-center justify-between mb-3">
+              <div class="icon-sm"><i class="fas fa-phone-volume text-white text-sm"></i></div>
+              <span class="text-[10px] font-bold text-white px-2 py-0.5 rounded-md"
+                    style="background:rgba(255,255,255,.2);">BUGUN</span>
+            </div>
+            <div class="text-2xl font-black text-white counter" data-target="{{ today_calls_total|default:0 }}">0</div>
+            <div class="text-xs text-white opacity-80 mt-1 font-medium">Gelen Cagri</div>
           </div>
+        </div>
 
-          {% with leads_total as lt %}
-          <!-- Lead -->
-          <div class="mb-4">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="text-xs font-semibold text-slate-600">Lead</span>
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-bold text-slate-800">{{ leads_total|default:0 }}</span>
-                <span class="text-xs text-purple-500 font-bold">%100</span>
-              </div>
+        <!-- Geri Donus Yapilan -->
+        <div class="call-card-sm"
+             style="background:linear-gradient(135deg,#10b981,#047857);
+                    box-shadow:0 8px 20px -4px rgba(16,185,129,.4);">
+          <div class="deco"></div>
+          <div style="position:relative;">
+            <div class="flex items-center justify-between mb-3">
+              <div class="icon-sm"><i class="fas fa-phone-alt text-white text-sm"></i></div>
+              <span class="text-[10px] font-bold text-white px-2 py-0.5 rounded-md"
+                    style="background:rgba(255,255,255,.2);">%{{ call_return_rate|default:0 }}</span>
             </div>
-            <div class="w-full bg-slate-100 rounded-full h-2">
-              <div class="h-2 rounded-full bg-purple-500" style="width:100%"></div>
-            </div>
+            <div class="text-2xl font-black text-white counter" data-target="{{ today_calls_returned|default:0 }}">0</div>
+            <div class="text-xs text-white opacity-80 mt-1 font-medium">Geri Donus Yapilan</div>
           </div>
+        </div>
 
-          <!-- Teklif -->
-          {% with pending_offers as po %}
-          {% with accepted_offers as ao %}
-          {% widthratio po leads_total 100 as offer_pct %}
-          <div class="mb-4">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="text-xs font-semibold text-slate-600">Teklif</span>
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-bold text-slate-800">{{ po|default:0 }}</span>
-                <span class="text-xs text-blue-500 font-bold">%{{ offer_pct|default:0 }}</span>
-              </div>
+        <!-- Geri Donus Yapilmayan -->
+        <div class="call-card-sm"
+             style="background:linear-gradient(135deg,#f43f5e,#be123c);
+                    box-shadow:0 8px 20px -4px rgba(244,63,94,.4);">
+          <div class="deco"></div>
+          <div style="position:relative;">
+            <div class="flex items-center justify-between mb-3">
+              <div class="icon-sm"><i class="fas fa-phone-slash text-white text-sm"></i></div>
+              <span class="text-[10px] font-bold text-white px-2 py-0.5 rounded-md"
+                    style="background:rgba(255,255,255,.2);">BEKLIYOR</span>
             </div>
-            <div class="w-full bg-slate-100 rounded-full h-2">
-              <div class="h-2 rounded-full bg-blue-500" style="width:{{ offer_pct|default:0 }}%"></div>
-            </div>
-          </div>
-
-          <!-- Kabul -->
-          {% widthratio ao leads_total 100 as kabul_pct %}
-          <div class="mb-4">
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="text-xs font-semibold text-slate-600">Kabul</span>
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-bold text-slate-800">{{ ao|default:0 }}</span>
-                <span class="text-xs text-emerald-500 font-bold">%{{ kabul_pct|default:0 }}</span>
-              </div>
-            </div>
-            <div class="w-full bg-slate-100 rounded-full h-2">
-              <div class="h-2 rounded-full bg-emerald-500" style="width:{{ kabul_pct|default:0 }}%"></div>
-            </div>
-          </div>
-          {% endwith %}{% endwith %}
-          {% endwith %}
-
-          <!-- Özet sayılar -->
-          <div class="grid grid-cols-3 gap-2 mt-4 pt-4" style="border-top:1px solid #f1f5f9;">
-            <div class="text-center">
-              <div class="text-lg font-black text-slate-800">{{ pending_offers|default:0 }}</div>
-              <div class="text-[10px] text-slate-400">Bekleyen</div>
-            </div>
-            <div class="text-center">
-              <div class="text-lg font-black text-emerald-600">{{ accepted_offers|default:0 }}</div>
-              <div class="text-[10px] text-slate-400">Kabul</div>
-            </div>
-            <div class="text-center">
-              <div class="text-lg font-black text-slate-800">{{ active_leads|default:0 }}</div>
-              <div class="text-[10px] text-slate-400">Aktif</div>
-            </div>
+            <div class="text-2xl font-black text-white counter" data-target="{{ today_calls_not_returned|default:0 }}">0</div>
+            <div class="text-xs text-white opacity-80 mt-1 font-medium">Geri Donus Yapilmayan</div>
           </div>
         </div>
 
       </div>
 
-      <!-- Günün Panosu -->
-      <div class="bg-white rounded-2xl" style="border:1px solid #f1f5f9;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+      <!-- Hatirlaticilar Paneli -->
+      <div class="bg-white rounded-2xl p2-anim" style="animation-delay:.15s;
+           border:1px solid #f1f5f9; box-shadow:0 2px 10px rgba(0,0,0,.04);">
         <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <i class="fas fa-calendar-check text-blue-500"></i> Günün Panosu
-              </h3>
-              <p class="text-xs text-slate-400 mt-0.5">{{ today_todos|length }} görev · {{ today_presentations|length }} yer gösterimi · {{ upcoming_reminders|length }} hatırlatıcı</p>
-            </div>
-            <div class="flex gap-1">
-              <button class="tab-btn active" onclick="switchTab('reminders', this)">Hatırlatıcılar</button>
-              <button class="tab-btn" onclick="switchTab('todos', this)">Görevler</button>
-              <button class="tab-btn" onclick="switchTab('showings', this)">Yer Gösterimi</button>
-            </div>
-          </div>
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <i class="fas fa-bell text-red-500"></i> Hatirlaticilar
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">{{ upcoming_reminders|length }} yaklasan hatirlatici</p>
         </div>
-
-        <!-- Hatırlatıcılar -->
-        <div id="tab-reminders" class="tab-pane active" style="max-height:320px;overflow-y:auto;">
+        <div style="max-height:260px;overflow-y:auto;">
           {% for rem in upcoming_reminders %}
           <div class="px-5 py-3 flex items-center gap-4" style="border-bottom:1px solid #f8fafc;">
             <div class="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
@@ -233,17 +181,35 @@
             </div>
           </div>
           {% empty %}
-          <div class="py-16 text-center">
+          <div class="py-14 text-center">
             <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
               <i class="fas fa-bell text-slate-300 text-xl"></i>
             </div>
-            <p class="text-sm text-slate-400">Yaklaşan hatırlatıcı yok</p>
+            <p class="text-sm text-slate-400">Yaklasan hatirlatici yok</p>
           </div>
           {% endfor %}
         </div>
+      </div>
 
-        <!-- Görevler -->
-        <div id="tab-todos" class="tab-pane" style="max-height:320px;overflow-y:auto;">
+      <!-- Gunun Panosu -->
+      <div class="bg-white rounded-2xl" style="border:1px solid #f1f5f9;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+        <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-calendar-check text-blue-500"></i> Gunun Panosu
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">{{ today_todos|length }} gorev · {{ today_presentations|length }} yer gosterimi</p>
+            </div>
+            <div class="flex gap-1">
+              <button class="tab-btn active" onclick="switchTab('todos', this)">Gorevler</button>
+              <button class="tab-btn" onclick="switchTab('showings', this)">Yer Gosterimi</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gorevler -->
+        <div id="tab-todos" class="tab-pane active" style="max-height:320px;overflow-y:auto;">
           {% for todo in today_todos %}
           <div class="px-5 py-3 flex items-center gap-4" style="border-bottom:1px solid #f8fafc;">
             <div class="w-8 h-8 rounded-xl bg-cyan-50 flex items-center justify-center flex-shrink-0">
@@ -264,12 +230,12 @@
             <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
               <i class="fas fa-tasks text-slate-300 text-xl"></i>
             </div>
-            <p class="text-sm text-slate-400">Bugün için görev yok</p>
+            <p class="text-sm text-slate-400">Bugun icin gorev yok</p>
           </div>
           {% endfor %}
         </div>
 
-        <!-- Yer Gösterimi -->
+        <!-- Yer Gosterimi -->
         <div id="tab-showings" class="tab-pane" style="max-height:320px;overflow-y:auto;">
           {% for show in today_presentations %}
           <div class="px-5 py-3 flex items-center gap-4" style="border-bottom:1px solid #f8fafc;">
@@ -277,8 +243,8 @@
               <i class="fas fa-home text-emerald-400 text-xs"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-slate-700 truncate">{{ show.customer_name|default:"Müşteri" }}</div>
-              <div class="text-xs text-slate-400 mt-0.5 truncate">{{ show.property.title|default:"—" }}</div>
+              <div class="text-sm font-semibold text-slate-700 truncate">{{ show.customer_name|default:"Musteri" }}</div>
+              <div class="text-xs text-slate-400 mt-0.5 truncate">{{ show.property.title|default:"-" }}</div>
             </div>
             <span class="text-xs font-bold text-emerald-600 flex-shrink-0">{{ show.presentation_date|date:"H:i" }}</span>
           </div>
@@ -287,7 +253,7 @@
             <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
               <i class="fas fa-home text-slate-300 text-xl"></i>
             </div>
-            <p class="text-sm text-slate-400">Bugün yer gösterimi yok</p>
+            <p class="text-sm text-slate-400">Bugun yer gosterimi yok</p>
           </div>
           {% endfor %}
         </div>
@@ -295,93 +261,65 @@
 
     </div>
 
-    <!-- SAĞ: Son Müşteriler + Performans -->
+    <!-- ========== SAG KOLON (4/12) ========== -->
     <div class="col-span-4 space-y-5">
 
-      <!-- Son Müşteriler / Danışman Leaderboard -->
-      {% if role == 'consultant' %}
-      <!-- DANIŞMAN: Kendi portföyü -->
-      <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid #f1f5f9;box-shadow:0 1px 4px rgba(0,0,0,.06);">
-        <div class="px-5 py-4 flex justify-between items-center" style="border-bottom:1px solid #f1f5f9;">
-          <div>
-            <h3 class="text-sm font-bold text-slate-800">Son Müşterilerim</h3>
-            <p class="text-xs text-slate-400 mt-0.5">{{ my_customer_count|default:0 }} toplam</p>
-          </div>
-          <a href="{% url 'customer_list' %}" class="text-xs text-blue-600 hover:underline font-semibold">Tümü →</a>
-        </div>
-        <div style="max-height:280px;overflow-y:auto;">
-          {% for c in my_customers %}
-          <a href="{% url 'customer_detail' c.pk %}" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition no-underline" style="border-bottom:1px solid #f8fafc;">
-            <div class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
-              {{ c.full_name|slice:":2"|upper }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-slate-700 truncate">{{ c.full_name }}</div>
-              <div class="text-xs text-slate-400">{{ c.phone }}</div>
-            </div>
-          </a>
-          {% empty %}
-          <div class="py-10 text-center text-xs text-slate-400">Henüz müşteri yok</div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- Sunum Performansı -->
-      <div class="bg-white rounded-2xl p-5" style="border:1px solid #f1f5f9;box-shadow:0 1px 4px rgba(0,0,0,.06);">
-        <h3 class="text-sm font-bold text-slate-800 mb-4">Sunum Performansı</h3>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="rounded-xl p-3 bg-emerald-50">
-            <div class="text-[10px] font-bold text-emerald-600 uppercase mb-1">Tamamlanan</div>
-            <div class="text-2xl font-black text-emerald-700">{{ completed_presentations|default:0 }}</div>
-          </div>
-          <div class="rounded-xl p-3 bg-amber-50">
-            <div class="text-[10px] font-bold text-amber-600 uppercase mb-1">Bekleyen</div>
-            <div class="text-2xl font-black text-amber-700">{{ pending_presentations|default:0 }}</div>
-          </div>
-          <div class="rounded-xl p-3 bg-red-50">
-            <div class="text-[10px] font-bold text-red-600 uppercase mb-1">İptal</div>
-            <div class="text-2xl font-black text-red-700">{{ cancelled_presentations|default:0 }}</div>
-          </div>
-          <div class="rounded-xl p-3 bg-blue-50">
-            <div class="text-[10px] font-bold text-blue-600 uppercase mb-1">Toplam</div>
-            <div class="text-2xl font-black text-blue-700">{{ total_presentations|default:0 }}</div>
-          </div>
-        </div>
-      </div>
-
-      {% else %}
-      <!-- ADMIN/MANAGER: Leaderboard -->
-      <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid #f1f5f9;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+      <!-- ======= GOREVLERIM PANELI (Faz 3 - AJAX) ======= -->
+      <div class="task-panel">
         <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
-          <h3 class="text-sm font-bold text-slate-800">Danışman Sıralaması</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Performans skoru</p>
-        </div>
-        <div style="max-height:400px;overflow-y:auto;">
-          {% for c in leaderboard %}
-          <div class="px-5 py-3 flex items-center gap-3" style="border-bottom:1px solid #f8fafc;">
-            {% if forloop.counter == 1 %}
-            <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
-            {% elif forloop.counter == 2 %}
-            <div class="w-7 h-7 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
-            {% elif forloop.counter == 3 %}
-            <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
-            {% else %}
-            <div class="w-7 h-7 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{{ forloop.counter }}</div>
-            {% endif %}
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-slate-700 truncate">{{ c.name }}</div>
-              <div class="text-[10px] text-slate-400">{{ c.customers }} müşteri · {{ c.properties }} portföy</div>
-            </div>
-            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">{{ c.performance_score }}</span>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <i class="fas fa-clipboard-list text-blue-500"></i> Gorevlerim
+            </h3>
           </div>
-          {% empty %}
-          <div class="py-12 text-center text-xs text-slate-400">Veri yok</div>
-          {% endfor %}
+          <div class="flex gap-1.5" id="task-tabs">
+            <button class="task-tab-btn active" data-filter="pending">
+              Bekleyen <span class="task-count" data-tab="pending">0</span>
+            </button>
+            <button class="task-tab-btn" data-filter="overdue">
+              Gecikmis <span class="task-count overdue-badge" data-tab="overdue">0</span>
+            </button>
+            <button class="task-tab-btn" data-filter="completed">
+              Tamamlanan <span class="task-count" data-tab="completed">0</span>
+            </button>
+          </div>
+        </div>
+        <div style="height:240px;overflow-y:auto;" id="tasks-list">
+          <div class="py-10 text-center" id="tasks-loading">
+            <i class="fas fa-spinner fa-spin text-slate-300 text-2xl"></i>
+            <p class="text-xs text-slate-400 mt-2">Yukleniyor...</p>
+          </div>
         </div>
       </div>
 
+      <!-- ======= NOTLARIM PANELI (Faz 3 - AJAX) ======= -->
+      <div class="task-panel">
+        <div class="px-5 py-4" style="border-bottom:1px solid #f1f5f9;">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <i class="fas fa-sticky-note text-amber-500"></i> Notlarim
+            </h3>
+            <button id="note-add-toggle" class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+              <i class="fas fa-plus-circle"></i> Ekle
+            </button>
+          </div>
+          <div id="note-add-form" class="hidden">
+            <textarea id="note-content" rows="2" maxlength="1000" placeholder="Notunuzu yazin..."
+                      class="w-full text-xs border border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+            <div class="flex gap-2 mt-2">
+              <button id="note-save-btn" class="flex-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition">Kaydet</button>
+              <button id="note-cancel-btn" class="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition">Iptal</button>
+            </div>
+          </div>
+        </div>
+        <div style="height:240px;overflow-y:auto;" id="notes-list">
+          <div class="py-10 text-center" id="notes-loading">
+            <i class="fas fa-spinner fa-spin text-slate-300 text-2xl"></i>
+            <p class="text-xs text-slate-400 mt-2">Yukleniyor...</p>
+          </div>
+        </div>
+      </div>
 
-      {% endif %}
 
     </div>
   </div>
@@ -398,6 +336,238 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
 }
+
+// Counter animasyonu
+document.querySelectorAll('.counter').forEach(el => {
+  const target = parseInt(el.dataset.target) || 0;
+  const duration = 1200;
+  const start = performance.now();
+  function tick(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.floor(target * eased).toLocaleString('tr-TR');
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+});
+
+// ============ Phase 3: Notlar ve Gorevler AJAX ============
+(function() {
+  const API = "/personel/api";
+
+  function getCSRF() {
+    const name = 'csrftoken';
+    const cookies = document.cookie.split(';');
+    for (let c of cookies) {
+      c = c.trim();
+      if (c.startsWith(name + '=')) return decodeURIComponent(c.substring(name.length + 1));
+    }
+    return '';
+  }
+
+  function post(url, body) {
+    const data = new FormData();
+    if (body) for (const k in body) data.append(k, body[k]);
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCSRF() },
+      body: data,
+      credentials: 'same-origin'
+    }).then(r => r.json());
+  }
+
+  function get(url) {
+    return fetch(url, { credentials: 'same-origin' }).then(r => r.json());
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // ============== NOTLAR ==============
+  function renderNotes(notes) {
+    const list = document.getElementById('notes-list');
+    if (!notes || notes.length === 0) {
+      list.innerHTML = `
+        <div class="py-12 text-center">
+          <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-2">
+            <i class="fas fa-sticky-note text-slate-300"></i>
+          </div>
+          <p class="text-xs text-slate-400">Henuz not yok</p>
+          <p class="text-[10px] text-slate-300 mt-1">Yukaridan + Ekle ile baslayin</p>
+        </div>`;
+      return;
+    }
+    list.innerHTML = notes.map(n => `
+      <div class="note-item ${n.is_completed ? 'completed' : ''}" data-id="${n.id}">
+        <button class="action-btn complete ${n.is_completed ? 'completed' : ''}" data-act="toggle" title="Tamamla/Geri al">
+          <i class="${n.is_completed ? 'fas fa-check-square' : 'far fa-square'}"></i>
+        </button>
+        <div class="flex-1 min-w-0">
+          <div class="note-text text-xs text-slate-700" style="word-break:break-word;">${escapeHtml(n.content)}</div>
+          <div class="text-[10px] text-slate-400 mt-1">${n.created_at}</div>
+        </div>
+        <button class="action-btn delete" data-act="delete" title="Sil">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `).join('');
+  }
+
+  function loadNotes() {
+    get(API + '/notes/').then(d => renderNotes(d.notes));
+  }
+
+  // Not ekle UI
+  const addToggle = document.getElementById('note-add-toggle');
+  const addForm = document.getElementById('note-add-form');
+  const noteContent = document.getElementById('note-content');
+  const saveBtn = document.getElementById('note-save-btn');
+  const cancelBtn = document.getElementById('note-cancel-btn');
+
+  addToggle.addEventListener('click', () => {
+    addForm.classList.toggle('hidden');
+    if (!addForm.classList.contains('hidden')) noteContent.focus();
+  });
+  cancelBtn.addEventListener('click', () => {
+    addForm.classList.add('hidden');
+    noteContent.value = '';
+  });
+  saveBtn.addEventListener('click', () => {
+    const content = noteContent.value.trim();
+    if (!content) return;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Kaydediliyor...';
+    post(API + '/notes/add/', { content }).then(d => {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Kaydet';
+      if (d.success) {
+        noteContent.value = '';
+        addForm.classList.add('hidden');
+        loadNotes();
+      } else {
+        alert(d.error || 'Kayit basarisiz');
+      }
+    });
+  });
+
+  // Not action delegasyonu (toggle/delete)
+  document.getElementById('notes-list').addEventListener('click', e => {
+    const btn = e.target.closest('.action-btn');
+    if (!btn) return;
+    const item = btn.closest('.note-item');
+    const id = item.dataset.id;
+    const act = btn.dataset.act;
+    if (act === 'toggle') {
+      post(API + '/notes/' + id + '/toggle/').then(d => { if (d.success) loadNotes(); });
+    } else if (act === 'delete') {
+      if (!confirm('Bu notu silmek istediginize emin misiniz?')) return;
+      post(API + '/notes/' + id + '/delete/').then(d => { if (d.success) loadNotes(); });
+    }
+  });
+
+  // ============== GOREVLER ==============
+  const TASK_ICONS = {
+    'neighborhood_visit': 'fa-map-marker-alt',
+    'photo_shoot': 'fa-camera',
+    'hang_banner': 'fa-flag',
+    'central_task': 'fa-user-tie',
+    'manual': 'fa-pencil-alt'
+  };
+
+  function renderTasks(tasks, counts, activeFilter) {
+    // Sayilari guncelle
+    document.querySelector('.task-count[data-tab="pending"]').textContent = counts.pending;
+    document.querySelector('.task-count[data-tab="overdue"]').textContent = counts.overdue;
+    document.querySelector('.task-count[data-tab="completed"]').textContent = counts.completed;
+
+    const list = document.getElementById('tasks-list');
+    if (!tasks || tasks.length === 0) {
+      const emptyMsg = {
+        'pending': 'Bekleyen gorev yok',
+        'overdue': 'Gecikmis gorev yok',
+        'completed': 'Tamamlanan gorev yok'
+      }[activeFilter] || 'Gorev yok';
+      list.innerHTML = `
+        <div class="py-12 text-center">
+          <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-2">
+            <i class="fas fa-clipboard-check text-slate-300"></i>
+          </div>
+          <p class="text-xs text-slate-400">${emptyMsg}</p>
+        </div>`;
+      return;
+    }
+    list.innerHTML = tasks.map(t => {
+      const isCompleted = t.status === 'completed';
+      const isOverdue = t.status === 'overdue';
+      const icon = TASK_ICONS[t.task_type] || 'fa-tasks';
+      const meta = [];
+      if (t.neighborhood) meta.push('<i class="fas fa-map-marker-alt mr-0.5"></i>' + escapeHtml(t.neighborhood));
+      if (t.property_title) meta.push('<i class="fas fa-building mr-0.5"></i>' + escapeHtml(t.property_title.substring(0, 20)));
+      if (t.assigned_by) meta.push('<i class="fas fa-user-tie mr-0.5"></i>' + escapeHtml(t.assigned_by));
+      if (t.due_date) meta.push('<i class="fas fa-calendar mr-0.5"></i>' + t.due_date);
+      return `
+        <div class="task-item ${isCompleted ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}" data-id="${t.id}" ${t.detail_url ? `data-url="${t.detail_url}" title="Detay için çift tıklayın"` : ''} style="cursor:${t.detail_url ? 'pointer' : 'default'}">
+          <div class="task-type-icon task-type-${t.task_type}">
+            <i class="fas ${icon}"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="task-title text-xs font-semibold text-slate-700" style="word-break:break-word;">${escapeHtml(t.title)}</div>
+            ${t.description ? `<div class="text-[10px] text-slate-500 mt-0.5" style="word-break:break-word;">${escapeHtml(t.description.substring(0, 80))}${t.description.length > 80 ? '...' : ''}</div>` : ''}
+            ${meta.length ? `<div class="text-[10px] text-slate-400 mt-1 flex flex-wrap gap-2">${meta.join('')}</div>` : ''}
+          </div>
+          <button class="action-btn complete ${isCompleted ? 'completed' : ''}" data-act="complete" title="${isCompleted ? 'Geri al' : 'Tamamla'}">
+            <i class="${isCompleted ? 'fas fa-check-circle' : 'far fa-circle'}"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  let currentTaskFilter = 'pending';
+  function loadTasks(filter) {
+    currentTaskFilter = filter || currentTaskFilter;
+    get(API + '/tasks/?filter=' + currentTaskFilter).then(d => {
+      renderTasks(d.tasks, d.counts, currentTaskFilter);
+    });
+  }
+
+  // Sekme tiklamalari
+  document.querySelectorAll('#task-tabs .task-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#task-tabs .task-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadTasks(btn.dataset.filter);
+    });
+  });
+
+  // Tamamla butonu
+  document.getElementById('tasks-list').addEventListener('click', e => {
+    const btn = e.target.closest('.action-btn');
+    if (!btn) return;
+    const item = btn.closest('.task-item');
+    const id = item.dataset.id;
+    post(API + '/tasks/' + id + '/complete/').then(d => {
+      if (d.success) loadTasks();
+    });
+  });
+
+  // Çift tıklama: parsel detay sayfasına git
+  document.getElementById('tasks-list').addEventListener('dblclick', e => {
+    // Tamamla butonu üzerinde çift tıklanırsa git etme
+    if (e.target.closest('.action-btn')) return;
+    const item = e.target.closest('.task-item');
+    if (!item || !item.dataset.url) return;
+    window.location.href = item.dataset.url;
+  });
+
+  // Ilk yukleme
+  loadNotes();
+  loadTasks('pending');
+})();
 
 </script>
 {% endblock %}

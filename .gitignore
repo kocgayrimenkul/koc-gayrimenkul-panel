@@ -64,3 +64,11 @@ apps/static/assets/.temp
 
 
 venv_win/
+
+# Geçici uygulama scriptleri
+apply_phase*.py
+
+# Yedek dosyalar
+*.bak
+*.bak_*
+backups/

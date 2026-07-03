@@ -129,6 +129,14 @@ def ai_summarize_call(request, call_id):
     if not call.customer:
         return JsonResponse({'success': False, 'error': 'Çağrı bir müşteriyle eşleşmemiş.'}, status=400)
 
+    # Özellik geçici olarak kapalı — API key güncellenince settings.OPENAI_ENABLED=True yapın
+    if not getattr(settings, 'OPENAI_ENABLED', False):
+        return JsonResponse({
+            'success': False,
+            'unavailable': True,
+            'error': 'AI Çağrı Özeti şu an kullanılamıyor.',
+        }, status=200)
+
     api_key = getattr(settings, 'OPENAI_API_KEY', '')
     if not api_key or api_key == 'buraya_openai_api_keyinizi_yazin':
         return JsonResponse({'success': False, 'error': 'OpenAI API anahtarı ayarlanmamış. .env dosyasına OPENAI_API_KEY ekleyin.'}, status=500)

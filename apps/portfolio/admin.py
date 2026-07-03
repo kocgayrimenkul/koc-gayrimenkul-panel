@@ -4,7 +4,7 @@ Koç Gayrimenkul Panel - Portföy Yönetimi Admin Yapılandırması
 """
 
 from django.contrib import admin
-from .models import Property, PropertyImage, PropertyEnvironment
+from .models import Property, PropertyImage, PropertyEnvironment, VideoJob
 
 # Inline modeller
 class PropertyImageInline(admin.TabularInline):
@@ -71,4 +71,12 @@ class PropertyAdmin(admin.ModelAdmin):
 class PropertyImageAdmin(admin.ModelAdmin):
     list_display = ['id', 'property', 'title', 'order']
     list_filter = ['property']
-    search_fields = ['property__apartment_name', 'title'] 
+    search_fields = ['property__apartment_name', 'title']
+
+
+@admin.register(VideoJob)
+class VideoJobAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'property', 'created_by', 'status', 'resolution', 'aspect_ratio', 'created_at']
+    list_filter   = ['status', 'resolution', 'aspect_ratio']
+    search_fields = ['property__apartment_name', 'created_by__username']
+    readonly_fields = ['created_at', 'updated_at']

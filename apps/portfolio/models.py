@@ -118,6 +118,7 @@ class Property(models.Model):
     listing_type = models.CharField(max_length=20, choices=LISTING_TYPE_CHOICES, verbose_name="İlan Türü", blank=True)
     
     # Diğer Bilgiler
+    front = models.CharField(max_length=50, verbose_name="Cephe", blank=True, default='')
     deed_status = models.CharField(max_length=20, choices=DEED_STATUS_CHOICES, verbose_name="Tapu Durumu", blank=True)
     is_suitable_for_credit = models.BooleanField(default=True, verbose_name="Krediye Uygunluk")
     is_bargainable = models.BooleanField(default=True, verbose_name="Pazarlık Payı")
@@ -295,4 +296,63 @@ class PortalNotification(models.Model):
         verbose_name = "Portal Bildirimi"
         verbose_name_plural = "Portal Bildirimleri"
         ordering = ['-created_at']
+
+
+class VideoJob(models.Model):
+    """Gayrimenkul tanıtım videosu oluşturma talebi"""
+
+    STATUS_CHOICES = [
+        ('queued',     'Kuyrukta'),
+        ('processing', 'İşleniyor'),
+        ('completed',  'Hazır'),
+        ('error',      'Hata'),
+    ]
+    RESOLUTION_CHOICES = [
+        ('480p',  'Standart (480p)'),
+        ('720p',  'HD (720p)'),
+        ('1080p', 'Sinematik (1080p)'),
+    ]
+    ASPECT_CHOICES = [
+        ('9:16', 'Dikey 9:16 — Reels/Story'),
+        ('16:9', 'Yatay 16:9 — YouTube/Web'),
+    ]
+
+    property = models.ForeignKey(
+        Property, on_delete=models.CASCADE,
+        related_name='video_jobs', verbose_name="Gayrimenkul"
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, related_name='video_jobs', verbose_name="Oluşturan"
+    )
+    status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default='queued', verbose_name="Durum")
+    resolution   = models.CharField(max_length=10, choices=RESOLUTION_CHOICES, default='720p', verbose_name="Çözünürlük")
+    aspect_ratio = models.CharField(max_length=10, choices=ASPECT_CHOICES, default='9:16', verbose_name="En-Boy Oranı")
+    photo_order  = models.JSONField(default=list, verbose_name="Fotoğraf Sırası (ID listesi)")
+    output_url   = models.URLField(blank=True, verbose_name="Video URL")
+    error_message = models.TextField(blank=True, verbose_name="Hata Mesajı")
+    created_at   = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma")
+    updated_at   = models.DateTimeField(auto_now=True, verbose_name="Güncelleme")
+
+    class Meta:
+        verbose_name = "Video Görevi"
+        verbose_name_plural = "Video Görevleri"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.property} — {self.get_status_display()} ({self.created_at:%d.%m.%Y})"
+
+    def get_status_color(self):
+        return {
+            'queued': 'blue', 'processing': 'amber',
+            'completed': 'emerald', 'error': 'red'
+        }.get(self.status, 'slate')
+
+    def get_ordered_photos(self):
+        """photo_order ID listesine göre sıralanmış PropertyImage'ları döndür."""
+        images = {img.id: img for img in self.property.images.all()}
+        ordered = [images[i] for i in self.photo_order if i in images]
+        if not ordered:
+            ordered = list(self.property.images.order_by('order'))
+        return ordered
 

@@ -530,17 +530,32 @@ def employee_delete(request, employee_id):
     if request.method == 'POST':
         user_name = employee.user.get_full_name()
         user = employee.user
-        
+
+        try:
+            # Mahalle danışmanı ilişkilerini temizle (FK constraint hatası önlenir)
+            from apps.customers.models import Neighborhood
+            for neighborhood in Neighborhood.objects.filter(consultants=user):
+                neighborhood.consultants.remove(user)
+        except Exception:
+            pass
+
+        try:
+            # Müşteri danışmanı ilişkilerini temizle
+            from apps.customers.models import Customer
+            Customer.objects.filter(consultant=user).update(consultant=None)
+        except Exception:
+            pass
+
         # Önce profili sil, sonra kullanıcıyı
         employee.delete()
         user.delete()
-        
+
         ActivityLog.objects.create(
             user=request.user,
             action=f"Çalışan silindi: {user_name}",
             details="Kullanıcı tamamen sistemden kaldırıldı"
         )
-        
+
         messages.success(request, f"{user_name} sistemden tamamen kaldırıldı.")
         return redirect('employee_list')
     
@@ -1142,3 +1157,348 @@ def available_extensions_api(request):
             'success': False,
             'message': f'Hata oluştu: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+# ============================================================================
+# FAZ 3 - NOTLAR ve GOREVLER AJAX ENDPOINT'LERI
+# ============================================================================
+
+@login_required(login_url="/login/")
+def phase3_notes_list(request):
+    """Kullanicinin notlarini JSON olarak dondur"""
+    from .models import UserNote
+    notes = UserNote.objects.filter(user=request.user).order_by('is_completed', '-created_at')[:50]
+    data = []
+    for n in notes:
+        data.append({
+            'id': n.id,
+            'content': n.content,
+            'is_completed': n.is_completed,
+            'created_at': n.created_at.strftime('%d.%m.%Y %H:%M'),
+            'completed_at': n.completed_at.strftime('%d.%m.%Y %H:%M') if n.completed_at else None,
+        })
+    return JsonResponse({'notes': data, 'total': len(data)})
+
+
+@login_required(login_url="/login/")
+@require_POST
+def phase3_note_add(request):
+    """Yeni not ekle"""
+    from .models import UserNote
+    content = (request.POST.get('content') or '').strip()
+    if not content:
+        return JsonResponse({'success': False, 'error': 'Not icerigi bos olamaz'}, status=400)
+    if len(content) > 1000:
+        return JsonResponse({'success': False, 'error': 'Not 1000 karakteri gecemez'}, status=400)
+
+    note = UserNote.objects.create(user=request.user, content=content)
+    return JsonResponse({
+        'success': True,
+        'note': {
+            'id': note.id,
+            'content': note.content,
+            'is_completed': False,
+            'created_at': note.created_at.strftime('%d.%m.%Y %H:%M'),
+            'completed_at': None,
+        }
+    })
+
+
+@login_required(login_url="/login/")
+@require_POST
+def phase3_note_toggle(request, note_id):
+    """Notu tamamla / geri al"""
+    from .models import UserNote
+    try:
+        note = UserNote.objects.get(id=note_id, user=request.user)
+    except UserNote.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Not bulunamadi'}, status=404)
+
+    note.is_completed = not note.is_completed
+    note.save()
+    return JsonResponse({
+        'success': True,
+        'is_completed': note.is_completed,
+        'completed_at': note.completed_at.strftime('%d.%m.%Y %H:%M') if note.completed_at else None,
+    })
+
+
+@login_required(login_url="/login/")
+@require_POST
+def phase3_note_delete(request, note_id):
+    """Not sil"""
+    from .models import UserNote
+    try:
+        note = UserNote.objects.get(id=note_id, user=request.user)
+    except UserNote.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Not bulunamadi'}, status=404)
+    note.delete()
+    return JsonResponse({'success': True})
+
+
+@login_required(login_url="/login/")
+def phase3_tasks_list(request):
+    """Kullanicinin gorevlerini JSON olarak dondur.
+    ?filter=pending | overdue | completed | all (varsayilan: all)
+    """
+    from .models import UserTask
+    from django.utils import timezone
+
+    # Once gecikmis olanlari guncelle
+    pending_overdue = UserTask.objects.filter(
+        user=request.user,
+        status='pending',
+        due_date__lt=timezone.now().date()
+    )
+    pending_overdue.update(status='overdue')
+
+    filter_type = request.GET.get('filter', 'all')
+
+    qs = UserTask.objects.filter(user=request.user).select_related('neighborhood', 'property', 'parsel', 'assigned_by')
+
+    if filter_type == 'pending':
+        qs = qs.filter(status__in=['pending', 'in_progress'])
+    elif filter_type == 'overdue':
+        qs = qs.filter(status='overdue')
+    elif filter_type == 'completed':
+        qs = qs.filter(status='completed')
+
+    qs = qs.order_by('status', '-created_at')[:50]
+
+    # Sayilari da hesapla (sekme rozeti icin)
+    counts = {
+        'pending': UserTask.objects.filter(user=request.user, status__in=['pending', 'in_progress']).count(),
+        'overdue': UserTask.objects.filter(user=request.user, status='overdue').count(),
+        'completed': UserTask.objects.filter(user=request.user, status='completed').count(),
+    }
+
+    data = []
+    for t in qs:
+        data.append({
+            'id': t.id,
+            'title': t.title,
+            'description': t.description,
+            'task_type': t.task_type,
+            'task_type_display': t.get_task_type_display() if hasattr(t, 'get_task_type_display') else t.task_type,
+            'status': t.status,
+            'priority': t.priority,
+            'neighborhood': t.neighborhood.name if t.neighborhood else None,
+            'property_title': (t.property.apartment_name or f'#{t.property.id}') if t.property else None,
+            'parsel_adres': t.parsel.adres if t.parsel else None,
+            'detail_url': f'/saha/parsel/{t.parsel.id}/' if t.parsel else None,
+            'assigned_by': t.assigned_by.get_full_name() if t.assigned_by else None,
+            'due_date': t.due_date.strftime('%d.%m.%Y') if t.due_date else None,
+            'created_at': t.created_at.strftime('%d.%m.%Y %H:%M'),
+            'completed_at': t.completed_at.strftime('%d.%m.%Y %H:%M') if t.completed_at else None,
+        })
+
+    return JsonResponse({'tasks': data, 'counts': counts, 'filter': filter_type})
+
+
+@login_required(login_url="/login/")
+@require_POST
+def phase3_task_complete(request, task_id):
+    """Gorevi tamamla / geri al (toggle)"""
+    from .models import UserTask
+    try:
+        task = UserTask.objects.get(id=task_id, user=request.user)
+    except UserTask.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Gorev bulunamadi'}, status=404)
+
+    if task.status == 'completed':
+        # Geri al
+        task.status = 'pending'
+    else:
+        task.status = 'completed'
+    task.save()
+
+    return JsonResponse({
+        'success': True,
+        'status': task.status,
+        'completed_at': task.completed_at.strftime('%d.%m.%Y %H:%M') if task.completed_at else None,
+    })
+
+
+# ============================================================================
+# GÖREV ATAMA PANELİ (Admin / Manager / Secretary)
+# ============================================================================
+
+def _is_task_manager(user):
+    """Admin, müdür veya santral/sekreter rolündeki kullanıcılar."""
+    if user.is_superuser:
+        return True
+    try:
+        role = user.employee_profile.role
+        return role in ('admin', 'manager', 'secretary')
+    except Exception:
+        return False
+
+
+@login_required(login_url="/login/")
+@user_passes_test(_is_task_manager, login_url='/')
+def task_assign_panel(request):
+    """Görev atama paneli — liste + form."""
+    from .models import UserTask
+    from apps.customers.models import Neighborhood
+    from apps.portfolio.models import Property
+
+    # Atanabilir personeller (tüm aktif kullanıcılar)
+    assignable = (
+        EmployeeProfile.objects
+        .filter(is_active=True)
+        .select_related('user')
+        .order_by('user__first_name', 'user__last_name')
+    )
+
+    # Filtreler
+    filter_user   = request.GET.get('user', '')
+    filter_status = request.GET.get('status', '')
+
+    tasks_qs = (
+        UserTask.objects
+        .select_related('user', 'assigned_by', 'neighborhood', 'property')
+        .exclude(task_type__in=['neighborhood_visit'])   # otomatik görevler gizle
+        .order_by('-created_at')
+    )
+    if filter_user:
+        tasks_qs = tasks_qs.filter(user_id=filter_user)
+    if filter_status:
+        tasks_qs = tasks_qs.filter(status=filter_status)
+
+    # Gecikmeli güncelleme
+    for t in tasks_qs.filter(status='pending'):
+        t.check_and_update_overdue()
+
+    tasks_qs = tasks_qs[:200]
+
+    neighborhoods = Neighborhood.objects.order_by('name')
+
+    context = {
+        'segment': 'task_assign',
+        'assignable': assignable,
+        'tasks': tasks_qs,
+        'neighborhoods': neighborhoods,
+        'filter_user': filter_user,
+        'filter_status': filter_status,
+        'task_types': [
+            ('photo_shoot',  'Fotoğraf Çekimi',  'fa-camera',      'text-purple-600',  'bg-purple-50'),
+            ('hang_banner',  'Branda Asma',       'fa-tag',         'text-orange-600',  'bg-orange-50'),
+            ('central_task', 'Santral Görevi',    'fa-headset',     'text-blue-600',    'bg-blue-50'),
+            ('manual',       'Diğer',             'fa-pen',         'text-slate-600',   'bg-slate-50'),
+        ],
+        'priority_choices': UserTask.PRIORITY_CHOICES,
+        'status_choices':   UserTask.STATUS_CHOICES,
+    }
+    return render(request, 'employees/task_assign_panel.html', context)
+
+
+@login_required(login_url="/login/")
+@user_passes_test(_is_task_manager, login_url='/')
+@require_POST
+def task_assign_create(request):
+    """AJAX: Yeni görev oluştur."""
+    import json
+    from .models import UserTask
+
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        data = request.POST
+
+    user_id     = data.get('user_id')
+    title       = (data.get('title') or '').strip()
+    description = (data.get('description') or '').strip()
+    task_type   = data.get('task_type', 'manual')
+    priority    = data.get('priority', 'normal')
+    due_date    = data.get('due_date') or None
+    nb_id       = data.get('neighborhood_id') or None
+    prop_id     = data.get('property_id') or None
+
+    if not user_id or not title:
+        return JsonResponse({'success': False, 'error': 'Personel ve görev başlığı zorunludur.'}, status=400)
+
+    try:
+        assigned_to = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Personel bulunamadı.'}, status=404)
+
+    task = UserTask(
+        user        = assigned_to,
+        assigned_by = request.user,
+        title       = title,
+        description = description,
+        task_type   = task_type,
+        priority    = priority,
+        due_date    = due_date or None,
+    )
+    if nb_id:
+        from apps.customers.models import Neighborhood
+        task.neighborhood = Neighborhood.objects.filter(pk=nb_id).first()
+    if prop_id:
+        from apps.portfolio.models import Property
+        task.property = Property.objects.filter(pk=prop_id).first()
+
+    task.save()
+
+    PRIORITY_LABELS = {'low': 'Düşük', 'normal': 'Normal', 'high': 'Yüksek', 'urgent': 'Acil'}
+    TYPE_LABELS = {
+        'photo_shoot': 'Fotoğraf Çekimi',
+        'hang_banner': 'Branda Asma',
+        'central_task': 'Santral Görevi',
+        'manual': 'Diğer',
+    }
+
+    return JsonResponse({
+        'success': True,
+        'task': {
+            'id':           task.id,
+            'user_name':    assigned_to.get_full_name() or assigned_to.username,
+            'title':        task.title,
+            'task_type':    task.task_type,
+            'type_label':   TYPE_LABELS.get(task.task_type, task.task_type),
+            'priority':     task.priority,
+            'priority_label': PRIORITY_LABELS.get(task.priority, task.priority),
+            'status':       task.status,
+            'due_date':     task.due_date.strftime('%d.%m.%Y') if task.due_date else '—',
+            'created_at':   task.created_at.strftime('%d.%m.%Y %H:%M'),
+        }
+    })
+
+
+@login_required(login_url="/login/")
+@user_passes_test(_is_task_manager, login_url='/')
+@require_POST
+def task_assign_delete(request, task_id):
+    """AJAX: Görev sil (sadece bekleyen/gecikmeli)."""
+    from .models import UserTask
+    try:
+        task = UserTask.objects.get(pk=task_id)
+    except UserTask.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Görev bulunamadı.'}, status=404)
+
+    if task.status == 'completed':
+        return JsonResponse({'success': False, 'error': 'Tamamlanan görev silinemez.'}, status=400)
+
+    task.delete()
+    return JsonResponse({'success': True})
+
+
+@login_required(login_url="/login/")
+@user_passes_test(_is_task_manager, login_url='/')
+def task_assign_properties_by_neighborhood(request):
+    """AJAX: Mahalleye göre mülk listesi."""
+    from apps.portfolio.models import Property
+    nb_id = request.GET.get('neighborhood_id')
+    props = []
+    if nb_id:
+        qs = (
+            Property.objects
+            .filter(neighborhood_id=nb_id)
+            .values('id', 'apartment_name', 'web_title')
+            .order_by('apartment_name')[:100]
+        )
+        for p in qs:
+            label = p['apartment_name'] or p['web_title'] or f"#{p['id']}"
+            props.append({'id': p['id'], 'label': label})
+    return JsonResponse({'properties': props})

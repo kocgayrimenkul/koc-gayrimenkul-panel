@@ -25,7 +25,20 @@
             <i class="fas fa-chevron-right text-[10px] text-slate-300"></i>
             <span class="font-medium text-slate-700">{{ property.apartment_name|truncatechars:50 }}</span>
         </div>
-        <div class="flex space-x-2">
+        <div class="flex space-x-2 flex-wrap gap-2">
+            {% if pending_visit_task %}
+            <button id="visit-task-btn"
+                    data-task-id="{{ pending_visit_task.id }}"
+                    data-url="{% url 'complete_visit_task' pending_visit_task.id %}"
+                    class="flex items-center space-x-2 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition text-sm font-bold shadow-md">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Ziyaret Gorevini Tamamla</span>
+            </button>
+            {% endif %}
+            <a href="{% url 'video_creator_page' property.id %}" class="flex items-center space-x-2 px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition text-sm font-medium">
+                <i class="fas fa-video"></i>
+                <span>Video Oluştur</span>
+            </a>
             <a href="{% url 'property_update' property.id %}" class="flex items-center space-x-2 px-4 py-2 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg hover:bg-amber-100 transition text-sm font-medium">
                 <i class="far fa-edit"></i>
                 <span>Düzenle</span>
@@ -626,5 +639,45 @@
         const el = document.getElementById(id);
         if (el) el.classList.toggle('hidden');
     }
+
+// Ziyaret gorevi tamamla
+(function() {
+    const btn = document.getElementById('visit-task-btn');
+    if (!btn) return;
+
+    function getCsrf() {
+        const m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    btn.addEventListener('click', function() {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Kaydediliyor...</span>';
+
+        fetch(btn.dataset.url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCsrf(), 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                btn.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+                btn.classList.add('bg-slate-400', 'cursor-default');
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> <span>Tamamlandi ✓</span>';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> <span>Ziyaret Gorevini Tamamla</span>';
+                alert('Hata: ' + (d.error || 'Bilinmeyen hata'));
+            }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> <span>Ziyaret Gorevini Tamamla</span>';
+            alert('Baglanti hatasi. Lutfen tekrar deneyin.');
+        });
+    });
+})();
 </script>
 {% endblock extra_js %}

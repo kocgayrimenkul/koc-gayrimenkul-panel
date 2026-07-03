@@ -75,6 +75,15 @@ urlpatterns = [
     # Arşivden geri al
     path('gayrimenkul/<int:property_id>/geri-al/', views.property_restore, name='property_restore'),
 
+    # Ziyaret gorevi tamamla (AJAX)
+    path('api/gorev/<int:task_id>/tamamla/', views.complete_visit_task, name='complete_visit_task'),
+
+    # Video Olusturucu
+    path('gayrimenkul/<int:property_id>/video/',              views.video_creator_page, name='video_creator_page'),
+    path('gayrimenkul/<int:property_id>/video/olustur/',      views.video_create_job,   name='video_create_job'),
+    path('gayrimenkul/<int:property_id>/video/gecmis/',       views.video_job_list,     name='video_job_list'),
+    path('api/video/job/<int:job_id>/durum/',                  views.video_job_status,   name='video_job_status'),
+
     # Sahibinden entegrasyonu
     path('sahibinden/', views.sahibinden_export, name='sahibinden_export'),
     path('sahibinden/xml/', views.sahibinden_xml_feed, name='sahibinden_xml_feed'),

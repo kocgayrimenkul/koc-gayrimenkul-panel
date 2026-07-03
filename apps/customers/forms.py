@@ -157,9 +157,19 @@ class NeighborhoodForm(forms.ModelForm):
         empty_label="-- Danışman Seçin --",
     )
 
+    consultant2 = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_staff=True) | User.objects.filter(
+            employee_profile__role='consultant'
+        ),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control select2"}),
+        label="2. Danışman",
+        empty_label="-- 2. Danışman Seçin --",
+    )
+
     class Meta:
         model = Neighborhood
-        fields = ['name', 'district', 'consultant']
+        fields = ['name', 'district', 'consultant', 'consultant2']
         widgets = {
             'name': forms.TextInput(attrs={
                 "class": "form-control",

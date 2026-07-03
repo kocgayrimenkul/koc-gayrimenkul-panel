@@ -375,6 +375,15 @@ def property_detail(request, property_id):
 
     activities.sort(key=lambda x: x['date'], reverse=True)
 
+    # Bu portföy için kullanicinin bekleyen/gecikmiş ziyaret görevi
+    from apps.employees.models import UserTask
+    pending_visit_task = UserTask.objects.filter(
+        user=request.user,
+        property=property_obj,
+        task_type='neighborhood_visit',
+        status__in=['pending', 'overdue'],
+    ).first()
+
     context = {
         'segment': 'gayrimenkul',
         'property': property_obj,
@@ -385,6 +394,7 @@ def property_detail(request, property_id):
         'customer_presentations': customer_presentations,
         'property_calls': property_calls,
         'activities': activities,
+        'pending_visit_task': pending_visit_task,
     }
 
     html_template = loader.get_template('portfolio/property_detail.html')
@@ -2311,3 +2321,128 @@ def hepsiemlak_toggle(request, property_id):
         return JR({'error': 'Bulunamadı'}, status=404)
     except Exception as e:
         return JR({'error': str(e)}, status=500)
+
+
+
+# ---------------------------------------------------------------------------
+# AJAX: Ziyaret gorevini tamamla
+# ---------------------------------------------------------------------------
+@login_required(login_url="/login/")
+def complete_visit_task(request, task_id):
+    """Portfoy detay sayfasindan ziyaret gorevini tamamla (AJAX POST)."""
+    from apps.employees.models import UserTask
+    from django.views.decorators.http import require_POST
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST gerekli'}, status=405)
+
+    task = get_object_or_404(UserTask, pk=task_id, user=request.user, task_type='neighborhood_visit')
+
+    if task.status == 'completed':
+        return JsonResponse({'success': True, 'already': True})
+
+    task.status = 'completed'
+    task.save()  # save() completed_at'i otomatik seter
+
+    return JsonResponse({'success': True})
+
+
+# ===========================================================================
+# VIDEO OLUSTURUCU
+# ===========================================================================
+
+@login_required(login_url="/login/")
+def video_creator_page(request, property_id):
+    """Video oluşturucu ana sayfası."""
+    property_obj = get_object_or_404(Property, id=property_id)
+    photos = property_obj.images.order_by('order')
+    jobs   = property_obj.video_jobs.select_related('created_by').order_by('-created_at')[:20]
+    context = {
+        'segment': 'gayrimenkul',
+        'property': property_obj,
+        'photos': photos,
+        'jobs': jobs,
+        'resolution_choices': [('480p','Standart (480p)','Hızlı, küçük boyut'),('720p','HD (720p)','Önerilen'),('1080p','Sinematik (1080p)','En yüksek kalite')],
+        'aspect_choices': [('9:16','Dikey 9:16','Reels / TikTok / Story'),('16:9','Yatay 16:9','YouTube / Portal / Web')],
+    }
+    return render(request, 'portfolio/video_creator.html', context)
+
+
+@login_required(login_url="/login/")
+def video_create_job(request, property_id):
+    """Video görevi oluştur (AJAX POST)."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST gerekli'}, status=405)
+
+    import json as _json
+    from .models import VideoJob
+    from .services.video_service import create_video_job
+
+    property_obj = get_object_or_404(Property, id=property_id)
+    try:
+        body = _json.loads(request.body)
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Geçersiz JSON'}, status=400)
+
+    photo_ids    = body.get('photo_ids', [])
+    resolution   = body.get('resolution', '720p')
+    aspect_ratio = body.get('aspect_ratio', '9:16')
+
+    try:
+        job = create_video_job(property_obj, request.user, photo_ids, resolution, aspect_ratio)
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+    return JsonResponse({
+        'success': True,
+        'job': {
+            'id': job.id,
+            'status': job.status,
+            'status_display': job.get_status_display(),
+            'created_at': job.created_at.strftime('%d.%m.%Y %H:%M'),
+        }
+    })
+
+
+@login_required(login_url="/login/")
+def video_job_status(request, job_id):
+    """Job durumunu sorgula (AJAX GET)."""
+    from .models import VideoJob
+    job = get_object_or_404(VideoJob, id=job_id)
+    return JsonResponse({
+        'id': job.id,
+        'status': job.status,
+        'status_display': job.get_status_display(),
+        'output_url': job.output_url,
+        'error_message': job.error_message,
+        'updated_at': job.updated_at.strftime('%d.%m.%Y %H:%M'),
+    })
+
+
+@login_required(login_url="/login/")
+def video_job_list(request, property_id):
+    """Geçmiş video görevlerini döndür (AJAX GET)."""
+    from .models import VideoJob
+    property_obj = get_object_or_404(Property, id=property_id)
+    jobs = property_obj.video_jobs.select_related('created_by').order_by('-created_at')[:20]
+    data = []
+    for j in jobs:
+        thumb = None
+        if j.photo_order:
+            first = property_obj.images.filter(id=j.photo_order[0]).first()
+            if first:
+                thumb = first.thumbnail.url if first.thumbnail else first.image.url
+        data.append({
+            'id': j.id,
+            'status': j.status,
+            'status_display': j.get_status_display(),
+            'resolution': j.resolution,
+            'aspect_ratio': j.aspect_ratio,
+            'photo_count': len(j.photo_order),
+            'output_url': j.output_url,
+            'error_message': j.error_message,
+            'thumbnail': thumb,
+            'created_at': j.created_at.strftime('%d.%m.%Y %H:%M'),
+            'created_by': j.created_by.get_full_name() if j.created_by else '—',
+        })
+    return JsonResponse({'jobs': data})

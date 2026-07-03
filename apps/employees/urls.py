@@ -39,4 +39,17 @@ urlpatterns = [
     path('api/extensions/available/', views.available_extensions_api, name='available_extensions_api'),
     path('api/extensions/<int:employee_id>/assign/', views.assign_extension_api, name='assign_extension_api'),
     path('api/extensions/<int:employee_id>/remove/', views.remove_extension_api, name='remove_extension_api'),
+    # Phase 3 - Notlar ve Gorevler AJAX endpoint'leri
+    path('api/notes/',                        views.phase3_notes_list,    name='notes_list'),
+    path('api/notes/add/',                    views.phase3_note_add,      name='note_add'),
+    path('api/notes/<int:note_id>/toggle/',   views.phase3_note_toggle,   name='note_toggle'),
+    path('api/notes/<int:note_id>/delete/',   views.phase3_note_delete,   name='note_delete'),
+    path('api/tasks/',                        views.phase3_tasks_list,    name='tasks_list'),
+    path('api/tasks/<int:task_id>/complete/', views.phase3_task_complete, name='task_complete'),
+
+    # Görev Atama Paneli
+    path('gorev-ata/',                            views.task_assign_panel,                       name='task_assign_panel'),
+    path('gorev-ata/olustur/',                    views.task_assign_create,                      name='task_assign_create'),
+    path('gorev-ata/<int:task_id>/sil/',          views.task_assign_delete,                      name='task_assign_delete'),
+    path('api/gorev-ata/mulkler/',                views.task_assign_properties_by_neighborhood,  name='task_assign_properties'),
 ]

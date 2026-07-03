@@ -34,11 +34,12 @@ services:
   koc-gayrimenkul-panel:
     build: .  # Mevcut dizindeki Dockerfile'ı kullan
     container_name: koc-gayrimenkul-panel
-    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
     volumes:
       - .:/app  # Mevcut dizini /app'e bağla
       - ./media:/app/media  # Medya dosyalarına erişimi sağlar
       - ./staticfiles:/app/staticfiles  # Statik dosyalara erişimi sağlar
+      - /var/run/mysqld/mysqld.sock:/run/mysqld/mysqld.sock  # MySQL socket bağlantısı
     environment:
       - VIRTUAL_HOST=panelkocgayrimenkul.com
       - LETSENCRYPT_HOST=panelkocgayrimenkul.com

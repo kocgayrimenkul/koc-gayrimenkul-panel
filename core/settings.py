@@ -38,6 +38,8 @@ environ.Env.read_env(env_file=env_file)
 # ─────────────────────────────────────────────
 SECRET_KEY = env('SECRET_KEY')
 OPENAI_API_KEY          = env('OPENAI_API_KEY')
+# API key geçerli olduğunda True yapın
+OPENAI_ENABLED          = False
 META_VERIFY_TOKEN       = env('META_VERIFY_TOKEN')
 META_ACCESS_TOKEN       = env('META_ACCESS_TOKEN')
 WHATSAPP_PHONE_NUMBER_ID = env('WHATSAPP_PHONE_NUMBER_ID')
@@ -95,6 +97,7 @@ INSTALLED_APPS = [
     'apps.sales_process',
     'apps.calls',
     'apps.messaging',
+    'apps.muhasebe',
     'apps.saha',
     'apps.sahibinden',
 ]

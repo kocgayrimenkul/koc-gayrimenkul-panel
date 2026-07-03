@@ -241,14 +241,20 @@ def customer_note_create(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
     content = request.POST.get('content', '').strip()
     if not content:
-        return JsonResponse({'success': False, 'error': 'Icerik zorunludur.'}, status=400)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Icerik zorunludur.'}, status=400)
+        from django.shortcuts import redirect
+        return redirect('customer_detail', pk=pk)
     note = CustomerNote.objects.create(
         customer=customer, user=request.user, content=content,
         note_type=request.POST.get('note_type', 'not'),
         priority=request.POST.get('priority', 'normal'),
     )
     CustomerActivity.objects.create(customer=customer, user=request.user, activity_type='not_eklendi', source_label='Manuel', description=f"Not eklendi: {content[:60]}")
-    return JsonResponse({'success': True, 'note': {'id': note.id, 'content': note.content, 'created_at': note.created_at.strftime('%d.%m.%Y %H:%M')}})
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'note': {'id': note.id, 'content': note.content, 'created_at': note.created_at.strftime('%d.%m.%Y %H:%M')}})
+    from django.shortcuts import redirect
+    return redirect('customer_detail', pk=pk)
 
 
 @login_required

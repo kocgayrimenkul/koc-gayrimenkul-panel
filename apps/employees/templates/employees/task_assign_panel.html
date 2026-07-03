@@ -1,0 +1,459 @@
+{% extends "layouts/modern_base.html" %}
+{% load static %}
+
+{% block title %}Görev Atama Paneli{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-6 px-4 sm:px-6">
+
+  <!-- Başlık -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Görev Atama Paneli</h1>
+      <p class="text-sm text-slate-500 mt-0.5">Personele görev oluştur ve takip et</p>
+    </div>
+    <a href="{% url 'employee_list' %}" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition no-underline">
+      <i class="fas fa-arrow-left"></i> Çalışanlara Dön
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+    <!-- ══════════════════════════════════
+         GÖREV OLUŞTURMA FORMU (sol / üst)
+         ══════════════════════════════════ -->
+    <div class="xl:col-span-2">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <h2 class="text-base font-bold text-slate-700 mb-5 flex items-center gap-2">
+          <i class="fas fa-plus-circle text-indigo-500"></i> Yeni Görev Oluştur
+        </h2>
+
+        <form id="taskForm" class="space-y-4">
+          {% csrf_token %}
+
+          <!-- Personel seçimi -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Personel <span class="text-red-500">*</span></label>
+            <select id="f_user" required
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+              <option value="">— Personel seçin —</option>
+              {% for ep in assignable %}
+              <option value="{{ ep.user.id }}">{{ ep.user.get_full_name|default:ep.user.username }} ({{ ep.get_role_display }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Görev başlığı -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Görev Başlığı <span class="text-red-500">*</span></label>
+            <input id="f_title" type="text" required maxlength="200" placeholder="Kısa ve açıklayıcı başlık..."
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+          </div>
+
+          <!-- Açıklama -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Açıklama <span class="text-slate-400 font-normal">(opsiyonel)</span></label>
+            <textarea id="f_desc" rows="2" placeholder="Detaylı bilgi..."
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"></textarea>
+          </div>
+
+          <!-- Görev tipi -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-2">Görev Tipi</label>
+            <div class="grid grid-cols-2 gap-2">
+              {% for value, label, icon, color, bg in task_types %}
+              <label class="task-type-card cursor-pointer flex items-center gap-2 rounded-xl border-2 border-slate-200 px-3 py-2.5 text-sm font-semibold transition hover:border-indigo-300 has-[:checked]:border-indigo-500 has-[:checked]:{{ bg }}">
+                <input type="radio" name="task_type" value="{{ value }}" class="hidden" {% if forloop.first %}checked{% endif %}>
+                <i class="fas {{ icon }} {{ color }}"></i>
+                <span class="text-slate-700">{{ label }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Öncelik -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-2">Öncelik</label>
+            <div class="flex gap-2 flex-wrap">
+              {% for val, lbl in priority_choices %}
+              <label class="cursor-pointer">
+                <input type="radio" name="priority" value="{{ val }}" class="hidden" {% if val == 'normal' %}checked{% endif %}>
+                <span class="priority-pill inline-block px-3 py-1.5 rounded-full border text-xs font-semibold transition
+                  {% if val == 'low'    %}border-slate-300 text-slate-600
+                  {% elif val == 'normal' %}border-blue-300 text-blue-700
+                  {% elif val == 'high'  %}border-orange-400 text-orange-700
+                  {% else               %}border-red-500 text-red-700{% endif %}">{{ lbl }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Mahalle -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Mahalle <span class="text-slate-400 font-normal">(opsiyonel)</span></label>
+            <select id="f_neighborhood"
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+              <option value="">— Mahalle seçin —</option>
+              {% for nb in neighborhoods %}
+              <option value="{{ nb.id }}">{{ nb.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Portföy/Mülk -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Mülk <span class="text-slate-400 font-normal">(mahalle seçilince filtrelenir)</span></label>
+            <select id="f_property"
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+              <option value="">— Mülk seçin —</option>
+            </select>
+          </div>
+
+          <!-- Son tarih -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Son Tarih</label>
+            <input id="f_due" type="date"
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" id="submitBtn"
+            class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition flex items-center justify-center gap-2">
+            <i class="fas fa-paper-plane"></i> Görevi Ata
+          </button>
+
+          <!-- Sonuç mesajı -->
+          <div id="formMsg" class="hidden text-center text-sm font-semibold rounded-xl py-2 px-3"></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         GÖREV LİSTESİ (sağ / alt)
+         ══════════════════════════════════ -->
+    <div class="xl:col-span-3">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+
+        <!-- Filtreler -->
+        <div class="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
+          <h2 class="text-base font-bold text-slate-700 flex items-center gap-2 mr-auto">
+            <i class="fas fa-list-check text-indigo-500"></i> Atanan Görevler
+          </h2>
+          <form method="get" class="flex flex-wrap gap-2 items-center">
+            <select name="user" onchange="this.form.submit()"
+              class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+              <option value="">Tüm Personel</option>
+              {% for ep in assignable %}
+              <option value="{{ ep.user.id }}" {% if filter_user == ep.user.id|stringformat:"s" %}selected{% endif %}>
+                {{ ep.user.get_full_name|default:ep.user.username }}
+              </option>
+              {% endfor %}
+            </select>
+            <select name="status" onchange="this.form.submit()"
+              class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+              <option value="">Tüm Durumlar</option>
+              {% for val, lbl in status_choices %}
+              <option value="{{ val }}" {% if filter_status == val %}selected{% endif %}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+            {% if filter_user or filter_status %}
+            <a href="{% url 'task_assign_panel' %}" class="text-xs text-slate-400 hover:text-red-500 no-underline">
+              <i class="fas fa-times"></i> Temizle
+            </a>
+            {% endif %}
+          </form>
+        </div>
+
+        <!-- Tablo -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                <th class="px-4 py-3 text-left">Personel</th>
+                <th class="px-4 py-3 text-left">Görev</th>
+                <th class="px-4 py-3 text-left">Tip</th>
+                <th class="px-4 py-3 text-left">Öncelik</th>
+                <th class="px-4 py-3 text-left">Son Tarih</th>
+                <th class="px-4 py-3 text-left">Durum</th>
+                <th class="px-4 py-3 text-center">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="taskTableBody">
+              {% for task in tasks %}
+              <tr class="border-b border-slate-50 hover:bg-slate-50 transition task-row" data-id="{{ task.id }}">
+                <td class="px-4 py-3">
+                  <div class="font-semibold text-slate-700 text-xs">{{ task.user.get_full_name|default:task.user.username }}</div>
+                  {% if task.assigned_by %}
+                  <div class="text-[10px] text-slate-400">Atayan: {{ task.assigned_by.get_full_name|default:task.assigned_by.username }}</div>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3 max-w-[180px]">
+                  <div class="font-semibold text-slate-800 text-xs truncate" title="{{ task.title }}">{{ task.title }}</div>
+                  {% if task.neighborhood %}<div class="text-[10px] text-slate-400"><i class="fas fa-map-marker-alt mr-1"></i>{{ task.neighborhood.name }}</div>{% endif %}
+                </td>
+                <td class="px-4 py-3">
+                  {% if task.task_type == 'photo_shoot' %}<span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full"><i class="fas fa-camera"></i> Fotoğraf</span>
+                  {% elif task.task_type == 'hang_banner' %}<span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full"><i class="fas fa-tag"></i> Branda</span>
+                  {% elif task.task_type == 'central_task' %}<span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full"><i class="fas fa-headset"></i> Santral</span>
+                  {% else %}<span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full"><i class="fas fa-pen"></i> Diğer</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                  {% if task.priority == 'urgent' %}<span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">🔴 Acil</span>
+                  {% elif task.priority == 'high' %}<span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">🟠 Yüksek</span>
+                  {% elif task.priority == 'normal' %}<span class="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">🔵 Normal</span>
+                  {% else %}<span class="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">⚪ Düşük</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
+                  {% if task.due_date %}{{ task.due_date|date:"d.m.Y" }}{% else %}—{% endif %}
+                </td>
+                <td class="px-4 py-3">
+                  {% if task.status == 'completed' %}<span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">✓ Tamamlandı</span>
+                  {% elif task.status == 'overdue' %}<span class="text-[10px] font-semibold text-red-700 bg-red-50 px-2 py-1 rounded-full">⚠ Gecikmiş</span>
+                  {% elif task.status == 'in_progress' %}<span class="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-1 rounded-full">↻ Devam Ediyor</span>
+                  {% else %}<span class="text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-full">● Bekliyor</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3 text-center">
+                  {% if task.status != 'completed' %}
+                  <button onclick="deleteTask({{ task.id }}, this)"
+                    class="text-red-400 hover:text-red-600 transition text-xs px-2 py-1 rounded-lg hover:bg-red-50"
+                    title="Görevi Sil">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                  {% else %}
+                  <span class="text-slate-300 text-xs">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr id="emptyRow">
+                <td colspan="7" class="px-6 py-12 text-center text-slate-400 text-sm">
+                  <i class="fas fa-clipboard-list text-3xl mb-3 block opacity-30"></i>
+                  Henüz görev bulunmuyor.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if tasks|length >= 200 %}
+        <div class="px-6 py-3 text-center text-xs text-slate-400 border-t border-slate-100">
+          En son 200 görev gösteriliyor. Filtreleri kullanarak daraltın.
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast bildirimi -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden transition-all duration-300">
+  <div class="flex items-center gap-3 bg-white border border-slate-200 shadow-xl rounded-2xl px-5 py-3.5">
+    <i id="toastIcon" class="fas fa-check-circle text-emerald-500 text-lg"></i>
+    <span id="toastMsg" class="text-sm font-semibold text-slate-700"></span>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const URLS = {
+  create:     "{% url 'task_assign_create' %}",
+  deleteBase: "{% url 'task_assign_delete' task_id=0 %}".replace('/0/', '/'),
+  properties: "{% url 'task_assign_properties' %}",
+};
+const CSRF = "{{ csrf_token }}";
+
+// ── Radio kartları görsel aktif state ──────────────────────────────────────
+document.querySelectorAll('[name="task_type"], [name="priority"]').forEach(radio => {
+  radio.addEventListener('change', () => updateRadioStyles());
+});
+function updateRadioStyles() {
+  // task_type
+  document.querySelectorAll('[name="task_type"]').forEach(r => {
+    const card = r.closest('label');
+    if (r.checked) {
+      card.classList.add('border-indigo-500', 'bg-indigo-50');
+      card.classList.remove('border-slate-200');
+    } else {
+      card.classList.remove('border-indigo-500', 'bg-indigo-50');
+      card.classList.add('border-slate-200');
+    }
+  });
+  // priority
+  document.querySelectorAll('[name="priority"]').forEach(r => {
+    const pill = r.nextElementSibling;
+    if (r.checked) pill.classList.add('ring-2', 'ring-offset-1', 'ring-indigo-400', 'bg-indigo-50');
+    else pill.classList.remove('ring-2', 'ring-offset-1', 'ring-indigo-400', 'bg-indigo-50');
+  });
+}
+updateRadioStyles();
+
+// ── Mahalle → Mülk filtresi ─────────────────────────────────────────────
+document.getElementById('f_neighborhood').addEventListener('change', function() {
+  const nbId = this.value;
+  const sel = document.getElementById('f_property');
+  sel.innerHTML = '<option value="">— Yükleniyor... —</option>';
+  if (!nbId) { sel.innerHTML = '<option value="">— Mülk seçin —</option>'; return; }
+  fetch(URLS.properties + '?neighborhood_id=' + nbId)
+    .then(r => r.json())
+    .then(data => {
+      sel.innerHTML = '<option value="">— Mülk seçin —</option>';
+      data.properties.forEach(p => {
+        const o = document.createElement('option');
+        o.value = p.id; o.textContent = p.label;
+        sel.appendChild(o);
+      });
+    });
+});
+
+// ── Form gönderimi ──────────────────────────────────────────────────────
+document.getElementById('taskForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const userId = document.getElementById('f_user').value;
+  const title  = document.getElementById('f_title').value.trim();
+  if (!userId || !title) { showMsg('Personel ve görev başlığı zorunludur.', false); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atanıyor...';
+
+  const payload = {
+    user_id:         userId,
+    title:           title,
+    description:     document.getElementById('f_desc').value.trim(),
+    task_type:       document.querySelector('[name="task_type"]:checked').value,
+    priority:        document.querySelector('[name="priority"]:checked').value,
+    due_date:        document.getElementById('f_due').value,
+    neighborhood_id: document.getElementById('f_neighborhood').value,
+    property_id:     document.getElementById('f_property').value,
+  };
+
+  fetch(URLS.create, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body: JSON.stringify(payload),
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Görevi Ata';
+    if (data.success) {
+      showToast('Görev "' + data.task.user_name + '" adına atandı.', true);
+      prependTaskRow(data.task);
+      resetForm();
+    } else {
+      showMsg(data.error || 'Hata oluştu.', false);
+    }
+  })
+  .catch(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Görevi Ata';
+    showMsg('Bağlantı hatası.', false);
+  });
+});
+
+function resetForm() {
+  document.getElementById('f_user').value = '';
+  document.getElementById('f_title').value = '';
+  document.getElementById('f_desc').value = '';
+  document.getElementById('f_due').value = '';
+  document.getElementById('f_neighborhood').value = '';
+  document.getElementById('f_property').innerHTML = '<option value="">— Mülk seçin —</option>';
+  document.querySelector('[name="task_type"][value="photo_shoot"]').checked = true;
+  document.querySelector('[name="priority"][value="normal"]').checked = true;
+  updateRadioStyles();
+  document.getElementById('formMsg').classList.add('hidden');
+}
+
+function showMsg(msg, ok) {
+  const el = document.getElementById('formMsg');
+  el.textContent = msg;
+  el.className = 'text-center text-sm font-semibold rounded-xl py-2 px-3 ' +
+    (ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700');
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+// ── Yeni satır ekle ────────────────────────────────────────────────────
+function prependTaskRow(t) {
+  const empty = document.getElementById('emptyRow');
+  if (empty) empty.remove();
+
+  const typeIcons = {
+    photo_shoot:  '<span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full"><i class="fas fa-camera"></i> Fotoğraf</span>',
+    hang_banner:  '<span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full"><i class="fas fa-tag"></i> Branda</span>',
+    central_task: '<span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full"><i class="fas fa-headset"></i> Santral</span>',
+    manual:       '<span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full"><i class="fas fa-pen"></i> Diğer</span>',
+  };
+  const prioLabels = {
+    urgent: '🔴 Acil', high: '🟠 Yüksek', normal: '🔵 Normal', low: '⚪ Düşük'
+  };
+  const prioCls = {
+    urgent: 'text-red-600 bg-red-50', high: 'text-orange-600 bg-orange-50',
+    normal: 'text-blue-600 bg-blue-50', low: 'text-slate-500 bg-slate-100'
+  };
+
+  const tr = document.createElement('tr');
+  tr.className = 'border-b border-slate-50 hover:bg-slate-50 transition task-row bg-indigo-50/40';
+  tr.dataset.id = t.id;
+  tr.innerHTML = `
+    <td class="px-4 py-3"><div class="font-semibold text-slate-700 text-xs">${t.user_name}</div></td>
+    <td class="px-4 py-3 max-w-[180px]"><div class="font-semibold text-slate-800 text-xs truncate">${t.title}</div></td>
+    <td class="px-4 py-3">${typeIcons[t.task_type] || t.type_label}</td>
+    <td class="px-4 py-3"><span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${prioCls[t.priority]}">${prioLabels[t.priority]}</span></td>
+    <td class="px-4 py-3 text-xs text-slate-600">${t.due_date}</td>
+    <td class="px-4 py-3"><span class="text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded-full">● Bekliyor</span></td>
+    <td class="px-4 py-3 text-center">
+      <button onclick="deleteTask(${t.id}, this)"
+        class="text-red-400 hover:text-red-600 transition text-xs px-2 py-1 rounded-lg hover:bg-red-50" title="Görevi Sil">
+        <i class="fas fa-trash"></i>
+      </button>
+    </td>`;
+
+  const tbody = document.getElementById('taskTableBody');
+  tbody.insertBefore(tr, tbody.firstChild);
+  setTimeout(() => tr.classList.remove('bg-indigo-50/40'), 2000);
+}
+
+// ── Görev silme ────────────────────────────────────────────────────────
+function deleteTask(taskId, btn) {
+  if (!confirm('Bu görevi silmek istediğinize emin misiniz?')) return;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  btn.disabled = true;
+
+  fetch(URLS.deleteBase + taskId + '/sil/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF },
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      const row = document.querySelector('.task-row[data-id="' + taskId + '"]');
+      if (row) { row.style.opacity = '0'; setTimeout(() => row.remove(), 300); }
+      showToast('Görev silindi.', true);
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-trash"></i>';
+      showToast(data.error || 'Silinemedi.', false);
+    }
+  });
+}
+
+// ── Toast bildirimi ────────────────────────────────────────────────────
+function showToast(msg, ok) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  const icon = document.getElementById('toastIcon');
+  if (ok) { icon.className = 'fas fa-check-circle text-emerald-500 text-lg'; }
+  else     { icon.className = 'fas fa-exclamation-circle text-red-500 text-lg'; }
+  toast.classList.remove('hidden');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.add('hidden'), 3500);
+}
+</script>
+{% endblock %}
